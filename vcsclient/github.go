@@ -2,7 +2,6 @@ package vcsclient
 
 import (
 	"context"
-	"log"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -17,11 +16,10 @@ const scopesHeader = "X-OAuth-Scopes"
 
 type GitHubClient struct {
 	ghClient *github.Client
-	logger   *log.Logger
 	context  context.Context
 }
 
-func NewGitHubClient(context context.Context, logger *log.Logger, vcsInfo *VcsInfo) (*GitHubClient, error) {
+func NewGitHubClient(context context.Context, vcsInfo *VcsInfo) (*GitHubClient, error) {
 	httpClient := &http.Client{}
 	if vcsInfo.Token != "" {
 		httpClient = oauth2.NewClient(context, oauth2.StaticTokenSource(&oauth2.Token{AccessToken: vcsInfo.Token}))
@@ -36,7 +34,6 @@ func NewGitHubClient(context context.Context, logger *log.Logger, vcsInfo *VcsIn
 	}
 	return &GitHubClient{
 		ghClient: client,
-		logger:   logger,
 		context:  context,
 	}, nil
 }

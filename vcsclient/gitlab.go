@@ -3,7 +3,6 @@ package vcsclient
 import (
 	"bytes"
 	"context"
-	"log"
 	"strconv"
 
 	"github.com/jfrog/froggit-go/vcsutils"
@@ -20,10 +19,9 @@ const (
 type GitLabClient struct {
 	glClient *gitlab.Client
 	context  context.Context
-	logger   *log.Logger
 }
 
-func NewGitLabClient(context context.Context, logger *log.Logger, vcsInfo *VcsInfo) (*GitLabClient, error) {
+func NewGitLabClient(context context.Context, vcsInfo *VcsInfo) (*GitLabClient, error) {
 	var client *gitlab.Client
 	var err error
 	if vcsInfo.ApiEndpoint != "" {
@@ -38,7 +36,6 @@ func NewGitLabClient(context context.Context, logger *log.Logger, vcsInfo *VcsIn
 	return &GitLabClient{
 		glClient: client,
 		context:  context,
-		logger:   logger,
 	}, nil
 }
 

@@ -48,19 +48,15 @@ func (builder *ClientBuilder) Build() (VcsClient, error) {
 	if ctx == nil {
 		ctx = context.Background()
 	}
-	logger := builder.logger
-	if logger == nil {
-		logger = log.Default()
-	}
 	switch builder.vcsProvider {
 	case vcsutils.GitHub:
-		return NewGitHubClient(ctx, logger, &builder.vcsInfo)
+		return NewGitHubClient(ctx, &builder.vcsInfo)
 	case vcsutils.GitLab:
-		return NewGitLabClient(ctx, logger, &builder.vcsInfo)
+		return NewGitLabClient(ctx, &builder.vcsInfo)
 	case vcsutils.BitbucketServer:
-		return NewBitbucketServerClient(ctx, logger, &builder.vcsInfo)
+		return NewBitbucketServerClient(ctx, &builder.vcsInfo)
 	case vcsutils.BitbucketCloud:
-		return NewBitbucketCloudClient(ctx, logger, &builder.vcsInfo)
+		return NewBitbucketCloudClient(ctx, &builder.vcsInfo)
 	}
 	return nil, nil
 }

@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -18,20 +17,17 @@ type BitbucketCloudClient struct {
 	bitbucketClient *bitbucket.Client
 	username        string
 	token           string
-	logger          *log.Logger
 }
 
-func NewBitbucketCloudClient(context context.Context, logger *log.Logger, vcsInfo *VcsInfo) (*BitbucketCloudClient, error) {
+func NewBitbucketCloudClient(context context.Context, vcsInfo *VcsInfo) (*BitbucketCloudClient, error) {
 	err := os.Setenv("BITBUCKET_API_BASE_URL", vcsInfo.ApiEndpoint)
 	if err != nil {
 		return nil, err
 	}
-
 	bitbucketClient := &BitbucketCloudClient{
 		bitbucketClient: bitbucket.NewBasicAuth(vcsInfo.Username, vcsInfo.Token),
 		username:        vcsInfo.Username,
 		token:           vcsInfo.Token,
-		logger:          logger,
 	}
 	return bitbucketClient, nil
 }

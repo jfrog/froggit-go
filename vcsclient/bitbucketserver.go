@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"log"
 	"net/http"
 	"strconv"
 
@@ -16,10 +15,9 @@ import (
 
 type BitbucketServerClient struct {
 	bitbucketClient *bitbucketv1.DefaultApiService
-	logger          *log.Logger
 }
 
-func NewBitbucketServerClient(context context.Context, logger *log.Logger, vcsInfo *VcsInfo) (*BitbucketServerClient, error) {
+func NewBitbucketServerClient(context context.Context, vcsInfo *VcsInfo) (*BitbucketServerClient, error) {
 	var httpClient *http.Client
 	if vcsInfo.Token != "" {
 		httpClient = oauth2.NewClient(context, oauth2.StaticTokenSource(&oauth2.Token{AccessToken: vcsInfo.Token}))
@@ -32,7 +30,6 @@ func NewBitbucketServerClient(context context.Context, logger *log.Logger, vcsIn
 	})
 	bitbucketServerClient := &BitbucketServerClient{
 		bitbucketClient: bitbucketClient.DefaultApi,
-		logger:          logger,
 	}
 	return bitbucketServerClient, nil
 }
