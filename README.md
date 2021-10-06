@@ -1,6 +1,6 @@
-# Froggit Go
+# Froggit-Go
 
-Froggit-Go is a set of Go tools allowing to perform actions on VCS providers.
+Froggit-Go is a Go library, allowing to perform actions on VCS git providers.
 Currently supported providers are: [GitHub](#github), [Bitbucket Server](#bitbucket-server), [Bitbucket Cloud](#bitbucket-cloud), and [GitLab](#gitlab).
 
 ## Project status
@@ -151,7 +151,7 @@ owner := "jfrog"
 webhookEvent := vcsutils.Push
 // VCS repository
 repository := "jfrog-cli"
-// Webhook on branch does not supported in GitHub and Bitbucket
+// Optional - Webhooks on branches are supported only on GitLab
 branch := ""
 // The URL to send the payload upon a webhook event
 payloadUrl := "https://acme.jfrog.io/integration/api/v1/webhook/event"
@@ -167,13 +167,13 @@ id, token, err := client.CreateWebhook(owner, repository, branch, "https://jfrog
 owner := "jfrog"
 // VCS repository
 repository := "jfrog-cli"
-// Webhook on branch does not supported in GitHub and Bitbucket
+// Optional - Webhooks on branches are supported only on GitLab
 branch := ""
 // The URL to send the payload upon a webhook event
 payloadUrl := "https://acme.jfrog.io/integration/api/v1/webhook/event"
 // A token to validate identity of the webhook, created by CreateWebhook command
 token := "abc123"
-// The webhook ID returned from a previous CreateWebhook command
+// The webhook ID returned by the CreateWebhook API, which created this webhook
 webhookId := "123"
 // The event to watch
 webhookEvent := vcsutils.PrCreated
@@ -186,9 +186,9 @@ err := client.UpdateWebhook(owner, repository, branch, "https://jfrog.com", toke
 ```go
 // Organization or username
 owner := "jfrog"
-// GitHub repository
+// VCS repository
 repository := "jfrog-cli"
-// The webhook ID returned from a previous CreateWebhook command
+// The webhook ID returned by the CreateWebhook API, which created this webhook
 webhookId := "123"
 
 err := client.DeleteWebhook(owner, repository, webhookId)
@@ -203,7 +203,7 @@ commitStatus := vcsclient.Pass
 owner := "jfrog"
 // VCS repository
 repository := "jfrog-cli"
-// Branch or commit or tag on GitHub, commit on Bitbucket
+// Branch or commit or tag on GitHub and GitLab, commit on Bitbucket
 ref := "5c05522fecf8d93a11752ff255c99fcb0f0557cd"
 // Title of the commit status
 title := "Xray scanning"

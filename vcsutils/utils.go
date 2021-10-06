@@ -34,7 +34,6 @@ func Untar(destDir string, reader io.Reader, shouldRemoveBaseDir bool) error {
 	var header *tar.Header
 	for tarEntryReader := tar.NewReader(gzr); err != io.EOF; header, err = tarEntryReader.Next() {
 		if err != nil {
-			// An error occurred
 			return err
 		}
 

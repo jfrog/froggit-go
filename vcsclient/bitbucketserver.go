@@ -140,10 +140,6 @@ func (client *BitbucketServerClient) DownloadRepository(owner, repository, branc
 	return vcsutils.Untar(localPath, bytes.NewReader(response.Payload), false)
 }
 
-func (client BitbucketServerClient) Push(owner, repository string, branch string) error {
-	return nil
-}
-
 func (client *BitbucketServerClient) CreatePullRequest(owner, repository, sourceBranch, targetBranch, title, description string) error {
 	bitbucketRepo := &bitbucketv1.Repository{
 		Slug: repository,
@@ -226,11 +222,12 @@ func createBitbucketServerHook(token, payloadUrl string, webhookEvents ...vcsuti
 	return &map[string]interface{}{
 		"url":           payloadUrl,
 		"configuration": map[string]interface{}{"secret": token},
-		"events":        getBitbucketServerWebhookEvent(webhookEvents...),
+		"events":        getBitbucketServerWebhookEvents(webhookEvents...),
 	}
 }
 
-func getBitbucketServerWebhookEvent(webhookEvents ...vcsutils.WebhookEvent) []string {
+// Get varargs of webhook events and return a slice of Bitbucket server webhook events
+func getBitbucketServerWebhookEvents(webhookEvents ...vcsutils.WebhookEvent) []string {
 	events := []string{}
 	for _, event := range webhookEvents {
 		switch event {

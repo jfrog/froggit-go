@@ -151,10 +151,6 @@ func (client *GitLabClient) DownloadRepository(owner, repository, branch, localP
 	return vcsutils.Untar(localPath, bytes.NewReader(response), true)
 }
 
-func (client *GitLabClient) Push(owner, repository string, branch string) error {
-	return nil
-}
-
 func (client *GitLabClient) CreatePullRequest(owner, repository, sourceBranch, targetBranch, title, description string) error {
 	options := &gitlab.CreateMergeRequestOptions{
 		Title:        &title,

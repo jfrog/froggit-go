@@ -28,7 +28,7 @@ func NewGitHubClient(context context.Context, vcsInfo *VcsInfo) (*GitHubClient, 
 	if vcsInfo.ApiEndpoint != "" {
 		url, err := url.Parse(strings.TrimSuffix(vcsInfo.ApiEndpoint, "/") + "/")
 		if err != nil {
-			return nil, nil
+			return nil, err
 		}
 		client.BaseURL = url
 	}
@@ -132,10 +132,6 @@ func (client *GitHubClient) DownloadRepository(owner, repository, branch, localP
 	return vcsutils.Untar(localPath, resp.Body, true)
 }
 
-func (client GitHubClient) Push(owner, repository string, branch string) error {
-	return nil
-}
-
 func (client *GitHubClient) CreatePullRequest(owner, repository, sourceBranch, targetBranch, title, description string) error {
 	head := owner + ":" + sourceBranch
 	_, _, err := client.ghClient.PullRequests.Create(client.context, owner, repository, &github.NewPullRequest{
@@ -149,7 +145,7 @@ func (client *GitHubClient) CreatePullRequest(owner, repository, sourceBranch, t
 
 func createGitHubHook(token, payloadUrl string, webhookEvents ...vcsutils.WebhookEvent) *github.Hook {
 	return &github.Hook{
-		Events: getWebhookEvents(webhookEvents...),
+		Events: getGitHubWebhookEvents(webhookEvents...),
 		Config: map[string]interface{}{
 			"url":          payloadUrl,
 			"content_type": "json",
@@ -158,7 +154,8 @@ func createGitHubHook(token, payloadUrl string, webhookEvents ...vcsutils.Webhoo
 	}
 }
 
-func getWebhookEvents(webhookEvents ...vcsutils.WebhookEvent) []string {
+// Get varargs of webhook events and return a slice of GitHub webhook events
+func getGitHubWebhookEvents(webhookEvents ...vcsutils.WebhookEvent) []string {
 	events := []string{}
 	for _, event := range webhookEvents {
 		switch event {

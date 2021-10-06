@@ -156,10 +156,6 @@ func (client *BitbucketCloudClient) DownloadRepository(owner, repository, branch
 	return vcsutils.Untar(localPath, response.Body, true)
 }
 
-func (client BitbucketCloudClient) Push(owner, repository string, branch string) error {
-	return nil
-}
-
 func (client *BitbucketCloudClient) CreatePullRequest(owner, repository, sourceBranch, targetBranch, title, description string) error {
 	options := &bitbucket.PullRequestsOptions{
 		Owner:             owner,
@@ -174,6 +170,7 @@ func (client *BitbucketCloudClient) CreatePullRequest(owner, repository, sourceB
 	return err
 }
 
+// Extract the webhook id from the webhook create response
 func getBitbucketCloudWebhookId(r interface{}) (string, error) {
 	webhook := &bitbucket.WebhooksOptions{}
 	bytes, err := json.Marshal(r)
@@ -187,6 +184,7 @@ func getBitbucketCloudWebhookId(r interface{}) (string, error) {
 	return strings.TrimRight(strings.TrimLeft(webhook.Uuid, "{"), "}"), nil
 }
 
+// Get varargs of webhook events and return a slice of Bitbucket cloud webhook events
 func getBitbucketCloudWebhookEvents(webhookEvents ...vcsutils.WebhookEvent) []string {
 	events := []string{}
 	for _, event := range webhookEvents {
