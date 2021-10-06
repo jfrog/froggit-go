@@ -156,7 +156,9 @@ branch := ""
 // The URL to send the payload upon a webhook event
 payloadUrl := "https://acme.jfrog.io/integration/api/v1/webhook/event"
 
-// token - A token used to validate identity of the incoming webhook
+// token - A token used to validate identity of the incoming webhook.
+// In GitHub and Bitbucket server the token verifies the sha256 signature of the payload.
+// In GitLab and Bitbucket cloud the token compared to the token received in the incoming payload.
 id, token, err := client.CreateWebhook(owner, repository, branch, "https://jfrog.com", webhookEvent)
 ```
 
@@ -171,7 +173,7 @@ repository := "jfrog-cli"
 branch := ""
 // The URL to send the payload upon a webhook event
 payloadUrl := "https://acme.jfrog.io/integration/api/v1/webhook/event"
-// A token to validate identity of the webhook, created by CreateWebhook command
+// A token to validate identity of the webhook, created by [CreateWebhook](#create-webhook) command
 token := "abc123"
 // The webhook ID returned by the CreateWebhook API, which created this webhook
 webhookId := "123"
@@ -238,6 +240,7 @@ err := client.CreatePullRequest(owner, repository, sourceBranch, targetBranch, t
 
 ```go
 // Token to authenticate incoming webhooks. If empty, signature will not be verified.
+// The token is a random key generated in the [CreateWebhook](#create-webhook) command.
 token := "abc123"
 // The HTTP request of the incoming webhook
 request := http.Request{}
