@@ -39,13 +39,13 @@ func (builder *ClientBuilder) Logger(logger *log.Logger) *ClientBuilder {
 func (builder *ClientBuilder) Build() (VcsClient, error) {
 	switch builder.vcsProvider {
 	case vcsutils.GitHub:
-		return NewGitHubClient(&builder.vcsInfo)
+		return NewGitHubClient(builder.vcsInfo)
 	case vcsutils.GitLab:
-		return NewGitLabClient(&builder.vcsInfo)
+		return NewGitLabClient(builder.vcsInfo)
 	case vcsutils.BitbucketServer:
-		return NewBitbucketServerClient(&builder.vcsInfo)
+		return NewBitbucketServerClient(builder.vcsInfo)
 	case vcsutils.BitbucketCloud:
-		return NewBitbucketCloudClient(&builder.vcsInfo)
+		return NewBitbucketCloudClient(builder.vcsInfo)
 	}
 	return nil, nil
 }

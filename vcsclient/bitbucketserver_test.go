@@ -19,39 +19,40 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestBitbucketServerConnection(t *testing.T) {
+func TestBitbucketServer_Connection(t *testing.T) {
 	ctx := context.Background()
 	mockResponse := make(map[string][]bitbucketv1.User)
-	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, true, mockResponse, "/api/1.0/admin/users", createBitbucketServerHandler)
+	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, true, mockResponse,
+		"/api/1.0/admin/users?limit=1", createBitbucketServerHandler)
 	defer cleanUp()
 
 	err := client.TestConnection(ctx)
 	assert.NoError(t, err)
 }
 
-func TestBitbucketConnectionWhenContextCancelled(t *testing.T) {
+func TestBitbucketServer_ConnectionWhenContextCancelled(t *testing.T) {
 	ctx := context.Background()
 	ctxWithCancel, cancel := context.WithCancel(ctx)
 	cancel()
 
-	client, closeServer := createWaitingServerAndClient(t, vcsutils.BitbucketServer, 0)
-	defer closeServer()
+	client, cleanUp := createWaitingServerAndClient(t, vcsutils.BitbucketServer, 0)
+	defer cleanUp()
 	err := client.TestConnection(ctxWithCancel)
 	assert.ErrorIs(t, err, context.Canceled)
 }
 
-func TestBitbucketConnectionWhenContextTimesOut(t *testing.T) {
+func TestBitbucketServer_ConnectionWhenContextTimesOut(t *testing.T) {
 	ctx := context.Background()
 	ctxWithTimeout, cancel := context.WithTimeout(ctx, 10*time.Millisecond)
 	defer cancel()
 
-	client, closeServer := createWaitingServerAndClient(t, vcsutils.BitbucketServer, 50*time.Millisecond)
-	defer closeServer()
+	client, cleanUp := createWaitingServerAndClient(t, vcsutils.BitbucketServer, 50*time.Millisecond)
+	defer cleanUp()
 	err := client.TestConnection(ctxWithTimeout)
 	assert.ErrorIs(t, err, context.DeadlineExceeded)
 }
 
-func TestBitbucketServerListRepositories(t *testing.T) {
+func TestBitbucketServer_ListRepositories(t *testing.T) {
 	ctx := context.Background()
 	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, false, nil, "", createBitbucketServerListRepositoriesHandler)
 	defer cleanUp()
@@ -61,7 +62,7 @@ func TestBitbucketServerListRepositories(t *testing.T) {
 	assert.Equal(t, map[string][]string{"~" + username: {repo1}, username: {repo2}}, actualRepositories)
 }
 
-func TestBitbucketServerListBranches(t *testing.T) {
+func TestBitbucketServer_ListBranches(t *testing.T) {
 	ctx := context.Background()
 	mockResponse := map[string][]bitbucketv1.Branch{
 		"values": {{ID: branch1}, {ID: branch2}},
@@ -74,7 +75,7 @@ func TestBitbucketServerListBranches(t *testing.T) {
 	assert.ElementsMatch(t, actualRepositories, []string{branch1, branch2})
 }
 
-func TestBitbucketServerCreateWebhook(t *testing.T) {
+func TestBitbucketServer_CreateWebhook(t *testing.T) {
 	ctx := context.Background()
 	id := rand.Int31()
 	mockResponse := bitbucketv1.Webhook{ID: int(id)}
@@ -88,7 +89,7 @@ func TestBitbucketServerCreateWebhook(t *testing.T) {
 	assert.Equal(t, strconv.Itoa(int(id)), actualId)
 }
 
-func TestBitbucketServerUpdateWebhook(t *testing.T) {
+func TestBitbucketServer_UpdateWebhook(t *testing.T) {
 	ctx := context.Background()
 	id := rand.Int31()
 	stringId := strconv.Itoa(int(id))
@@ -101,7 +102,7 @@ func TestBitbucketServerUpdateWebhook(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestBitbucketServerDeleteWebhook(t *testing.T) {
+func TestBitbucketServer_DeleteWebhook(t *testing.T) {
 	ctx := context.Background()
 	id := rand.Int31()
 	stringId := strconv.Itoa(int(id))
@@ -113,7 +114,7 @@ func TestBitbucketServerDeleteWebhook(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestBitbucketServerSetCommitStatus(t *testing.T) {
+func TestBitbucketServer_SetCommitStatus(t *testing.T) {
 	ctx := context.Background()
 	ref := "9caf1c431fb783b669f0f909bd018b40f2ea3808"
 	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, false, nil, fmt.Sprintf("/build-status/1.0/commits/%s", ref), createBitbucketServerHandler)
@@ -124,7 +125,7 @@ func TestBitbucketServerSetCommitStatus(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestBitbucketServerDownloadRepository(t *testing.T) {
+func TestBitbucketServer_DownloadRepository(t *testing.T) {
 	ctx := context.Background()
 	dir, err := ioutil.TempDir("", "")
 	assert.NoError(t, err)
@@ -140,7 +141,7 @@ func TestBitbucketServerDownloadRepository(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestBitbucketServerCreatePullRequest(t *testing.T) {
+func TestBitbucketServer_CreatePullRequest(t *testing.T) {
 	ctx := context.Background()
 	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, true, nil, "/api/1.0/projects/jfrog/repos/repo-1/pull-requests", createBitbucketServerHandler)
 	defer cleanUp()
@@ -149,9 +150,104 @@ func TestBitbucketServerCreatePullRequest(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func createBitbucketServerHandler(t *testing.T, expectedUri string, response []byte) http.HandlerFunc {
+func TestBitbucketServer_GetLatestCommit(t *testing.T) {
+	ctx := context.Background()
+	response, err := os.ReadFile(filepath.Join("testdata", "bitbucketserver", "commit_list_response.json"))
+	assert.NoError(t, err)
+
+	// limit=1 appears twice because it is added twice by: github.com/gfleury/go-bitbucket-v1@v0.0.0-20210826163055-dff2223adeac/default_api.go:3848
+	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, false, response,
+		fmt.Sprintf("/api/1.0/projects/%s/repos/%s/commits?limit=1&limit=1&until=master", owner, repo1),
+		createBitbucketServerHandler)
+	defer cleanUp()
+
+	result, err := client.GetLatestCommit(ctx, owner, repo1, "master")
+
+	require.NoError(t, err)
+	assert.Equal(t, CommitInfo{
+		Hash:          "def0123abcdef4567abcdef8987abcdef6543abc",
+		AuthorName:    "charlie",
+		CommitterName: "mark",
+		Url:           "",
+		Timestamp:     1548720847610,
+		Message:       "More work on feature 1",
+		ParentHashes:  []string{"abcdef0123abcdef4567abcdef8987abcdef6543", "qwerty0123abcdef4567abcdef8987abcdef6543"},
+	}, result)
+}
+
+func TestBitbucketServer_GetLatestCommitNotFound(t *testing.T) {
+	ctx := context.Background()
+	response := []byte(`{
+		"errors": [
+        	{
+            	"context": null,
+            	"exceptionName": "com.atlassian.bitbucket.project.NoSuchProjectException",
+            	"message": "Project unknown does not exist."
+        	}
+    	]
+	}`)
+	client, cleanUp := createServerAndClientReturningStatus(t, vcsutils.BitbucketServer, false, response,
+		fmt.Sprintf("/api/1.0/projects/%s/repos/%s/commits?limit=1&limit=1&until=master", owner, repo1),
+		http.StatusNotFound, createBitbucketServerHandler)
+	defer cleanUp()
+
+	result, err := client.GetLatestCommit(ctx, owner, repo1, "master")
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "Status: 404 Not Found")
+	assert.Empty(t, result)
+}
+
+func TestBitbucketServer_GetLatestCommitInvalidPayload(t *testing.T) {
+	tests := []struct {
+		name   string
+		owner  string
+		repo   string
+		branch string
+	}{
+		{
+			name:   "all empty",
+			owner:  "",
+			repo:   "",
+			branch: "",
+		},
+		{
+			name:   "empty owner",
+			owner:  "",
+			repo:   "repo",
+			branch: "branch",
+		},
+		{
+			name:   "empty repo",
+			owner:  "owner",
+			repo:   "",
+			branch: "branch",
+		},
+		{
+			name:   "empty branch",
+			owner:  "owner",
+			repo:   "repo",
+			branch: "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := context.Background()
+			client, err := NewClientBuilder(vcsutils.BitbucketServer).Build()
+			require.NoError(t, err)
+
+			result, err := client.GetLatestCommit(ctx, tt.owner, tt.repo, tt.branch)
+
+			require.EqualError(t, err, "required parameter is empty")
+			assert.Empty(t, result)
+		})
+	}
+}
+
+func createBitbucketServerHandler(t *testing.T, expectedUri string, response []byte, expectedStatusCode int) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
+		w.WriteHeader(expectedStatusCode)
 		_, err := w.Write(response)
 		require.NoError(t, err)
 		assert.Equal(t, expectedUri, r.RequestURI)
@@ -159,7 +255,7 @@ func createBitbucketServerHandler(t *testing.T, expectedUri string, response []b
 	}
 }
 
-func createBitbucketServerListRepositoriesHandler(t *testing.T, _ string, _ []byte) http.HandlerFunc {
+func createBitbucketServerListRepositoriesHandler(t *testing.T, _ string, _ []byte, expectedStatusCode int) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var responseObj interface{}
 		if r.RequestURI == "/api/1.0/projects?start=0" {
@@ -173,7 +269,7 @@ func createBitbucketServerListRepositoriesHandler(t *testing.T, _ string, _ []by
 		} else {
 			assert.Fail(t, "Unexpected request Uri "+r.RequestURI)
 		}
-		w.WriteHeader(http.StatusOK)
+		w.WriteHeader(expectedStatusCode)
 		response, err := json.Marshal(responseObj)
 		require.NoError(t, err)
 		_, err = w.Write(response)

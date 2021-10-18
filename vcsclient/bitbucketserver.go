@@ -13,10 +13,10 @@ import (
 )
 
 type BitbucketServerClient struct {
-	vcsInfo *VcsInfo
+	vcsInfo VcsInfo
 }
 
-func NewBitbucketServerClient(vcsInfo *VcsInfo) (*BitbucketServerClient, error) {
+func NewBitbucketServerClient(vcsInfo VcsInfo) (*BitbucketServerClient, error) {
 	bitbucketServerClient := &BitbucketServerClient{
 		vcsInfo: vcsInfo,
 	}
@@ -40,7 +40,9 @@ func (client *BitbucketServerClient) TestConnection(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	_, err = bitbucketClient.GetUsers(make(map[string]interface{}))
+
+	options := map[string]interface{}{"limit": 1}
+	_, err = bitbucketClient.GetUsers(options)
 	return err
 }
 
@@ -207,6 +209,48 @@ type projectsResponse struct {
 	Values []struct {
 		Key string `json:"key,omitempty"`
 	} `json:"values,omitempty"`
+}
+
+func (client *BitbucketServerClient) GetLatestCommit(ctx context.Context, owner, repository, branch string) (CommitInfo, error) {
+	err := validateParametersNotBlank(owner, repository, branch)
+	if err != nil {
+		return CommitInfo{}, err
+	}
+
+	options := map[string]interface{}{
+		"limit": 1,
+		"until": branch,
+	}
+	bitbucketClient, err := client.buildBitbucketClient(ctx)
+	if err != nil {
+		return CommitInfo{}, err
+	}
+
+	apiResponse, err := bitbucketClient.GetCommits(owner, repository, options)
+	if err != nil {
+		return CommitInfo{}, err
+	}
+	commits, err := bitbucketv1.GetCommitsResponse(apiResponse)
+	if err != nil {
+		return CommitInfo{}, err
+	}
+	if len(commits) > 0 {
+		latestCommit := commits[0]
+		parents := make([]string, len(latestCommit.Parents))
+		for i, p := range latestCommit.Parents {
+			parents[i] = p.ID
+		}
+		return CommitInfo{
+			Hash:          latestCommit.ID,
+			AuthorName:    latestCommit.Author.Name,
+			CommitterName: latestCommit.Committer.Name,
+			Url:           "", // URL not provided
+			Timestamp:     latestCommit.CommitterTimestamp,
+			Message:       latestCommit.Message,
+			ParentHashes:  parents,
+		}, nil
+	}
+	return CommitInfo{}, nil
 }
 
 // Get all projects for which the authenticated user has the PROJECT_VIEW permission

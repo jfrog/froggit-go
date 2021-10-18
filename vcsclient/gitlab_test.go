@@ -20,7 +20,7 @@ import (
 	"github.com/xanzy/go-gitlab"
 )
 
-func TestGitLabConnection(t *testing.T) {
+func TestGitLabClient_Connection(t *testing.T) {
 	ctx := context.Background()
 	client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, []gitlab.Project{}, "/api/v4/projects", createGitLabHandler)
 	defer cleanUp()
@@ -29,30 +29,30 @@ func TestGitLabConnection(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestGitlabConnectionWhenContextCancelled(t *testing.T) {
+func TestGitLabClient_ConnectionWhenContextCancelled(t *testing.T) {
 	ctx := context.Background()
 	ctxWithCancel, cancel := context.WithCancel(ctx)
 	cancel()
 
-	client, closeServer := createWaitingServerAndClient(t, vcsutils.GitLab, 0)
-	defer closeServer()
+	client, cleanUp := createWaitingServerAndClient(t, vcsutils.GitLab, 0)
+	defer cleanUp()
 
 	err := client.TestConnection(ctxWithCancel)
 	assert.ErrorIs(t, err, context.Canceled)
 }
 
-func TestGitlabConnectionWhenContextTimesOut(t *testing.T) {
+func TestGitLabClient_ConnectionWhenContextTimesOut(t *testing.T) {
 	ctx := context.Background()
 	ctxWithTimeout, cancel := context.WithTimeout(ctx, 10*time.Millisecond)
 	defer cancel()
 
-	client, closeServer := createWaitingServerAndClient(t, vcsutils.GitLab, 50*time.Millisecond)
-	defer closeServer()
+	client, cleanUp := createWaitingServerAndClient(t, vcsutils.GitLab, 50*time.Millisecond)
+	defer cleanUp()
 	err := client.TestConnection(ctxWithTimeout)
 	assert.ErrorIs(t, err, context.DeadlineExceeded)
 }
 
-func TestGitLabListRepositories(t *testing.T) {
+func TestGitLabClient_ListRepositories(t *testing.T) {
 	ctx := context.Background()
 	client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, []gitlab.Project{{Path: repo1}, {Path: repo2}}, "/api/v4/groups/frogger/projects?page=1", createGitLabHandler)
 	defer cleanUp()
@@ -62,7 +62,7 @@ func TestGitLabListRepositories(t *testing.T) {
 	assert.Equal(t, actualRepositories, map[string][]string{username: {repo1, repo2}})
 }
 
-func TestGitLabListBranches(t *testing.T) {
+func TestGitLabClient_ListBranches(t *testing.T) {
 	ctx := context.Background()
 	client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, []gitlab.Branch{{Name: branch1}, {Name: branch2}}, fmt.Sprintf("/api/v4/projects/%s/repository/branches", url.PathEscape(owner+"/"+repo1)), createGitLabHandler)
 	defer cleanUp()
@@ -72,7 +72,7 @@ func TestGitLabListBranches(t *testing.T) {
 	assert.ElementsMatch(t, actualRepositories, []string{branch1, branch2})
 }
 
-func TestGitLabCreateWebhook(t *testing.T) {
+func TestGitLabClient_CreateWebhook(t *testing.T) {
 	ctx := context.Background()
 	id := rand.Int()
 	client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, gitlab.ProjectHook{ID: id}, fmt.Sprintf("/api/v4/projects/%s/hooks", url.PathEscape(owner+"/"+repo1)), createGitLabHandler)
@@ -85,7 +85,7 @@ func TestGitLabCreateWebhook(t *testing.T) {
 	assert.Equal(t, actualId, strconv.Itoa(id))
 }
 
-func TestGitLabUpdateWebhook(t *testing.T) {
+func TestGitLabClient_UpdateWebhook(t *testing.T) {
 	ctx := context.Background()
 	id := rand.Int()
 	client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, gitlab.ProjectHook{ID: id}, fmt.Sprintf("/api/v4/projects/%s/hooks/%d", url.PathEscape(owner+"/"+repo1), id), createGitLabHandler)
@@ -96,7 +96,7 @@ func TestGitLabUpdateWebhook(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestGitLabDeleteWebhook(t *testing.T) {
+func TestGitLabClient_DeleteWebhook(t *testing.T) {
 	ctx := context.Background()
 	id := rand.Int()
 	client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, gitlab.ProjectHook{ID: id}, fmt.Sprintf("/api/v4/projects/%s/hooks/%d", url.PathEscape(owner+"/"+repo1), id), createGitLabHandler)
@@ -106,7 +106,7 @@ func TestGitLabDeleteWebhook(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestGitLabCreateCommitStatus(t *testing.T) {
+func TestGitLabClient_CreateCommitStatus(t *testing.T) {
 	ctx := context.Background()
 	ref := "5fbf81b31ff7a3b06bd362d1891e2f01bdb2be69"
 	client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, gitlab.CommitStatus{}, fmt.Sprintf("/api/v4/projects/%s/statuses/%s", url.PathEscape(owner+"/"+repo1), ref), createGitLabHandler)
@@ -117,7 +117,7 @@ func TestGitLabCreateCommitStatus(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestGitLabDownloadRepository(t *testing.T) {
+func TestGitLabClient_DownloadRepository(t *testing.T) {
 	ctx := context.Background()
 	dir, err := ioutil.TempDir("", "")
 	assert.NoError(t, err)
@@ -138,7 +138,7 @@ func TestGitLabDownloadRepository(t *testing.T) {
 	assert.Equal(t, "README.md", fileinfo[0].Name())
 }
 
-func TestGitLabCreatePullRequest(t *testing.T) {
+func TestGitLabClient_CreatePullRequest(t *testing.T) {
 	ctx := context.Background()
 	client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, &gitlab.MergeRequest{}, fmt.Sprintf("/api/v4/projects/%s/merge_requests", url.PathEscape(owner+"/"+repo1)), createGitLabHandler)
 	defer cleanUp()
@@ -147,19 +147,110 @@ func TestGitLabCreatePullRequest(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func createGitLabHandler(t *testing.T, expectedUri string, response []byte) http.HandlerFunc {
+func TestGitLabClient_GetLatestCommit(t *testing.T) {
+	ctx := context.Background()
+	response, err := os.ReadFile(filepath.Join("testdata", "gitlab", "commit_list_response.json"))
+	assert.NoError(t, err)
+
+	client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, response,
+		fmt.Sprintf("/api/v4/projects/%s/repository/commits?page=1&per_page=1&ref_name=master",
+			url.PathEscape(owner+"/"+repo1)), createGitLabHandler)
+	defer cleanUp()
+
+	result, err := client.GetLatestCommit(ctx, owner, repo1, "master")
+
+	require.NoError(t, err)
+	assert.Equal(t, CommitInfo{
+		Hash:          "ed899a2f4b50b4370feeea94676502b42383c746",
+		AuthorName:    "Example User",
+		CommitterName: "Administrator",
+		Url:           "https://gitlab.example.com/thedude/gitlab-foss/-/commit/ed899a2f4b50b4370feeea94676502b42383c746",
+		Timestamp:     1348131022,
+		Message:       "Replace sanitize with escape once",
+		ParentHashes:  []string{"6104942438c14ec7bd21c6cd5bd995272b3faff6"},
+	}, result)
+}
+
+func TestGitLabClient_GetLatestCommitNotFound(t *testing.T) {
+	ctx := context.Background()
+	response := []byte(`{
+    "message": "404 Project Not Found"
+}`)
+
+	client, cleanUp := createServerAndClientReturningStatus(t, vcsutils.GitLab, false, response,
+		fmt.Sprintf("/api/v4/projects/%s/repository/commits?page=1&per_page=1&ref_name=master",
+			url.PathEscape(owner+"/"+repo1)), http.StatusNotFound, createGitLabHandler)
+	defer cleanUp()
+
+	result, err := client.GetLatestCommit(ctx, owner, repo1, "master")
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "404 Project Not Found")
+	assert.Empty(t, result)
+}
+
+func TestGitLabClient_GetLatestCommitInvalidPayload(t *testing.T) {
+	tests := []struct {
+		name   string
+		owner  string
+		repo   string
+		branch string
+	}{
+		{
+			name:   "all empty",
+			owner:  "",
+			repo:   "",
+			branch: "",
+		},
+		{
+			name:   "empty owner",
+			owner:  "",
+			repo:   "repo",
+			branch: "branch",
+		},
+		{
+			name:   "empty repo",
+			owner:  "owner",
+			repo:   "",
+			branch: "branch",
+		},
+		{
+			name:   "empty branch",
+			owner:  "owner",
+			repo:   "repo",
+			branch: "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := context.Background()
+			client, err := NewClientBuilder(vcsutils.GitLab).Build()
+			require.NoError(t, err)
+
+			result, err := client.GetLatestCommit(ctx, tt.owner, tt.repo, tt.branch)
+
+			require.EqualError(t, err, "required parameter is empty")
+			assert.Empty(t, result)
+		})
+	}
+}
+
+func createGitLabHandler(t *testing.T, expectedUri string, response []byte, expectedStatusCode int) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
 		if r.RequestURI == "/api/v4/" {
+			w.WriteHeader(http.StatusOK)
 			return
 		}
 		if r.RequestURI == "/api/v4/groups" {
 			byteResponse, err := json.Marshal(&[]gitlab.Group{{Path: username}})
 			assert.NoError(t, err)
+			w.WriteHeader(http.StatusOK)
 			_, err = w.Write(byteResponse)
 			assert.NoError(t, err)
 			return
 		}
+		w.WriteHeader(expectedStatusCode)
 		_, err := w.Write(response)
 		assert.NoError(t, err)
 		assert.Equal(t, expectedUri, r.RequestURI)
