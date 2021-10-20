@@ -3,25 +3,18 @@ package vcsclient
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"strconv"
 
 	"github.com/jfrog/froggit-go/vcsutils"
 	"github.com/xanzy/go-gitlab"
 )
 
-type namespaceKind string
-
-const (
-	user  namespaceKind = "user"
-	group               = "group"
-)
-
 type GitLabClient struct {
 	glClient *gitlab.Client
-	context  context.Context
 }
 
-func NewGitLabClient(context context.Context, vcsInfo *VcsInfo) (*GitLabClient, error) {
+func NewGitLabClient(vcsInfo *VcsInfo) (*GitLabClient, error) {
 	var client *gitlab.Client
 	var err error
 	if vcsInfo.ApiEndpoint != "" {
@@ -35,25 +28,25 @@ func NewGitLabClient(context context.Context, vcsInfo *VcsInfo) (*GitLabClient, 
 
 	return &GitLabClient{
 		glClient: client,
-		context:  context,
 	}, nil
 }
 
-func (client *GitLabClient) TestConnection() error {
-	_, _, err := client.glClient.Projects.ListProjects(nil, gitlab.WithContext(client.context))
+func (client *GitLabClient) TestConnection(ctx context.Context) error {
+	_, _, err := client.glClient.Projects.ListProjects(nil, gitlab.WithContext(ctx))
 	return err
 }
 
-func (client *GitLabClient) ListRepositories() (map[string][]string, error) {
+func (client *GitLabClient) ListRepositories(ctx context.Context) (map[string][]string, error) {
 	results := make(map[string][]string)
-	groups, _, err := client.glClient.Groups.ListGroups(nil, gitlab.WithContext(client.context))
+	groups, _, err := client.glClient.Groups.ListGroups(nil, gitlab.WithContext(ctx))
 	if err != nil {
 		return results, err
 	}
 	for _, group := range groups {
 		for pageId := 1; ; pageId++ {
 			options := &gitlab.ListGroupProjectsOptions{ListOptions: gitlab.ListOptions{Page: pageId}}
-			projects, response, err := client.glClient.Groups.ListGroupProjects(group.Path, options, gitlab.WithContext(client.context))
+			projects, response, err := client.glClient.Groups.ListGroupProjects(group.Path, options,
+				gitlab.WithContext(ctx))
 			if err != nil {
 				return nil, err
 			}
@@ -70,20 +63,22 @@ func (client *GitLabClient) ListRepositories() (map[string][]string, error) {
 	return results, nil
 }
 
-func (client *GitLabClient) ListBranches(owner, repository string) ([]string, error) {
-	branches, _, err := client.glClient.Branches.ListBranches(client.getProjectId(owner, repository), nil, gitlab.WithContext(client.context))
+func (client *GitLabClient) ListBranches(ctx context.Context, owner, repository string) ([]string, error) {
+	branches, _, err := client.glClient.Branches.ListBranches(getProjectId(owner, repository), nil,
+		gitlab.WithContext(ctx))
 	if err != nil {
-		return []string{}, err
+		return nil, err
 	}
 
-	results := []string{}
+	results := make([]string, 0, len(branches))
 	for _, branch := range branches {
 		results = append(results, branch.Name)
 	}
 	return results, nil
 }
 
-func (client *GitLabClient) CreateWebhook(owner, repository, branch, payloadUrl string, webhookEvents ...vcsutils.WebhookEvent) (string, string, error) {
+func (client *GitLabClient) CreateWebhook(ctx context.Context, owner, repository, branch, payloadUrl string,
+	webhookEvents ...vcsutils.WebhookEvent) (string, string, error) {
 	token := vcsutils.CreateToken()
 	projectHook := createProjectHook(branch, payloadUrl, webhookEvents...)
 	options := &gitlab.AddProjectHookOptions{
@@ -93,14 +88,16 @@ func (client *GitLabClient) CreateWebhook(owner, repository, branch, payloadUrl 
 		PushEvents:             &projectHook.PushEvents,
 		PushEventsBranchFilter: &projectHook.PushEventsBranchFilter,
 	}
-	response, _, err := client.glClient.Projects.AddProjectHook(client.getProjectId(owner, repository), options, gitlab.WithContext(client.context))
+	response, _, err := client.glClient.Projects.AddProjectHook(getProjectId(owner, repository), options,
+		gitlab.WithContext(ctx))
 	if err != nil {
 		return "", "", err
 	}
 	return strconv.Itoa(response.ID), token, nil
 }
 
-func (client *GitLabClient) UpdateWebhook(owner, repository, branch, payloadUrl, token, webhookId string, webhookEvents ...vcsutils.WebhookEvent) error {
+func (client *GitLabClient) UpdateWebhook(ctx context.Context, owner, repository, branch, payloadUrl, token,
+	webhookId string, webhookEvents ...vcsutils.WebhookEvent) error {
 	projectHook := createProjectHook(branch, payloadUrl, webhookEvents...)
 	options := &gitlab.EditProjectHookOptions{
 		Token:                  &token,
@@ -113,20 +110,23 @@ func (client *GitLabClient) UpdateWebhook(owner, repository, branch, payloadUrl,
 	if err != nil {
 		return err
 	}
-	_, _, err = client.glClient.Projects.EditProjectHook(client.getProjectId(owner, repository), intWebhook, options, gitlab.WithContext(client.context))
+	_, _, err = client.glClient.Projects.EditProjectHook(getProjectId(owner, repository), intWebhook, options,
+		gitlab.WithContext(ctx))
 	return err
 }
 
-func (client *GitLabClient) DeleteWebhook(owner, repository, webhookId string) error {
+func (client *GitLabClient) DeleteWebhook(ctx context.Context, owner, repository, webhookId string) error {
 	intWebhook, err := strconv.Atoi(webhookId)
 	if err != nil {
 		return err
 	}
-	_, err = client.glClient.Projects.DeleteProjectHook(client.getProjectId(owner, repository), intWebhook, gitlab.WithContext(client.context))
+	_, err = client.glClient.Projects.DeleteProjectHook(getProjectId(owner, repository), intWebhook,
+		gitlab.WithContext(ctx))
 	return err
 }
 
-func (client *GitLabClient) SetCommitStatus(commitStatus CommitStatus, owner, repository, ref, title, description, detailsUrl string) error {
+func (client *GitLabClient) SetCommitStatus(ctx context.Context, commitStatus CommitStatus, owner, repository, ref,
+	title, description, detailsUrl string) error {
 	options := &gitlab.SetCommitStatusOptions{
 		State:       gitlab.BuildStateValue(getGitLabCommitState(commitStatus)),
 		Ref:         &ref,
@@ -134,36 +134,40 @@ func (client *GitLabClient) SetCommitStatus(commitStatus CommitStatus, owner, re
 		Description: &description,
 		TargetURL:   &detailsUrl,
 	}
-	_, _, err := client.glClient.Commits.SetCommitStatus(client.getProjectId(owner, repository), ref, options, gitlab.WithContext(client.context))
+	_, _, err := client.glClient.Commits.SetCommitStatus(getProjectId(owner, repository), ref, options,
+		gitlab.WithContext(ctx))
 	return err
 }
 
-func (client *GitLabClient) DownloadRepository(owner, repository, branch, localPath string) error {
+func (client *GitLabClient) DownloadRepository(ctx context.Context, owner, repository, branch, localPath string) error {
 	format := "tar.gz"
 	options := &gitlab.ArchiveOptions{
 		Format: &format,
 		SHA:    &branch,
 	}
-	response, _, err := client.glClient.Repositories.Archive(client.getProjectId(owner, repository), options, gitlab.WithContext(client.context))
+	response, _, err := client.glClient.Repositories.Archive(getProjectId(owner, repository), options,
+		gitlab.WithContext(ctx))
 	if err != nil {
 		return err
 	}
 	return vcsutils.Untar(localPath, bytes.NewReader(response), true)
 }
 
-func (client *GitLabClient) CreatePullRequest(owner, repository, sourceBranch, targetBranch, title, description string) error {
+func (client *GitLabClient) CreatePullRequest(ctx context.Context, owner, repository, sourceBranch, targetBranch,
+	title, description string) error {
 	options := &gitlab.CreateMergeRequestOptions{
 		Title:        &title,
 		Description:  &description,
 		SourceBranch: &sourceBranch,
 		TargetBranch: &targetBranch,
 	}
-	_, _, err := client.glClient.MergeRequests.CreateMergeRequest(client.getProjectId(owner, repository), options, gitlab.WithContext(client.context))
+	_, _, err := client.glClient.MergeRequests.CreateMergeRequest(getProjectId(owner, repository), options,
+		gitlab.WithContext(ctx))
 	return err
 }
 
-func (client *GitLabClient) getProjectId(owner, project string) string {
-	return owner + "/" + project
+func getProjectId(owner, project string) string {
+	return fmt.Sprintf("%s/%s", owner, project)
 }
 
 func createProjectHook(branch string, payloadUrl string, webhookEvents ...vcsutils.WebhookEvent) *gitlab.ProjectHook {

@@ -39,9 +39,6 @@ vcsProvider := vcsutils.GitHub
 apiEndpoint := "https://github.example.com"
 // Access token to GitHub
 token := "secret-github-token"
-// Optional Parameters:
-// The context
-context := context.Background()
 // Logger
 logger := log.Default()
 
@@ -57,9 +54,6 @@ vcsProvider := vcsutils.GitLab
 apiEndpoint := "https://gitlab.example.com"
 // Access token to GitLab
 token := "secret-gitlab-token"
-// Optional Parameters:
-// The context
-context := context.Background()
 // Logger
 logger := log.Default()
 
@@ -75,9 +69,6 @@ vcsProvider := vcsclient.BitbucketServer
 apiEndpoint := "https://git.acme.com/rest"
 // Access token to Bitbucket
 token := "secret-bitbucket-token"
-// Optional Parameters:
-// The context
-context := context.Background()
 // Logger
 logger := log.Default()
 
@@ -95,9 +86,6 @@ apiEndpoint := "https://bitbucket.example.com"
 username := "bitbucket-user"
 // Password or Bitbucket "App Password'
 token := "secret-bitbucket-token"
-// Optional Parameters:
-// The context
-context := context.Background()
 // Logger
 logger := log.Default()
 
@@ -107,29 +95,39 @@ client, err := vcsclient.NewClientBuilder(vcsProvider).ApiEndpoint(apiEndpoint).
 #### Test Connection
 
 ```go
-err := client.TestConnection()
+// Go context
+ctx := context.Background()
+
+err := client.TestConnection(ctx)
 ```
 
 #### List Repositories
 
 ```go
-repositories, err := client.ListRepositories()
+// Go context
+ctx := context.Background()
+
+repositories, err := client.ListRepositories(ctx)
 ```
 
 #### List Branches
 
 ```go
+// Go context
+ctx := context.Background()
 // Organization or username
 owner := "jfrog"
 // VCS repository
 repository := "jfrog-cli"
 
-repositoryBranches, err := client.ListBranches(owner, repository)
+repositoryBranches, err := client.ListBranches(ctx, owner, repository)
 ```
 
 #### Download Repository
 
 ```go
+// Go context
+ctx := context.Background()
 // Organization or username
 owner := "jfrog"
 // VCS repository
@@ -139,12 +137,14 @@ branch := "master"
 // Local path in the file system
 localPath := "/Users/frogger/code/jfrog-cli"
 
-repositoryBranches, err := client.DownloadRepository(owner, repository, branch, localPath)
+repositoryBranches, err := client.DownloadRepository(ctx, owner, repository, branch, localPath)
 ```
 
 #### Create Webhook
 
 ```go
+// Go context
+ctx := context.Background()
 // Organization or username
 owner := "jfrog"
 // The event to watch
@@ -159,12 +159,14 @@ payloadUrl := "https://acme.jfrog.io/integration/api/v1/webhook/event"
 // token - A token used to validate identity of the incoming webhook.
 // In GitHub and Bitbucket server the token verifies the sha256 signature of the payload.
 // In GitLab and Bitbucket cloud the token compared to the token received in the incoming payload.
-id, token, err := client.CreateWebhook(owner, repository, branch, "https://jfrog.com", webhookEvent)
+id, token, err := client.CreateWebhook(ctx, owner, repository, branch, "https://jfrog.com", webhookEvent)
 ```
 
 #### Update Webhook
 
 ```go
+// Go context
+ctx := context.Background()
 // Organization or username
 owner := "jfrog"
 // VCS repository
@@ -180,12 +182,14 @@ webhookId := "123"
 // The event to watch
 webhookEvent := vcsutils.PrCreated
 
-err := client.UpdateWebhook(owner, repository, branch, "https://jfrog.com", token, webhookId, webhookEvent)
+err := client.UpdateWebhook(ctx, owner, repository, branch, "https://jfrog.com", token, webhookId, webhookEvent)
 ```
 
 #### Delete Webhook
 
 ```go
+// Go context
+ctx := context.Background()
 // Organization or username
 owner := "jfrog"
 // VCS repository
@@ -193,12 +197,14 @@ repository := "jfrog-cli"
 // The webhook ID returned by the CreateWebhook API, which created this webhook
 webhookId := "123"
 
-err := client.DeleteWebhook(owner, repository, webhookId)
+err := client.DeleteWebhook(ctx, owner, repository, webhookId)
 ```
 
 #### Set Commit Status
 
 ```go
+// Go context
+ctx := context.Background()
 // One of Pass, Fail, Error, or InProgress
 commitStatus := vcsclient.Pass
 // Organization or username
@@ -214,12 +220,14 @@ description := "Run JFrog Xray scan"
 // URL leads to the platform to provide more information, such as Xray scanning results
 detailsUrl := "https://acme.jfrog.io/ui/xray-scan-results-url"
 
-err := client.SetCommitStatus(commitStatus, owner, repository, ref, title, description, detailsUrl)
+err := client.SetCommitStatus(ctx, commitStatus, owner, repository, ref, title, description, detailsUrl)
 ```
 
 ##### Create Pull Request
 
 ```go
+// Go context
+ctx := context.Background()
 // Organization or username
 owner := "jfrog"
 // VCS repository
@@ -233,12 +241,14 @@ title := "Pull request title"
 // Pull request description
 description := "Pull request description"
 
-err := client.CreatePullRequest(owner, repository, sourceBranch, targetBranch, title, description string)
+err := client.CreatePullRequest(ctx, owner, repository, sourceBranch, targetBranch, title, description string)
 ```
 
 ### Webhook Parser
 
 ```go
+// Go context
+ctx := context.Background()
 // Token to authenticate incoming webhooks. If empty, signature will not be verified.
 // The token is a random key generated in the CreateWebhook command.
 token := "abc123"

@@ -19,7 +19,7 @@ type BitbucketCloudClient struct {
 	token           string
 }
 
-func NewBitbucketCloudClient(context context.Context, vcsInfo *VcsInfo) (*BitbucketCloudClient, error) {
+func NewBitbucketCloudClient(vcsInfo *VcsInfo) (*BitbucketCloudClient, error) {
 	err := os.Setenv("BITBUCKET_API_BASE_URL", vcsInfo.ApiEndpoint)
 	if err != nil {
 		return nil, err
@@ -32,12 +32,12 @@ func NewBitbucketCloudClient(context context.Context, vcsInfo *VcsInfo) (*Bitbuc
 	return bitbucketClient, nil
 }
 
-func (client *BitbucketCloudClient) TestConnection() error {
+func (client *BitbucketCloudClient) TestConnection(_ context.Context) error {
 	_, err := client.bitbucketClient.User.Profile()
 	return err
 }
 
-func (client *BitbucketCloudClient) ListRepositories() (map[string][]string, error) {
+func (client *BitbucketCloudClient) ListRepositories(_ context.Context) (map[string][]string, error) {
 	results := make(map[string][]string)
 	workspaces, err := client.bitbucketClient.Workspaces.List()
 	if err != nil {
@@ -55,20 +55,21 @@ func (client *BitbucketCloudClient) ListRepositories() (map[string][]string, err
 	return results, nil
 }
 
-func (client *BitbucketCloudClient) ListBranches(owner, repository string) ([]string, error) {
+func (client *BitbucketCloudClient) ListBranches(_ context.Context, owner, repository string) ([]string, error) {
 	branches, err := client.bitbucketClient.Repositories.Repository.ListBranches(&bitbucket.RepositoryBranchOptions{Owner: owner, RepoSlug: repository})
 	if err != nil {
-		return []string{}, err
+		return nil, err
 	}
 
-	results := []string{}
+	results := make([]string, 0, len(branches.Branches))
 	for _, branch := range branches.Branches {
 		results = append(results, branch.Name)
 	}
 	return results, nil
 }
 
-func (client *BitbucketCloudClient) CreateWebhook(owner, repository, branch, payloadUrl string, webhookEvents ...vcsutils.WebhookEvent) (string, string, error) {
+func (client *BitbucketCloudClient) CreateWebhook(_ context.Context, owner, repository, _, payloadUrl string,
+	webhookEvents ...vcsutils.WebhookEvent) (string, string, error) {
 	token := vcsutils.CreateToken()
 	options := &bitbucket.WebhooksOptions{
 		Active:   true,
@@ -88,7 +89,8 @@ func (client *BitbucketCloudClient) CreateWebhook(owner, repository, branch, pay
 	return id, token, err
 }
 
-func (client *BitbucketCloudClient) UpdateWebhook(owner, repository, branch, payloadUrl, token, webhookId string, webhookEvents ...vcsutils.WebhookEvent) error {
+func (client *BitbucketCloudClient) UpdateWebhook(_ context.Context, owner, repository, _, payloadUrl, token,
+	webhookId string, webhookEvents ...vcsutils.WebhookEvent) error {
 	options := &bitbucket.WebhooksOptions{
 		Active:   true,
 		Uuid:     webhookId,
@@ -101,7 +103,7 @@ func (client *BitbucketCloudClient) UpdateWebhook(owner, repository, branch, pay
 	return err
 }
 
-func (client *BitbucketCloudClient) DeleteWebhook(owner, repository, webhookId string) error {
+func (client *BitbucketCloudClient) DeleteWebhook(_ context.Context, owner, repository, webhookId string) error {
 	options := &bitbucket.WebhooksOptions{
 		Uuid:     webhookId,
 		Owner:    owner,
@@ -111,7 +113,8 @@ func (client *BitbucketCloudClient) DeleteWebhook(owner, repository, webhookId s
 	return err
 }
 
-func (client *BitbucketCloudClient) SetCommitStatus(commitStatus CommitStatus, owner, repository, ref, title, description, detailsUrl string) error {
+func (client *BitbucketCloudClient) SetCommitStatus(_ context.Context, commitStatus CommitStatus, owner, repository,
+	ref, title, description, detailsUrl string) error {
 	commitOptions := &bitbucket.CommitsOptions{
 		Owner:    owner,
 		RepoSlug: repository,
@@ -127,7 +130,8 @@ func (client *BitbucketCloudClient) SetCommitStatus(commitStatus CommitStatus, o
 	return err
 }
 
-func (client *BitbucketCloudClient) DownloadRepository(owner, repository, branch, localPath string) error {
+func (client *BitbucketCloudClient) DownloadRepository(_ context.Context, owner, repository, branch,
+	localPath string) error {
 	repo, err := client.bitbucketClient.Repositories.Repository.Get(&bitbucket.RepositoryOptions{
 		Owner:    owner,
 		RepoSlug: repository,
@@ -156,7 +160,8 @@ func (client *BitbucketCloudClient) DownloadRepository(owner, repository, branch
 	return vcsutils.Untar(localPath, response.Body, true)
 }
 
-func (client *BitbucketCloudClient) CreatePullRequest(owner, repository, sourceBranch, targetBranch, title, description string) error {
+func (client *BitbucketCloudClient) CreatePullRequest(_ context.Context, owner, repository, sourceBranch,
+	targetBranch, title, description string) error {
 	options := &bitbucket.PullRequestsOptions{
 		Owner:             owner,
 		SourceRepository:  owner + "/" + repository,
@@ -186,7 +191,7 @@ func getBitbucketCloudWebhookId(r interface{}) (string, error) {
 
 // Get varargs of webhook events and return a slice of Bitbucket cloud webhook events
 func getBitbucketCloudWebhookEvents(webhookEvents ...vcsutils.WebhookEvent) []string {
-	events := []string{}
+	events := make([]string, 0, len(webhookEvents))
 	for _, event := range webhookEvents {
 		switch event {
 		case vcsutils.PrCreated:
@@ -213,7 +218,7 @@ func getDownloadLink(repo *bitbucket.Repository, branch string) (string, error) 
 	}
 	htmlLink := repositoryHtmlLinks.Href
 	if htmlLink == "" {
-		return "", fmt.Errorf("Couldn't find repository HTML link: %s", repo.Links["html"])
+		return "", fmt.Errorf("couldn't find repository HTML link: %s", repo.Links["html"])
 	}
 	return htmlLink + "/get/" + branch + ".tar.gz", err
 }

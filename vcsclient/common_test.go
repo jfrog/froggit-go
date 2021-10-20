@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/jfrog/froggit-go/vcsutils"
 	"github.com/stretchr/testify/assert"
@@ -14,7 +15,6 @@ const (
 	owner           = "jfrog"
 	token           = "abc123"
 	basicAuthHeader = "Basic ZnJvZ2dlcjphYmMxMjM="
-	commitSha       = "39e5418"
 )
 
 var (
@@ -27,7 +27,8 @@ var (
 
 type createHandlerFunc func(t *testing.T, expectedUri string, response []byte) http.HandlerFunc
 
-func createServerAndClient(t *testing.T, vcsProvider vcsutils.VcsProvider, basicAuth bool, response interface{}, expectedUri string, createHandlerFunc createHandlerFunc) (VcsClient, func()) {
+func createServerAndClient(t *testing.T, vcsProvider vcsutils.VcsProvider, basicAuth bool, response interface{},
+	expectedUri string, createHandlerFunc createHandlerFunc) (VcsClient, func()) {
 	var byteResponse []byte
 	var ok bool
 	if byteResponse, ok = response.([]byte); !ok {
@@ -43,5 +44,19 @@ func createServerAndClient(t *testing.T, vcsProvider vcsutils.VcsProvider, basic
 	}
 	client, err := clientBuilder.Build()
 	assert.NoError(t, err)
-	return client, func() { server.Close() }
+	return client, server.Close
+}
+
+func createWaitingServerAndClient(t *testing.T, provider vcsutils.VcsProvider,
+	waitDuration time.Duration) (VcsClient, func()) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if waitDuration > 0 {
+			time.Sleep(waitDuration)
+		}
+		w.WriteHeader(http.StatusOK)
+	}))
+	clientBuilder := NewClientBuilder(provider).ApiEndpoint(server.URL).Token(token)
+	client, err := clientBuilder.Build()
+	assert.NoError(t, err)
+	return client, server.Close
 }
