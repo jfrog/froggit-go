@@ -1,0 +1,20 @@
+{
+  "id": 123,
+  "key": "ssh-rsa AAAA...",
+  "label": "My deploy key",
+  "type": "deploy_key",
+  "created_on": "2018-08-15T23:50:59.993890+00:00",
+  "repository": {
+    "full_name": "mleu/test",
+    "name": "test",
+    "type": "repository",
+    "uuid": "{85d08b4e-571d-44e9-a507-fa476535aa98}"
+  },
+  "links": {
+    "self": {
+      "href": "https://api.bitbucket.org/2.0/repositories/mleu/test/deploy-keys/123"
+    }
+  },
+  "last_used": null,
+  "comment": "mleu@C02W454JHTD8"
+}

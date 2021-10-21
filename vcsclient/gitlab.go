@@ -77,6 +77,30 @@ func (client *GitLabClient) ListBranches(ctx context.Context, owner, repository 
 	return results, nil
 }
 
+func (client *GitLabClient) AddSshKeyToRepository(ctx context.Context, owner, repository, keyName, publicKey string, permission Permission) error {
+	err := validateParametersNotBlank(map[string]string{
+		"owner":      owner,
+		"repository": repository,
+		"key name":   keyName,
+		"public key": publicKey,
+	})
+	if err != nil {
+		return err
+	}
+
+	canPush := false
+	if permission == ReadWrite {
+		canPush = true
+	}
+	options := &gitlab.AddDeployKeyOptions{
+		Title:   &keyName,
+		Key:     &publicKey,
+		CanPush: &canPush,
+	}
+	_, _, err = client.glClient.DeployKeys.AddDeployKey(getProjectId(owner, repository), options, gitlab.WithContext(ctx))
+	return err
+}
+
 func (client *GitLabClient) CreateWebhook(ctx context.Context, owner, repository, branch, payloadUrl string,
 	webhookEvents ...vcsutils.WebhookEvent) (string, string, error) {
 	token := vcsutils.CreateToken()
@@ -167,7 +191,11 @@ func (client *GitLabClient) CreatePullRequest(ctx context.Context, owner, reposi
 }
 
 func (client *GitLabClient) GetLatestCommit(ctx context.Context, owner, repository, branch string) (CommitInfo, error) {
-	err := validateParametersNotBlank(owner, repository, branch)
+	err := validateParametersNotBlank(map[string]string{
+		"owner":      owner,
+		"repository": repository,
+		"branch":     branch,
+	})
 	if err != nil {
 		return CommitInfo{}, err
 	}

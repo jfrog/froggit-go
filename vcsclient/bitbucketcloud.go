@@ -1,6 +1,7 @@
 package vcsclient
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -70,6 +71,60 @@ func (client *BitbucketCloudClient) ListBranches(ctx context.Context, owner, rep
 		results = append(results, branch.Name)
 	}
 	return results, nil
+}
+
+// AddSshKeyToRepository on Bitbucket cloud, the deploy-key is always read-only.
+func (client *BitbucketCloudClient) AddSshKeyToRepository(ctx context.Context, owner, repository, keyName, publicKey string, _ Permission) error {
+	err := validateParametersNotBlank(map[string]string{
+		"owner":      owner,
+		"repository": repository,
+		"key name":   keyName,
+		"public key": publicKey,
+	})
+	if err != nil {
+		return err
+	}
+	endpoint := client.vcsInfo.ApiEndpoint
+	if endpoint == "" {
+		endpoint = bitbucket.DEFAULT_BITBUCKET_API_BASE_URL
+	}
+	u := fmt.Sprintf("%s/repositories/%s/%s/deploy-keys", endpoint, owner, repository)
+	addKeyRequest := bitbucketCloudAddSshKeyRequest{
+		Label: keyName,
+		Key:   publicKey,
+	}
+
+	body := new(bytes.Buffer)
+	err = json.NewEncoder(body).Encode(addKeyRequest)
+	if err != nil {
+		return err
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, u, body)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.SetBasicAuth(client.vcsInfo.Username, client.vcsInfo.Token)
+
+	bitbucketClient := client.buildBitbucketCloudClient(ctx)
+	response, err := bitbucketClient.HttpClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		_ = vcsutils.DiscardResponseBody(response)
+		_ = response.Body.Close()
+	}()
+
+	if response.StatusCode >= 300 {
+		return fmt.Errorf(response.Status)
+	}
+	return nil
+}
+
+type bitbucketCloudAddSshKeyRequest struct {
+	Key   string `json:"key"`
+	Label string `json:"label"`
 }
 
 func (client *BitbucketCloudClient) CreateWebhook(ctx context.Context, owner, repository, _, payloadUrl string,
@@ -186,7 +241,11 @@ func (client *BitbucketCloudClient) CreatePullRequest(ctx context.Context, owner
 }
 
 func (client *BitbucketCloudClient) GetLatestCommit(ctx context.Context, owner, repository, branch string) (CommitInfo, error) {
-	err := validateParametersNotBlank(owner, repository, branch)
+	err := validateParametersNotBlank(map[string]string{
+		"owner":      owner,
+		"repository": repository,
+		"branch":     branch,
+	})
 	if err != nil {
 		return CommitInfo{}, err
 	}
@@ -265,11 +324,11 @@ type link struct {
 // Extract the webhook id from the webhook create response
 func getBitbucketCloudWebhookId(r interface{}) (string, error) {
 	webhook := &bitbucket.WebhooksOptions{}
-	bytes, err := json.Marshal(r)
+	b, err := json.Marshal(r)
 	if err != nil {
 		return "", err
 	}
-	err = json.Unmarshal(bytes, &webhook)
+	err = json.Unmarshal(b, &webhook)
 	if err != nil {
 		return "", err
 	}
@@ -295,11 +354,11 @@ func getBitbucketCloudWebhookEvents(webhookEvents ...vcsutils.WebhookEvent) []st
 // The get repository request returns HTTP link to the repository - extract the link from the response.
 func getDownloadLink(repo *bitbucket.Repository, branch string) (string, error) {
 	repositoryHtmlLinks := &link{}
-	bytes, err := json.Marshal(repo.Links["html"])
+	b, err := json.Marshal(repo.Links["html"])
 	if err != nil {
 		return "", err
 	}
-	err = json.Unmarshal(bytes, repositoryHtmlLinks)
+	err = json.Unmarshal(b, repositoryHtmlLinks)
 	if err != nil {
 		return "", err
 	}

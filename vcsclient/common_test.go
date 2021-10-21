@@ -26,6 +26,8 @@ var (
 )
 
 type createHandlerFunc func(t *testing.T, expectedUri string, response []byte, expectedStatusCode int) http.HandlerFunc
+type createPostHandlerFunc func(t *testing.T, expectedUri string, response []byte, expectedRequestBody []byte,
+	expectedStatusCode int, expectedHttpMethod string) http.HandlerFunc
 
 func createServerAndClient(t *testing.T, vcsProvider vcsutils.VcsProvider, basicAuth bool, response interface{},
 	expectedUri string, createHandlerFunc createHandlerFunc) (VcsClient, func()) {
@@ -43,6 +45,23 @@ func createServerAndClientReturningStatus(t *testing.T, vcsProvider vcsutils.Vcs
 		assert.NoError(t, err)
 	}
 	server := httptest.NewServer(createHandlerFunc(t, expectedUri, byteResponse, expectedStatusCode))
+	client := buildClient(t, vcsProvider, basicAuth, server)
+	return client, server.Close
+}
+
+func createBodyHandlingServerAndClient(t *testing.T, vcsProvider vcsutils.VcsProvider, basicAuth bool, response interface{},
+	expectedUri string, expectedStatusCode int, expectedRequestBody []byte, expectedHttpMethod string,
+	createPostHandlerFunc createPostHandlerFunc) (VcsClient, func()) {
+	var byteResponse []byte
+	var ok bool
+	if byteResponse, ok = response.([]byte); !ok {
+		// Response is not a byte array - unmarshal is needed
+		var err error
+		byteResponse, err = json.Marshal(response)
+		assert.NoError(t, err)
+	}
+	server := httptest.NewServer(createPostHandlerFunc(t, expectedUri, byteResponse, expectedRequestBody,
+		expectedStatusCode, expectedHttpMethod))
 	client := buildClient(t, vcsProvider, basicAuth, server)
 	return client, server.Close
 }
@@ -68,4 +87,10 @@ func createWaitingServerAndClient(t *testing.T, provider vcsutils.VcsProvider, w
 	client, err := clientBuilder.Build()
 	assert.NoError(t, err)
 	return client, server.Close
+}
+
+func getAllProviders() []vcsutils.VcsProvider {
+	return []vcsutils.VcsProvider{
+		vcsutils.GitHub, vcsutils.GitLab, vcsutils.BitbucketServer, vcsutils.BitbucketCloud,
+	}
 }

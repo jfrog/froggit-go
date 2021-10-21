@@ -16,6 +16,13 @@ const (
 	InProgress
 )
 
+type Permission int
+
+const (
+	Read Permission = iota
+	ReadWrite
+)
+
 type VcsInfo struct {
 	ApiEndpoint string
 	Username    string
@@ -90,6 +97,14 @@ type VcsClient interface {
 	// repository   - VCS repository name
 	// branch       - The name of the branch
 	GetLatestCommit(ctx context.Context, owner, repository, branch string) (CommitInfo, error)
+
+	// AddSshKeyToRepository Add a public ssh key to a repository
+	// owner        - User or organization
+	// repository   - VCS repository name
+	// keyName      - Name of the key
+	// publicKey    - SSH public key
+	// permission   - Access permission of the key: read or readWrite
+	AddSshKeyToRepository(ctx context.Context, owner, repository, keyName, publicKey string, permission Permission) error
 }
 
 // CommitInfo contains the details of a commit
@@ -110,11 +125,15 @@ type CommitInfo struct {
 	ParentHashes []string
 }
 
-func validateParametersNotBlank(parameters ...string) error {
-	for _, parameter := range parameters {
-		if len(strings.TrimSpace(parameter)) == 0 {
-			return fmt.Errorf("required parameter is empty")
+func validateParametersNotBlank(paramNameValueMap map[string]string) error {
+	errorMessages := make([]string, 0)
+	for k, v := range paramNameValueMap {
+		if strings.TrimSpace(v) == "" {
+			errorMessages = append(errorMessages, fmt.Sprintf("required parameter '%s' is missing", k))
 		}
+	}
+	if len(errorMessages) > 0 {
+		return fmt.Errorf("validation failed: %s", strings.Join(errorMessages, ", "))
 	}
 	return nil
 }

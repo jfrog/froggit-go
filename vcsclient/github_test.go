@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/stretchr/testify/require"
+	"io"
 	"io/ioutil"
 	"math/rand"
 	"net/http"
@@ -168,67 +169,68 @@ func TestGitHubClient_GetLatestCommit(t *testing.T) {
 	}, result)
 }
 
-func TestGitHubClient_GetLatestCommitNotFound(t *testing.T) {
+func TestGitHubClient_AddSshKeyToRepository(t *testing.T) {
 	ctx := context.Background()
 	response := []byte(`{
-    	"documentation_url": "https://docs.github.com/rest/reference/repos#list-commits",
-    	"message": "Not Found"
+	 "id": 1,
+	 "key": "ssh-rsa AAAA...",
+	 "url": "https://api.github.com/repos/octocat/Hello-World/keys/1",
+	 "title": "My deploy key",
+	 "verified": true,
+	 "created_at": "2014-12-10T15:53:42Z",
+	 "read_only": true
 	}`)
 
-	client, cleanUp := createServerAndClientReturningStatus(t, vcsutils.GitHub, false, response,
-		fmt.Sprintf("/repos/%s/%s/commits?page=1&per_page=1&sha=master", owner, repo1), http.StatusNotFound, createGitHubHandler)
-	defer cleanUp()
+	expectedBody := []byte(`{"key":"ssh-rsa AAAA...","title":"My deploy key","read_only":true}` + "\n")
 
-	result, err := client.GetLatestCommit(ctx, owner, repo1, "master")
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "404 Not Found")
-	assert.Empty(t, result)
+	client, closeServer := createBodyHandlingServerAndClient(t, vcsutils.GitHub, false,
+		response, fmt.Sprintf("/repos/%v/%v/keys", owner, repo1), http.StatusCreated, expectedBody, http.MethodPost,
+		createGitHubWithBodyHandler)
+	defer closeServer()
+
+	err := client.AddSshKeyToRepository(ctx, owner, repo1, "My deploy key", "ssh-rsa AAAA...", Read)
+
+	require.NoError(t, err)
 }
 
-func TestGitHubClient_GetLatestCommitInvalidPayload(t *testing.T) {
-	tests := []struct {
-		name   string
-		owner  string
-		repo   string
-		branch string
-	}{
-		{
-			name:   "all empty",
-			owner:  "",
-			repo:   "",
-			branch: "",
-		},
-		{
-			name:   "empty owner",
-			owner:  "",
-			repo:   "repo",
-			branch: "branch",
-		},
-		{
-			name:   "empty repo",
-			owner:  "owner",
-			repo:   "",
-			branch: "branch",
-		},
-		{
-			name:   "empty branch",
-			owner:  "owner",
-			repo:   "repo",
-			branch: "",
-		},
-	}
+func TestGitHubClient_AddSshKeyToRepositoryReadWrite(t *testing.T) {
+	ctx := context.Background()
+	response := []byte(`{
+	 "id": 1,
+	 "key": "ssh-rsa AAAA...",
+	 "url": "https://api.github.com/repos/octocat/Hello-World/keys/1",
+	 "title": "My deploy key",
+	 "verified": true,
+	 "created_at": "2014-12-10T15:53:42Z",
+	 "read_only": true
+	}`)
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			ctx := context.Background()
-			client, err := NewClientBuilder(vcsutils.GitHub).Build()
-			require.NoError(t, err)
+	expectedBody := []byte(`{"key":"ssh-rsa AAAA...","title":"My deploy key","read_only":false}` + "\n")
 
-			result, err := client.GetLatestCommit(ctx, tt.owner, tt.repo, tt.branch)
+	client, closeServer := createBodyHandlingServerAndClient(t, vcsutils.GitHub, false,
+		response, fmt.Sprintf("/repos/%v/%v/keys", owner, repo1), http.StatusCreated, expectedBody, http.MethodPost,
+		createGitHubWithBodyHandler)
+	defer closeServer()
 
-			require.EqualError(t, err, "required parameter is empty")
-			assert.Empty(t, result)
-		})
+	err := client.AddSshKeyToRepository(ctx, owner, repo1, "My deploy key", "ssh-rsa AAAA...", ReadWrite)
+
+	require.NoError(t, err)
+}
+
+func createGitHubWithBodyHandler(t *testing.T, expectedUri string, response []byte, expectedRequestBody []byte,
+	expectedStatusCode int, expectedHttpMethod string) http.HandlerFunc {
+	return func(writer http.ResponseWriter, request *http.Request) {
+		assert.Equal(t, expectedHttpMethod, request.Method)
+		assert.Equal(t, expectedUri, request.RequestURI)
+		assert.Equal(t, "Bearer "+token, request.Header.Get("Authorization"))
+
+		b, err := io.ReadAll(request.Body)
+		require.NoError(t, err)
+		assert.Equal(t, expectedRequestBody, b)
+
+		writer.WriteHeader(expectedStatusCode)
+		_, err = writer.Write(response)
+		assert.NoError(t, err)
 	}
 }
 

@@ -5,6 +5,8 @@ import (
 	"compress/gzip"
 	"fmt"
 	"io"
+	"io/ioutil"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -123,4 +125,12 @@ func safeCopy(targetFile *os.File, reader *tar.Reader) error {
 			return err
 		}
 	}
+}
+
+func DiscardResponseBody(resp *http.Response) error {
+	if resp != nil {
+		_, err := io.Copy(ioutil.Discard, resp.Body)
+		return err
+	}
+	return nil
 }

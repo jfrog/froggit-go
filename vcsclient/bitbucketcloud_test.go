@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/stretchr/testify/require"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -196,50 +197,55 @@ func TestBitbucketCloud_GetLatestCommitNotFound(t *testing.T) {
 	assert.Empty(t, result)
 }
 
-func TestBitbucketCloud_GetLatestCommitInvalidPayload(t *testing.T) {
-	tests := []struct {
-		name   string
-		owner  string
-		repo   string
-		branch string
-	}{
-		{
-			name:   "all empty",
-			owner:  "",
-			repo:   "",
-			branch: "",
-		},
-		{
-			name:   "empty owner",
-			owner:  "",
-			repo:   "repo",
-			branch: "branch",
-		},
-		{
-			name:   "empty repo",
-			owner:  "owner",
-			repo:   "",
-			branch: "branch",
-		},
-		{
-			name:   "empty branch",
-			owner:  "owner",
-			repo:   "repo",
-			branch: "",
-		},
-	}
+func TestBitbucketCloud_AddSshKeyToRepository(t *testing.T) {
+	ctx := context.Background()
+	response, err := os.ReadFile(filepath.Join("testdata", "bitbucketcloud", "add_ssh_key_response.json"))
+	assert.NoError(t, err)
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			ctx := context.Background()
-			client, err := NewClientBuilder(vcsutils.BitbucketCloud).Build()
-			require.NoError(t, err)
+	expectedBody := []byte(`{"key":"ssh-rsa AAAA...","label":"My deploy key"}` + "\n")
 
-			result, err := client.GetLatestCommit(ctx, tt.owner, tt.repo, tt.branch)
+	client, closeServer := createBodyHandlingServerAndClient(t, vcsutils.BitbucketCloud, true,
+		response, fmt.Sprintf("/repositories/%s/%s/deploy-keys", owner, repo1), http.StatusOK,
+		expectedBody, http.MethodPost,
+		createBitbucketCloudWithBodyHandler)
+	defer closeServer()
 
-			require.EqualError(t, err, "required parameter is empty")
-			assert.Empty(t, result)
-		})
+	err = client.AddSshKeyToRepository(ctx, owner, repo1, "My deploy key", "ssh-rsa AAAA...", Read)
+
+	require.NoError(t, err)
+}
+
+func TestBitbucketCloud_AddSshKeyToRepositoryNotFound(t *testing.T) {
+	ctx := context.Background()
+	response := []byte(`The requested repository either does not exist or you do not have access. If you believe this repository exists and you have access, make sure you're authenticated.`)
+
+	expectedBody := []byte(`{"key":"ssh-rsa AAAA...","label":"My deploy key"}` + "\n")
+
+	client, closeServer := createBodyHandlingServerAndClient(t, vcsutils.BitbucketCloud, true,
+		response, fmt.Sprintf("/repositories/%s/%s/deploy-keys", owner, repo1), http.StatusNotFound,
+		expectedBody, http.MethodPost,
+		createBitbucketCloudWithBodyHandler)
+	defer closeServer()
+
+	err := client.AddSshKeyToRepository(ctx, owner, repo1, "My deploy key", "ssh-rsa AAAA...", Read)
+
+	require.EqualError(t, err, "404 Not Found")
+}
+
+func createBitbucketCloudWithBodyHandler(t *testing.T, expectedUri string, response []byte, expectedRequestBody []byte,
+	expectedStatusCode int, expectedHttpMethod string) http.HandlerFunc {
+	return func(writer http.ResponseWriter, request *http.Request) {
+		assert.Equal(t, expectedHttpMethod, request.Method)
+		assert.Equal(t, expectedUri, request.RequestURI)
+		assert.Equal(t, basicAuthHeader, request.Header.Get("Authorization"))
+
+		b, err := io.ReadAll(request.Body)
+		require.NoError(t, err)
+		assert.Equal(t, expectedRequestBody, b)
+
+		writer.WriteHeader(expectedStatusCode)
+		_, err = writer.Write(response)
+		assert.NoError(t, err)
 	}
 }
 

@@ -9,6 +9,21 @@ const (
 	BitbucketCloud
 )
 
+func (v VcsProvider) String() string {
+	switch v {
+	case GitHub:
+		return "GitHub"
+	case GitLab:
+		return "GitLab"
+	case BitbucketServer:
+		return "Bitbucket Server"
+	case BitbucketCloud:
+		return "Bitbucket Cloud"
+	default:
+		return ""
+	}
+}
+
 type WebhookEvent string
 
 const (
