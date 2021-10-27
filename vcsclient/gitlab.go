@@ -14,7 +14,7 @@ type GitLabClient struct {
 	glClient *gitlab.Client
 }
 
-func NewGitLabClient(vcsInfo *VcsInfo) (*GitLabClient, error) {
+func NewGitLabClient(vcsInfo VcsInfo) (*GitLabClient, error) {
 	var client *gitlab.Client
 	var err error
 	if vcsInfo.ApiEndpoint != "" {
@@ -164,6 +164,39 @@ func (client *GitLabClient) CreatePullRequest(ctx context.Context, owner, reposi
 	_, _, err := client.glClient.MergeRequests.CreateMergeRequest(getProjectId(owner, repository), options,
 		gitlab.WithContext(ctx))
 	return err
+}
+
+func (client *GitLabClient) GetLatestCommit(ctx context.Context, owner, repository, branch string) (CommitInfo, error) {
+	err := validateParametersNotBlank(owner, repository, branch)
+	if err != nil {
+		return CommitInfo{}, err
+	}
+
+	listOptions := &gitlab.ListCommitsOptions{
+		RefName: &branch,
+		ListOptions: gitlab.ListOptions{
+			Page:    1,
+			PerPage: 1,
+		},
+	}
+
+	commits, _, err := client.glClient.Commits.ListCommits(getProjectId(owner, repository), listOptions, gitlab.WithContext(ctx))
+	if err != nil {
+		return CommitInfo{}, err
+	}
+	if len(commits) > 0 {
+		latestCommit := commits[0]
+		return CommitInfo{
+			Hash:          latestCommit.ID,
+			AuthorName:    latestCommit.AuthorName,
+			CommitterName: latestCommit.CommitterName,
+			Url:           latestCommit.WebURL,
+			Timestamp:     latestCommit.CommittedDate.UTC().Unix(),
+			Message:       latestCommit.Message,
+			ParentHashes:  latestCommit.ParentIDs,
+		}, nil
+	}
+	return CommitInfo{}, nil
 }
 
 func getProjectId(owner, project string) string {

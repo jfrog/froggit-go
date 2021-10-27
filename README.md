@@ -24,6 +24,7 @@ Currently supported providers are: [GitHub](#github), [Bitbucket Server](#bitbuc
   - [Delete Webhook](#delete-webhook)
   - [Set Commit Status](#set-commit-status)
   - [Create Pull Request](#create-pull-request)
+  - [Latest Commit Hash](#get-latest-commit-hash)
 - [Webhook Parser](#webhook-parser)
 
 ### VCS Clients
@@ -32,6 +33,7 @@ Currently supported providers are: [GitHub](#github), [Bitbucket Server](#bitbuc
 
 ##### GitHub
 
+GitHub api v3 is used 
 ```go
 // The VCS provider. Cannot be changed.
 vcsProvider := vcsutils.GitHub
@@ -47,6 +49,7 @@ client, err := vcsclient.NewClientBuilder(vcsProvider).ApiEndpoint(apiEndpoint).
 
 ##### GitLab
 
+GitLab api v4 is used.
 ```go
 // The VCS provider. Cannot be changed.
 vcsProvider := vcsutils.GitLab
@@ -62,6 +65,7 @@ client, err := vcsclient.NewClientBuilder(vcsProvider).ApiEndpoint(apiEndpoint).
 
 ##### Bitbucket Server
 
+Bitbucket api 1.0 is used.
 ```go
 // The VCS provider. Cannot be changed.
 vcsProvider := vcsclient.BitbucketServer
@@ -77,6 +81,7 @@ client, err := vcsclient.NewClientBuilder(vcsProvider).ApiEndpoint(apiEndpoint).
 
 ##### Bitbucket Cloud
 
+Bitbucket cloud api version 2.0 is used and the version should be added to the apiEndpoint.  
 ```go
 // The VCS provider. Cannot be changed.
 vcsProvider := vcsutils.BitbucketCloud
@@ -242,6 +247,22 @@ title := "Pull request title"
 description := "Pull request description"
 
 err := client.CreatePullRequest(ctx, owner, repository, sourceBranch, targetBranch, title, description string)
+```
+
+#### Get Latest Commit Hash
+
+```go
+// Go context
+ctx := context.Background()
+// Organization or username
+owner := "jfrog"
+// VCS repository
+repository := "jfrog-cli"
+// VCS branch
+branch := "dev"
+
+// SHA-1 hash of the latest commit
+commitHash, err := client.GetLatestCommitHash(ctx, owner, repository, branch)
 ```
 
 ### Webhook Parser

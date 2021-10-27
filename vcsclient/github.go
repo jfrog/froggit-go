@@ -13,10 +13,10 @@ import (
 )
 
 type GitHubClient struct {
-	vcsInfo *VcsInfo
+	vcsInfo VcsInfo
 }
 
-func NewGitHubClient(vcsInfo *VcsInfo) (*GitHubClient, error) {
+func NewGitHubClient(vcsInfo VcsInfo) (*GitHubClient, error) {
 	return &GitHubClient{vcsInfo: vcsInfo}, nil
 }
 
@@ -180,6 +180,47 @@ func (client *GitHubClient) CreatePullRequest(ctx context.Context, owner, reposi
 		Base:  &targetBranch,
 	})
 	return err
+}
+
+func (client *GitHubClient) GetLatestCommit(ctx context.Context, owner, repository, branch string) (CommitInfo, error) {
+	err := validateParametersNotBlank(owner, repository, branch)
+	if err != nil {
+		return CommitInfo{}, err
+	}
+
+	ghClient, err := client.buildGithubClient(ctx)
+	if err != nil {
+		return CommitInfo{}, err
+	}
+	listOptions := &github.CommitsListOptions{
+		SHA: branch,
+		ListOptions: github.ListOptions{
+			Page:    1,
+			PerPage: 1,
+		},
+	}
+	commits, _, err := ghClient.Repositories.ListCommits(ctx, owner, repository, listOptions)
+	if err != nil {
+		return CommitInfo{}, err
+	}
+	if len(commits) > 0 {
+		latestCommit := commits[0]
+		parents := make([]string, len(latestCommit.Parents))
+		for i, c := range latestCommit.Parents {
+			parents[i] = c.GetSHA()
+		}
+		details := latestCommit.GetCommit()
+		return CommitInfo{
+			Hash:          latestCommit.GetSHA(),
+			AuthorName:    details.GetAuthor().GetName(),
+			CommitterName: details.GetCommitter().GetName(),
+			Url:           latestCommit.GetURL(),
+			Timestamp:     details.GetCommitter().GetDate().UTC().Unix(),
+			Message:       details.GetMessage(),
+			ParentHashes:  parents,
+		}, nil
+	}
+	return CommitInfo{}, nil
 }
 
 func createGitHubHook(token, payloadUrl string, webhookEvents ...vcsutils.WebhookEvent) *github.Hook {

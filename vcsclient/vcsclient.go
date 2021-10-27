@@ -2,7 +2,9 @@ package vcsclient
 
 import (
 	"context"
+	"fmt"
 	"github.com/jfrog/froggit-go/vcsutils"
+	"strings"
 )
 
 type CommitStatus int
@@ -82,4 +84,37 @@ type VcsClient interface {
 	// title        - Pull request title
 	// description  - Pull request description
 	CreatePullRequest(ctx context.Context, owner, repository, sourceBranch, targetBranch, title, description string) error
+
+	// GetLatestCommit Get the most recent commit of a branch
+	// owner        - User or organization
+	// repository   - VCS repository name
+	// branch       - The name of the branch
+	GetLatestCommit(ctx context.Context, owner, repository, branch string) (CommitInfo, error)
+}
+
+// CommitInfo contains the details of a commit
+type CommitInfo struct {
+	// The SHA-1 hash of the commit
+	Hash string
+	// The author's name
+	AuthorName string
+	// The committer's name
+	CommitterName string
+	// The commit URL
+	Url string
+	// Seconds from epoch
+	Timestamp int64
+	// The commit message
+	Message string
+	// The SHA-1 hashes of the parent commits
+	ParentHashes []string
+}
+
+func validateParametersNotBlank(parameters ...string) error {
+	for _, parameter := range parameters {
+		if len(strings.TrimSpace(parameter)) == 0 {
+			return fmt.Errorf("required parameter is empty")
+		}
+	}
+	return nil
 }
