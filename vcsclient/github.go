@@ -258,6 +258,24 @@ func (client *GitHubClient) GetLatestCommit(ctx context.Context, owner, reposito
 	return CommitInfo{}, nil
 }
 
+func (client *GitHubClient) GetRepositoryInfo(ctx context.Context, owner, repository string) (RepositoryInfo, error) {
+	err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository})
+	if err != nil {
+		return RepositoryInfo{}, err
+	}
+
+	ghClient, err := client.buildGithubClient(ctx)
+	if err != nil {
+		return RepositoryInfo{}, err
+	}
+
+	repo, _, err := ghClient.Repositories.Get(ctx, owner, repository)
+	if err != nil {
+		return RepositoryInfo{}, err
+	}
+	return RepositoryInfo{CloneInfo: CloneInfo{HTTP: repo.GetCloneURL(), SSH: repo.GetSSHURL()}}, nil
+}
+
 func createGitHubHook(token, payloadUrl string, webhookEvents ...vcsutils.WebhookEvent) *github.Hook {
 	return &github.Hook{
 		Events: getGitHubWebhookEvents(webhookEvents...),

@@ -1,0 +1,114 @@
+{
+  "has_wiki": false,
+  "fork_policy": "allow_forks",
+  "workspace": {
+    "slug": "jfrog",
+    "type": "workspace",
+    "name": "JFrog",
+    "links": null,
+    "uuid": "{08229d9e-bfc7-4ca4-bec3-ee3fbfbaa0d2}"
+  },
+  "scm": "git",
+  "full_name": "jfrog/jfrog-setup-cli",
+  "name": "jfrog-setup-cli",
+  "mainbranch": {
+    "type": "branch",
+    "name": "master"
+  },
+  "updated_on": "2020-06-22T12:32:49.604972+00:00",
+  "description": "",
+  "website": null,
+  "language": "",
+  "created_on": "2020-06-01T18:20:00.848673+00:00",
+  "has_issues": true,
+  "owner": {
+    "username": "jfrog",
+    "display_name": "JFrog",
+    "type": "team",
+    "uuid": "{08229d9e-bfc7-4ca4-bec3-ee3fbfbaa0d2}",
+    "links": {
+      "self": {
+        "href": "https://api.bitbucket.org/2.0/workspaces/%7B08229d9e-bfc7-4ca4-bec3-ee3fbfbaa0d2%7D"
+      },
+      "html": {
+        "href": "https://bitbucket.org/%7B08229d9e-bfc7-4ca4-bec3-ee3fbfbaa0d2%7D/"
+      },
+      "avatar": {
+        "href": "https://bitbucket.org/account/jfrog/avatar/"
+      }
+    }
+  },
+  "size": 458232,
+  "uuid": "{7715225f-38e7-49d7-b9cf-479f39044395}",
+  "links": {
+    "forks": {
+      "href": "https://api.bitbucket.org/2.0/repositories/jfrog/jfrog-setup-cli/forks"
+    },
+    "issues": {
+      "href": "https://api.bitbucket.org/2.0/repositories/jfrog/jfrog-setup-cli/issues"
+    },
+    "watchers": {
+      "href": "https://api.bitbucket.org/2.0/repositories/jfrog/jfrog-setup-cli/watchers"
+    },
+    "branches": {
+      "href": "https://api.bitbucket.org/2.0/repositories/jfrog/jfrog-setup-cli/refs/branches"
+    },
+    "commits": {
+      "href": "https://api.bitbucket.org/2.0/repositories/jfrog/jfrog-setup-cli/commits"
+    },
+    "html": {
+      "href": "https://bitbucket.org/jfrog/jfrog-setup-cli"
+    },
+    "avatar": {
+      "href": "https://bytebucket.org/ravatar/%7B7715225f-38e7-49d7-b9cf-479f39044395%7D?ts=2553958"
+    },
+    "hooks": {
+      "href": "https://api.bitbucket.org/2.0/repositories/jfrog/jfrog-setup-cli/hooks"
+    },
+    "downloads": {
+      "href": "https://api.bitbucket.org/2.0/repositories/jfrog/jfrog-setup-cli/downloads"
+    },
+    "pullrequests": {
+      "href": "https://api.bitbucket.org/2.0/repositories/jfrog/jfrog-setup-cli/pullrequests"
+    },
+    "clone": [
+      {
+        "href": "https://bitbucket.org/jfrog/jfrog-setup-cli.git",
+        "name": "https"
+      },
+      {
+        "href": "git@bitbucket.org:jfrog/jfrog-setup-cli.git",
+        "name": "ssh"
+      }
+    ],
+    "source": {
+      "href": "https://api.bitbucket.org/2.0/repositories/jfrog/jfrog-setup-cli/src"
+    },
+    "tags": {
+      "href": "https://api.bitbucket.org/2.0/repositories/jfrog/jfrog-setup-cli/refs/tags"
+    },
+    "self": {
+      "href": "https://api.bitbucket.org/2.0/repositories/jfrog/jfrog-setup-cli"
+    }
+  },
+  "project": {
+    "links": {
+      "self": {
+        "href": "https://api.bitbucket.org/2.0/workspaces/jfrog/projects/PROJ"
+      },
+      "html": {
+        "href": "https://bitbucket.org/jfrog/workspace/projects/PROJ"
+      },
+      "avatar": {
+        "href": "https://bitbucket.org/account/user/jfrog/projects/PROJ/avatar/32?ts=1591045050"
+      }
+    },
+    "type": "project",
+    "name": "jfrog",
+    "key": "PROJ",
+    "uuid": "{c23ff002-f633-4fb0-8ab8-ec70a5701784}"
+  },
+  "type": "repository",
+  "slug": "jfrog-setup-cli",
+  "is_private": false
+}

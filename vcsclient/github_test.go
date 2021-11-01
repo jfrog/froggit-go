@@ -234,6 +234,24 @@ func createGitHubWithBodyHandler(t *testing.T, expectedUri string, response []by
 	}
 }
 
+func TestGitHubClient_GetRepositoryInfo(t *testing.T) {
+	ctx := context.Background()
+	response, err := os.ReadFile(filepath.Join("testdata", "github", "repository_response.json"))
+	assert.NoError(t, err)
+
+	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, response, "/repos/octocat/Hello-World", createGitHubHandler)
+	defer cleanUp()
+
+	info, err := client.GetRepositoryInfo(ctx, "octocat", "Hello-World")
+	require.NoError(t, err)
+	require.Equal(t,
+		RepositoryInfo{
+			CloneInfo: CloneInfo{HTTP: "https://github.com/octocat/Hello-World.git", SSH: "git@github.com:octocat/Hello-World.git"},
+		},
+		info,
+	)
+}
+
 func createGitHubHandler(t *testing.T, expectedUri string, response []byte, expectedStatusCode int) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, expectedUri, r.RequestURI)

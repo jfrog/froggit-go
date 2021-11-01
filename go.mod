@@ -7,6 +7,7 @@ require (
 	github.com/google/go-github/v38 v38.1.0
 	github.com/google/uuid v1.3.0
 	github.com/ktrysmt/go-bitbucket v0.9.24
+	github.com/mitchellh/mapstructure v1.1.2
 	github.com/stretchr/testify v1.7.0
 	github.com/xanzy/go-gitlab v0.50.3
 	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5 // indirect

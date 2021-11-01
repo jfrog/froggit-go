@@ -234,6 +234,26 @@ func TestGitLabClient_AddSshKeyToRepositoryReadWrite(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func TestGitLabClient_GetRepositoryInfo(t *testing.T) {
+	ctx := context.Background()
+	response, err := os.ReadFile(filepath.Join("testdata", "gitlab", "repository_response.json"))
+	require.NoError(t, err)
+
+	client, cleanUp := createServerAndClientReturningStatus(t, vcsutils.GitLab, false, response,
+		"/api/v4/projects/diaspora%2Fdiaspora-project-site", http.StatusOK, createGitLabHandler)
+	defer cleanUp()
+
+	result, err := client.GetRepositoryInfo(ctx, "diaspora", "diaspora-project-site")
+	require.NoError(t, err)
+	require.Equal(t,
+		RepositoryInfo{CloneInfo: CloneInfo{
+			HTTP: "http://example.com/diaspora/diaspora-project-site.git",
+			SSH:  "git@example.com:diaspora/diaspora-project-site.git"},
+		},
+		result,
+	)
+}
+
 func createGitLabHandler(t *testing.T, expectedUri string, response []byte, expectedStatusCode int) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.RequestURI == "/api/v4/" {

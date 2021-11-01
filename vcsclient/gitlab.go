@@ -227,6 +227,20 @@ func (client *GitLabClient) GetLatestCommit(ctx context.Context, owner, reposito
 	return CommitInfo{}, nil
 }
 
+func (client *GitLabClient) GetRepositoryInfo(ctx context.Context, owner, repository string) (RepositoryInfo, error) {
+	err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository})
+	if err != nil {
+		return RepositoryInfo{}, err
+	}
+
+	project, _, err := client.glClient.Projects.GetProject(getProjectId(owner, repository), nil, gitlab.WithContext(ctx))
+	if err != nil {
+		return RepositoryInfo{}, err
+	}
+
+	return RepositoryInfo{CloneInfo: CloneInfo{HTTP: project.HTTPURLToRepo, SSH: project.SSHURLToRepo}}, nil
+}
+
 func getProjectId(owner, project string) string {
 	return fmt.Sprintf("%s/%s", owner, project)
 }
