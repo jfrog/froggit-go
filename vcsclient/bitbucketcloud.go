@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"os"
 	"strings"
 	"time"
 
@@ -16,21 +15,29 @@ import (
 
 type BitbucketCloudClient struct {
 	vcsInfo VcsInfo
+	url     *url.URL
 }
 
 func NewBitbucketCloudClient(vcsInfo VcsInfo) (*BitbucketCloudClient, error) {
-	err := os.Setenv("BITBUCKET_API_BASE_URL", vcsInfo.ApiEndpoint)
-	if err != nil {
-		return nil, err
-	}
 	bitbucketClient := &BitbucketCloudClient{
 		vcsInfo: vcsInfo,
+	}
+	if vcsInfo.ApiEndpoint != "" {
+		url, err := url.Parse(vcsInfo.ApiEndpoint)
+		if err != nil {
+			return nil, err
+		}
+		bitbucketClient.url = url
 	}
 	return bitbucketClient, nil
 }
 
 func (client *BitbucketCloudClient) buildBitbucketCloudClient(_ context.Context) *bitbucket.Client {
-	return bitbucket.NewBasicAuth(client.vcsInfo.Username, client.vcsInfo.Token)
+	bitbucketClient := bitbucket.NewBasicAuth(client.vcsInfo.Username, client.vcsInfo.Token)
+	if client.url != nil {
+		bitbucketClient.SetApiBaseURL(*client.url)
+	}
+	return bitbucketClient
 }
 
 func (client *BitbucketCloudClient) TestConnection(ctx context.Context) error {
