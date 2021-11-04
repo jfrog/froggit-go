@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/stretchr/testify/require"
+	"io"
 	"io/ioutil"
 	"math/rand"
 	"net/http"
@@ -189,51 +190,48 @@ func TestGitLabClient_GetLatestCommitNotFound(t *testing.T) {
 	assert.Empty(t, result)
 }
 
-func TestGitLabClient_GetLatestCommitInvalidPayload(t *testing.T) {
-	tests := []struct {
-		name   string
-		owner  string
-		repo   string
-		branch string
-	}{
-		{
-			name:   "all empty",
-			owner:  "",
-			repo:   "",
-			branch: "",
-		},
-		{
-			name:   "empty owner",
-			owner:  "",
-			repo:   "repo",
-			branch: "branch",
-		},
-		{
-			name:   "empty repo",
-			owner:  "owner",
-			repo:   "",
-			branch: "branch",
-		},
-		{
-			name:   "empty branch",
-			owner:  "owner",
-			repo:   "repo",
-			branch: "",
-		},
-	}
+func TestGitLabClient_AddSshKeyToRepository(t *testing.T) {
+	ctx := context.Background()
+	response := []byte(`{
+		"can_push": false,
+		"created_at": "2021-10-21T13:49:59.996Z",
+		"expires_at": null,
+		"id": 1,
+		"key": "ssh-rsa AAAA...",
+		"title": "My deploy key"
+	}`)
+	expectedBody := []byte(`{"title":"My deploy key","key":"ssh-rsa AAAA...","can_push":false}`)
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			ctx := context.Background()
-			client, err := NewClientBuilder(vcsutils.GitLab).Build()
-			require.NoError(t, err)
+	client, closeServer := createBodyHandlingServerAndClient(t, vcsutils.GitLab, false, response,
+		fmt.Sprintf("/api/v4/projects/%s/deploy_keys", url.PathEscape(owner+"/"+repo1)), http.StatusCreated,
+		expectedBody, http.MethodPost, createGitLabWithBodyHandler)
+	defer closeServer()
 
-			result, err := client.GetLatestCommit(ctx, tt.owner, tt.repo, tt.branch)
+	err := client.AddSshKeyToRepository(ctx, owner, repo1, "My deploy key", "ssh-rsa AAAA...", Read)
 
-			require.EqualError(t, err, "required parameter is empty")
-			assert.Empty(t, result)
-		})
-	}
+	require.NoError(t, err)
+}
+
+func TestGitLabClient_AddSshKeyToRepositoryReadWrite(t *testing.T) {
+	ctx := context.Background()
+	response := []byte(`{
+		"can_push": false,
+		"created_at": "2021-10-21T13:49:59.996Z",
+		"expires_at": null,
+		"id": 1,
+		"key": "ssh-rsa AAAA...",
+		"title": "My deploy key"
+	}`)
+	expectedBody := []byte(`{"title":"My deploy key","key":"ssh-rsa AAAA...","can_push":true}`)
+
+	client, closeServer := createBodyHandlingServerAndClient(t, vcsutils.GitLab, false, response,
+		fmt.Sprintf("/api/v4/projects/%s/deploy_keys", url.PathEscape(owner+"/"+repo1)), http.StatusCreated,
+		expectedBody, http.MethodPost, createGitLabWithBodyHandler)
+	defer closeServer()
+
+	err := client.AddSshKeyToRepository(ctx, owner, repo1, "My deploy key", "ssh-rsa AAAA...", ReadWrite)
+
+	require.NoError(t, err)
 }
 
 func createGitLabHandler(t *testing.T, expectedUri string, response []byte, expectedStatusCode int) http.HandlerFunc {
@@ -255,5 +253,27 @@ func createGitLabHandler(t *testing.T, expectedUri string, response []byte, expe
 		assert.NoError(t, err)
 		assert.Equal(t, expectedUri, r.RequestURI)
 		assert.Equal(t, token, r.Header.Get("Private-Token"))
+	}
+}
+
+func createGitLabWithBodyHandler(t *testing.T, expectedUri string, response []byte, expectedRequestBody []byte,
+	expectedStatusCode int, expectedHttpMethod string) http.HandlerFunc {
+	return func(writer http.ResponseWriter, request *http.Request) {
+		if request.RequestURI == "/api/v4/" {
+			writer.WriteHeader(http.StatusOK)
+			return
+		}
+		assert.Equal(t, expectedHttpMethod, request.Method)
+		assert.Equal(t, expectedUri, request.RequestURI)
+		assert.Equal(t, token, request.Header.Get("Private-Token"))
+
+		b, err := io.ReadAll(request.Body)
+		require.NoError(t, err)
+		assert.Equal(t, expectedRequestBody, b)
+
+		writer.WriteHeader(expectedStatusCode)
+		assert.NoError(t, err)
+		_, err = writer.Write(response)
+		assert.NoError(t, err)
 	}
 }

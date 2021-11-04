@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/stretchr/testify/require"
+	"io"
 	"io/ioutil"
 	"math/rand"
 	"net/http"
@@ -198,51 +199,66 @@ func TestBitbucketServer_GetLatestCommitNotFound(t *testing.T) {
 	assert.Empty(t, result)
 }
 
-func TestBitbucketServer_GetLatestCommitInvalidPayload(t *testing.T) {
-	tests := []struct {
-		name   string
-		owner  string
-		repo   string
-		branch string
-	}{
-		{
-			name:   "all empty",
-			owner:  "",
-			repo:   "",
-			branch: "",
-		},
-		{
-			name:   "empty owner",
-			owner:  "",
-			repo:   "repo",
-			branch: "branch",
-		},
-		{
-			name:   "empty repo",
-			owner:  "owner",
-			repo:   "",
-			branch: "branch",
-		},
-		{
-			name:   "empty branch",
-			owner:  "owner",
-			repo:   "repo",
-			branch: "",
-		},
-	}
+func TestBitbucketServer_AddSshKeyToRepository(t *testing.T) {
+	ctx := context.Background()
+	response, err := os.ReadFile(filepath.Join("testdata", "bitbucketserver", "add_ssh_key_response.json"))
+	assert.NoError(t, err)
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			ctx := context.Background()
-			client, err := NewClientBuilder(vcsutils.BitbucketServer).Build()
-			require.NoError(t, err)
+	expectedBody := []byte(`{"key":{"text":"ssh-rsa AAAA...","label":"My deploy key"},"permission":"REPO_READ"}` + "\n")
 
-			result, err := client.GetLatestCommit(ctx, tt.owner, tt.repo, tt.branch)
+	client, closeServer := createBodyHandlingServerAndClient(t, vcsutils.BitbucketServer, false,
+		response, fmt.Sprintf("/keys/1.0/projects/%s/repos/%s/ssh", owner, repo1), http.StatusOK,
+		expectedBody, http.MethodPost,
+		createBitbucketServerWithBodyHandler)
+	defer closeServer()
 
-			require.EqualError(t, err, "required parameter is empty")
-			assert.Empty(t, result)
-		})
-	}
+	err = client.AddSshKeyToRepository(ctx, owner, repo1, "My deploy key", "ssh-rsa AAAA...", Read)
+
+	require.NoError(t, err)
+}
+
+func TestBitbucketServer_AddSshKeyToRepositoryReadWrite(t *testing.T) {
+	ctx := context.Background()
+	response, err := os.ReadFile(filepath.Join("testdata", "bitbucketserver", "add_ssh_key_response.json"))
+	assert.NoError(t, err)
+
+	expectedBody := []byte(`{"key":{"text":"ssh-rsa AAAA...","label":"My deploy key"},"permission":"REPO_WRITE"}` + "\n")
+
+	client, closeServer := createBodyHandlingServerAndClient(t, vcsutils.BitbucketServer, false,
+		response, fmt.Sprintf("/keys/1.0/projects/%s/repos/%s/ssh", owner, repo1), http.StatusOK,
+		expectedBody, http.MethodPost,
+		createBitbucketServerWithBodyHandler)
+	defer closeServer()
+
+	err = client.AddSshKeyToRepository(ctx, owner, repo1, "My deploy key", "ssh-rsa AAAA...", ReadWrite)
+
+	require.NoError(t, err)
+}
+
+func TestBitbucketServer_AddSshKeyToRepositoryNotFound(t *testing.T) {
+	ctx := context.Background()
+	response := []byte(`{
+		"errors": [
+			{
+				"context": null,
+				"exceptionName": "com.atlassian.bitbucket.project.NoSuchProjectException",
+				"message": "Project unknown does not exist."
+			}
+		]
+	}`)
+
+	expectedBody := []byte(`{"key":{"text":"ssh-rsa AAAA...","label":"My deploy key"},"permission":"REPO_READ"}` + "\n")
+
+	client, closeServer := createBodyHandlingServerAndClient(t, vcsutils.BitbucketServer, false,
+		response, fmt.Sprintf("/keys/1.0/projects/%s/repos/%s/ssh", "unknown", repo1), http.StatusNotFound,
+		expectedBody, http.MethodPost,
+		createBitbucketServerWithBodyHandler)
+	defer closeServer()
+
+	err := client.AddSshKeyToRepository(ctx, "unknown", repo1, "My deploy key", "ssh-rsa AAAA...", Read)
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "status: 404 Not Found")
 }
 
 func createBitbucketServerHandler(t *testing.T, expectedUri string, response []byte, expectedStatusCode int) http.HandlerFunc {
@@ -275,5 +291,22 @@ func createBitbucketServerListRepositoriesHandler(t *testing.T, _ string, _ []by
 		_, err = w.Write(response)
 		require.NoError(t, err)
 		assert.Equal(t, "Bearer "+token, r.Header.Get("Authorization"))
+	}
+}
+
+func createBitbucketServerWithBodyHandler(t *testing.T, expectedUri string, response []byte, expectedRequestBody []byte,
+	expectedStatusCode int, expectedHttpMethod string) http.HandlerFunc {
+	return func(writer http.ResponseWriter, request *http.Request) {
+		assert.Equal(t, expectedHttpMethod, request.Method)
+		assert.Equal(t, expectedUri, request.RequestURI)
+		assert.Equal(t, "Bearer "+token, request.Header.Get("Authorization"))
+
+		b, err := io.ReadAll(request.Body)
+		require.NoError(t, err)
+		assert.Equal(t, expectedRequestBody, b)
+
+		writer.WriteHeader(expectedStatusCode)
+		_, err = writer.Write(response)
+		assert.NoError(t, err)
 	}
 }

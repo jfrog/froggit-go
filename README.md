@@ -25,6 +25,7 @@ Currently supported providers are: [GitHub](#github), [Bitbucket Server](#bitbuc
   - [Set Commit Status](#set-commit-status)
   - [Create Pull Request](#create-pull-request)
   - [Latest Commit Hash](#get-latest-commit-hash)
+  - [Add Public SSH Key](#add-public-ssh-key)
 - [Webhook Parser](#webhook-parser)
 
 ### VCS Clients
@@ -263,6 +264,26 @@ branch := "dev"
 
 // SHA-1 hash of the latest commit
 commitHash, err := client.GetLatestCommitHash(ctx, owner, repository, branch)
+```
+
+#### Add Public SSH Key
+
+```go
+// Go context
+ctx := context.Background()
+// Organization or username
+owner := "jfrog"
+// VCS repository
+repository := "jfrog-cli"
+// An identifier for the key
+keyName := "my ssh key"
+// The public SSH key
+publicKey := "ssh-rsa AAAA..."
+// Access permission of the key: vcsclient.Read or vcsclient.ReadWrite
+permission = vcsclient.Read
+
+// Add a public SSH key to a repository
+err := client.AddSshKeyToRepository(ctx, owner, repository, keyName, publicKey, permission)
 ```
 
 ### Webhook Parser

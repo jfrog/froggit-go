@@ -5,9 +5,11 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	bitbucketv1 "github.com/gfleury/go-bitbucket-v1"
 	"github.com/jfrog/froggit-go/vcsutils"
 	"golang.org/x/oauth2"
+	"io/ioutil"
 	"net/http"
 	"strconv"
 )
@@ -24,15 +26,19 @@ func NewBitbucketServerClient(vcsInfo VcsInfo) (*BitbucketServerClient, error) {
 }
 
 func (client *BitbucketServerClient) buildBitbucketClient(ctx context.Context) (*bitbucketv1.DefaultApiService, error) {
+	bbClient := bitbucketv1.NewAPIClient(ctx, &bitbucketv1.Configuration{
+		HTTPClient: client.buildHttpClient(ctx),
+		BasePath:   client.vcsInfo.ApiEndpoint,
+	})
+	return bbClient.DefaultApi, nil
+}
+
+func (client *BitbucketServerClient) buildHttpClient(ctx context.Context) *http.Client {
 	httpClient := &http.Client{}
 	if client.vcsInfo.Token != "" {
 		httpClient = oauth2.NewClient(ctx, oauth2.StaticTokenSource(&oauth2.Token{AccessToken: client.vcsInfo.Token}))
 	}
-	bbClient := bitbucketv1.NewAPIClient(ctx, &bitbucketv1.Configuration{
-		HTTPClient: httpClient,
-		BasePath:   client.vcsInfo.ApiEndpoint,
-	})
-	return bbClient.DefaultApi, nil
+	return httpClient
 }
 
 func (client *BitbucketServerClient) TestConnection(ctx context.Context) error {
@@ -101,6 +107,68 @@ func (client *BitbucketServerClient) ListBranches(ctx context.Context, owner, re
 	}
 
 	return results, nil
+}
+
+func (client *BitbucketServerClient) AddSshKeyToRepository(ctx context.Context, owner, repository, keyName, publicKey string, permission Permission) error {
+	// https://docs.atlassian.com/bitbucket-server/rest/5.16.0/bitbucket-ssh-rest.html
+	err := validateParametersNotBlank(map[string]string{
+		"owner":      owner,
+		"repository": repository,
+		"key name":   keyName,
+		"public key": publicKey,
+	})
+	if err != nil {
+		return err
+	}
+
+	accessPermission := "REPO_READ"
+	if permission == ReadWrite {
+		accessPermission = "REPO_WRITE"
+	}
+
+	url := fmt.Sprintf("%s/keys/1.0/projects/%s/repos/%s/ssh", client.vcsInfo.ApiEndpoint, owner, repository)
+	addKeyRequest := bitbucketServerAddSshKeyRequest{
+		Key:        bitbucketServerSshKey{Text: publicKey, Label: keyName},
+		Permission: accessPermission,
+	}
+
+	body := new(bytes.Buffer)
+	err = json.NewEncoder(body).Encode(addKeyRequest)
+	if err != nil {
+		return err
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, body)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	httpClient := client.buildHttpClient(ctx)
+	response, err := httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = response.Body.Close() }()
+
+	if response.StatusCode >= 300 {
+		bodyBytes, err := ioutil.ReadAll(response.Body)
+		if err != nil {
+			return err
+		}
+		return fmt.Errorf("status: %v, body: %s", response.Status, bodyBytes)
+	}
+	_ = vcsutils.DiscardResponseBody(response)
+	return nil
+}
+
+type bitbucketServerAddSshKeyRequest struct {
+	Key        bitbucketServerSshKey `json:"key"`
+	Permission string                `json:"permission"`
+}
+
+type bitbucketServerSshKey struct {
+	Text  string `json:"text"`
+	Label string `json:"label"`
 }
 
 func (client *BitbucketServerClient) CreateWebhook(ctx context.Context, owner, repository, _, payloadUrl string,
@@ -212,7 +280,11 @@ type projectsResponse struct {
 }
 
 func (client *BitbucketServerClient) GetLatestCommit(ctx context.Context, owner, repository, branch string) (CommitInfo, error) {
-	err := validateParametersNotBlank(owner, repository, branch)
+	err := validateParametersNotBlank(map[string]string{
+		"owner":      owner,
+		"repository": repository,
+		"branch":     branch,
+	})
 	if err != nil {
 		return CommitInfo{}, err
 	}

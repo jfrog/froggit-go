@@ -45,6 +45,37 @@ func (client *GitHubClient) buildGithubClient(ctx context.Context) (*github.Clie
 	return ghClient, nil
 }
 
+func (client *GitHubClient) AddSshKeyToRepository(ctx context.Context, owner, repository, keyName, publicKey string, permission Permission) error {
+	err := validateParametersNotBlank(map[string]string{
+		"owner":      owner,
+		"repository": repository,
+		"key name":   keyName,
+		"public key": publicKey,
+	})
+	if err != nil {
+		return err
+	}
+	ghClient, err := client.buildGithubClient(ctx)
+	if err != nil {
+		return err
+	}
+
+	readOnly := true
+	if permission == ReadWrite {
+		readOnly = false
+	}
+	key := github.Key{
+		Key:      &publicKey,
+		Title:    &keyName,
+		ReadOnly: &readOnly,
+	}
+	_, _, err = ghClient.Repositories.CreateKey(ctx, owner, repository, &key)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (client *GitHubClient) ListRepositories(ctx context.Context) (map[string][]string, error) {
 	ghClient, err := client.buildGithubClient(ctx)
 	if err != nil {
@@ -183,7 +214,11 @@ func (client *GitHubClient) CreatePullRequest(ctx context.Context, owner, reposi
 }
 
 func (client *GitHubClient) GetLatestCommit(ctx context.Context, owner, repository, branch string) (CommitInfo, error) {
-	err := validateParametersNotBlank(owner, repository, branch)
+	err := validateParametersNotBlank(map[string]string{
+		"owner":      owner,
+		"repository": repository,
+		"branch":     branch,
+	})
 	if err != nil {
 		return CommitInfo{}, err
 	}
