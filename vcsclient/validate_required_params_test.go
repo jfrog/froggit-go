@@ -150,3 +150,54 @@ func TestRequiredParams__GetLatestCommitInvalidPayload(t *testing.T) {
 		}
 	}
 }
+
+func TestRequiredParams_GetRepositoryInfoInvalidPayload(t *testing.T) {
+	tests := []struct {
+		name       string
+		owner      string
+		repo       string
+		assertFunc func(*testing.T, error)
+	}{
+		{
+			name:  "all empty",
+			owner: "",
+			repo:  "",
+			assertFunc: func(t *testing.T, err error) {
+				assert.Error(t, err)
+				message := err.Error()
+				assert.Contains(t, message, "required parameter 'owner' is missing")
+				assert.Contains(t, message, "required parameter 'repository' is missing")
+			},
+		},
+		{
+			name:  "empty owner",
+			owner: "",
+			repo:  "repo",
+			assertFunc: func(t *testing.T, err error) {
+				assert.EqualError(t, err, "validation failed: required parameter 'owner' is missing")
+			},
+		},
+		{
+			name:  "empty repo",
+			owner: "owner",
+			repo:  "",
+			assertFunc: func(t *testing.T, err error) {
+				assert.EqualError(t, err, "validation failed: required parameter 'repository' is missing")
+			},
+		},
+	}
+
+	for _, p := range getAllProviders() {
+		for _, tt := range tests {
+			t.Run(p.String()+" "+tt.name, func(t *testing.T) {
+				ctx := context.Background()
+				client, err := NewClientBuilder(p).Build()
+				require.NoError(t, err)
+
+				result, err := client.GetRepositoryInfo(ctx, tt.owner, tt.repo)
+				tt.assertFunc(t, err)
+				assert.Empty(t, result)
+			})
+		}
+	}
+}

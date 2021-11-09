@@ -249,6 +249,29 @@ func createBitbucketCloudWithBodyHandler(t *testing.T, expectedUri string, respo
 	}
 }
 
+func TestBitbucketCloud_GetRepositoryInfo(t *testing.T) {
+	ctx := context.Background()
+	response, err := os.ReadFile(filepath.Join("testdata", "bitbucketcloud", "repository_response.json"))
+	assert.NoError(t, err)
+
+	client, cleanUp := createServerAndClientReturningStatus(t, vcsutils.BitbucketCloud, true, response,
+		fmt.Sprintf("/repositories/%s/%s", owner, repo1), http.StatusOK,
+		createBitbucketCloudHandler)
+	defer cleanUp()
+
+	res, err := client.GetRepositoryInfo(ctx, owner, repo1)
+	require.NoError(t, err)
+	require.Equal(t,
+		RepositoryInfo{
+			CloneInfo: CloneInfo{
+				HTTP: "https://bitbucket.org/jfrog/jfrog-setup-cli.git",
+				SSH:  "git@bitbucket.org:jfrog/jfrog-setup-cli.git",
+			},
+		},
+		res,
+	)
+}
+
 func createBitbucketCloudHandler(t *testing.T, expectedUri string, response []byte, expectedStatusCode int) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(expectedStatusCode)

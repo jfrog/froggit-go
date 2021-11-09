@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/mitchellh/mapstructure"
 	"net/http"
 	"net/url"
 	"strings"
@@ -288,6 +289,42 @@ func (client *BitbucketCloudClient) GetLatestCommit(ctx context.Context, owner, 
 		}, nil
 	}
 	return CommitInfo{}, nil
+}
+
+func (client *BitbucketCloudClient) GetRepositoryInfo(ctx context.Context, owner, repository string) (RepositoryInfo, error) {
+	if err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository}); err != nil {
+		return RepositoryInfo{}, err
+	}
+	bitbucketClient := client.buildBitbucketCloudClient(ctx)
+	repo, err := bitbucketClient.Repositories.Repository.Get(&bitbucket.RepositoryOptions{
+		Owner:    owner,
+		RepoSlug: repository,
+	})
+	if err != nil {
+		return RepositoryInfo{}, err
+	}
+
+	holder := struct {
+		Clone []struct {
+			Name string `mapstructure:"name"`
+			HRef string `mapstructure:"href"`
+		} `mapstructure:"clone"`
+	}{}
+
+	if err := mapstructure.Decode(repo.Links, &holder); err != nil {
+		return RepositoryInfo{}, err
+	}
+
+	var info CloneInfo
+	for _, link := range holder.Clone {
+		switch strings.ToLower(link.Name) {
+		case "https":
+			info.HTTP = link.HRef
+		case "ssh":
+			info.SSH = link.HRef
+		}
+	}
+	return RepositoryInfo{CloneInfo: info}, nil
 }
 
 func extractCommitFromResponse(commits interface{}) (*commitResponse, error) {

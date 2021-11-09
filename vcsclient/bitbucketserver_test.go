@@ -261,6 +261,38 @@ func TestBitbucketServer_AddSshKeyToRepositoryNotFound(t *testing.T) {
 	assert.Contains(t, err.Error(), "status: 404 Not Found")
 }
 
+func TestBitbucketServer_GetRepositoryInfo(t *testing.T) {
+	ctx := context.Background()
+
+	response, err := os.ReadFile(filepath.Join("testdata", "bitbucketserver", "repository_response.json"))
+	assert.NoError(t, err)
+
+	client, cleanUp := createServerAndClientReturningStatus(
+		t,
+		vcsutils.BitbucketServer,
+		false,
+		response,
+		fmt.Sprintf("/api/1.0/projects/%s/repos/%s", owner, repo1),
+		http.StatusOK,
+		createBitbucketServerHandler,
+	)
+	defer cleanUp()
+
+	t.Run("ok", func(t *testing.T) {
+		res, err := client.GetRepositoryInfo(ctx, owner, repo1)
+		require.NoError(t, err)
+		require.Equal(t,
+			RepositoryInfo{
+				CloneInfo: CloneInfo{
+					HTTP: "https://bitbucket.org/jfrog/repo-1.git",
+					SSH:  "ssh://git@bitbucket.org:jfrog/repo-1.git",
+				},
+			},
+			res,
+		)
+	})
+}
+
 func createBitbucketServerHandler(t *testing.T, expectedUri string, response []byte, expectedStatusCode int) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(expectedStatusCode)

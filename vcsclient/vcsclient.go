@@ -105,6 +105,11 @@ type VcsClient interface {
 	// publicKey    - SSH public key
 	// permission   - Access permission of the key: read or readWrite
 	AddSshKeyToRepository(ctx context.Context, owner, repository, keyName, publicKey string, permission Permission) error
+
+	// GetRepositoryInfo Returns information about repository.
+	// owner        - User or organization
+	// repository   - VCS repository name
+	GetRepositoryInfo(ctx context.Context, owner, repository string) (RepositoryInfo, error)
 }
 
 // CommitInfo contains the details of a commit
@@ -123,6 +128,19 @@ type CommitInfo struct {
 	Message string
 	// The SHA-1 hashes of the parent commits
 	ParentHashes []string
+}
+
+// RepositoryInfo contains general information about repository.
+type RepositoryInfo struct {
+	CloneInfo CloneInfo
+}
+
+// CloneInfo contains URLs that can be used to clone the repository.
+type CloneInfo struct {
+	// HTTP is a URL string to clone repository using HTTP(S)) protocol.
+	HTTP string
+	// SSH is a URL string to clone repository using SSH protocol.
+	SSH string
 }
 
 func validateParametersNotBlank(paramNameValueMap map[string]string) error {

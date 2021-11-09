@@ -8,6 +8,7 @@ import (
 	"fmt"
 	bitbucketv1 "github.com/gfleury/go-bitbucket-v1"
 	"github.com/jfrog/froggit-go/vcsutils"
+	"github.com/mitchellh/mapstructure"
 	"golang.org/x/oauth2"
 	"io/ioutil"
 	"net/http"
@@ -323,6 +324,47 @@ func (client *BitbucketServerClient) GetLatestCommit(ctx context.Context, owner,
 		}, nil
 	}
 	return CommitInfo{}, nil
+}
+
+func (client *BitbucketServerClient) GetRepositoryInfo(ctx context.Context, owner, repository string) (RepositoryInfo, error) {
+	if err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository}); err != nil {
+		return RepositoryInfo{}, err
+	}
+
+	bitbucketClient, err := client.buildBitbucketClient(ctx)
+	if err != nil {
+		return RepositoryInfo{}, err
+	}
+
+	repo, err := bitbucketClient.GetRepository(owner, repository)
+	if err != nil {
+		return RepositoryInfo{}, err
+	}
+
+	holder := struct {
+		Links struct {
+			Clone []struct {
+				Name string `mapstructure:"name"`
+				HRef string `mapstructure:"href"`
+			} `mapstructure:"clone"`
+		} `mapstructure:"links"`
+	}{}
+
+	if err := mapstructure.Decode(repo.Values, &holder); err != nil {
+		return RepositoryInfo{}, err
+	}
+
+	var info CloneInfo
+	for _, cloneLink := range holder.Links.Clone {
+		switch cloneLink.Name {
+		case "http":
+			info.HTTP = cloneLink.HRef
+		case "ssh":
+			info.SSH = cloneLink.HRef
+		}
+	}
+
+	return RepositoryInfo{CloneInfo: info}, nil
 }
 
 // Get all projects for which the authenticated user has the PROJECT_VIEW permission

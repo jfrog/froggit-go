@@ -1,0 +1,42 @@
+{
+  "slug": "jfrog-setup-cli",
+  "id": 1,
+  "name": "Test repo",
+  "scmId": "git",
+  "state": "AVAILABLE",
+  "statusMessage": "Available",
+  "forkable": true,
+  "project": {
+    "key": "PRJ",
+    "id": 1,
+    "name": "My Cool Project",
+    "description": "The description for my cool project.",
+    "public": true,
+    "type": "NORMAL",
+    "links": {
+      "self": [
+        {
+          "href": "http://link/to/project"
+        }
+      ]
+    }
+  },
+  "public": true,
+  "links": {
+    "clone": [
+      {
+        "href": "ssh://git@bitbucket.org:jfrog/repo-1.git",
+        "name": "ssh"
+      },
+      {
+        "href": "https://bitbucket.org/jfrog/repo-1.git",
+        "name": "http"
+      }
+    ],
+    "self": [
+      {
+        "href": "http://link/to/repository"
+      }
+    ]
+  }
+}
