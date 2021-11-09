@@ -175,8 +175,8 @@ func TestGitLabClient_GetLatestCommit(t *testing.T) {
 func TestGitLabClient_GetLatestCommitNotFound(t *testing.T) {
 	ctx := context.Background()
 	response := []byte(`{
-    "message": "404 Project Not Found"
-}`)
+		"message": "404 Project Not Found"
+	}`)
 
 	client, cleanUp := createServerAndClientReturningStatus(t, vcsutils.GitLab, false, response,
 		fmt.Sprintf("/api/v4/projects/%s/repository/commits?page=1&per_page=1&ref_name=master",
@@ -252,6 +252,50 @@ func TestGitLabClient_GetRepositoryInfo(t *testing.T) {
 		},
 		result,
 	)
+}
+
+func TestGitLabClient_GetCommitBySha(t *testing.T) {
+	ctx := context.Background()
+	sha := "ff4a54b88fbd387ac4d9e8cdeb54b049978e450a"
+	response, err := os.ReadFile(filepath.Join("testdata", "gitlab", "commit_single_response.json"))
+	assert.NoError(t, err)
+
+	client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, response,
+		fmt.Sprintf("/api/v4/projects/%s/repository/commits/%s",
+			url.PathEscape(owner+"/"+repo1), sha), createGitLabHandler)
+	defer cleanUp()
+
+	result, err := client.GetCommitBySha(ctx, owner, repo1, sha)
+
+	require.NoError(t, err)
+	assert.Equal(t, CommitInfo{
+		Hash:          sha,
+		AuthorName:    "Example User",
+		CommitterName: "Administrator",
+		Url:           "https://gitlab.example.com/thedude/gitlab-foss/-/commit/ff4a54b88fbd387ac4d9e8cdeb54b049978e450a",
+		Timestamp:     1636383388,
+		Message:       "Initial commit",
+		ParentHashes:  []string{"667fb1d7f3854da3ee036ba3ad711c87c8b37fbd"},
+	}, result)
+}
+
+func TestGitLabClient_GetCommitByShaNotFound(t *testing.T) {
+	ctx := context.Background()
+	sha := "ff4a54b88fbd387ac4d9e8cdeb54b049978e450b"
+	response := []byte(`{
+		"message": "404 Commit Not Found"
+	}`)
+
+	client, cleanUp := createServerAndClientReturningStatus(t, vcsutils.GitLab, false, response,
+		fmt.Sprintf("/api/v4/projects/%s/repository/commits/%s",
+			url.PathEscape(owner+"/"+repo1), sha), http.StatusNotFound, createGitLabHandler)
+	defer cleanUp()
+
+	result, err := client.GetCommitBySha(ctx, owner, repo1, sha)
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "404 Commit Not Found")
+	assert.Empty(t, result)
 }
 
 func createGitLabHandler(t *testing.T, expectedUri string, response []byte, expectedStatusCode int) http.HandlerFunc {

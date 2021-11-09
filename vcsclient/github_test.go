@@ -217,6 +217,48 @@ func TestGitHubClient_AddSshKeyToRepositoryReadWrite(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func TestGitHubClient_GetCommitBySha(t *testing.T) {
+	ctx := context.Background()
+	sha := "6dcb09b5b57875f334f61aebed695e2e4193db5e"
+	response, err := os.ReadFile(filepath.Join("testdata", "github", "commit_single_response.json"))
+	assert.NoError(t, err)
+
+	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, response,
+		fmt.Sprintf("/repos/%s/%s/commits/%s", owner, repo1, sha), createGitHubHandler)
+	defer cleanUp()
+
+	result, err := client.GetCommitBySha(ctx, owner, repo1, sha)
+
+	require.NoError(t, err)
+	assert.Equal(t, CommitInfo{
+		Hash:          sha,
+		AuthorName:    "Monalisa Octocat",
+		CommitterName: "Joconde Octocat",
+		Url:           "https://api.github.com/repos/octocat/Hello-World/commits/6dcb09b5b57875f334f61aebed695e2e4193db5e",
+		Timestamp:     1302796850,
+		Message:       "Fix all the bugs",
+		ParentHashes:  []string{"5dcb09b5b57875f334f61aebed695e2e4193db5e"},
+	}, result)
+}
+
+func TestGitHubClient_GetCommitByWrongSha(t *testing.T) {
+	ctx := context.Background()
+	sha := "5dcb09b5b57875f334f61aebed695e2e4193db5e"
+	response := []byte(`{
+		"message": "No commit found for SHA: 5dcb09b5b57875f334f61aebed695e2e4193db5e"
+	}`)
+
+	client, cleanUp := createServerAndClientReturningStatus(t, vcsutils.GitHub, false, response,
+		fmt.Sprintf("/repos/%s/%s/commits/%s", owner, repo1, sha),
+		http.StatusUnprocessableEntity, createGitHubHandler)
+	defer cleanUp()
+
+	result, err := client.GetCommitBySha(ctx, owner, repo1, sha)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "No commit found for SHA: 5dcb09b5b57875f334f61aebed695e2e4193db5e")
+	assert.Empty(t, result)
+}
+
 func createGitHubWithBodyHandler(t *testing.T, expectedUri string, response []byte, expectedRequestBody []byte,
 	expectedStatusCode int, expectedHttpMethod string) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {

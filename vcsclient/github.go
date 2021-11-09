@@ -240,20 +240,7 @@ func (client *GitHubClient) GetLatestCommit(ctx context.Context, owner, reposito
 	}
 	if len(commits) > 0 {
 		latestCommit := commits[0]
-		parents := make([]string, len(latestCommit.Parents))
-		for i, c := range latestCommit.Parents {
-			parents[i] = c.GetSHA()
-		}
-		details := latestCommit.GetCommit()
-		return CommitInfo{
-			Hash:          latestCommit.GetSHA(),
-			AuthorName:    details.GetAuthor().GetName(),
-			CommitterName: details.GetCommitter().GetName(),
-			Url:           latestCommit.GetURL(),
-			Timestamp:     details.GetCommitter().GetDate().UTC().Unix(),
-			Message:       details.GetMessage(),
-			ParentHashes:  parents,
-		}, nil
+		return mapGitHubCommitToCommitInfo(latestCommit), nil
 	}
 	return CommitInfo{}, nil
 }
@@ -274,6 +261,29 @@ func (client *GitHubClient) GetRepositoryInfo(ctx context.Context, owner, reposi
 		return RepositoryInfo{}, err
 	}
 	return RepositoryInfo{CloneInfo: CloneInfo{HTTP: repo.GetCloneURL(), SSH: repo.GetSSHURL()}}, nil
+}
+
+func (client *GitHubClient) GetCommitBySha(ctx context.Context, owner, repository, sha string) (CommitInfo, error) {
+	err := validateParametersNotBlank(map[string]string{
+		"owner":      owner,
+		"repository": repository,
+		"sha":        sha,
+	})
+	if err != nil {
+		return CommitInfo{}, err
+	}
+
+	ghClient, err := client.buildGithubClient(ctx)
+	if err != nil {
+		return CommitInfo{}, err
+	}
+
+	commit, _, err := ghClient.Repositories.GetCommit(ctx, owner, repository, sha, nil)
+	if err != nil {
+		return CommitInfo{}, err
+	}
+
+	return mapGitHubCommitToCommitInfo(commit), nil
 }
 
 func createGitHubHook(token, payloadUrl string, webhookEvents ...vcsutils.WebhookEvent) *github.Hook {
@@ -313,4 +323,21 @@ func getGitHubCommitState(commitState CommitStatus) string {
 		return "pending"
 	}
 	return ""
+}
+
+func mapGitHubCommitToCommitInfo(commit *github.RepositoryCommit) CommitInfo {
+	parents := make([]string, len(commit.Parents))
+	for i, c := range commit.Parents {
+		parents[i] = c.GetSHA()
+	}
+	details := commit.GetCommit()
+	return CommitInfo{
+		Hash:          commit.GetSHA(),
+		AuthorName:    details.GetAuthor().GetName(),
+		CommitterName: details.GetCommitter().GetName(),
+		Url:           commit.GetURL(),
+		Timestamp:     details.GetCommitter().GetDate().UTC().Unix(),
+		Message:       details.GetMessage(),
+		ParentHashes:  parents,
+	}
 }

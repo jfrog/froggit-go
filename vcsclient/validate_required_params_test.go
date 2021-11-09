@@ -201,3 +201,68 @@ func TestRequiredParams_GetRepositoryInfoInvalidPayload(t *testing.T) {
 		}
 	}
 }
+
+func TestRequiredParams__GetCommitByShaInvalidPayload(t *testing.T) {
+	tests := []struct {
+		name       string
+		owner      string
+		repo       string
+		sha        string
+		assertFunc func(*testing.T, error)
+	}{
+		{
+			name:  "all empty",
+			owner: "",
+			repo:  "",
+			sha:   "",
+			assertFunc: func(t *testing.T, err error) {
+				assert.Error(t, err)
+				message := err.Error()
+				assert.Contains(t, message, "required parameter 'owner' is missing")
+				assert.Contains(t, message, "required parameter 'repository' is missing")
+				assert.Contains(t, message, "required parameter 'sha' is missing")
+			},
+		},
+		{
+			name:  "empty owner",
+			owner: "",
+			repo:  "repo",
+			sha:   "sha",
+			assertFunc: func(t *testing.T, err error) {
+				assert.EqualError(t, err, "validation failed: required parameter 'owner' is missing")
+			},
+		},
+		{
+			name:  "empty repo",
+			owner: "owner",
+			repo:  "",
+			sha:   "sha",
+			assertFunc: func(t *testing.T, err error) {
+				assert.EqualError(t, err, "validation failed: required parameter 'repository' is missing")
+			},
+		},
+		{
+			name:  "empty branch",
+			owner: "owner",
+			repo:  "repo",
+			sha:   "",
+			assertFunc: func(t *testing.T, err error) {
+				assert.EqualError(t, err, "validation failed: required parameter 'sha' is missing")
+			},
+		},
+	}
+
+	for _, p := range getAllProviders() {
+		for _, tt := range tests {
+			t.Run(p.String()+" "+tt.name, func(t *testing.T) {
+				ctx := context.Background()
+				client, err := NewClientBuilder(p).Build()
+				require.NoError(t, err)
+
+				result, err := client.GetCommitBySha(ctx, tt.owner, tt.repo, tt.sha)
+				tt.assertFunc(t, err)
+				assert.Empty(t, result)
+			})
+		}
+	}
+}

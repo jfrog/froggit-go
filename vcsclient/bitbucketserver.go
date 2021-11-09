@@ -309,19 +309,7 @@ func (client *BitbucketServerClient) GetLatestCommit(ctx context.Context, owner,
 	}
 	if len(commits) > 0 {
 		latestCommit := commits[0]
-		parents := make([]string, len(latestCommit.Parents))
-		for i, p := range latestCommit.Parents {
-			parents[i] = p.ID
-		}
-		return CommitInfo{
-			Hash:          latestCommit.ID,
-			AuthorName:    latestCommit.Author.Name,
-			CommitterName: latestCommit.Committer.Name,
-			Url:           "", // URL not provided
-			Timestamp:     latestCommit.CommitterTimestamp,
-			Message:       latestCommit.Message,
-			ParentHashes:  parents,
-		}, nil
+		return mapBitbucketServerCommitToCommitInfo(latestCommit), nil
 	}
 	return CommitInfo{}, nil
 }
@@ -365,6 +353,33 @@ func (client *BitbucketServerClient) GetRepositoryInfo(ctx context.Context, owne
 	}
 
 	return RepositoryInfo{CloneInfo: info}, nil
+}
+
+func (client BitbucketServerClient) GetCommitBySha(ctx context.Context, owner, repository, sha string) (CommitInfo, error) {
+	err := validateParametersNotBlank(map[string]string{
+		"owner":      owner,
+		"repository": repository,
+		"sha":        sha,
+	})
+	if err != nil {
+		return CommitInfo{}, err
+	}
+
+	bitbucketClient, err := client.buildBitbucketClient(ctx)
+	if err != nil {
+		return CommitInfo{}, err
+	}
+
+	apiResponse, err := bitbucketClient.GetCommit(owner, repository, sha, nil)
+	if err != nil {
+		return CommitInfo{}, err
+	}
+	commit := bitbucketv1.Commit{}
+	err = unmarshalApiResponseValues(apiResponse, &commit)
+	if err != nil {
+		return CommitInfo{}, err
+	}
+	return mapBitbucketServerCommitToCommitInfo(commit), nil
 }
 
 // Get all projects for which the authenticated user has the PROJECT_VIEW permission
@@ -438,4 +453,20 @@ func getBitbucketServerWebhookEvents(webhookEvents ...vcsutils.WebhookEvent) []s
 		}
 	}
 	return events
+}
+
+func mapBitbucketServerCommitToCommitInfo(commit bitbucketv1.Commit) CommitInfo {
+	parents := make([]string, len(commit.Parents))
+	for i, p := range commit.Parents {
+		parents[i] = p.ID
+	}
+	return CommitInfo{
+		Hash:          commit.ID,
+		AuthorName:    commit.Author.Name,
+		CommitterName: commit.Committer.Name,
+		Url:           "", // URL not provided
+		Timestamp:     commit.CommitterTimestamp,
+		Message:       commit.Message,
+		ParentHashes:  parents,
+	}
 }

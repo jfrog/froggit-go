@@ -1,0 +1,97 @@
+{
+  "rendered": {
+    "message": {
+      "html": "<p>Update image name</p>",
+      "markup": "markdown",
+      "raw": "Update image name\n",
+      "type": "rendered"
+    }
+  },
+  "hash": "f62ea5359e7af59880b4a5e23e0ce6c1b32b5d3c",
+  "repository": {
+    "full_name": "user2/setup-jfrog-cli",
+    "links": {
+      "avatar": {
+        "href": "https://bytebucket.org/ravatar/%7Bd5f8a3f0-0cf1-43e9-8451-5379417d6c7c%7D?ts=default"
+      },
+      "html": {
+        "href": "https://bitbucket.org/user2/setup-jfrog-cli"
+      },
+      "self": {
+        "href": "https://api.bitbucket.org/2.0/repositories/user2/setup-jfrog-cli"
+      }
+    },
+    "name": "setup-jfrog-cli",
+    "type": "repository",
+    "uuid": "{d5f8a3f0-0cf1-43e9-8451-5379417d6c7c}"
+  },
+  "links": {
+    "approve": {
+      "href": "https://api.bitbucket.org/2.0/repositories/user2/setup-jfrog-cli/commit/f62ea5359e7af59880b4a5e23e0ce6c1b32b5d3c/approve"
+    },
+    "comments": {
+      "href": "https://api.bitbucket.org/2.0/repositories/user2/setup-jfrog-cli/commit/f62ea5359e7af59880b4a5e23e0ce6c1b32b5d3c/comments"
+    },
+    "diff": {
+      "href": "https://api.bitbucket.org/2.0/repositories/user2/setup-jfrog-cli/diff/f62ea5359e7af59880b4a5e23e0ce6c1b32b5d3c"
+    },
+    "html": {
+      "href": "https://bitbucket.org/user2/setup-jfrog-cli/commits/f62ea5359e7af59880b4a5e23e0ce6c1b32b5d3c"
+    },
+    "patch": {
+      "href": "https://api.bitbucket.org/2.0/repositories/user2/setup-jfrog-cli/patch/f62ea5359e7af59880b4a5e23e0ce6c1b32b5d3c"
+    },
+    "self": {
+      "href": "https://api.bitbucket.org/2.0/repositories/user2/setup-jfrog-cli/commit/f62ea5359e7af59880b4a5e23e0ce6c1b32b5d3c"
+    },
+    "statuses": {
+      "href": "https://api.bitbucket.org/2.0/repositories/user2/setup-jfrog-cli/commit/f62ea5359e7af59880b4a5e23e0ce6c1b32b5d3c/statuses"
+    }
+  },
+  "author": {
+    "raw": "user <user@example.com>",
+    "type": "author",
+    "user": {
+      "account_id": "5d74edb2098f0b0daa7630de",
+      "display_name": "user",
+      "links": {
+        "avatar": {
+          "href": "https://secure.gravatar.com/avatar/477cdb6499e58f28541b52307a3c5bbc?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FRN-1.png"
+        },
+        "html": {
+          "href": "https://bitbucket.org/%7B1658dec0-6727-44ba-b680-15f84e664746%7D/"
+        },
+        "self": {
+          "href": "https://api.bitbucket.org/2.0/users/%7B1658dec0-6727-44ba-b680-15f84e664746%7D"
+        }
+      },
+      "nickname": "user",
+      "type": "user",
+      "uuid": "{1658dec0-6727-44ba-b680-15f84e664746}"
+    }
+  },
+  "summary": {
+    "html": "<p>Update image name</p>",
+    "markup": "markdown",
+    "raw": "Update image name\n",
+    "type": "rendered"
+  },
+  "participants": [],
+  "parents": [
+    {
+      "hash": "f62ea5359e7af59880b4a5e23e0ce6c1b32b5d3c",
+      "links": {
+        "html": {
+          "href": "https://bitbucket.org/user2/setup-jfrog-cli/commits/f62ea5359e7af59880b4a5e23e0ce6c1b32b5d3c"
+        },
+        "self": {
+          "href": "https://api.bitbucket.org/2.0/repositories/user2/setup-jfrog-cli/commit/f62ea5359e7af59880b4a5e23e0ce6c1b32b5d3c"
+        }
+      },
+      "type": "commit"
+    }
+  ],
+  "date": "2020-06-01T16:54:09+00:00",
+  "message": "Update image name\n",
+  "type": "commit"
+}

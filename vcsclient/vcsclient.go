@@ -110,6 +110,12 @@ type VcsClient interface {
 	// owner        - User or organization
 	// repository   - VCS repository name
 	GetRepositoryInfo(ctx context.Context, owner, repository string) (RepositoryInfo, error)
+
+	// GetCommitBySha Get the commit by its SHA
+	// owner        - User or organization
+	// repository   - VCS repository name
+	// sha          - The commit hash
+	GetCommitBySha(ctx context.Context, owner, repository, sha string) (CommitInfo, error)
 }
 
 // CommitInfo contains the details of a commit
