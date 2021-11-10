@@ -214,15 +214,7 @@ func (client *GitLabClient) GetLatestCommit(ctx context.Context, owner, reposito
 	}
 	if len(commits) > 0 {
 		latestCommit := commits[0]
-		return CommitInfo{
-			Hash:          latestCommit.ID,
-			AuthorName:    latestCommit.AuthorName,
-			CommitterName: latestCommit.CommitterName,
-			Url:           latestCommit.WebURL,
-			Timestamp:     latestCommit.CommittedDate.UTC().Unix(),
-			Message:       latestCommit.Message,
-			ParentHashes:  latestCommit.ParentIDs,
-		}, nil
+		return mapGitLabCommitToCommitInfo(latestCommit), nil
 	}
 	return CommitInfo{}, nil
 }
@@ -239,6 +231,23 @@ func (client *GitLabClient) GetRepositoryInfo(ctx context.Context, owner, reposi
 	}
 
 	return RepositoryInfo{CloneInfo: CloneInfo{HTTP: project.HTTPURLToRepo, SSH: project.SSHURLToRepo}}, nil
+}
+
+func (client *GitLabClient) GetCommitBySha(ctx context.Context, owner, repository, sha string) (CommitInfo, error) {
+	err := validateParametersNotBlank(map[string]string{
+		"owner":      owner,
+		"repository": repository,
+		"sha":        sha,
+	})
+	if err != nil {
+		return CommitInfo{}, err
+	}
+
+	commit, _, err := client.glClient.Commits.GetCommit(getProjectId(owner, repository), sha, gitlab.WithContext(ctx))
+	if err != nil {
+		return CommitInfo{}, err
+	}
+	return mapGitLabCommitToCommitInfo(commit), nil
 }
 
 func getProjectId(owner, project string) string {
@@ -271,4 +280,16 @@ func getGitLabCommitState(commitState CommitStatus) string {
 		return "running"
 	}
 	return ""
+}
+
+func mapGitLabCommitToCommitInfo(commit *gitlab.Commit) CommitInfo {
+	return CommitInfo{
+		Hash:          commit.ID,
+		AuthorName:    commit.AuthorName,
+		CommitterName: commit.CommitterName,
+		Url:           commit.WebURL,
+		Timestamp:     commit.CommittedDate.UTC().Unix(),
+		Message:       commit.Message,
+		ParentHashes:  commit.ParentIDs,
+	}
 }

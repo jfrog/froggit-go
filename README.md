@@ -24,7 +24,8 @@ Currently supported providers are: [GitHub](#github), [Bitbucket Server](#bitbuc
   - [Delete Webhook](#delete-webhook)
   - [Set Commit Status](#set-commit-status)
   - [Create Pull Request](#create-pull-request)
-  - [Latest Commit Hash](#get-latest-commit-hash)
+  - [Get Latest Commit](#get-latest-commit)
+  - [Get Commit By SHA](#get-commit-by-sha)
   - [Add Public SSH Key](#add-public-ssh-key)
   - [Get Repository Info](#get-repository-info)
 - [Webhook Parser](#webhook-parser)
@@ -251,7 +252,7 @@ description := "Pull request description"
 err := client.CreatePullRequest(ctx, owner, repository, sourceBranch, targetBranch, title, description string)
 ```
 
-#### Get Latest Commit Hash
+#### Get Latest Commit
 
 ```go
 // Go context
@@ -263,8 +264,24 @@ repository := "jfrog-cli"
 // VCS branch
 branch := "dev"
 
-// SHA-1 hash of the latest commit
-commitHash, err := client.GetLatestCommitHash(ctx, owner, repository, branch)
+// Commit information of the latest commit
+commitInfo, err := client.GetLatestCommit(ctx, owner, repository, branch)
+```
+
+#### Get Commit By SHA
+
+```go
+// Go context
+ctx := context.Background()
+// Organization or username
+owner := "jfrog"
+// VCS repository
+repository := "jfrog-cli"
+// SHA-1 hash of the commit
+sha := "abcdef0123abcdef4567abcdef8987abcdef6543"
+
+// Commit information of requested commit
+commitInfo, err := client.GetCommitBySha(ctx, owner, repository, sha)
 ```
 
 #### Add Public SSH Key

@@ -1,0 +1,26 @@
+{
+  "author_email": "user@example.com",
+  "author_name": "Example User",
+  "authored_date": "2021-11-08T14:56:28.000+00:00",
+  "committed_date": "2021-11-08T14:56:28.000+00:00",
+  "committer_email": "admin@example.com",
+  "committer_name": "Administrator",
+  "created_at": "2021-11-08T14:56:28.000+00:00",
+  "id": "ff4a54b88fbd387ac4d9e8cdeb54b049978e450a",
+  "last_pipeline": null,
+  "message": "Initial commit",
+  "parent_ids": [
+    "667fb1d7f3854da3ee036ba3ad711c87c8b37fbd"
+  ],
+  "project_id": 2,
+  "short_id": "ff4a54b8",
+  "stats": {
+    "additions": 1,
+    "deletions": 0,
+    "total": 1
+  },
+  "status": null,
+  "title": "Initial commit",
+  "trailers": {},
+  "web_url": "https://gitlab.example.com/thedude/gitlab-foss/-/commit/ff4a54b88fbd387ac4d9e8cdeb54b049978e450a"
+}

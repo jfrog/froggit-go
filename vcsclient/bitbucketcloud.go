@@ -274,19 +274,7 @@ func (client *BitbucketCloudClient) GetLatestCommit(ctx context.Context, owner, 
 	}
 	if len(parsedCommits.Values) > 0 {
 		latestCommit := parsedCommits.Values[0]
-		parents := make([]string, len(latestCommit.Parents))
-		for i, p := range latestCommit.Parents {
-			parents[i] = p.Hash
-		}
-		return CommitInfo{
-			Hash:          latestCommit.Hash,
-			AuthorName:    latestCommit.Author.User.DisplayName,
-			CommitterName: "", // not provided
-			Url:           latestCommit.Links.Self.Href,
-			Timestamp:     latestCommit.Date.UTC().Unix(),
-			Message:       latestCommit.Message,
-			ParentHashes:  parents,
-		}, nil
+		return mapBitbucketCloudCommitToCommitInfo(latestCommit), nil
 	}
 	return CommitInfo{}, nil
 }
@@ -327,6 +315,33 @@ func (client *BitbucketCloudClient) GetRepositoryInfo(ctx context.Context, owner
 	return RepositoryInfo{CloneInfo: info}, nil
 }
 
+func (client *BitbucketCloudClient) GetCommitBySha(ctx context.Context, owner, repository, sha string) (CommitInfo, error) {
+	err := validateParametersNotBlank(map[string]string{
+		"owner":      owner,
+		"repository": repository,
+		"sha":        sha,
+	})
+	if err != nil {
+		return CommitInfo{}, err
+	}
+
+	bitbucketClient := client.buildBitbucketCloudClient(ctx)
+	options := &bitbucket.CommitsOptions{
+		Owner:    owner,
+		RepoSlug: repository,
+		Revision: sha,
+	}
+	commit, err := bitbucketClient.Repositories.Commits.GetCommit(options)
+	if err != nil {
+		return CommitInfo{}, err
+	}
+	parsedCommit, err := extractCommitDetailsFromResponse(commit)
+	if err != nil {
+		return CommitInfo{}, err
+	}
+	return mapBitbucketCloudCommitToCommitInfo(parsedCommit), nil
+}
+
 func extractCommitFromResponse(commits interface{}) (*commitResponse, error) {
 	var res commitResponse
 	b, err := json.Marshal(commits)
@@ -338,6 +353,19 @@ func extractCommitFromResponse(commits interface{}) (*commitResponse, error) {
 		return nil, err
 	}
 	return &res, nil
+}
+
+func extractCommitDetailsFromResponse(commit interface{}) (commitDetails, error) {
+	var res commitDetails
+	b, err := json.Marshal(commit)
+	if err != nil {
+		return commitDetails{}, err
+	}
+	err = json.Unmarshal(b, &res)
+	if err != nil {
+		return commitDetails{}, err
+	}
+	return res, nil
 }
 
 type commitResponse struct {
@@ -411,4 +439,20 @@ func getDownloadLink(repo *bitbucket.Repository, branch string) (string, error) 
 		return "", fmt.Errorf("couldn't find repository HTML link: %s", repo.Links["html"])
 	}
 	return htmlLink + "/get/" + branch + ".tar.gz", err
+}
+
+func mapBitbucketCloudCommitToCommitInfo(parsedCommit commitDetails) CommitInfo {
+	parents := make([]string, len(parsedCommit.Parents))
+	for i, p := range parsedCommit.Parents {
+		parents[i] = p.Hash
+	}
+	return CommitInfo{
+		Hash:          parsedCommit.Hash,
+		AuthorName:    parsedCommit.Author.User.DisplayName,
+		CommitterName: "", // not provided
+		Url:           parsedCommit.Links.Self.Href,
+		Timestamp:     parsedCommit.Date.UTC().Unix(),
+		Message:       parsedCommit.Message,
+		ParentHashes:  parents,
+	}
 }

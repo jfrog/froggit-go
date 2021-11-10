@@ -293,6 +293,55 @@ func TestBitbucketServer_GetRepositoryInfo(t *testing.T) {
 	})
 }
 
+func TestBitbucketServer_GetCommitBySha(t *testing.T) {
+	ctx := context.Background()
+	sha := "abcdef0123abcdef4567abcdef8987abcdef6543"
+	response, err := os.ReadFile(filepath.Join("testdata", "bitbucketserver", "commit_single_response.json"))
+	assert.NoError(t, err)
+
+	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, false, response,
+		fmt.Sprintf("/api/1.0/projects/%s/repos/%s/commits/%s", owner, repo1, sha),
+		createBitbucketServerHandler)
+	defer cleanUp()
+
+	result, err := client.GetCommitBySha(ctx, owner, repo1, sha)
+
+	require.NoError(t, err)
+	assert.Equal(t, CommitInfo{
+		Hash:          sha,
+		AuthorName:    "charlie",
+		CommitterName: "mark",
+		Url:           "",
+		Timestamp:     1636089306104,
+		Message:       "WIP on feature 1",
+		ParentHashes:  []string{"bbcdef0123abcdef4567abcdef8987abcdef6543"},
+	}, result)
+}
+
+func TestBitbucketServer_GetCommitByShaNotFound(t *testing.T) {
+	ctx := context.Background()
+	sha := "bbcdef0123abcdef4567abcdef8987abcdef6543"
+	response := []byte(`{
+		"errors": [
+        	{
+            	"context": null,
+            	"exceptionName": "com.atlassian.bitbucket.project.NoSuchProjectException",
+            	"message": "Project unknown does not exist."
+        	}
+    	]
+	}`)
+	client, cleanUp := createServerAndClientReturningStatus(t, vcsutils.BitbucketServer, false, response,
+		fmt.Sprintf("/api/1.0/projects/%s/repos/%s/commits/%s", owner, repo1, sha),
+		http.StatusNotFound, createBitbucketServerHandler)
+	defer cleanUp()
+
+	result, err := client.GetCommitBySha(ctx, owner, repo1, sha)
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "Status: 404 Not Found")
+	assert.Empty(t, result)
+}
+
 func createBitbucketServerHandler(t *testing.T, expectedUri string, response []byte, expectedStatusCode int) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(expectedStatusCode)

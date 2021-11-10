@@ -232,6 +232,46 @@ func TestBitbucketCloud_AddSshKeyToRepositoryNotFound(t *testing.T) {
 	require.EqualError(t, err, "404 Not Found")
 }
 
+func TestBitbucketCloud_GetCommitBySha(t *testing.T) {
+	ctx := context.Background()
+	sha := "f62ea5359e7af59880b4a5e23e0ce6c1b32b5d3c"
+	response, err := os.ReadFile(filepath.Join("testdata", "bitbucketcloud", "commit_single_response.json"))
+	assert.NoError(t, err)
+
+	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketCloud, true, response,
+		fmt.Sprintf("/repositories/%s/%s/commit/%s", owner, repo1, sha), createBitbucketCloudHandler)
+	defer cleanUp()
+
+	result, err := client.GetCommitBySha(ctx, owner, repo1, sha)
+
+	require.NoError(t, err)
+	assert.Equal(t, CommitInfo{
+		Hash:          sha,
+		AuthorName:    "user",
+		CommitterName: "",
+		Url:           "https://api.bitbucket.org/2.0/repositories/user2/setup-jfrog-cli/commit/f62ea5359e7af59880b4a5e23e0ce6c1b32b5d3c",
+		Timestamp:     1591030449,
+		Message:       "Update image name\n",
+		ParentHashes:  []string{"f62ea5359e7af59880b4a5e23e0ce6c1b32b5d3c"},
+	}, result)
+}
+
+func TestBitbucketCloud_GetCommitByShaNotFound(t *testing.T) {
+	ctx := context.Background()
+	sha := "062ea5359e7af59880b4a5e23e0ce6c1b32b5d3c"
+	response := []byte(`<!DOCTYPE html><html lang="en"></html>`)
+
+	client, cleanUp := createServerAndClientReturningStatus(t, vcsutils.BitbucketCloud, true, response,
+		fmt.Sprintf("/repositories/%s/%s/commit/%s", owner, repo1, sha),
+		http.StatusNotFound,
+		createBitbucketCloudHandler)
+	defer cleanUp()
+
+	result, err := client.GetCommitBySha(ctx, owner, repo1, sha)
+	require.EqualError(t, err, "404 Not Found")
+	assert.Empty(t, result)
+}
+
 func createBitbucketCloudWithBodyHandler(t *testing.T, expectedUri string, response []byte, expectedRequestBody []byte,
 	expectedStatusCode int, expectedHttpMethod string) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
