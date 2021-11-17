@@ -37,28 +37,21 @@ func (client *GitLabClient) TestConnection(ctx context.Context) error {
 }
 
 func (client *GitLabClient) ListRepositories(ctx context.Context) (map[string][]string, error) {
+	simple := true
 	results := make(map[string][]string)
-	groups, _, err := client.glClient.Groups.ListGroups(nil, gitlab.WithContext(ctx))
-	if err != nil {
-		return results, err
-	}
-	for _, group := range groups {
-		for pageId := 1; ; pageId++ {
-			options := &gitlab.ListGroupProjectsOptions{ListOptions: gitlab.ListOptions{Page: pageId}}
-			projects, response, err := client.glClient.Groups.ListGroupProjects(group.Path, options,
-				gitlab.WithContext(ctx))
-			if err != nil {
-				return nil, err
-			}
-
-			for _, project := range projects {
-				results[group.Path] = append(results[group.Path], project.Path)
-			}
-			if pageId >= response.TotalPages {
-				break
-			}
+	for pageId := 1; ; pageId++ {
+		options := &gitlab.ListProjectsOptions{ListOptions: gitlab.ListOptions{Page: pageId}, Simple: &simple}
+		projects, response, err := client.glClient.Projects.ListProjects(options, gitlab.WithContext(ctx))
+		if err != nil {
+			return nil, err
 		}
-
+		for _, project := range projects {
+			owner := project.Namespace.Path
+			results[owner] = append(results[owner], project.Path)
+		}
+		if pageId >= response.TotalPages {
+			break
+		}
 	}
 	return results, nil
 }
