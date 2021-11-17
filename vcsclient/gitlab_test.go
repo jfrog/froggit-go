@@ -2,7 +2,6 @@ package vcsclient
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"github.com/stretchr/testify/require"
 	"io"
@@ -55,12 +54,18 @@ func TestGitLabClient_ConnectionWhenContextTimesOut(t *testing.T) {
 
 func TestGitLabClient_ListRepositories(t *testing.T) {
 	ctx := context.Background()
-	client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, []gitlab.Project{{Path: repo1}, {Path: repo2}}, "/api/v4/groups/frogger/projects?page=1", createGitLabHandler)
+	response, err := os.ReadFile(filepath.Join("testdata", "gitlab", "projects_response.json"))
+	assert.NoError(t, err)
+
+	client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, response, "/api/v4/projects?page=1&simple=true", createGitLabHandler)
 	defer cleanUp()
 
 	actualRepositories, err := client.ListRepositories(ctx)
 	assert.NoError(t, err)
-	assert.Equal(t, actualRepositories, map[string][]string{username: {repo1, repo2}})
+	assert.Equal(t, actualRepositories, map[string][]string{
+		"example-user":             {"example-project"},
+		"root":                     {"my-project", "go-micro"},
+		"gitlab-instance-ba535d0c": {"Monitoring"}})
 }
 
 func TestGitLabClient_ListBranches(t *testing.T) {
@@ -302,14 +307,6 @@ func createGitLabHandler(t *testing.T, expectedUri string, response []byte, expe
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.RequestURI == "/api/v4/" {
 			w.WriteHeader(http.StatusOK)
-			return
-		}
-		if r.RequestURI == "/api/v4/groups" {
-			byteResponse, err := json.Marshal(&[]gitlab.Group{{Path: username}})
-			assert.NoError(t, err)
-			w.WriteHeader(http.StatusOK)
-			_, err = w.Write(byteResponse)
-			assert.NoError(t, err)
 			return
 		}
 		w.WriteHeader(expectedStatusCode)
