@@ -70,29 +70,30 @@ func calculatePayloadSignature(payload []byte, token []byte) string {
 }
 
 func (webhook *BitbucketServerWebhook) parsePushEvent(bitbucketCloudWebHook *bitbucketServerWebHook) (*WebhookInfo, error) {
-	time, err := time.Parse("2006-01-02T15:04:05-0700", bitbucketCloudWebHook.Date)
+	eventTime, err := time.Parse("2006-01-02T15:04:05-0700", bitbucketCloudWebHook.Date)
 	if err != nil {
 		return nil, err
 	}
 	return &WebhookInfo{
 		Repository: getFullRepositoryName(bitbucketCloudWebHook.Repository),
 		Branch:     strings.TrimPrefix(bitbucketCloudWebHook.Changes[0].RefId, "refs/heads/"),
-		Timestamp:  time.UTC().Unix(),
+		Timestamp:  eventTime.UTC().Unix(),
 		Event:      vcsutils.Push,
 	}, nil
 }
 
 func (webhook *BitbucketServerWebhook) parsePrEvents(bitbucketCloudWebHook *bitbucketServerWebHook, event vcsutils.WebhookEvent) (*WebhookInfo, error) {
-	time, err := time.Parse("2006-01-02T15:04:05-0700", bitbucketCloudWebHook.Date)
+	eventTime, err := time.Parse("2006-01-02T15:04:05-0700", bitbucketCloudWebHook.Date)
 	if err != nil {
 		return nil, err
 	}
 	return &WebhookInfo{
+		PullRequestId:    bitbucketCloudWebHook.PullRequest.ID,
 		Repository:       getFullRepositoryName(bitbucketCloudWebHook.PullRequest.ToRef.Repository),
 		Branch:           strings.TrimPrefix(bitbucketCloudWebHook.PullRequest.ToRef.ID, "refs/heads/"),
 		SourceRepository: getFullRepositoryName(bitbucketCloudWebHook.PullRequest.FromRef.Repository),
 		SourceBranch:     strings.TrimPrefix(bitbucketCloudWebHook.PullRequest.FromRef.ID, "refs/heads/"),
-		Timestamp:        time.UTC().Unix(),
+		Timestamp:        eventTime.UTC().Unix(),
 		Event:            event,
 	}, nil
 }

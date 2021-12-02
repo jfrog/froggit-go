@@ -64,6 +64,7 @@ func (webhook *BitbucketCloudWebhook) parsePushEvent(bitbucketCloudWebHook *bitb
 
 func (webhook *BitbucketCloudWebhook) parsePrEvents(bitbucketCloudWebHook *bitbucketCloudWebHook, event vcsutils.WebhookEvent) *WebhookInfo {
 	return &WebhookInfo{
+		PullRequestId:    bitbucketCloudWebHook.PullRequest.Id,
 		Repository:       bitbucketCloudWebHook.PullRequest.Destination.Repository.FullName,
 		Branch:           bitbucketCloudWebHook.PullRequest.Destination.Branch.Name,
 		SourceRepository: bitbucketCloudWebHook.PullRequest.Source.Repository.FullName,
@@ -85,6 +86,7 @@ type bitbucketCloudWebHook struct {
 		} `json:"changes,omitempty"`
 	} `json:"push,omitempty"`
 	PullRequest struct {
+		Id          int                                  `json:"id,omitempty"`
 		Source      struct{ bitbucketCloudPrRepository } `json:"source,omitempty"`
 		Destination struct{ bitbucketCloudPrRepository } `json:"destination,omitempty"`
 		UpdatedOn   time.Time                            `json:"updated_on,omitempty"` // Timestamp

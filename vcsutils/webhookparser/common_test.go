@@ -1,5 +1,7 @@
 package webhookparser
 
+import "os"
+
 const (
 	expectedRepoName     = "yahavi/hello-world"
 	expectedBranch       = "main"
@@ -7,3 +9,7 @@ const (
 )
 
 var token = []byte("abc123")
+
+func closeReader(reader *os.File) {
+	_ = reader.Close()
+}

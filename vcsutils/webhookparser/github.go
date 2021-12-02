@@ -66,6 +66,7 @@ func (webhook *GitHubWebhook) parsePrEvents(event *github.PullRequestEvent) *Web
 		return nil
 	}
 	return &WebhookInfo{
+		PullRequestId:    event.GetPullRequest().GetNumber(),
 		Repository:       event.GetPullRequest().GetBase().GetRepo().GetFullName(),
 		Branch:           event.GetPullRequest().GetBase().GetRef(),
 		SourceRepository: event.GetPullRequest().GetHead().GetRepo().GetFullName(),
