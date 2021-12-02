@@ -15,12 +15,13 @@ const (
 	gitlabPushExpectedTime     = int64(1630306883)
 	gitlabPrCreateExpectedTime = int64(1631202047)
 	gitlabPrUpdateExpectedTime = int64(1631202266)
+	gitlabExpectedPrId         = 1
 )
 
 func TestGitLabParseIncomingPushWebhook(t *testing.T) {
 	reader, err := os.Open(filepath.Join("testdata", "gitlab", "pushpayload"))
 	assert.NoError(t, err)
-	defer reader.Close()
+	defer closeReader(reader)
 
 	// Create request
 	request := httptest.NewRequest("POST", "https://127.0.0.1", reader)
@@ -41,7 +42,7 @@ func TestGitLabParseIncomingPushWebhook(t *testing.T) {
 func TestGitLabParseIncomingPrCreateWebhook(t *testing.T) {
 	reader, err := os.Open(filepath.Join("testdata", "gitlab", "prcreatepayload"))
 	assert.NoError(t, err)
-	defer reader.Close()
+	defer closeReader(reader)
 
 	// Create request
 	request := httptest.NewRequest("POST", "https://127.0.0.1", reader)
@@ -53,6 +54,7 @@ func TestGitLabParseIncomingPrCreateWebhook(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Check values
+	assert.Equal(t, gitlabExpectedPrId, actual.PullRequestId)
 	assert.Equal(t, expectedRepoName, actual.Repository)
 	assert.Equal(t, expectedBranch, actual.Branch)
 	assert.Equal(t, gitlabPrCreateExpectedTime, actual.Timestamp)
@@ -64,7 +66,7 @@ func TestGitLabParseIncomingPrCreateWebhook(t *testing.T) {
 func TestGitLabParseIncomingPrUpdateWebhook(t *testing.T) {
 	reader, err := os.Open(filepath.Join("testdata", "gitlab", "prupdatepayload"))
 	assert.NoError(t, err)
-	defer reader.Close()
+	defer closeReader(reader)
 
 	// Create request
 	request := httptest.NewRequest("POST", "https://127.0.0.1", reader)
@@ -76,6 +78,7 @@ func TestGitLabParseIncomingPrUpdateWebhook(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Check values
+	assert.Equal(t, gitlabExpectedPrId, actual.PullRequestId)
 	assert.Equal(t, expectedRepoName, actual.Repository)
 	assert.Equal(t, expectedBranch, actual.Branch)
 	assert.Equal(t, gitlabPrUpdateExpectedTime, actual.Timestamp)
@@ -87,7 +90,7 @@ func TestGitLabParseIncomingPrUpdateWebhook(t *testing.T) {
 func TestGitLabPayloadMismatchSignature(t *testing.T) {
 	reader, err := os.Open(filepath.Join("testdata", "gitlab", "pushpayload"))
 	assert.NoError(t, err)
-	defer reader.Close()
+	defer closeReader(reader)
 
 	// Create request
 	request := httptest.NewRequest("POST", "https://127.0.0.1", reader)

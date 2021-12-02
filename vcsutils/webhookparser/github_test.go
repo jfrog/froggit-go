@@ -24,12 +24,13 @@ const (
 	// Pull request update event
 	githubPrUpdateSha256       = "4e03348ae316bae2719c0e936b55535e7869a85aa5649021ea5055b378cd6d56"
 	githubPrUpdateExpectedTime = int64(1630666481)
+	gitHubExpectedPrId         = 2
 )
 
 func TestGitHubParseIncomingPushWebhook(t *testing.T) {
 	reader, err := os.Open(filepath.Join("testdata", "github", "pushpayload"))
 	assert.NoError(t, err)
-	defer reader.Close()
+	defer closeReader(reader)
 
 	// Create request
 	request := httptest.NewRequest("POST", "https://127.0.0.1", reader)
@@ -51,7 +52,7 @@ func TestGitHubParseIncomingPushWebhook(t *testing.T) {
 func TestGitHubParseIncomingPrCreateWebhook(t *testing.T) {
 	reader, err := os.Open(filepath.Join("testdata", "github", "prcreatepayload"))
 	assert.NoError(t, err)
-	defer reader.Close()
+	defer closeReader(reader)
 
 	// Create request
 	request := httptest.NewRequest("POST", "https://127.0.0.1", reader)
@@ -64,6 +65,7 @@ func TestGitHubParseIncomingPrCreateWebhook(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Check values
+	assert.Equal(t, gitHubExpectedPrId, actual.PullRequestId)
 	assert.Equal(t, expectedRepoName, actual.Repository)
 	assert.Equal(t, expectedBranch, actual.Branch)
 	assert.Equal(t, githubPrCreateExpectedTime, actual.Timestamp)
@@ -75,7 +77,7 @@ func TestGitHubParseIncomingPrCreateWebhook(t *testing.T) {
 func TestGitHubParseIncomingPrUpdateWebhook(t *testing.T) {
 	reader, err := os.Open(filepath.Join("testdata", "github", "prupdatepayload"))
 	assert.NoError(t, err)
-	defer reader.Close()
+	defer closeReader(reader)
 
 	// Create request
 	request := httptest.NewRequest("POST", "https://127.0.0.1", reader)
@@ -88,6 +90,7 @@ func TestGitHubParseIncomingPrUpdateWebhook(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Check values
+	assert.Equal(t, gitHubExpectedPrId, actual.PullRequestId)
 	assert.Equal(t, expectedRepoName, actual.Repository)
 	assert.Equal(t, expectedBranch, actual.Branch)
 	assert.Equal(t, githubPrUpdateExpectedTime, actual.Timestamp)
@@ -99,7 +102,7 @@ func TestGitHubParseIncomingPrUpdateWebhook(t *testing.T) {
 func TestGitHubPayloadMismatchSignature(t *testing.T) {
 	reader, err := os.Open(filepath.Join("testdata", "github", "pushpayload"))
 	assert.NoError(t, err)
-	defer reader.Close()
+	defer closeReader(reader)
 
 	// Create request
 	request := httptest.NewRequest("POST", "https://127.0.0.1", reader)

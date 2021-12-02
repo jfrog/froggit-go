@@ -14,12 +14,13 @@ const (
 	bitbucketCloudPushExpectedTime     = int64(1630824565)
 	bitbucketCloudPrCreateExpectedTime = int64(1630831665)
 	bitbucketCloudPrUpdateExpectedTime = int64(1630844170)
+	bitbucketCloudExpectedPrId         = 2
 )
 
 func TestBitbucketCloudParseIncomingPushWebhook(t *testing.T) {
 	reader, err := os.Open(filepath.Join("testdata", "bitbucketcloud", "pushpayload"))
 	assert.NoError(t, err)
-	defer reader.Close()
+	defer closeReader(reader)
 
 	// Create request
 	request := httptest.NewRequest("POST", "https://127.0.0.1?token="+string(token), reader)
@@ -39,7 +40,7 @@ func TestBitbucketCloudParseIncomingPushWebhook(t *testing.T) {
 func TestBitbucketCloudParseIncomingPrCreateWebhook(t *testing.T) {
 	reader, err := os.Open(filepath.Join("testdata", "bitbucketcloud", "prcreatepayload"))
 	assert.NoError(t, err)
-	defer reader.Close()
+	defer closeReader(reader)
 
 	// Create request
 	request := httptest.NewRequest("POST", "https://127.0.0.1?token="+string(token), reader)
@@ -50,6 +51,7 @@ func TestBitbucketCloudParseIncomingPrCreateWebhook(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Check values
+	assert.Equal(t, bitbucketCloudExpectedPrId, actual.PullRequestId)
 	assert.Equal(t, expectedRepoName, actual.Repository)
 	assert.Equal(t, expectedBranch, actual.Branch)
 	assert.Equal(t, bitbucketCloudPrCreateExpectedTime, actual.Timestamp)
@@ -61,7 +63,7 @@ func TestBitbucketCloudParseIncomingPrCreateWebhook(t *testing.T) {
 func TestBitbucketCloudParseIncomingPrUpdateWebhook(t *testing.T) {
 	reader, err := os.Open(filepath.Join("testdata", "bitbucketcloud", "prupdatepayload"))
 	assert.NoError(t, err)
-	defer reader.Close()
+	defer closeReader(reader)
 
 	// Create request
 	request := httptest.NewRequest("POST", "https://127.0.0.1?token="+string(token), reader)
@@ -72,6 +74,7 @@ func TestBitbucketCloudParseIncomingPrUpdateWebhook(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Check values
+	assert.Equal(t, bitbucketCloudExpectedPrId, actual.PullRequestId)
 	assert.Equal(t, expectedRepoName, actual.Repository)
 	assert.Equal(t, expectedBranch, actual.Branch)
 	assert.Equal(t, bitbucketCloudPrUpdateExpectedTime, actual.Timestamp)
@@ -83,7 +86,7 @@ func TestBitbucketCloudParseIncomingPrUpdateWebhook(t *testing.T) {
 func TestBitbucketCloudPayloadMismatchToken(t *testing.T) {
 	reader, err := os.Open(filepath.Join("testdata", "bitbucketcloud", "pushpayload"))
 	assert.NoError(t, err)
-	defer reader.Close()
+	defer closeReader(reader)
 
 	// Create request
 	request := httptest.NewRequest("POST", "https://127.0.0.1?token=wrong-token", reader)

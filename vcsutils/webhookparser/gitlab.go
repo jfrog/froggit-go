@@ -67,16 +67,17 @@ func (webhook *GitLabWebhook) parsePrEvents(event *gitlab.MergeEvent) (*WebhookI
 	} else {
 		webhookEvent = vcsutils.PrEdited
 	}
-	time, err := time.Parse("2006-01-02 15:04:05 MST", event.ObjectAttributes.UpdatedAt)
+	eventTime, err := time.Parse("2006-01-02 15:04:05 MST", event.ObjectAttributes.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}
 	return &WebhookInfo{
+		PullRequestId:    event.ObjectAttributes.IID,
 		SourceRepository: event.ObjectAttributes.Source.PathWithNamespace,
 		SourceBranch:     event.ObjectAttributes.SourceBranch,
 		Repository:       event.ObjectAttributes.Target.PathWithNamespace,
 		Branch:           event.ObjectAttributes.TargetBranch,
-		Timestamp:        time.UTC().Unix(),
+		Timestamp:        eventTime.UTC().Unix(),
 		Event:            webhookEvent,
 	}, nil
 }
