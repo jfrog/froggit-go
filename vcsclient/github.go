@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/google/go-github/v38/github"
+	"github.com/google/go-github/v41/github"
 	"github.com/jfrog/froggit-go/vcsutils"
 	"golang.org/x/oauth2"
 )

@@ -98,7 +98,7 @@ func TestBitbucketCloud_UpdateWebhook(t *testing.T) {
 	ctx := context.Background()
 	id, err := uuid.NewUUID()
 	assert.NoError(t, err)
-	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketCloud, true, nil, fmt.Sprintf("/repositories/jfrog/repo-1/hooks/%s", id.String()), createBitbucketCloudHandler)
+	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketCloud, true, make(map[string]interface{}), fmt.Sprintf("/repositories/jfrog/repo-1/hooks/%s", id.String()), createBitbucketCloudHandler)
 	defer cleanUp()
 
 	err = client.UpdateWebhook(ctx, owner, repo1, branch1, "https://httpbin.org/anything", token, id.String(),
