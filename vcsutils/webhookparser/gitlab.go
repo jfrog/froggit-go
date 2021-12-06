@@ -53,10 +53,18 @@ func (webhook *GitLabWebhook) parseIncomingWebhook(payload []byte) (*WebhookInfo
 
 func (webhook *GitLabWebhook) parsePushEvent(event *gitlab.PushEvent) *WebhookInfo {
 	return &WebhookInfo{
-		Repository: event.Project.PathWithNamespace,
-		Branch:     strings.TrimPrefix(event.Ref, "refs/heads/"),
-		Timestamp:  event.Commits[0].Timestamp.Local().Unix(),
-		Event:      vcsutils.Push,
+		TargetRepositoryDetails: webhook.parseRepoDetails(event.Project.PathWithNamespace),
+		Branch:                  strings.TrimPrefix(event.Ref, "refs/heads/"),
+		Timestamp:               event.Commits[0].Timestamp.Local().Unix(),
+		Event:                   vcsutils.Push,
+	}
+}
+
+func (webhook *GitLabWebhook) parseRepoDetails(pathWithNamespace string) WebHookInfoRepoDetails {
+	split := strings.Split(pathWithNamespace, "/")
+	return WebHookInfoRepoDetails{
+		Name:  split[1],
+		Owner: split[0],
 	}
 }
 
@@ -72,12 +80,12 @@ func (webhook *GitLabWebhook) parsePrEvents(event *gitlab.MergeEvent) (*WebhookI
 		return nil, err
 	}
 	return &WebhookInfo{
-		PullRequestId:    event.ObjectAttributes.IID,
-		SourceRepository: event.ObjectAttributes.Source.PathWithNamespace,
-		SourceBranch:     event.ObjectAttributes.SourceBranch,
-		Repository:       event.ObjectAttributes.Target.PathWithNamespace,
-		Branch:           event.ObjectAttributes.TargetBranch,
-		Timestamp:        eventTime.UTC().Unix(),
-		Event:            webhookEvent,
+		PullRequestId:           event.ObjectAttributes.IID,
+		SourceRepositoryDetails: webhook.parseRepoDetails(event.ObjectAttributes.Source.PathWithNamespace),
+		SourceBranch:            event.ObjectAttributes.SourceBranch,
+		TargetRepositoryDetails: webhook.parseRepoDetails(event.ObjectAttributes.Target.PathWithNamespace),
+		Branch:                  event.ObjectAttributes.TargetBranch,
+		Timestamp:               eventTime.UTC().Unix(),
+		Event:                   webhookEvent,
 	}, nil
 }

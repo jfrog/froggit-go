@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/jfrog/froggit-go/vcsutils"
@@ -55,22 +56,32 @@ func (webhook *BitbucketCloudWebhook) parseIncomingWebhook(payload []byte) (*Web
 
 func (webhook *BitbucketCloudWebhook) parsePushEvent(bitbucketCloudWebHook *bitbucketCloudWebHook) *WebhookInfo {
 	return &WebhookInfo{
-		Repository: bitbucketCloudWebHook.Repository.FullName,
-		Branch:     bitbucketCloudWebHook.Push.Changes[0].New.Name,
-		Timestamp:  bitbucketCloudWebHook.Push.Changes[0].New.Target.Date.UTC().Unix(),
-		Event:      vcsutils.Push,
+		TargetRepositoryDetails: webhook.parseRepoFullName(bitbucketCloudWebHook.Repository.FullName),
+		Branch:                  bitbucketCloudWebHook.Push.Changes[0].New.Name,
+		Timestamp:               bitbucketCloudWebHook.Push.Changes[0].New.Target.Date.UTC().Unix(),
+		Event:                   vcsutils.Push,
 	}
 }
 
 func (webhook *BitbucketCloudWebhook) parsePrEvents(bitbucketCloudWebHook *bitbucketCloudWebHook, event vcsutils.WebhookEvent) *WebhookInfo {
 	return &WebhookInfo{
-		PullRequestId:    bitbucketCloudWebHook.PullRequest.Id,
-		Repository:       bitbucketCloudWebHook.PullRequest.Destination.Repository.FullName,
-		Branch:           bitbucketCloudWebHook.PullRequest.Destination.Branch.Name,
-		SourceRepository: bitbucketCloudWebHook.PullRequest.Source.Repository.FullName,
-		SourceBranch:     bitbucketCloudWebHook.PullRequest.Source.Branch.Name,
-		Timestamp:        bitbucketCloudWebHook.PullRequest.UpdatedOn.UTC().Unix(),
-		Event:            event,
+		PullRequestId:           bitbucketCloudWebHook.PullRequest.Id,
+		TargetRepositoryDetails: webhook.parseRepoFullName(bitbucketCloudWebHook.PullRequest.Destination.Repository.FullName),
+		Branch:                  bitbucketCloudWebHook.PullRequest.Destination.Branch.Name,
+		SourceRepositoryDetails: webhook.parseRepoFullName(bitbucketCloudWebHook.PullRequest.Source.Repository.FullName),
+		SourceBranch:            bitbucketCloudWebHook.PullRequest.Source.Branch.Name,
+		Timestamp:               bitbucketCloudWebHook.PullRequest.UpdatedOn.UTC().Unix(),
+		Event:                   event,
+	}
+}
+
+func (webhook *BitbucketCloudWebhook) parseRepoFullName(fullName string) WebHookInfoRepoDetails {
+	// From https://support.atlassian.com/bitbucket-cloud/docs/event-payloads/#Repository
+	// "full_name : The workspace and repository slugs joined with a '/'."
+	split := strings.Split(fullName, "/")
+	return WebHookInfoRepoDetails{
+		Name:  split[1],
+		Owner: split[0],
 	}
 }
 

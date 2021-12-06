@@ -11,19 +11,24 @@ const EventHeaderKey = "X-Event-Key"
 // This struct is used for parsing an incoming webhook request from the VCS provider.
 type WebhookInfo struct {
 	// The target repository for pull requests and push
-	Repository string `json:"repository,omitempty"`
+	TargetRepositoryDetails WebHookInfoRepoDetails `json:"target_repository_details,omitempty"`
 	// The target branch for pull requests and push
 	Branch string `json:"branch,omitempty"`
 	// Pull request id
 	PullRequestId int `json:"pull_request_id,omitempty"`
 	// The source repository for pull requests
-	SourceRepository string `json:"source_repository,omitempty"`
+	SourceRepositoryDetails WebHookInfoRepoDetails `json:"source_repository_details,omitempty"`
 	// The source branch for pull requests
 	SourceBranch string `json:"source_branch,omitempty"`
 	// Seconds from epoch
 	Timestamp int64 `json:"timestamp,omitempty"`
 	// The event type
 	Event vcsutils.WebhookEvent `json:"event,omitempty"`
+}
+
+type WebHookInfoRepoDetails struct {
+	Name  string `json:"name,omitempty"`
+	Owner string `json:"owner,omitempty"`
 }
 
 type WebhookParser interface {
