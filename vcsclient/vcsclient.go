@@ -46,7 +46,7 @@ type VcsClient interface {
 	// repository    - VCS repository name
 	// branch        - VCS branch name
 	// payloadUrl    - URL to send the payload when a webhook event occurs
-	// webhookEvents - PrCreated, PrEdited, or Push
+	// webhookEvents - The event type
 	// Return the webhook ID, token and an error, if occurred
 	CreateWebhook(ctx context.Context, owner, repository, branch, payloadUrl string, webhookEvents ...vcsutils.WebhookEvent) (string, string, error)
 
@@ -57,7 +57,7 @@ type VcsClient interface {
 	// payloadUrl    - URL to send the payload when a webhook event occurs
 	// token         - A token used to validate identity of the incoming webhook
 	// webhookId     - The webhook ID returned from a previous CreateWebhook command
-	// webhookEvents - PrCreated, PrEdited, or Push
+	// webhookEvents - The event type
 	UpdateWebhook(ctx context.Context, owner, repository, branch, payloadUrl, token, webhookId string, webhookEvents ...vcsutils.WebhookEvent) error
 
 	// DeleteWebhook Delete a webhook

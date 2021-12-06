@@ -60,11 +60,14 @@ func (webhook *GitHubWebhook) parsePushEvent(event *github.PushEvent) *WebhookIn
 
 func (webhook *GitHubWebhook) parsePrEvents(event *github.PullRequestEvent) *WebhookInfo {
 	var webhookEvent vcsutils.WebhookEvent
-	if event.GetAction() == "opened" {
-		webhookEvent = vcsutils.PrCreated
-	} else if event.GetAction() == "synchronize" {
+	switch event.GetAction() {
+	case "opened", "reopened":
+		webhookEvent = vcsutils.PrOpened
+	case "synchronize", "edited":
 		webhookEvent = vcsutils.PrEdited
-	} else {
+	case "closed":
+		webhookEvent = webhook.resolveClosedEventType(event)
+	default:
 		// Action is not supported
 		return nil
 	}
@@ -83,4 +86,11 @@ func (webhook *GitHubWebhook) parsePrEvents(event *github.PullRequestEvent) *Web
 		Timestamp:    event.GetPullRequest().GetUpdatedAt().UTC().Unix(),
 		Event:        webhookEvent,
 	}
+}
+
+func (webhook *GitHubWebhook) resolveClosedEventType(event *github.PullRequestEvent) vcsutils.WebhookEvent {
+	if event.GetPullRequest().GetMerged() {
+		return vcsutils.PrMerged
+	}
+	return vcsutils.PrRejected
 }

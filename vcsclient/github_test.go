@@ -92,7 +92,7 @@ func TestGitHubClient_UpdateWebhook(t *testing.T) {
 	defer cleanUp()
 
 	err := client.UpdateWebhook(ctx, owner, repo1, branch1, "https://jfrog.com", token, strconv.FormatInt(id, 10),
-		vcsutils.PrCreated, vcsutils.PrEdited)
+		vcsutils.PrOpened, vcsutils.PrEdited, vcsutils.PrMerged, vcsutils.PrRejected)
 	assert.NoError(t, err)
 }
 

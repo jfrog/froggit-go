@@ -1,6 +1,8 @@
 package webhookparser
 
-import "os"
+import (
+	"io"
+)
 
 const (
 	expectedOwner        = "yahavi"
@@ -11,6 +13,6 @@ const (
 
 var token = []byte("abc123")
 
-func closeReader(reader *os.File) {
-	_ = reader.Close()
+func close(closer io.Closer) {
+	_ = closer.Close()
 }

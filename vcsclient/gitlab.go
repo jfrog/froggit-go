@@ -251,7 +251,7 @@ func createProjectHook(branch string, payloadUrl string, webhookEvents ...vcsuti
 	options := &gitlab.ProjectHook{URL: payloadUrl}
 	for _, webhookEvent := range webhookEvents {
 		switch webhookEvent {
-		case vcsutils.PrCreated, vcsutils.PrEdited:
+		case vcsutils.PrOpened, vcsutils.PrEdited, vcsutils.PrRejected, vcsutils.PrMerged:
 			options.MergeRequestsEvents = true
 		case vcsutils.Push:
 			options.PushEvents = true

@@ -70,10 +70,18 @@ func (webhook *GitLabWebhook) parseRepoDetails(pathWithNamespace string) WebHook
 
 func (webhook *GitLabWebhook) parsePrEvents(event *gitlab.MergeEvent) (*WebhookInfo, error) {
 	var webhookEvent vcsutils.WebhookEvent
-	if event.ObjectAttributes.CreatedAt == event.ObjectAttributes.UpdatedAt {
-		webhookEvent = vcsutils.PrCreated
-	} else {
+	switch event.ObjectAttributes.Action {
+	case "open", "reopen":
+		webhookEvent = vcsutils.PrOpened
+	case "update":
 		webhookEvent = vcsutils.PrEdited
+	case "merge":
+		webhookEvent = vcsutils.PrMerged
+	case "close":
+		webhookEvent = vcsutils.PrRejected
+	default:
+		//Action is not supported
+		return nil, nil
 	}
 	eventTime, err := time.Parse("2006-01-02 15:04:05 MST", event.ObjectAttributes.UpdatedAt)
 	if err != nil {
