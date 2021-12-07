@@ -3,7 +3,8 @@ package webhookparser
 import "os"
 
 const (
-	expectedRepoName     = "yahavi/hello-world"
+	expectedOwner        = "yahavi"
+	expectedRepoName     = "hello-world"
 	expectedBranch       = "main"
 	expectedSourceBranch = "dev"
 )

@@ -74,12 +74,20 @@ func (webhook *BitbucketServerWebhook) parsePushEvent(bitbucketCloudWebHook *bit
 	if err != nil {
 		return nil, err
 	}
+	repository := bitbucketCloudWebHook.Repository
 	return &WebhookInfo{
-		Repository: getFullRepositoryName(bitbucketCloudWebHook.Repository),
-		Branch:     strings.TrimPrefix(bitbucketCloudWebHook.Changes[0].RefId, "refs/heads/"),
-		Timestamp:  eventTime.UTC().Unix(),
-		Event:      vcsutils.Push,
+		TargetRepositoryDetails: webhook.getRepositoryDetails(repository),
+		TargetBranch:            strings.TrimPrefix(bitbucketCloudWebHook.Changes[0].RefId, "refs/heads/"),
+		Timestamp:               eventTime.UTC().Unix(),
+		Event:                   vcsutils.Push,
 	}, nil
+}
+
+func (webhook *BitbucketServerWebhook) getRepositoryDetails(repository bitbucketv1.Repository) WebHookInfoRepoDetails {
+	return WebHookInfoRepoDetails{
+		Name:  repository.Slug,
+		Owner: strings.TrimPrefix(strings.ToLower(repository.Project.Key), "~"),
+	}
 }
 
 func (webhook *BitbucketServerWebhook) parsePrEvents(bitbucketCloudWebHook *bitbucketServerWebHook, event vcsutils.WebhookEvent) (*WebhookInfo, error) {
@@ -88,13 +96,13 @@ func (webhook *BitbucketServerWebhook) parsePrEvents(bitbucketCloudWebHook *bitb
 		return nil, err
 	}
 	return &WebhookInfo{
-		PullRequestId:    bitbucketCloudWebHook.PullRequest.ID,
-		Repository:       getFullRepositoryName(bitbucketCloudWebHook.PullRequest.ToRef.Repository),
-		Branch:           strings.TrimPrefix(bitbucketCloudWebHook.PullRequest.ToRef.ID, "refs/heads/"),
-		SourceRepository: getFullRepositoryName(bitbucketCloudWebHook.PullRequest.FromRef.Repository),
-		SourceBranch:     strings.TrimPrefix(bitbucketCloudWebHook.PullRequest.FromRef.ID, "refs/heads/"),
-		Timestamp:        eventTime.UTC().Unix(),
-		Event:            event,
+		PullRequestId:           bitbucketCloudWebHook.PullRequest.ID,
+		TargetRepositoryDetails: webhook.getRepositoryDetails(bitbucketCloudWebHook.PullRequest.ToRef.Repository),
+		TargetBranch:            strings.TrimPrefix(bitbucketCloudWebHook.PullRequest.ToRef.ID, "refs/heads/"),
+		SourceRepositoryDetails: webhook.getRepositoryDetails(bitbucketCloudWebHook.PullRequest.FromRef.Repository),
+		SourceBranch:            strings.TrimPrefix(bitbucketCloudWebHook.PullRequest.FromRef.ID, "refs/heads/"),
+		Timestamp:               eventTime.UTC().Unix(),
+		Event:                   event,
 	}, nil
 }
 
@@ -106,8 +114,4 @@ type bitbucketServerWebHook struct {
 	Changes     []struct {
 		RefId string `json:"refId,omitempty"`
 	} `json:"changes,omitempty"`
-}
-
-func getFullRepositoryName(repository bitbucketv1.Repository) string {
-	return strings.ToLower(repository.Project.Key) + "/" + repository.Name
 }
