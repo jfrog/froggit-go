@@ -40,7 +40,7 @@ func TestBitbucketServerParseIncomingPushWebhook(t *testing.T) {
 	// Check values
 	assert.Equal(t, expectedRepoName, actual.TargetRepositoryDetails.Name)
 	assert.Equal(t, expectedOwner, actual.TargetRepositoryDetails.Owner)
-	assert.Equal(t, expectedBranch, actual.Branch)
+	assert.Equal(t, expectedBranch, actual.TargetBranch)
 	assert.Equal(t, bitbucketServerPushExpectedTime, actual.Timestamp)
 	assert.Equal(t, vcsutils.Push, actual.Event)
 }
@@ -63,7 +63,7 @@ func TestBitbucketServerParseIncomingPrCreateWebhook(t *testing.T) {
 	assert.Equal(t, bitbucketServerExpectedPrId, actual.PullRequestId)
 	assert.Equal(t, expectedRepoName, actual.TargetRepositoryDetails.Name)
 	assert.Equal(t, expectedOwner, actual.TargetRepositoryDetails.Owner)
-	assert.Equal(t, expectedBranch, actual.Branch)
+	assert.Equal(t, expectedBranch, actual.TargetBranch)
 	assert.Equal(t, bitbucketServerPrCreateExpectedTime, actual.Timestamp)
 	assert.Equal(t, expectedRepoName, actual.SourceRepositoryDetails.Name)
 	assert.Equal(t, expectedOwner, actual.SourceRepositoryDetails.Owner)
@@ -89,7 +89,7 @@ func TestBitbucketServerParseIncomingPrUpdateWebhook(t *testing.T) {
 	assert.Equal(t, bitbucketServerExpectedPrId, actual.PullRequestId)
 	assert.Equal(t, expectedRepoName, actual.TargetRepositoryDetails.Name)
 	assert.Equal(t, expectedOwner, actual.TargetRepositoryDetails.Owner)
-	assert.Equal(t, expectedBranch, actual.Branch)
+	assert.Equal(t, expectedBranch, actual.TargetBranch)
 	assert.Equal(t, bitbucketServerPrUpdateExpectedTime, actual.Timestamp)
 	assert.Equal(t, expectedRepoName, actual.SourceRepositoryDetails.Name)
 	assert.Equal(t, expectedOwner, actual.SourceRepositoryDetails.Owner)

@@ -52,9 +52,9 @@ func (webhook *GitHubWebhook) parsePushEvent(event *github.PushEvent) *WebhookIn
 			Name:  *event.GetRepo().Name,
 			Owner: *event.GetRepo().Owner.Login,
 		},
-		Branch:    strings.TrimPrefix(event.GetRef(), "refs/heads/"),
-		Timestamp: event.GetHeadCommit().GetTimestamp().UTC().Unix(),
-		Event:     vcsutils.Push,
+		TargetBranch: strings.TrimPrefix(event.GetRef(), "refs/heads/"),
+		Timestamp:    event.GetHeadCommit().GetTimestamp().UTC().Unix(),
+		Event:        vcsutils.Push,
 	}
 }
 
@@ -74,7 +74,7 @@ func (webhook *GitHubWebhook) parsePrEvents(event *github.PullRequestEvent) *Web
 			Name:  *event.GetPullRequest().GetBase().GetRepo().Name,
 			Owner: *event.GetPullRequest().GetBase().GetRepo().Owner.Login,
 		},
-		Branch: event.GetPullRequest().GetBase().GetRef(),
+		TargetBranch: event.GetPullRequest().GetBase().GetRef(),
 		SourceRepositoryDetails: WebHookInfoRepoDetails{
 			Name:  *event.GetPullRequest().GetHead().GetRepo().Name,
 			Owner: *event.GetPullRequest().GetHead().GetRepo().Owner.Login,

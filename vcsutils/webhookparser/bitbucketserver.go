@@ -77,7 +77,7 @@ func (webhook *BitbucketServerWebhook) parsePushEvent(bitbucketCloudWebHook *bit
 	repository := bitbucketCloudWebHook.Repository
 	return &WebhookInfo{
 		TargetRepositoryDetails: webhook.getRepositoryDetails(repository),
-		Branch:                  strings.TrimPrefix(bitbucketCloudWebHook.Changes[0].RefId, "refs/heads/"),
+		TargetBranch:            strings.TrimPrefix(bitbucketCloudWebHook.Changes[0].RefId, "refs/heads/"),
 		Timestamp:               eventTime.UTC().Unix(),
 		Event:                   vcsutils.Push,
 	}, nil
@@ -98,7 +98,7 @@ func (webhook *BitbucketServerWebhook) parsePrEvents(bitbucketCloudWebHook *bitb
 	return &WebhookInfo{
 		PullRequestId:           bitbucketCloudWebHook.PullRequest.ID,
 		TargetRepositoryDetails: webhook.getRepositoryDetails(bitbucketCloudWebHook.PullRequest.ToRef.Repository),
-		Branch:                  strings.TrimPrefix(bitbucketCloudWebHook.PullRequest.ToRef.ID, "refs/heads/"),
+		TargetBranch:            strings.TrimPrefix(bitbucketCloudWebHook.PullRequest.ToRef.ID, "refs/heads/"),
 		SourceRepositoryDetails: webhook.getRepositoryDetails(bitbucketCloudWebHook.PullRequest.FromRef.Repository),
 		SourceBranch:            strings.TrimPrefix(bitbucketCloudWebHook.PullRequest.FromRef.ID, "refs/heads/"),
 		Timestamp:               eventTime.UTC().Unix(),

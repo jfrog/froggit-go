@@ -13,7 +13,7 @@ type WebhookInfo struct {
 	// The target repository for pull requests and push
 	TargetRepositoryDetails WebHookInfoRepoDetails `json:"target_repository_details,omitempty"`
 	// The target branch for pull requests and push
-	Branch string `json:"branch,omitempty"`
+	TargetBranch string `json:"branch,omitempty"`
 	// Pull request id
 	PullRequestId int `json:"pull_request_id,omitempty"`
 	// The source repository for pull requests

@@ -45,7 +45,7 @@ func TestGitHubParseIncomingPushWebhook(t *testing.T) {
 	// Check values
 	assert.Equal(t, expectedRepoName, actual.TargetRepositoryDetails.Name)
 	assert.Equal(t, expectedOwner, actual.TargetRepositoryDetails.Owner)
-	assert.Equal(t, expectedBranch, actual.Branch)
+	assert.Equal(t, expectedBranch, actual.TargetBranch)
 	assert.Equal(t, githubPushExpectedTime, actual.Timestamp)
 	assert.Equal(t, vcsutils.Push, actual.Event)
 }
@@ -69,7 +69,7 @@ func TestGitHubParseIncomingPrCreateWebhook(t *testing.T) {
 	assert.Equal(t, gitHubExpectedPrId, actual.PullRequestId)
 	assert.Equal(t, expectedRepoName, actual.TargetRepositoryDetails.Name)
 	assert.Equal(t, expectedOwner, actual.TargetRepositoryDetails.Owner)
-	assert.Equal(t, expectedBranch, actual.Branch)
+	assert.Equal(t, expectedBranch, actual.TargetBranch)
 	assert.Equal(t, githubPrCreateExpectedTime, actual.Timestamp)
 	assert.Equal(t, expectedRepoName, actual.SourceRepositoryDetails.Name)
 	assert.Equal(t, expectedOwner, actual.SourceRepositoryDetails.Owner)
@@ -96,7 +96,7 @@ func TestGitHubParseIncomingPrUpdateWebhook(t *testing.T) {
 	assert.Equal(t, gitHubExpectedPrId, actual.PullRequestId)
 	assert.Equal(t, expectedRepoName, actual.TargetRepositoryDetails.Name)
 	assert.Equal(t, expectedOwner, actual.TargetRepositoryDetails.Owner)
-	assert.Equal(t, expectedBranch, actual.Branch)
+	assert.Equal(t, expectedBranch, actual.TargetBranch)
 	assert.Equal(t, githubPrUpdateExpectedTime, actual.Timestamp)
 	assert.Equal(t, expectedRepoName, actual.SourceRepositoryDetails.Name)
 	assert.Equal(t, expectedOwner, actual.SourceRepositoryDetails.Owner)
