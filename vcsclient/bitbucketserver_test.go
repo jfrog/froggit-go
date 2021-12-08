@@ -12,6 +12,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -60,7 +61,7 @@ func TestBitbucketServer_ListRepositories(t *testing.T) {
 
 	actualRepositories, err := client.ListRepositories(ctx)
 	assert.NoError(t, err)
-	assert.Equal(t, map[string][]string{"~" + username: {repo1}, username: {repo2}}, actualRepositories)
+	assert.Equal(t, map[string][]string{"~" + strings.ToUpper(username): {repo1}, username: {repo2}}, actualRepositories)
 }
 
 func TestBitbucketServer_ListBranches(t *testing.T) {
@@ -359,7 +360,7 @@ func createBitbucketServerListRepositoriesHandler(t *testing.T, _ string, _ []by
 			responseObj = map[string][]bitbucketv1.Project{"values": {{Key: username}}}
 			w.Header().Add("X-Ausername", username)
 
-		} else if r.RequestURI == "/api/1.0/projects/~frogger/repos?start=0" {
+		} else if r.RequestURI == "/api/1.0/projects/~FROGGER/repos?start=0" {
 			responseObj = map[string][]bitbucketv1.Repository{"values": {{Slug: repo1}}}
 		} else if r.RequestURI == "/api/1.0/projects/frogger/repos?start=0" {
 			responseObj = map[string][]bitbucketv1.Repository{"values": {{Slug: repo2}}}

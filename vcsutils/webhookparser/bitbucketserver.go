@@ -86,7 +86,7 @@ func (webhook *BitbucketServerWebhook) parsePushEvent(bitbucketCloudWebHook *bit
 func (webhook *BitbucketServerWebhook) getRepositoryDetails(repository bitbucketv1.Repository) WebHookInfoRepoDetails {
 	return WebHookInfoRepoDetails{
 		Name:  repository.Slug,
-		Owner: strings.TrimPrefix(strings.ToLower(repository.Project.Key), "~"),
+		Owner: repository.Project.Key,
 	}
 }
 
