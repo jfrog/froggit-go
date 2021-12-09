@@ -13,6 +13,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strconv"
+	"strings"
 )
 
 type BitbucketServerClient struct {
@@ -406,7 +407,8 @@ func (client *BitbucketServerClient) listProjects(bitbucketClient *bitbucketv1.D
 	if username == "" {
 		return []string{}, errors.New("X-Ausername header is missing")
 	}
-	projects = append(projects, "~"+username)
+	// project keys are upper case
+	projects = append(projects, "~"+strings.ToUpper(username))
 	return projects, nil
 }
 
