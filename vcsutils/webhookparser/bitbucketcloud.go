@@ -47,9 +47,13 @@ func (webhook *BitbucketCloudWebhook) parseIncomingWebhook(payload []byte) (*Web
 	case "repo:push":
 		return webhook.parsePushEvent(bitbucketCloudWebHook), nil
 	case "pullrequest:created":
-		return webhook.parsePrEvents(bitbucketCloudWebHook, vcsutils.PrCreated), nil
+		return webhook.parsePrEvents(bitbucketCloudWebHook, vcsutils.PrOpened), nil
 	case "pullrequest:updated":
 		return webhook.parsePrEvents(bitbucketCloudWebHook, vcsutils.PrEdited), nil
+	case "pullrequest:fulfilled":
+		return webhook.parsePrEvents(bitbucketCloudWebHook, vcsutils.PrMerged), nil
+	case "pullrequest:rejected":
+		return webhook.parsePrEvents(bitbucketCloudWebHook, vcsutils.PrRejected), nil
 	}
 	return nil, nil
 }

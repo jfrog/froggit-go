@@ -85,7 +85,7 @@ func TestGitLabClient_CreateWebhook(t *testing.T) {
 	defer cleanUp()
 
 	actualId, token, err := client.CreateWebhook(ctx, owner, repo1, branch1, "https://jfrog.com", vcsutils.Push,
-		vcsutils.PrCreated, vcsutils.PrEdited)
+		vcsutils.PrOpened, vcsutils.PrEdited)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, token)
 	assert.Equal(t, actualId, strconv.Itoa(id))
@@ -98,7 +98,7 @@ func TestGitLabClient_UpdateWebhook(t *testing.T) {
 	defer cleanUp()
 
 	err := client.UpdateWebhook(ctx, owner, repo1, branch1, "https://jfrog.com", token, strconv.Itoa(id),
-		vcsutils.PrCreated, vcsutils.PrEdited)
+		vcsutils.PrOpened, vcsutils.PrEdited, vcsutils.PrMerged, vcsutils.PrRejected)
 	assert.NoError(t, err)
 }
 

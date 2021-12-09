@@ -56,9 +56,13 @@ func (webhook *BitbucketServerWebhook) parseIncomingWebhook(payload []byte) (*We
 	case "repo:refs_changed":
 		return webhook.parsePushEvent(bitbucketServerWebHook)
 	case "pr:opened":
-		return webhook.parsePrEvents(bitbucketServerWebHook, vcsutils.PrCreated)
+		return webhook.parsePrEvents(bitbucketServerWebHook, vcsutils.PrOpened)
 	case "pr:from_ref_updated":
 		return webhook.parsePrEvents(bitbucketServerWebHook, vcsutils.PrEdited)
+	case "pr:merged":
+		return webhook.parsePrEvents(bitbucketServerWebHook, vcsutils.PrMerged)
+	case "pr:declined", "pr:deleted":
+		return webhook.parsePrEvents(bitbucketServerWebHook, vcsutils.PrRejected)
 	}
 	return nil, nil
 }

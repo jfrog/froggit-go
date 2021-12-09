@@ -27,7 +27,9 @@ func (v VcsProvider) String() string {
 type WebhookEvent string
 
 const (
-	PrCreated WebhookEvent = "PrCreated"
-	PrEdited  WebhookEvent = "PrEdited"
-	Push      WebhookEvent = "Push"
+	PrRejected WebhookEvent = "PrRejected"
+	PrEdited   WebhookEvent = "PrEdited"
+	PrMerged   WebhookEvent = "PrMerged"
+	PrOpened   WebhookEvent = "PrOpened"
+	Push       WebhookEvent = "Push"
 )

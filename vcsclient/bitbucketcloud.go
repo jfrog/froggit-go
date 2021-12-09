@@ -412,10 +412,14 @@ func getBitbucketCloudWebhookEvents(webhookEvents ...vcsutils.WebhookEvent) []st
 	events := make([]string, 0, len(webhookEvents))
 	for _, event := range webhookEvents {
 		switch event {
-		case vcsutils.PrCreated:
+		case vcsutils.PrOpened:
 			events = append(events, "pullrequest:created")
 		case vcsutils.PrEdited:
 			events = append(events, "pullrequest:updated")
+		case vcsutils.PrRejected:
+			events = append(events, "pullrequest:rejected")
+		case vcsutils.PrMerged:
+			events = append(events, "pullrequest:fulfilled")
 		case vcsutils.Push:
 			events = append(events, "repo:push")
 		}

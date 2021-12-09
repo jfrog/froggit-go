@@ -302,7 +302,7 @@ func getGitHubWebhookEvents(webhookEvents ...vcsutils.WebhookEvent) []string {
 	events := make([]string, 0, len(webhookEvents))
 	for _, event := range webhookEvents {
 		switch event {
-		case vcsutils.PrCreated, vcsutils.PrEdited:
+		case vcsutils.PrOpened, vcsutils.PrEdited, vcsutils.PrMerged, vcsutils.PrRejected:
 			events = append(events, "pull_request")
 		case vcsutils.Push:
 			events = append(events, "push")
