@@ -22,7 +22,7 @@ jobs:
 
       # Run tests
       - name: Tests
-        run: go test -race -covermode atomic -coverprofile=covprofile ./...
+        run: go test -v -race -covermode atomic -coverprofile=covprofile ./...
 
       # Generate code coverage
       - name: Install goveralls
