@@ -1,11 +1,14 @@
 package webhookparser
 
 import (
-	"github.com/stretchr/testify/require"
+	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 
 	"github.com/jfrog/froggit-go/vcsutils"
 	"github.com/stretchr/testify/assert"
@@ -104,6 +107,15 @@ func TestBitbucketCloudParseIncomingPrWebhook(t *testing.T) {
 			assert.Equal(t, tt.expectedEventType, actual.Event)
 		})
 	}
+}
+
+func TestBitbucketCloudParseIncomingWebhookError(t *testing.T) {
+	_, err := ParseIncomingWebhook(vcsutils.BitbucketCloud, token, &http.Request{URL: &url.URL{RawQuery: "token=a"}})
+	assert.Error(t, err)
+
+	webhook := BitbucketCloudWebhook{}
+	_, err = webhook.parseIncomingWebhook([]byte{})
+	assert.Error(t, err)
 }
 
 func TestBitbucketCloudPayloadMismatchToken(t *testing.T) {

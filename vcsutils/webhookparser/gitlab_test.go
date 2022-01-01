@@ -1,11 +1,14 @@
 package webhookparser
 
 import (
-	"github.com/stretchr/testify/require"
+	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/stretchr/testify/require"
+	"github.com/xanzy/go-gitlab"
 
 	"github.com/jfrog/froggit-go/vcsutils"
 	"github.com/stretchr/testify/assert"
@@ -109,6 +112,21 @@ func TestGitLabParseIncomingPrWebhook(t *testing.T) {
 			assert.Equal(t, tt.expectedEventType, actual.Event)
 		})
 	}
+}
+
+func TestGitLabParseIncomingWebhookError(t *testing.T) {
+	_, err := ParseIncomingWebhook(vcsutils.GitLab, token, &http.Request{})
+	require.Error(t, err)
+
+	webhook := GitLabWebhook{request: &http.Request{}}
+	_, err = webhook.parseIncomingWebhook([]byte{})
+	assert.Error(t, err)
+}
+
+func TestGitLabParsePrEventsError(t *testing.T) {
+	webhook := GitLabWebhook{}
+	webhookInfo, _ := webhook.parsePrEvents(&gitlab.MergeEvent{})
+	assert.Nil(t, webhookInfo)
 }
 
 func TestGitLabPayloadMismatchSignature(t *testing.T) {

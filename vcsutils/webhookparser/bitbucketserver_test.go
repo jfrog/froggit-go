@@ -2,12 +2,15 @@ package webhookparser
 
 import (
 	"fmt"
-	"github.com/stretchr/testify/require"
+	"io"
+	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 
 	"github.com/jfrog/froggit-go/vcsutils"
 	"github.com/stretchr/testify/assert"
@@ -134,6 +137,21 @@ func TestBitbucketServerParseIncomingPrWebhook(t *testing.T) {
 			assert.Equal(t, tt.expectedEventType, actual.Event)
 		})
 	}
+}
+
+func TestBitbucketServerParseIncomingWebhookError(t *testing.T) {
+	_, err := ParseIncomingWebhook(vcsutils.BitbucketServer, token, &http.Request{Body: io.NopCloser(io.MultiReader())})
+	require.Error(t, err)
+
+	webhook := BitbucketServerWebhook{}
+	_, err = webhook.parseIncomingWebhook([]byte{})
+	assert.Error(t, err)
+}
+
+func TestBitbucketServerParsePrEventsError(t *testing.T) {
+	webhook := BitbucketServerWebhook{request: &http.Request{}}
+	_, err := webhook.parsePrEvents(&bitbucketServerWebHook{}, vcsutils.Push)
+	assert.Error(t, err)
 }
 
 func TestBitbucketServerPayloadMismatchSignature(t *testing.T) {
