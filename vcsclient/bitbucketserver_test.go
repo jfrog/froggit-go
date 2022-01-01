@@ -84,22 +84,22 @@ func TestBitbucketServer_CreateWebhook(t *testing.T) {
 	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, false, mockResponse, "/api/1.0/projects/jfrog/repos/repo-1/webhooks", createBitbucketServerHandler)
 	defer cleanUp()
 
-	actualId, token, err := client.CreateWebhook(ctx, owner, repo1, branch1, "https://httpbin.org/anything",
+	actualID, token, err := client.CreateWebhook(ctx, owner, repo1, branch1, "https://httpbin.org/anything",
 		vcsutils.Push)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, token)
-	assert.Equal(t, strconv.Itoa(int(id)), actualId)
+	assert.Equal(t, strconv.Itoa(int(id)), actualID)
 }
 
 func TestBitbucketServer_UpdateWebhook(t *testing.T) {
 	ctx := context.Background()
 	id := rand.Int31()
-	stringId := strconv.Itoa(int(id))
+	stringID := strconv.Itoa(int(id))
 
-	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, false, nil, fmt.Sprintf("/api/1.0/projects/jfrog/repos/repo-1/webhooks/%s", stringId), createBitbucketServerHandler)
+	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, false, nil, fmt.Sprintf("/api/1.0/projects/jfrog/repos/repo-1/webhooks/%s", stringID), createBitbucketServerHandler)
 	defer cleanUp()
 
-	err := client.UpdateWebhook(ctx, owner, repo1, branch1, "https://httpbin.org/anything", token, stringId,
+	err := client.UpdateWebhook(ctx, owner, repo1, branch1, "https://httpbin.org/anything", token, stringID,
 		vcsutils.PrOpened, vcsutils.PrEdited, vcsutils.PrMerged, vcsutils.PrRejected)
 	assert.NoError(t, err)
 }
@@ -107,12 +107,12 @@ func TestBitbucketServer_UpdateWebhook(t *testing.T) {
 func TestBitbucketServer_DeleteWebhook(t *testing.T) {
 	ctx := context.Background()
 	id := rand.Int31()
-	stringId := strconv.Itoa(int(id))
+	stringID := strconv.Itoa(int(id))
 
-	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, false, nil, fmt.Sprintf("/api/1.0/projects/jfrog/repos/repo-1/webhooks/%s", stringId), createBitbucketServerHandler)
+	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, false, nil, fmt.Sprintf("/api/1.0/projects/jfrog/repos/repo-1/webhooks/%s", stringID), createBitbucketServerHandler)
 	defer cleanUp()
 
-	err := client.DeleteWebhook(ctx, owner, repo1, stringId)
+	err := client.DeleteWebhook(ctx, owner, repo1, stringID)
 	assert.NoError(t, err)
 }
 
@@ -343,12 +343,12 @@ func TestBitbucketServer_GetCommitByShaNotFound(t *testing.T) {
 	assert.Empty(t, result)
 }
 
-func createBitbucketServerHandler(t *testing.T, expectedUri string, response []byte, expectedStatusCode int) http.HandlerFunc {
+func createBitbucketServerHandler(t *testing.T, expectedURI string, response []byte, expectedStatusCode int) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(expectedStatusCode)
 		_, err := w.Write(response)
 		require.NoError(t, err)
-		assert.Equal(t, expectedUri, r.RequestURI)
+		assert.Equal(t, expectedURI, r.RequestURI)
 		assert.Equal(t, "Bearer "+token, r.Header.Get("Authorization"))
 	}
 }
@@ -376,11 +376,11 @@ func createBitbucketServerListRepositoriesHandler(t *testing.T, _ string, _ []by
 	}
 }
 
-func createBitbucketServerWithBodyHandler(t *testing.T, expectedUri string, response []byte, expectedRequestBody []byte,
-	expectedStatusCode int, expectedHttpMethod string) http.HandlerFunc {
+func createBitbucketServerWithBodyHandler(t *testing.T, expectedURI string, response []byte, expectedRequestBody []byte,
+	expectedStatusCode int, expectedHTTPMethod string) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
-		assert.Equal(t, expectedHttpMethod, request.Method)
-		assert.Equal(t, expectedUri, request.RequestURI)
+		assert.Equal(t, expectedHTTPMethod, request.Method)
+		assert.Equal(t, expectedURI, request.RequestURI)
 		assert.Equal(t, "Bearer "+token, request.Header.Get("Authorization"))
 
 		b, err := io.ReadAll(request.Body)

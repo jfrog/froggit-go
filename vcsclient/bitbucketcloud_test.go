@@ -87,11 +87,11 @@ func TestBitbucketCloud_CreateWebhook(t *testing.T) {
 	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketCloud, true, mockResponse, "/repositories/jfrog/repo-1/hooks", createBitbucketCloudHandler)
 	defer cleanUp()
 
-	actualId, token, err := client.CreateWebhook(ctx, owner, repo1, branch1, "https://httpbin.org/anything",
+	actualID, token, err := client.CreateWebhook(ctx, owner, repo1, branch1, "https://httpbin.org/anything",
 		vcsutils.Push)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, token)
-	assert.Equal(t, id.String(), actualId)
+	assert.Equal(t, id.String(), actualID)
 }
 
 func TestBitbucketCloud_UpdateWebhook(t *testing.T) {
@@ -142,6 +142,7 @@ func TestBitbucketCloud_DownloadRepository(t *testing.T) {
 	assert.NoError(t, err)
 	rootFiles, err := ioutil.ReadDir(dir)
 	assert.NotEmpty(t, rootFiles)
+	assert.NoError(t, err)
 	readmeFound := false
 	for _, file := range rootFiles {
 		if file.Name() == "README.md" {
@@ -272,11 +273,11 @@ func TestBitbucketCloud_GetCommitByShaNotFound(t *testing.T) {
 	assert.Empty(t, result)
 }
 
-func createBitbucketCloudWithBodyHandler(t *testing.T, expectedUri string, response []byte, expectedRequestBody []byte,
-	expectedStatusCode int, expectedHttpMethod string) http.HandlerFunc {
+func createBitbucketCloudWithBodyHandler(t *testing.T, expectedURI string, response []byte, expectedRequestBody []byte,
+	expectedStatusCode int, expectedHTTPMethod string) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
-		assert.Equal(t, expectedHttpMethod, request.Method)
-		assert.Equal(t, expectedUri, request.RequestURI)
+		assert.Equal(t, expectedHTTPMethod, request.Method)
+		assert.Equal(t, expectedURI, request.RequestURI)
 		assert.Equal(t, basicAuthHeader, request.Header.Get("Authorization"))
 
 		b, err := io.ReadAll(request.Body)
@@ -312,7 +313,7 @@ func TestBitbucketCloud_GetRepositoryInfo(t *testing.T) {
 	)
 }
 
-func createBitbucketCloudHandler(t *testing.T, expectedUri string, response []byte, expectedStatusCode int) http.HandlerFunc {
+func createBitbucketCloudHandler(t *testing.T, expectedURI string, response []byte, expectedStatusCode int) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(expectedStatusCode)
 		if r.RequestURI == "/workspaces" {
@@ -325,7 +326,7 @@ func createBitbucketCloudHandler(t *testing.T, expectedUri string, response []by
 		} else {
 			_, err := w.Write(response)
 			require.NoError(t, err)
-			assert.Equal(t, expectedUri, r.RequestURI)
+			assert.Equal(t, expectedURI, r.RequestURI)
 		}
 		assert.Equal(t, basicAuthHeader, r.Header.Get("Authorization"))
 	}

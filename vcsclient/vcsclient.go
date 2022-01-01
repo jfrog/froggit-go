@@ -7,28 +7,38 @@ import (
 	"strings"
 )
 
+// CommitStatus the status of the commit in the VCS
 type CommitStatus int
 
 const (
+	// Pass means that the commit passed the tests
 	Pass CommitStatus = iota
+	// Fail means that the commit failed the tests
 	Fail
+	// Error means that an unexpected error occured
 	Error
+	// InProgress means than the status check is in progress
 	InProgress
 )
 
+// Permission the ssh key permission on the VCS repository
 type Permission int
 
 const (
+	// Read permission
 	Read Permission = iota
+	// ReadWrite is either read and write permission
 	ReadWrite
 )
 
+// VcsInfo is the connection details of the VcsClient to communicate with the server
 type VcsInfo struct {
-	ApiEndpoint string
+	APIEndpoint string
 	Username    string
 	Token       string
 }
 
+// VcsClient is a base class of all Vcs clients - GitHub, GitLab, Bitbucket server and cloud clients
 type VcsClient interface {
 	// TestConnection Return nil if connection and authorization established successfully
 	TestConnection(ctx context.Context) error
@@ -45,26 +55,26 @@ type VcsClient interface {
 	// owner         - User or organization
 	// repository    - VCS repository name
 	// branch        - VCS branch name
-	// payloadUrl    - URL to send the payload when a webhook event occurs
+	// payloadURL    - URL to send the payload when a webhook event occurs
 	// webhookEvents - The event type
 	// Return the webhook ID, token and an error, if occurred
-	CreateWebhook(ctx context.Context, owner, repository, branch, payloadUrl string, webhookEvents ...vcsutils.WebhookEvent) (string, string, error)
+	CreateWebhook(ctx context.Context, owner, repository, branch, payloadURL string, webhookEvents ...vcsutils.WebhookEvent) (string, string, error)
 
 	// UpdateWebhook Update a webhook
 	// owner         - User or organization
 	// repository    - VCS repository name
 	// branch        - VCS branch name
-	// payloadUrl    - URL to send the payload when a webhook event occurs
+	// payloadURL    - URL to send the payload when a webhook event occurs
 	// token         - A token used to validate identity of the incoming webhook
-	// webhookId     - The webhook ID returned from a previous CreateWebhook command
+	// webhookID     - The webhook ID returned from a previous CreateWebhook command
 	// webhookEvents - The event type
-	UpdateWebhook(ctx context.Context, owner, repository, branch, payloadUrl, token, webhookId string, webhookEvents ...vcsutils.WebhookEvent) error
+	UpdateWebhook(ctx context.Context, owner, repository, branch, payloadURL, token, webhookID string, webhookEvents ...vcsutils.WebhookEvent) error
 
 	// DeleteWebhook Delete a webhook
 	// owner        - User or organization
 	// repository   - VCS repository name
-	// webhookId    - The webhook ID returned from a previous CreateWebhook command
-	DeleteWebhook(ctx context.Context, owner, repository, webhookId string) error
+	// webhookID    - The webhook ID returned from a previous CreateWebhook command
+	DeleteWebhook(ctx context.Context, owner, repository, webhookID string) error
 
 	// SetCommitStatus Set commit status
 	// commitStatus - One of Pass, Fail, Error, or InProgress
@@ -74,7 +84,7 @@ type VcsClient interface {
 	// title        - Title of the commit status
 	// description  - Description of the commit status
 	// detailsUrl   - The URL for component status link
-	SetCommitStatus(ctx context.Context, commitStatus CommitStatus, owner, repository, ref, title, description, detailsUrl string) error
+	SetCommitStatus(ctx context.Context, commitStatus CommitStatus, owner, repository, ref, title, description, detailsURL string) error
 
 	// DownloadRepository Download and extract a VCS repository
 	// owner      - User or organization

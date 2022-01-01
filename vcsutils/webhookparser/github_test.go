@@ -35,7 +35,7 @@ const (
 	// Pull request merge event
 	githubPrMergeSha256       = "f94088bf7c34740ed9f9c3752f30e786527fbe5f5c9726d4526d9c92b5a7c208"
 	githubPrMergeExpectedTime = int64(1638805994)
-	gitHubExpectedPrId        = 2
+	gitHubExpectedPrID        = 2
 )
 
 func TestGitHubParseIncomingPushWebhook(t *testing.T) {
@@ -129,7 +129,7 @@ func TestGithubParseIncomingPrWebhook(t *testing.T) {
 			require.NoError(t, err)
 
 			// Check values
-			assert.Equal(t, gitHubExpectedPrId, actual.PullRequestId)
+			assert.Equal(t, gitHubExpectedPrID, actual.PullRequestId)
 			assert.Equal(t, expectedRepoName, actual.TargetRepositoryDetails.Name)
 			assert.Equal(t, expectedOwner, actual.TargetRepositoryDetails.Owner)
 			assert.Equal(t, expectedBranch, actual.TargetBranch)

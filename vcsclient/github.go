@@ -12,14 +12,17 @@ import (
 	"golang.org/x/oauth2"
 )
 
+// GitHubClient API version 3
 type GitHubClient struct {
 	vcsInfo VcsInfo
 }
 
+// NewGitHubClient create a new GitHubClient
 func NewGitHubClient(vcsInfo VcsInfo) (*GitHubClient, error) {
 	return &GitHubClient{vcsInfo: vcsInfo}, nil
 }
 
+// TestConnection on GitHub
 func (client *GitHubClient) TestConnection(ctx context.Context) error {
 	ghClient, err := client.buildGithubClient(ctx)
 	if err != nil {
@@ -35,16 +38,17 @@ func (client *GitHubClient) buildGithubClient(ctx context.Context) (*github.Clie
 		httpClient = oauth2.NewClient(ctx, oauth2.StaticTokenSource(&oauth2.Token{AccessToken: client.vcsInfo.Token}))
 	}
 	ghClient := github.NewClient(httpClient)
-	if client.vcsInfo.ApiEndpoint != "" {
-		baseUrl, err := url.Parse(strings.TrimSuffix(client.vcsInfo.ApiEndpoint, "/") + "/")
+	if client.vcsInfo.APIEndpoint != "" {
+		baseURL, err := url.Parse(strings.TrimSuffix(client.vcsInfo.APIEndpoint, "/") + "/")
 		if err != nil {
 			return nil, err
 		}
-		ghClient.BaseURL = baseUrl
+		ghClient.BaseURL = baseURL
 	}
 	return ghClient, nil
 }
 
+// AddSshKeyToRepository on GitHub
 func (client *GitHubClient) AddSshKeyToRepository(ctx context.Context, owner, repository, keyName, publicKey string, permission Permission) error {
 	err := validateParametersNotBlank(map[string]string{
 		"owner":      owner,
@@ -76,6 +80,7 @@ func (client *GitHubClient) AddSshKeyToRepository(ctx context.Context, owner, re
 	return nil
 }
 
+// ListRepositories on GitHub
 func (client *GitHubClient) ListRepositories(ctx context.Context) (map[string][]string, error) {
 	ghClient, err := client.buildGithubClient(ctx)
 	if err != nil {
@@ -98,6 +103,7 @@ func (client *GitHubClient) ListRepositories(ctx context.Context) (map[string][]
 	return results, nil
 }
 
+// ListBranches on GitHub
 func (client *GitHubClient) ListBranches(ctx context.Context, owner, repository string) ([]string, error) {
 	ghClient, err := client.buildGithubClient(ctx)
 	if err != nil {
@@ -115,14 +121,15 @@ func (client *GitHubClient) ListBranches(ctx context.Context, owner, repository 
 	return results, nil
 }
 
-func (client *GitHubClient) CreateWebhook(ctx context.Context, owner, repository, _, payloadUrl string,
+// CreateWebhook on GitHub
+func (client *GitHubClient) CreateWebhook(ctx context.Context, owner, repository, _, payloadURL string,
 	webhookEvents ...vcsutils.WebhookEvent) (string, string, error) {
 	ghClient, err := client.buildGithubClient(ctx)
 	if err != nil {
 		return "", "", err
 	}
 	token := vcsutils.CreateToken()
-	hook := createGitHubHook(token, payloadUrl, webhookEvents...)
+	hook := createGitHubHook(token, payloadURL, webhookEvents...)
 	responseHook, _, err := ghClient.Repositories.CreateHook(ctx, owner, repository, hook)
 	if err != nil {
 		return "", "", err
@@ -130,36 +137,39 @@ func (client *GitHubClient) CreateWebhook(ctx context.Context, owner, repository
 	return strconv.FormatInt(*responseHook.ID, 10), token, err
 }
 
-func (client *GitHubClient) UpdateWebhook(ctx context.Context, owner, repository, _, payloadUrl, token,
-	webhookId string, webhookEvents ...vcsutils.WebhookEvent) error {
+// UpdateWebhook on GitHub
+func (client *GitHubClient) UpdateWebhook(ctx context.Context, owner, repository, _, payloadURL, token,
+	webhookID string, webhookEvents ...vcsutils.WebhookEvent) error {
 	ghClient, err := client.buildGithubClient(ctx)
 	if err != nil {
 		return err
 	}
-	webhookIdInt64, err := strconv.ParseInt(webhookId, 10, 64)
+	webhookIDInt64, err := strconv.ParseInt(webhookID, 10, 64)
 	if err != nil {
 		return err
 	}
-	hook := createGitHubHook(token, payloadUrl, webhookEvents...)
-	_, _, err = ghClient.Repositories.EditHook(ctx, owner, repository, webhookIdInt64, hook)
+	hook := createGitHubHook(token, payloadURL, webhookEvents...)
+	_, _, err = ghClient.Repositories.EditHook(ctx, owner, repository, webhookIDInt64, hook)
 	return err
 }
 
-func (client *GitHubClient) DeleteWebhook(ctx context.Context, owner, repository, webhookId string) error {
+// DeleteWebhook on GitHub
+func (client *GitHubClient) DeleteWebhook(ctx context.Context, owner, repository, webhookID string) error {
 	ghClient, err := client.buildGithubClient(ctx)
 	if err != nil {
 		return err
 	}
-	webhookIdInt64, err := strconv.ParseInt(webhookId, 10, 64)
+	webhookIDInt64, err := strconv.ParseInt(webhookID, 10, 64)
 	if err != nil {
 		return err
 	}
-	_, err = ghClient.Repositories.DeleteHook(ctx, owner, repository, webhookIdInt64)
+	_, err = ghClient.Repositories.DeleteHook(ctx, owner, repository, webhookIDInt64)
 	return err
 }
 
+// SetCommitStatus on GitHub
 func (client *GitHubClient) SetCommitStatus(ctx context.Context, commitStatus CommitStatus, owner, repository, ref,
-	title, description, detailsUrl string) error {
+	title, description, detailsURL string) error {
 	ghClient, err := client.buildGithubClient(ctx)
 	if err != nil {
 		return err
@@ -167,7 +177,7 @@ func (client *GitHubClient) SetCommitStatus(ctx context.Context, commitStatus Co
 	state := getGitHubCommitState(commitStatus)
 	status := &github.RepoStatus{
 		Context:     &title,
-		TargetURL:   &detailsUrl,
+		TargetURL:   &detailsURL,
 		State:       &state,
 		Description: &description,
 	}
@@ -175,19 +185,23 @@ func (client *GitHubClient) SetCommitStatus(ctx context.Context, commitStatus Co
 	return err
 }
 
+// DownloadRepository on GitHub
 func (client *GitHubClient) DownloadRepository(ctx context.Context, owner, repository, branch, localPath string) error {
 	ghClient, err := client.buildGithubClient(ctx)
 	if err != nil {
 		return err
 	}
-	baseUrl, _, err := ghClient.Repositories.GetArchiveLink(ctx, owner, repository, github.Tarball,
+	baseURL, _, err := ghClient.Repositories.GetArchiveLink(ctx, owner, repository, github.Tarball,
 		&github.RepositoryContentGetOptions{Ref: branch}, true)
 	if err != nil {
 		return err
 	}
 
 	httpClient := &http.Client{}
-	req, err := http.NewRequest("GET", baseUrl.String(), nil)
+	req, err := http.NewRequest("GET", baseURL.String(), nil)
+	if err != nil {
+		return err
+	}
 	req.Header.Add("Accept", "application/vnd.github.v3+json")
 	resp, err := httpClient.Do(req)
 	if err != nil {
@@ -197,6 +211,7 @@ func (client *GitHubClient) DownloadRepository(ctx context.Context, owner, repos
 	return vcsutils.Untar(localPath, resp.Body, true)
 }
 
+// CreatePullRequest on GitHub
 func (client *GitHubClient) CreatePullRequest(ctx context.Context, owner, repository, sourceBranch, targetBranch,
 	title, description string) error {
 	ghClient, err := client.buildGithubClient(ctx)
@@ -213,6 +228,7 @@ func (client *GitHubClient) CreatePullRequest(ctx context.Context, owner, reposi
 	return err
 }
 
+// GetLatestCommit on GitHub
 func (client *GitHubClient) GetLatestCommit(ctx context.Context, owner, repository, branch string) (CommitInfo, error) {
 	err := validateParametersNotBlank(map[string]string{
 		"owner":      owner,
@@ -245,6 +261,7 @@ func (client *GitHubClient) GetLatestCommit(ctx context.Context, owner, reposito
 	return CommitInfo{}, nil
 }
 
+// GetRepositoryInfo on GitHub
 func (client *GitHubClient) GetRepositoryInfo(ctx context.Context, owner, repository string) (RepositoryInfo, error) {
 	err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository})
 	if err != nil {
@@ -263,6 +280,7 @@ func (client *GitHubClient) GetRepositoryInfo(ctx context.Context, owner, reposi
 	return RepositoryInfo{CloneInfo: CloneInfo{HTTP: repo.GetCloneURL(), SSH: repo.GetSSHURL()}}, nil
 }
 
+// GetCommitBySha on GitHub
 func (client *GitHubClient) GetCommitBySha(ctx context.Context, owner, repository, sha string) (CommitInfo, error) {
 	err := validateParametersNotBlank(map[string]string{
 		"owner":      owner,
@@ -286,11 +304,11 @@ func (client *GitHubClient) GetCommitBySha(ctx context.Context, owner, repositor
 	return mapGitHubCommitToCommitInfo(commit), nil
 }
 
-func createGitHubHook(token, payloadUrl string, webhookEvents ...vcsutils.WebhookEvent) *github.Hook {
+func createGitHubHook(token, payloadURL string, webhookEvents ...vcsutils.WebhookEvent) *github.Hook {
 	return &github.Hook{
 		Events: getGitHubWebhookEvents(webhookEvents...),
 		Config: map[string]interface{}{
-			"url":          payloadUrl,
+			"url":          payloadURL,
 			"content_type": "json",
 			"secret":       token,
 		},

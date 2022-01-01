@@ -1,14 +1,20 @@
 package vcsutils
 
+// VcsProvider is an enum represents the VCS provider type
 type VcsProvider int
 
 const (
+	// GitHub VCS provider
 	GitHub VcsProvider = iota
+	// GitLab VCS provider
 	GitLab
+	// BitbucketServer VCS provider
 	BitbucketServer
+	// BitbucketCloud VCS provider
 	BitbucketCloud
 )
 
+// String representation of the VcsProvider
 func (v VcsProvider) String() string {
 	switch v {
 	case GitHub:
@@ -24,12 +30,18 @@ func (v VcsProvider) String() string {
 	}
 }
 
+// WebhookEvent is the event type of the incoming webhook
 type WebhookEvent string
 
 const (
+	// PrRejected the pull request is rejected
 	PrRejected WebhookEvent = "PrRejected"
-	PrEdited   WebhookEvent = "PrEdited"
-	PrMerged   WebhookEvent = "PrMerged"
-	PrOpened   WebhookEvent = "PrOpened"
-	Push       WebhookEvent = "Push"
+	// PrEdited the pull request is edited
+	PrEdited WebhookEvent = "PrEdited"
+	// PrMerged the pull request is merged
+	PrMerged WebhookEvent = "PrMerged"
+	// PrOpened a pull request is opened
+	PrOpened WebhookEvent = "PrOpened"
+	// Push a commit is pushed to the source branch
+	Push WebhookEvent = "Push"
 )

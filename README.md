@@ -5,7 +5,7 @@ Currently supported providers are: [GitHub](#github), [Bitbucket Server](#bitbuc
 
 ## Project status
 
-[![Test](https://github.com/jfrog/froggit-go/actions/workflows/test.yml/badge.svg)](https://github.com/jfrog/froggit-go/actions/workflows/test.yml)
+[![Test](https://github.com/jfrog/froggit-go/actions/workflows/test.yml/badge.svg)](https://github.com/jfrog/froggit-go/actions/workflows/test.yml) [![Go Report Card](https://goreportcard.com/badge/github.com/jfrog/froggit-go)](https://goreportcard.com/report/github.com/jfrog/froggit-go)
 
 ## Usage
 
@@ -162,7 +162,7 @@ repository := "jfrog-cli"
 // Optional - Webhooks on branches are supported only on GitLab
 branch := ""
 // The URL to send the payload upon a webhook event
-payloadUrl := "https://acme.jfrog.io/integration/api/v1/webhook/event"
+payloadURL := "https://acme.jfrog.io/integration/api/v1/webhook/event"
 
 // token - A token used to validate identity of the incoming webhook.
 // In GitHub and Bitbucket server the token verifies the sha256 signature of the payload.
@@ -182,15 +182,15 @@ repository := "jfrog-cli"
 // Optional - Webhooks on branches are supported only on GitLab
 branch := ""
 // The URL to send the payload upon a webhook event
-payloadUrl := "https://acme.jfrog.io/integration/api/v1/webhook/event"
+payloadURL := "https://acme.jfrog.io/integration/api/v1/webhook/event"
 // A token to validate identity of the webhook, created by CreateWebhook command
 token := "abc123"
 // The webhook ID returned by the CreateWebhook API, which created this webhook
-webhookId := "123"
+webhookID := "123"
 // The event to watch
 webhookEvent := vcsutils.PrCreated
 
-err := client.UpdateWebhook(ctx, owner, repository, branch, "https://jfrog.com", token, webhookId, webhookEvent)
+err := client.UpdateWebhook(ctx, owner, repository, branch, "https://jfrog.com", token, webhookID, webhookEvent)
 ```
 
 #### Delete Webhook
@@ -203,9 +203,9 @@ owner := "jfrog"
 // VCS repository
 repository := "jfrog-cli"
 // The webhook ID returned by the CreateWebhook API, which created this webhook
-webhookId := "123"
+webhookID := "123"
 
-err := client.DeleteWebhook(ctx, owner, repository, webhookId)
+err := client.DeleteWebhook(ctx, owner, repository, webhookID)
 ```
 
 #### Set Commit Status
@@ -226,9 +226,9 @@ title := "Xray scanning"
 // Description of the commit status
 description := "Run JFrog Xray scan"
 // URL leads to the platform to provide more information, such as Xray scanning results
-detailsUrl := "https://acme.jfrog.io/ui/xray-scan-results-url"
+detailsURL := "https://acme.jfrog.io/ui/xray-scan-results-url"
 
-err := client.SetCommitStatus(ctx, commitStatus, owner, repository, ref, title, description, detailsUrl)
+err := client.SetCommitStatus(ctx, commitStatus, owner, repository, ref, title, description, detailsURL)
 ```
 
 ##### Create Pull Request

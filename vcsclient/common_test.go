@@ -30,12 +30,12 @@ type createPostHandlerFunc func(t *testing.T, expectedUri string, response []byt
 	expectedStatusCode int, expectedHttpMethod string) http.HandlerFunc
 
 func createServerAndClient(t *testing.T, vcsProvider vcsutils.VcsProvider, basicAuth bool, response interface{},
-	expectedUri string, createHandlerFunc createHandlerFunc) (VcsClient, func()) {
-	return createServerAndClientReturningStatus(t, vcsProvider, basicAuth, response, expectedUri, http.StatusOK, createHandlerFunc)
+	expectedURI string, createHandlerFunc createHandlerFunc) (VcsClient, func()) {
+	return createServerAndClientReturningStatus(t, vcsProvider, basicAuth, response, expectedURI, http.StatusOK, createHandlerFunc)
 }
 
 func createServerAndClientReturningStatus(t *testing.T, vcsProvider vcsutils.VcsProvider, basicAuth bool, response interface{},
-	expectedUri string, expectedStatusCode int, createHandlerFunc createHandlerFunc) (VcsClient, func()) {
+	expectedURI string, expectedStatusCode int, createHandlerFunc createHandlerFunc) (VcsClient, func()) {
 	var byteResponse []byte
 	var ok bool
 	if byteResponse, ok = response.([]byte); !ok {
@@ -44,13 +44,13 @@ func createServerAndClientReturningStatus(t *testing.T, vcsProvider vcsutils.Vcs
 		byteResponse, err = json.Marshal(response)
 		assert.NoError(t, err)
 	}
-	server := httptest.NewServer(createHandlerFunc(t, expectedUri, byteResponse, expectedStatusCode))
+	server := httptest.NewServer(createHandlerFunc(t, expectedURI, byteResponse, expectedStatusCode))
 	client := buildClient(t, vcsProvider, basicAuth, server)
 	return client, server.Close
 }
 
 func createBodyHandlingServerAndClient(t *testing.T, vcsProvider vcsutils.VcsProvider, basicAuth bool, response interface{},
-	expectedUri string, expectedStatusCode int, expectedRequestBody []byte, expectedHttpMethod string,
+	expectedURI string, expectedStatusCode int, expectedRequestBody []byte, expectedHTTPMethod string,
 	createPostHandlerFunc createPostHandlerFunc) (VcsClient, func()) {
 	var byteResponse []byte
 	var ok bool
@@ -60,8 +60,8 @@ func createBodyHandlingServerAndClient(t *testing.T, vcsProvider vcsutils.VcsPro
 		byteResponse, err = json.Marshal(response)
 		assert.NoError(t, err)
 	}
-	server := httptest.NewServer(createPostHandlerFunc(t, expectedUri, byteResponse, expectedRequestBody,
-		expectedStatusCode, expectedHttpMethod))
+	server := httptest.NewServer(createPostHandlerFunc(t, expectedURI, byteResponse, expectedRequestBody,
+		expectedStatusCode, expectedHTTPMethod))
 	client := buildClient(t, vcsProvider, basicAuth, server)
 	return client, server.Close
 }
