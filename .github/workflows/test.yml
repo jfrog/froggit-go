@@ -25,11 +25,10 @@ jobs:
         run: go test -v -race -covermode atomic -coverprofile=covprofile ./...
 
       # Generate code coverage
-      - name: Install goveralls
-        run: go install github.com/mattn/goveralls@latest
-        if: runner.os == 'Linux'
       - name: Send coverage
-        run: goveralls -coverprofile=covprofile -service=github
+        run: |
+          go install github.com/mattn/goveralls@latest
+          goveralls -coverprofile=covprofile -service=github
         env:
           COVERALLS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         if: runner.os == 'Linux'
