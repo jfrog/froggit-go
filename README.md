@@ -5,7 +5,7 @@ Currently supported providers are: [GitHub](#github), [Bitbucket Server](#bitbuc
 
 ## Project status
 
-[![Test](https://github.com/jfrog/froggit-go/actions/workflows/test.yml/badge.svg)](https://github.com/jfrog/froggit-go/actions/workflows/test.yml) [![Coverage Status](https://coveralls.io/repos/github/jfrog/froggit-go/badge.svg?branch=master)](https://coveralls.io/github/jfrog/froggit-go?branch=master)
+[![Test](https://github.com/jfrog/froggit-go/actions/workflows/test.yml/badge.svg)](https://github.com/jfrog/froggit-go/actions/workflows/test.yml) [![Coverage Status](https://coveralls.io/repos/github/jfrog/froggit-go/badge.svg?branch=master)](https://coveralls.io/github/jfrog/froggit-go?branch=master) [![Mentioned in Awesome Go](https://awesome.re/mentioned-badge.svg)](https://github.com/avelino/awesome-go)  
 
 ## Usage
 
@@ -36,7 +36,8 @@ Currently supported providers are: [GitHub](#github), [Bitbucket Server](#bitbuc
 
 ##### GitHub
 
-GitHub api v3 is used 
+GitHub api v3 is used
+
 ```go
 // The VCS provider. Cannot be changed.
 vcsProvider := vcsutils.GitHub
@@ -53,6 +54,7 @@ client, err := vcsclient.NewClientBuilder(vcsProvider).ApiEndpoint(apiEndpoint).
 ##### GitLab
 
 GitLab api v4 is used.
+
 ```go
 // The VCS provider. Cannot be changed.
 vcsProvider := vcsutils.GitLab
@@ -69,6 +71,7 @@ client, err := vcsclient.NewClientBuilder(vcsProvider).ApiEndpoint(apiEndpoint).
 ##### Bitbucket Server
 
 Bitbucket api 1.0 is used.
+
 ```go
 // The VCS provider. Cannot be changed.
 vcsProvider := vcsclient.BitbucketServer
@@ -84,7 +87,8 @@ client, err := vcsclient.NewClientBuilder(vcsProvider).ApiEndpoint(apiEndpoint).
 
 ##### Bitbucket Cloud
 
-Bitbucket cloud api version 2.0 is used and the version should be added to the apiEndpoint.  
+Bitbucket cloud api version 2.0 is used and the version should be added to the apiEndpoint.
+
 ```go
 // The VCS provider. Cannot be changed.
 vcsProvider := vcsutils.BitbucketCloud
