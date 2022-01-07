@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/stretchr/testify/require"
 	"io"
 	"io/ioutil"
 	"math/rand"
@@ -15,6 +14,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/require"
 
 	bitbucketv1 "github.com/gfleury/go-bitbucket-v1"
 	"github.com/jfrog/froggit-go/vcsutils"
@@ -30,6 +31,9 @@ func TestBitbucketServer_Connection(t *testing.T) {
 
 	err := client.TestConnection(ctx)
 	assert.NoError(t, err)
+
+	err = createBadBitbucketServerClient(t).TestConnection(ctx)
+	assert.Error(t, err)
 }
 
 func TestBitbucketServer_ConnectionWhenContextCancelled(t *testing.T) {
@@ -62,6 +66,9 @@ func TestBitbucketServer_ListRepositories(t *testing.T) {
 	actualRepositories, err := client.ListRepositories(ctx)
 	assert.NoError(t, err)
 	assert.Equal(t, map[string][]string{"~" + strings.ToUpper(username): {repo1}, username: {repo2}}, actualRepositories)
+
+	_, err = createBadBitbucketServerClient(t).ListRepositories(ctx)
+	assert.Error(t, err)
 }
 
 func TestBitbucketServer_ListBranches(t *testing.T) {
@@ -75,6 +82,9 @@ func TestBitbucketServer_ListBranches(t *testing.T) {
 	actualRepositories, err := client.ListBranches(ctx, owner, repo1)
 	assert.NoError(t, err)
 	assert.ElementsMatch(t, actualRepositories, []string{branch1, branch2})
+
+	_, err = createBadBitbucketServerClient(t).ListBranches(ctx, owner, repo1)
+	assert.Error(t, err)
 }
 
 func TestBitbucketServer_CreateWebhook(t *testing.T) {
@@ -89,6 +99,9 @@ func TestBitbucketServer_CreateWebhook(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, token)
 	assert.Equal(t, strconv.Itoa(int(id)), actualId)
+
+	_, _, err = createBadBitbucketServerClient(t).CreateWebhook(ctx, owner, repo1, branch1, "https://httpbin.org/anything", vcsutils.Push)
+	assert.Error(t, err)
 }
 
 func TestBitbucketServer_UpdateWebhook(t *testing.T) {
@@ -102,6 +115,9 @@ func TestBitbucketServer_UpdateWebhook(t *testing.T) {
 	err := client.UpdateWebhook(ctx, owner, repo1, branch1, "https://httpbin.org/anything", token, stringId,
 		vcsutils.PrOpened, vcsutils.PrEdited, vcsutils.PrMerged, vcsutils.PrRejected)
 	assert.NoError(t, err)
+
+	err = createBadBitbucketServerClient(t).UpdateWebhook(ctx, owner, repo1, branch1, "https://httpbin.org/anything", token, stringId, vcsutils.PrOpened, vcsutils.PrEdited, vcsutils.PrMerged, vcsutils.PrRejected)
+	assert.Error(t, err)
 }
 
 func TestBitbucketServer_DeleteWebhook(t *testing.T) {
@@ -114,6 +130,9 @@ func TestBitbucketServer_DeleteWebhook(t *testing.T) {
 
 	err := client.DeleteWebhook(ctx, owner, repo1, stringId)
 	assert.NoError(t, err)
+
+	err = createBadBitbucketServerClient(t).DeleteWebhook(ctx, owner, repo1, stringId)
+	assert.Error(t, err)
 }
 
 func TestBitbucketServer_SetCommitStatus(t *testing.T) {
@@ -125,6 +144,10 @@ func TestBitbucketServer_SetCommitStatus(t *testing.T) {
 	err := client.SetCommitStatus(ctx, Fail, owner, repo1, ref, "Commit status title", "Commit status description",
 		"https://httpbin.org/anything")
 	assert.NoError(t, err)
+
+	err = createBadBitbucketServerClient(t).SetCommitStatus(ctx, Fail, owner, repo1, ref, "Commit status title", "Commit status description",
+		"https://httpbin.org/anything")
+	assert.Error(t, err)
 }
 
 func TestBitbucketServer_DownloadRepository(t *testing.T) {
@@ -141,6 +164,9 @@ func TestBitbucketServer_DownloadRepository(t *testing.T) {
 
 	_, err = os.OpenFile(filepath.Join(dir, "README.md"), os.O_RDONLY, 0644)
 	assert.NoError(t, err)
+
+	err = createBadBitbucketServerClient(t).DownloadRepository(ctx, "ssa", "solr-system", "master", dir)
+	assert.Error(t, err)
 }
 
 func TestBitbucketServer_CreatePullRequest(t *testing.T) {
@@ -150,6 +176,9 @@ func TestBitbucketServer_CreatePullRequest(t *testing.T) {
 
 	err := client.CreatePullRequest(ctx, owner, repo1, branch1, branch2, "PR title", "PR body")
 	assert.NoError(t, err)
+
+	err = createBadBitbucketServerClient(t).CreatePullRequest(ctx, owner, repo1, branch1, branch2, "PR title", "PR body")
+	assert.Error(t, err)
 }
 
 func TestBitbucketServer_GetLatestCommit(t *testing.T) {
@@ -175,6 +204,9 @@ func TestBitbucketServer_GetLatestCommit(t *testing.T) {
 		Message:       "More work on feature 1",
 		ParentHashes:  []string{"abcdef0123abcdef4567abcdef8987abcdef6543", "qwerty0123abcdef4567abcdef8987abcdef6543"},
 	}, result)
+
+	_, err = createBadBitbucketServerClient(t).GetLatestCommit(ctx, owner, repo1, "master")
+	assert.Error(t, err)
 }
 
 func TestBitbucketServer_GetLatestCommitNotFound(t *testing.T) {
@@ -214,8 +246,10 @@ func TestBitbucketServer_AddSshKeyToRepository(t *testing.T) {
 	defer closeServer()
 
 	err = client.AddSshKeyToRepository(ctx, owner, repo1, "My deploy key", "ssh-rsa AAAA...", Read)
-
 	require.NoError(t, err)
+
+	err = createBadBitbucketServerClient(t).AddSshKeyToRepository(ctx, owner, repo1, "My deploy key", "ssh-rsa AAAA...", Read)
+	assert.Error(t, err)
 }
 
 func TestBitbucketServer_AddSshKeyToRepositoryReadWrite(t *testing.T) {
@@ -292,6 +326,9 @@ func TestBitbucketServer_GetRepositoryInfo(t *testing.T) {
 			res,
 		)
 	})
+
+	_, err = createBadBitbucketServerClient(t).GetRepositoryInfo(ctx, owner, repo1)
+	assert.Error(t, err)
 }
 
 func TestBitbucketServer_GetCommitBySha(t *testing.T) {
@@ -317,6 +354,9 @@ func TestBitbucketServer_GetCommitBySha(t *testing.T) {
 		Message:       "WIP on feature 1",
 		ParentHashes:  []string{"bbcdef0123abcdef4567abcdef8987abcdef6543"},
 	}, result)
+
+	_, err = createBadBitbucketServerClient(t).GetCommitBySha(ctx, owner, repo1, sha)
+	assert.Error(t, err)
 }
 
 func TestBitbucketServer_GetCommitByShaNotFound(t *testing.T) {
@@ -391,4 +431,9 @@ func createBitbucketServerWithBodyHandler(t *testing.T, expectedUri string, resp
 		_, err = writer.Write(response)
 		assert.NoError(t, err)
 	}
+}
+
+func createBadBitbucketServerClient(t *testing.T) VcsClient {
+	client, _ := NewClientBuilder(vcsutils.BitbucketServer).ApiEndpoint("https://bad^endpoint").Build()
+	return client
 }

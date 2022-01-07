@@ -3,7 +3,6 @@ package vcsclient
 import (
 	"context"
 	"fmt"
-	"github.com/stretchr/testify/require"
 	"io"
 	"io/ioutil"
 	"math/rand"
@@ -14,6 +13,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/require"
 
 	"github.com/google/go-github/v41/github"
 	"github.com/jfrog/froggit-go/vcsutils"
@@ -27,6 +28,9 @@ func TestGitHubClient_Connection(t *testing.T) {
 
 	err := client.TestConnection(ctx)
 	assert.NoError(t, err)
+
+	err = createBadGitHubClient(t).TestConnection(ctx)
+	assert.Error(t, err)
 }
 
 func TestGitHubClient_ConnectionWhenContextCancelled(t *testing.T) {
@@ -61,6 +65,9 @@ func TestGitHubClient_ListRepositories(t *testing.T) {
 	actualRepositories, err := client.ListRepositories(ctx)
 	assert.NoError(t, err)
 	assert.Equal(t, actualRepositories, map[string][]string{username: {repo1, repo2}})
+
+	_, err = createBadGitHubClient(t).ListRepositories(ctx)
+	assert.Error(t, err)
 }
 
 func TestGitHubClient_ListBranches(t *testing.T) {
@@ -71,6 +78,9 @@ func TestGitHubClient_ListBranches(t *testing.T) {
 	actualBranches, err := client.ListBranches(ctx, owner, repo1)
 	assert.NoError(t, err)
 	assert.ElementsMatch(t, actualBranches, []string{branch1, branch2})
+
+	_, err = createBadGitHubClient(t).ListBranches(ctx, owner, repo1)
+	assert.Error(t, err)
 }
 
 func TestGitHubClient_CreateWebhook(t *testing.T) {
@@ -83,6 +93,9 @@ func TestGitHubClient_CreateWebhook(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, token)
 	assert.Equal(t, actualId, strconv.FormatInt(id, 10))
+
+	_, _, err = createBadGitHubClient(t).CreateWebhook(ctx, owner, repo1, branch1, "https://jfrog.com", vcsutils.Push)
+	assert.Error(t, err)
 }
 
 func TestGitHubClient_UpdateWebhook(t *testing.T) {
@@ -94,6 +107,10 @@ func TestGitHubClient_UpdateWebhook(t *testing.T) {
 	err := client.UpdateWebhook(ctx, owner, repo1, branch1, "https://jfrog.com", token, strconv.FormatInt(id, 10),
 		vcsutils.PrOpened, vcsutils.PrEdited, vcsutils.PrMerged, vcsutils.PrRejected)
 	assert.NoError(t, err)
+
+	err = createBadGitHubClient(t).UpdateWebhook(ctx, owner, repo1, branch1, "https://jfrog.com", token, strconv.FormatInt(id, 10),
+		vcsutils.PrOpened, vcsutils.PrEdited, vcsutils.PrMerged, vcsutils.PrRejected)
+	assert.Error(t, err)
 }
 
 func TestGitHubClient_DeleteWebhook(t *testing.T) {
@@ -104,6 +121,9 @@ func TestGitHubClient_DeleteWebhook(t *testing.T) {
 
 	err := client.DeleteWebhook(ctx, owner, repo1, strconv.FormatInt(id, 10))
 	assert.NoError(t, err)
+
+	err = createBadGitHubClient(t).DeleteWebhook(ctx, "", "", "")
+	assert.Error(t, err)
 }
 
 func TestGitHubClient_CreateCommitStatus(t *testing.T) {
@@ -115,6 +135,18 @@ func TestGitHubClient_CreateCommitStatus(t *testing.T) {
 	err := client.SetCommitStatus(ctx, Error, owner, repo1, ref, "Commit status title", "Commit status description",
 		"https://httpbin.org/anything")
 	assert.NoError(t, err)
+
+	err = createBadGitHubClient(t).SetCommitStatus(ctx, Error, owner, repo1, ref, "Commit status title", "Commit status description",
+		"https://httpbin.org/anything")
+	assert.Error(t, err)
+}
+
+func TestGitHubClient_getGitHubCommitState(t *testing.T) {
+	assert.Equal(t, "success", getGitHubCommitState(Pass))
+	assert.Equal(t, "failure", getGitHubCommitState(Fail))
+	assert.Equal(t, "error", getGitHubCommitState(Error))
+	assert.Equal(t, "pending", getGitHubCommitState(InProgress))
+	assert.Equal(t, "", getGitHubCommitState(5))
 }
 
 func TestGitHubClient_DownloadRepository(t *testing.T) {
@@ -135,6 +167,9 @@ func TestGitHubClient_DownloadRepository(t *testing.T) {
 	require.NoError(t, err)
 	assert.Len(t, fileinfo, 1)
 	assert.Equal(t, "README", fileinfo[0].Name())
+
+	err = createBadGitHubClient(t).DownloadRepository(ctx, owner, "Hello-World", "test", dir)
+	assert.Error(t, err)
 }
 
 func TestGitHubClient_CreatePullRequest(t *testing.T) {
@@ -144,6 +179,9 @@ func TestGitHubClient_CreatePullRequest(t *testing.T) {
 
 	err := client.CreatePullRequest(ctx, owner, repo1, branch1, branch2, "PR title", "PR body")
 	assert.NoError(t, err)
+
+	err = createBadGitHubClient(t).CreatePullRequest(ctx, owner, repo1, branch1, branch2, "PR title", "PR body")
+	assert.Error(t, err)
 }
 
 func TestGitHubClient_GetLatestCommit(t *testing.T) {
@@ -167,6 +205,9 @@ func TestGitHubClient_GetLatestCommit(t *testing.T) {
 		Message:       "Fix all the bugs",
 		ParentHashes:  []string{"6dcb09b5b57875f334f61aebed695e2e4193db5e"},
 	}, result)
+
+	_, err = createBadGitHubClient(t).GetLatestCommit(ctx, owner, repo1, "master")
+	assert.Error(t, err)
 }
 
 func TestGitHubClient_AddSshKeyToRepository(t *testing.T) {
@@ -189,8 +230,10 @@ func TestGitHubClient_AddSshKeyToRepository(t *testing.T) {
 	defer closeServer()
 
 	err := client.AddSshKeyToRepository(ctx, owner, repo1, "My deploy key", "ssh-rsa AAAA...", Read)
-
 	require.NoError(t, err)
+
+	err = createBadGitHubClient(t).AddSshKeyToRepository(ctx, owner, repo1, "My deploy key", "ssh-rsa AAAA...", Read)
+	assert.Error(t, err)
 }
 
 func TestGitHubClient_AddSshKeyToRepositoryReadWrite(t *testing.T) {
@@ -239,6 +282,9 @@ func TestGitHubClient_GetCommitBySha(t *testing.T) {
 		Message:       "Fix all the bugs",
 		ParentHashes:  []string{"5dcb09b5b57875f334f61aebed695e2e4193db5e"},
 	}, result)
+
+	_, err = createBadGitHubClient(t).GetCommitBySha(ctx, owner, repo1, sha)
+	assert.Error(t, err)
 }
 
 func TestGitHubClient_GetCommitByWrongSha(t *testing.T) {
@@ -259,23 +305,6 @@ func TestGitHubClient_GetCommitByWrongSha(t *testing.T) {
 	assert.Empty(t, result)
 }
 
-func createGitHubWithBodyHandler(t *testing.T, expectedUri string, response []byte, expectedRequestBody []byte,
-	expectedStatusCode int, expectedHttpMethod string) http.HandlerFunc {
-	return func(writer http.ResponseWriter, request *http.Request) {
-		assert.Equal(t, expectedHttpMethod, request.Method)
-		assert.Equal(t, expectedUri, request.RequestURI)
-		assert.Equal(t, "Bearer "+token, request.Header.Get("Authorization"))
-
-		b, err := io.ReadAll(request.Body)
-		require.NoError(t, err)
-		assert.Equal(t, expectedRequestBody, b)
-
-		writer.WriteHeader(expectedStatusCode)
-		_, err = writer.Write(response)
-		assert.NoError(t, err)
-	}
-}
-
 func TestGitHubClient_GetRepositoryInfo(t *testing.T) {
 	ctx := context.Background()
 	response, err := os.ReadFile(filepath.Join("testdata", "github", "repository_response.json"))
@@ -292,6 +321,31 @@ func TestGitHubClient_GetRepositoryInfo(t *testing.T) {
 		},
 		info,
 	)
+
+	_, err = createBadGitHubClient(t).GetRepositoryInfo(ctx, "octocat", "Hello-World")
+	assert.Error(t, err)
+}
+
+func createBadGitHubClient(t *testing.T) VcsClient {
+	client, _ := NewClientBuilder(vcsutils.GitHub).ApiEndpoint("https://bad^endpoint").Build()
+	return client
+}
+
+func createGitHubWithBodyHandler(t *testing.T, expectedUri string, response []byte, expectedRequestBody []byte,
+	expectedStatusCode int, expectedHttpMethod string) http.HandlerFunc {
+	return func(writer http.ResponseWriter, request *http.Request) {
+		assert.Equal(t, expectedHttpMethod, request.Method)
+		assert.Equal(t, expectedUri, request.RequestURI)
+		assert.Equal(t, "Bearer "+token, request.Header.Get("Authorization"))
+
+		b, err := io.ReadAll(request.Body)
+		require.NoError(t, err)
+		assert.Equal(t, expectedRequestBody, b)
+
+		writer.WriteHeader(expectedStatusCode)
+		_, err = writer.Write(response)
+		assert.NoError(t, err)
+	}
 }
 
 func createGitHubHandler(t *testing.T, expectedUri string, response []byte, expectedStatusCode int) http.HandlerFunc {
