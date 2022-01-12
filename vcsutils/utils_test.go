@@ -1,7 +1,9 @@
 package vcsutils
 
 import (
+	"io"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"path/filepath"
 	"testing"
@@ -35,8 +37,23 @@ func TestUntarRemoveBaseDir(t *testing.T) {
 	assert.Equal(t, "b", fileinfo[0].Name())
 }
 
+func TestUntarError(t *testing.T) {
+	err := Untar("", io.MultiReader(), false)
+	assert.Error(t, err)
+}
+
 func TestCreateToken(t *testing.T) {
 	assert.NotEmpty(t, CreateToken())
+}
+
+func TestSanitizeExtractionPath(t *testing.T) {
+	_, err := sanitizeExtractionPath("../a", "a")
+	assert.EqualError(t, err, "../a: illegal file path")
+}
+
+func TestSafeCopyError(t *testing.T) {
+	err := safeCopy(nil, nil)
+	assert.Error(t, err)
 }
 
 type removeBaseDirDataProvider struct {
@@ -72,6 +89,11 @@ func TestRemoveBaseDir(t *testing.T) {
 			assert.Equal(t, testCase.expectedPath, removeBaseDir(testCase.relativePath))
 		})
 	}
+}
+
+func TestDiscardResponseBody(t *testing.T) {
+	assert.NoError(t, DiscardResponseBody(nil))
+	assert.NoError(t, DiscardResponseBody(&http.Response{Body: io.NopCloser(io.MultiReader())}))
 }
 
 func openTarball(t *testing.T) (string, *os.File) {

@@ -1,12 +1,14 @@
 package webhookparser
 
 import (
-	"github.com/stretchr/testify/require"
+	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 
 	"github.com/jfrog/froggit-go/vcsutils"
 	"github.com/stretchr/testify/assert"
@@ -140,6 +142,20 @@ func TestGithubParseIncomingPrWebhook(t *testing.T) {
 			assert.Equal(t, tt.expectedEventType, actual.Event)
 		})
 	}
+}
+
+func TestGitHubParseIncomingWebhookError(t *testing.T) {
+	_, err := ParseIncomingWebhook(vcsutils.GitHub, token, &http.Request{})
+	require.Error(t, err)
+
+	webhook := GitHubWebhook{request: &http.Request{}}
+	_, err = webhook.parseIncomingWebhook([]byte{})
+	assert.Error(t, err)
+}
+
+func TestGitHubParsePrEventsError(t *testing.T) {
+	webhook := GitHubWebhook{}
+	assert.Nil(t, webhook.parsePrEvents(nil))
 }
 
 func TestGitHubPayloadMismatchSignature(t *testing.T) {

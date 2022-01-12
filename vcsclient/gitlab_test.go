@@ -303,6 +303,14 @@ func TestGitLabClient_GetCommitByShaNotFound(t *testing.T) {
 	assert.Empty(t, result)
 }
 
+func TestGitlabClient_getGitlabCommitState(t *testing.T) {
+	assert.Equal(t, "success", getGitLabCommitState(Pass))
+	assert.Equal(t, "failed", getGitLabCommitState(Fail))
+	assert.Equal(t, "failed", getGitLabCommitState(Error))
+	assert.Equal(t, "running", getGitLabCommitState(InProgress))
+	assert.Equal(t, "", getGitLabCommitState(5))
+}
+
 func createGitLabHandler(t *testing.T, expectedURI string, response []byte, expectedStatusCode int) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.RequestURI == "/api/v4/" {
