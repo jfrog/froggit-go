@@ -9,10 +9,12 @@ import (
 	"github.com/jfrog/froggit-go/vcsutils"
 )
 
+// GitHubWebhook represents an incoming webhook on GitHub
 type GitHubWebhook struct {
 	request *http.Request
 }
 
+// NewGitHubWebhook create a new GitHubWebhook instance
 func NewGitHubWebhook(request *http.Request) *GitHubWebhook {
 	return &GitHubWebhook{
 		request: request,
@@ -22,7 +24,7 @@ func NewGitHubWebhook(request *http.Request) *GitHubWebhook {
 func (webhook *GitHubWebhook) validatePayload(token []byte) ([]byte, error) {
 	// Make sure X-Hub-Signature-256 header exist
 	if len(token) > 0 && len(webhook.request.Header.Get(github.SHA256SignatureHeader)) == 0 {
-		return nil, errors.New(github.SHA256SignatureHeader + " header is missing.")
+		return nil, errors.New(github.SHA256SignatureHeader + " header is missing")
 	}
 
 	payload, err := github.ValidatePayload(webhook.request, token)

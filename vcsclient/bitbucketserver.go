@@ -16,10 +16,12 @@ import (
 	"strings"
 )
 
+// BitbucketServerClient API version 1.0
 type BitbucketServerClient struct {
 	vcsInfo VcsInfo
 }
 
+// NewBitbucketServerClient create a new BitbucketServerClient
 func NewBitbucketServerClient(vcsInfo VcsInfo) (*BitbucketServerClient, error) {
 	bitbucketServerClient := &BitbucketServerClient{
 		vcsInfo: vcsInfo,
@@ -29,13 +31,13 @@ func NewBitbucketServerClient(vcsInfo VcsInfo) (*BitbucketServerClient, error) {
 
 func (client *BitbucketServerClient) buildBitbucketClient(ctx context.Context) (*bitbucketv1.DefaultApiService, error) {
 	bbClient := bitbucketv1.NewAPIClient(ctx, &bitbucketv1.Configuration{
-		HTTPClient: client.buildHttpClient(ctx),
-		BasePath:   client.vcsInfo.ApiEndpoint,
+		HTTPClient: client.buildHTTPClient(ctx),
+		BasePath:   client.vcsInfo.APIEndpoint,
 	})
 	return bbClient.DefaultApi, nil
 }
 
-func (client *BitbucketServerClient) buildHttpClient(ctx context.Context) *http.Client {
+func (client *BitbucketServerClient) buildHTTPClient(ctx context.Context) *http.Client {
 	httpClient := &http.Client{}
 	if client.vcsInfo.Token != "" {
 		httpClient = oauth2.NewClient(ctx, oauth2.StaticTokenSource(&oauth2.Token{AccessToken: client.vcsInfo.Token}))
@@ -43,6 +45,7 @@ func (client *BitbucketServerClient) buildHttpClient(ctx context.Context) *http.
 	return httpClient
 }
 
+// TestConnection on Bitbucket server
 func (client *BitbucketServerClient) TestConnection(ctx context.Context) error {
 	bitbucketClient, err := client.buildBitbucketClient(ctx)
 	if err != nil {
@@ -54,6 +57,7 @@ func (client *BitbucketServerClient) TestConnection(ctx context.Context) error {
 	return err
 }
 
+// ListRepositories on Bitbucket server
 func (client *BitbucketServerClient) ListRepositories(ctx context.Context) (map[string][]string, error) {
 	bitbucketClient, err := client.buildBitbucketClient(ctx)
 	if err != nil {
@@ -86,6 +90,7 @@ func (client *BitbucketServerClient) ListRepositories(ctx context.Context) (map[
 	return results, nil
 }
 
+// ListBranches on Bitbucket server
 func (client *BitbucketServerClient) ListBranches(ctx context.Context, owner, repository string) ([]string, error) {
 	bitbucketClient, err := client.buildBitbucketClient(ctx)
 	if err != nil {
@@ -111,6 +116,7 @@ func (client *BitbucketServerClient) ListBranches(ctx context.Context, owner, re
 	return results, nil
 }
 
+// AddSshKeyToRepository on Bitbucket server
 func (client *BitbucketServerClient) AddSshKeyToRepository(ctx context.Context, owner, repository, keyName, publicKey string, permission Permission) error {
 	// https://docs.atlassian.com/bitbucket-server/rest/5.16.0/bitbucket-ssh-rest.html
 	err := validateParametersNotBlank(map[string]string{
@@ -128,9 +134,9 @@ func (client *BitbucketServerClient) AddSshKeyToRepository(ctx context.Context, 
 		accessPermission = "REPO_WRITE"
 	}
 
-	url := fmt.Sprintf("%s/keys/1.0/projects/%s/repos/%s/ssh", client.vcsInfo.ApiEndpoint, owner, repository)
-	addKeyRequest := bitbucketServerAddSshKeyRequest{
-		Key:        bitbucketServerSshKey{Text: publicKey, Label: keyName},
+	url := fmt.Sprintf("%s/keys/1.0/projects/%s/repos/%s/ssh", client.vcsInfo.APIEndpoint, owner, repository)
+	addKeyRequest := bitbucketServerAddSSHKeyRequest{
+		Key:        bitbucketServerSSHKey{Text: publicKey, Label: keyName},
 		Permission: accessPermission,
 	}
 
@@ -145,7 +151,7 @@ func (client *BitbucketServerClient) AddSshKeyToRepository(ctx context.Context, 
 	}
 	req.Header.Set("Content-Type", "application/json")
 
-	httpClient := client.buildHttpClient(ctx)
+	httpClient := client.buildHTTPClient(ctx)
 	response, err := httpClient.Do(req)
 	if err != nil {
 		return err
@@ -163,65 +169,69 @@ func (client *BitbucketServerClient) AddSshKeyToRepository(ctx context.Context, 
 	return nil
 }
 
-type bitbucketServerAddSshKeyRequest struct {
-	Key        bitbucketServerSshKey `json:"key"`
+type bitbucketServerAddSSHKeyRequest struct {
+	Key        bitbucketServerSSHKey `json:"key"`
 	Permission string                `json:"permission"`
 }
 
-type bitbucketServerSshKey struct {
+type bitbucketServerSSHKey struct {
 	Text  string `json:"text"`
 	Label string `json:"label"`
 }
 
-func (client *BitbucketServerClient) CreateWebhook(ctx context.Context, owner, repository, _, payloadUrl string,
+// CreateWebhook on Bitbucket server
+func (client *BitbucketServerClient) CreateWebhook(ctx context.Context, owner, repository, _, payloadURL string,
 	webhookEvents ...vcsutils.WebhookEvent) (string, string, error) {
 	bitbucketClient, err := client.buildBitbucketClient(ctx)
 	if err != nil {
 		return "", "", err
 	}
 	token := vcsutils.CreateToken()
-	hook := createBitbucketServerHook(token, payloadUrl, webhookEvents...)
+	hook := createBitbucketServerHook(token, payloadURL, webhookEvents...)
 	response, err := bitbucketClient.CreateWebhook(owner, repository, hook, []string{})
 	if err != nil {
 		return "", "", err
 	}
-	webhoodId, err := getBitbucketServerWebhookId(response)
+	webhoodID, err := getBitbucketServerWebhookID(response)
 	if err != nil {
 		return "", "", err
 	}
-	return webhoodId, token, err
+	return webhoodID, token, err
 }
 
-func (client *BitbucketServerClient) UpdateWebhook(ctx context.Context, owner, repository, _, payloadUrl, token,
-	webhookId string, webhookEvents ...vcsutils.WebhookEvent) error {
+// UpdateWebhook on Bitbucket server
+func (client *BitbucketServerClient) UpdateWebhook(ctx context.Context, owner, repository, _, payloadURL, token,
+	webhookID string, webhookEvents ...vcsutils.WebhookEvent) error {
 	bitbucketClient, err := client.buildBitbucketClient(ctx)
 	if err != nil {
 		return err
 	}
-	webhookIdInt32, err := strconv.ParseInt(webhookId, 10, 32)
+	webhookIDInt32, err := strconv.ParseInt(webhookID, 10, 32)
 	if err != nil {
 		return err
 	}
-	hook := createBitbucketServerHook(token, payloadUrl, webhookEvents...)
-	_, err = bitbucketClient.UpdateWebhook(owner, repository, int32(webhookIdInt32), hook, []string{})
+	hook := createBitbucketServerHook(token, payloadURL, webhookEvents...)
+	_, err = bitbucketClient.UpdateWebhook(owner, repository, int32(webhookIDInt32), hook, []string{})
 	return err
 }
 
-func (client *BitbucketServerClient) DeleteWebhook(ctx context.Context, owner, repository, webhookId string) error {
+// DeleteWebhook on Bitbucket server
+func (client *BitbucketServerClient) DeleteWebhook(ctx context.Context, owner, repository, webhookID string) error {
 	bitbucketClient, err := client.buildBitbucketClient(ctx)
 	if err != nil {
 		return err
 	}
-	webhookIdInt32, err := strconv.ParseInt(webhookId, 10, 32)
+	webhookIDInt32, err := strconv.ParseInt(webhookID, 10, 32)
 	if err != nil {
 		return err
 	}
-	_, err = bitbucketClient.DeleteWebhook(owner, repository, int32(webhookIdInt32))
+	_, err = bitbucketClient.DeleteWebhook(owner, repository, int32(webhookIDInt32))
 	return err
 }
 
+// SetCommitStatus on Bitbucket server
 func (client *BitbucketServerClient) SetCommitStatus(ctx context.Context, commitStatus CommitStatus, _, _, ref, title,
-	description, detailsUrl string) error {
+	description, detailsURL string) error {
 	bitbucketClient, err := client.buildBitbucketClient(ctx)
 	if err != nil {
 		return err
@@ -230,11 +240,12 @@ func (client *BitbucketServerClient) SetCommitStatus(ctx context.Context, commit
 		State:       getBitbucketCommitState(commitStatus),
 		Key:         title,
 		Description: description,
-		Url:         detailsUrl,
+		Url:         detailsURL,
 	})
 	return err
 }
 
+// DownloadRepository on Bitbucket server
 func (client *BitbucketServerClient) DownloadRepository(ctx context.Context, owner, repository, _, localPath string) error {
 	bitbucketClient, err := client.buildBitbucketClient(ctx)
 	if err != nil {
@@ -247,6 +258,7 @@ func (client *BitbucketServerClient) DownloadRepository(ctx context.Context, own
 	return vcsutils.Untar(localPath, bytes.NewReader(response.Payload), false)
 }
 
+// CreatePullRequest on Bitbucket server
 func (client *BitbucketServerClient) CreatePullRequest(ctx context.Context, owner, repository, sourceBranch, targetBranch,
 	title, description string) error {
 	bitbucketClient, err := client.buildBitbucketClient(ctx)
@@ -281,6 +293,7 @@ type projectsResponse struct {
 	} `json:"values,omitempty"`
 }
 
+// GetLatestCommit on Bitbucket server
 func (client *BitbucketServerClient) GetLatestCommit(ctx context.Context, owner, repository, branch string) (CommitInfo, error) {
 	err := validateParametersNotBlank(map[string]string{
 		"owner":      owner,
@@ -315,6 +328,7 @@ func (client *BitbucketServerClient) GetLatestCommit(ctx context.Context, owner,
 	return CommitInfo{}, nil
 }
 
+// GetRepositoryInfo on Bitbucket server
 func (client *BitbucketServerClient) GetRepositoryInfo(ctx context.Context, owner, repository string) (RepositoryInfo, error) {
 	if err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository}); err != nil {
 		return RepositoryInfo{}, err
@@ -356,6 +370,7 @@ func (client *BitbucketServerClient) GetRepositoryInfo(ctx context.Context, owne
 	return RepositoryInfo{CloneInfo: info}, nil
 }
 
+// GetCommitBySha on Bitbucket server
 func (client BitbucketServerClient) GetCommitBySha(ctx context.Context, owner, repository, sha string) (CommitInfo, error) {
 	err := validateParametersNotBlank(map[string]string{
 		"owner":      owner,
@@ -376,7 +391,7 @@ func (client BitbucketServerClient) GetCommitBySha(ctx context.Context, owner, r
 		return CommitInfo{}, err
 	}
 	commit := bitbucketv1.Commit{}
-	err = unmarshalApiResponseValues(apiResponse, &commit)
+	err = unmarshalAPIResponseValues(apiResponse, &commit)
 	if err != nil {
 		return CommitInfo{}, err
 	}
@@ -394,7 +409,7 @@ func (client *BitbucketServerClient) listProjects(bitbucketClient *bitbucketv1.D
 			return nil, err
 		}
 		projectsResponse := &projectsResponse{}
-		err = unmarshalApiResponseValues(apiResponse, projectsResponse)
+		err = unmarshalAPIResponseValues(apiResponse, projectsResponse)
 		if err != nil {
 			return nil, err
 		}
@@ -416,7 +431,7 @@ func createPaginationOptions(nextPageStart int) map[string]interface{} {
 	return map[string]interface{}{"start": nextPageStart}
 }
 
-func unmarshalApiResponseValues(response *bitbucketv1.APIResponse, target interface{}) error {
+func unmarshalAPIResponseValues(response *bitbucketv1.APIResponse, target interface{}) error {
 	responseBytes, err := json.Marshal(response.Values)
 	if err != nil {
 		return err
@@ -424,18 +439,18 @@ func unmarshalApiResponseValues(response *bitbucketv1.APIResponse, target interf
 	return json.Unmarshal(responseBytes, &target)
 }
 
-func getBitbucketServerWebhookId(r *bitbucketv1.APIResponse) (string, error) {
+func getBitbucketServerWebhookID(r *bitbucketv1.APIResponse) (string, error) {
 	webhook := &bitbucketv1.Webhook{}
-	err := unmarshalApiResponseValues(r, webhook)
+	err := unmarshalAPIResponseValues(r, webhook)
 	if err != nil {
 		return "", err
 	}
 	return strconv.Itoa(webhook.ID), nil
 }
 
-func createBitbucketServerHook(token, payloadUrl string, webhookEvents ...vcsutils.WebhookEvent) *map[string]interface{} {
+func createBitbucketServerHook(token, payloadURL string, webhookEvents ...vcsutils.WebhookEvent) *map[string]interface{} {
 	return &map[string]interface{}{
-		"url":           payloadUrl,
+		"url":           payloadURL,
 		"configuration": map[string]interface{}{"secret": token},
 		"events":        getBitbucketServerWebhookEvents(webhookEvents...),
 	}

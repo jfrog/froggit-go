@@ -89,10 +89,10 @@ func TestGitHubClient_CreateWebhook(t *testing.T) {
 	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, github.Hook{ID: &id}, fmt.Sprintf("/repos/jfrog/%s/hooks", repo1), createGitHubHandler)
 	defer cleanUp()
 
-	actualId, token, err := client.CreateWebhook(ctx, owner, repo1, branch1, "https://jfrog.com", vcsutils.Push)
+	actualID, token, err := client.CreateWebhook(ctx, owner, repo1, branch1, "https://jfrog.com", vcsutils.Push)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, token)
-	assert.Equal(t, actualId, strconv.FormatInt(id, 10))
+	assert.Equal(t, actualID, strconv.FormatInt(id, 10))
 
 	_, _, err = createBadGitHubClient(t).CreateWebhook(ctx, owner, repo1, branch1, "https://jfrog.com", vcsutils.Push)
 	assert.Error(t, err)
@@ -331,11 +331,11 @@ func createBadGitHubClient(t *testing.T) VcsClient {
 	return client
 }
 
-func createGitHubWithBodyHandler(t *testing.T, expectedUri string, response []byte, expectedRequestBody []byte,
+func createGitHubWithBodyHandler(t *testing.T, expectedURI string, response []byte, expectedRequestBody []byte,
 	expectedStatusCode int, expectedHttpMethod string) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		assert.Equal(t, expectedHttpMethod, request.Method)
-		assert.Equal(t, expectedUri, request.RequestURI)
+		assert.Equal(t, expectedURI, request.RequestURI)
 		assert.Equal(t, "Bearer "+token, request.Header.Get("Authorization"))
 
 		b, err := io.ReadAll(request.Body)
@@ -348,9 +348,9 @@ func createGitHubWithBodyHandler(t *testing.T, expectedUri string, response []by
 	}
 }
 
-func createGitHubHandler(t *testing.T, expectedUri string, response []byte, expectedStatusCode int) http.HandlerFunc {
+func createGitHubHandler(t *testing.T, expectedURI string, response []byte, expectedStatusCode int) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		assert.Equal(t, expectedUri, r.RequestURI)
+		assert.Equal(t, expectedURI, r.RequestURI)
 		assert.Equal(t, "Bearer "+token, r.Header.Get("Authorization"))
 		if strings.Contains(r.RequestURI, "tarball") {
 			w.Header().Add("Location", string(response))

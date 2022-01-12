@@ -11,10 +11,12 @@ import (
 	"github.com/jfrog/froggit-go/vcsutils"
 )
 
+// BitbucketCloudWebhook represents an incoming webhook on Bitbucket cloud
 type BitbucketCloudWebhook struct {
 	request *http.Request
 }
 
+// NewBitbucketCloudWebhookWebhook create a new BitbucketCloudWebhook instance
 func NewBitbucketCloudWebhookWebhook(request *http.Request) *BitbucketCloudWebhook {
 	return &BitbucketCloudWebhook{
 		request: request,
@@ -25,7 +27,7 @@ func (webhook *BitbucketCloudWebhook) validatePayload(token []byte) ([]byte, err
 	keys, tokenParamsExist := webhook.request.URL.Query()["token"]
 	if len(token) > 0 || tokenParamsExist {
 		if keys[0] != string(token) {
-			return nil, errors.New("Token mismatch")
+			return nil, errors.New("token mismatch")
 		}
 	}
 	payload := new(bytes.Buffer)
@@ -69,7 +71,7 @@ func (webhook *BitbucketCloudWebhook) parsePushEvent(bitbucketCloudWebHook *bitb
 
 func (webhook *BitbucketCloudWebhook) parsePrEvents(bitbucketCloudWebHook *bitbucketCloudWebHook, event vcsutils.WebhookEvent) *WebhookInfo {
 	return &WebhookInfo{
-		PullRequestId:           bitbucketCloudWebHook.PullRequest.Id,
+		PullRequestId:           bitbucketCloudWebHook.PullRequest.ID,
 		TargetRepositoryDetails: webhook.parseRepoFullName(bitbucketCloudWebHook.PullRequest.Destination.Repository.FullName),
 		TargetBranch:            bitbucketCloudWebHook.PullRequest.Destination.Branch.Name,
 		SourceRepositoryDetails: webhook.parseRepoFullName(bitbucketCloudWebHook.PullRequest.Source.Repository.FullName),
@@ -101,7 +103,7 @@ type bitbucketCloudWebHook struct {
 		} `json:"changes,omitempty"`
 	} `json:"push,omitempty"`
 	PullRequest struct {
-		Id          int                                  `json:"id,omitempty"`
+		ID          int                                  `json:"id,omitempty"`
 		Source      struct{ bitbucketCloudPrRepository } `json:"source,omitempty"`
 		Destination struct{ bitbucketCloudPrRepository } `json:"destination,omitempty"`
 		UpdatedOn   time.Time                            `json:"updated_on,omitempty"` // Timestamp

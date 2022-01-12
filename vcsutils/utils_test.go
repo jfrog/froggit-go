@@ -19,6 +19,7 @@ func TestUntar(t *testing.T) {
 	assert.NoError(t, err)
 
 	fileinfo, err := ioutil.ReadDir(destDir)
+	assert.NoError(t, err)
 	assert.NotEmpty(t, fileinfo)
 	assert.Equal(t, "a", fileinfo[0].Name())
 }
@@ -31,6 +32,7 @@ func TestUntarRemoveBaseDir(t *testing.T) {
 	assert.NoError(t, err)
 
 	fileinfo, err := ioutil.ReadDir(destDir)
+	assert.NoError(t, err)
 	assert.NotEmpty(t, fileinfo)
 	assert.Equal(t, "b", fileinfo[0].Name())
 }

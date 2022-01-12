@@ -19,6 +19,8 @@ jobs:
       # Run lint
       - name: Lint
         run: go vet ./...
+      - name: Staticcheck
+        uses: dominikh/staticcheck-action@v1.1.0
 
       # Run tests
       - name: Tests

@@ -22,7 +22,7 @@ const (
 	gitlabPrUpdateExpectedTime = int64(1631202266)
 	gitlabPrCloseExpectedTime  = int64(1638864453)
 	gitlabPrMergeExpectedTime  = int64(1638866119)
-	gitlabExpectedPrId         = 1
+	gitlabExpectedPrID         = 1
 )
 
 func TestGitLabParseIncomingPushWebhook(t *testing.T) {
@@ -101,7 +101,7 @@ func TestGitLabParseIncomingPrWebhook(t *testing.T) {
 			require.NoError(t, err)
 
 			// Check values
-			assert.Equal(t, gitlabExpectedPrId, actual.PullRequestId)
+			assert.Equal(t, gitlabExpectedPrID, actual.PullRequestId)
 			assert.Equal(t, expectedRepoName, actual.TargetRepositoryDetails.Name)
 			assert.Equal(t, expectedOwner, actual.TargetRepositoryDetails.Owner)
 			assert.Equal(t, expectedBranch, actual.TargetBranch)
@@ -141,5 +141,5 @@ func TestGitLabPayloadMismatchSignature(t *testing.T) {
 
 	// Parse webhook
 	_, err = ParseIncomingWebhook(vcsutils.GitLab, token, request)
-	assert.EqualError(t, err, "Token mismatch")
+	assert.EqualError(t, err, "token mismatch")
 }

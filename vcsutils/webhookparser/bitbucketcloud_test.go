@@ -20,7 +20,7 @@ const (
 	bitbucketCloudPrUpdateExpectedTime = int64(1630844170)
 	bitbucketCloudPrMergeExpectedTime  = int64(1638783257)
 	bitbucketCloudPrCloseExpectedTime  = int64(1638784487)
-	bitbucketCloudExpectedPrId         = 2
+	bitbucketCloudExpectedPrID         = 2
 )
 
 func TestBitbucketCloudParseIncomingPushWebhook(t *testing.T) {
@@ -96,7 +96,7 @@ func TestBitbucketCloudParseIncomingPrWebhook(t *testing.T) {
 			require.NoError(t, err)
 
 			// Check values
-			assert.Equal(t, bitbucketCloudExpectedPrId, actual.PullRequestId)
+			assert.Equal(t, bitbucketCloudExpectedPrID, actual.PullRequestId)
 			assert.Equal(t, expectedRepoName, actual.TargetRepositoryDetails.Name)
 			assert.Equal(t, expectedOwner, actual.TargetRepositoryDetails.Owner)
 			assert.Equal(t, expectedBranch, actual.TargetBranch)
@@ -129,5 +129,5 @@ func TestBitbucketCloudPayloadMismatchToken(t *testing.T) {
 
 	// Parse webhook
 	_, err = ParseIncomingWebhook(vcsutils.BitbucketCloud, token, request)
-	assert.EqualError(t, err, "Token mismatch")
+	assert.EqualError(t, err, "token mismatch")
 }

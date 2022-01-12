@@ -35,7 +35,7 @@ const (
 	bitbucketServerPrDeleteExpectedTime = int64(1638794581)
 	bitbucketServerPrDeletedSha256      = "b0ccbd0f97ca030aa469cfa559f7051732c33fc63e7e3a8b5b8e2d157af71806"
 
-	bitbucketServerExpectedPrId = 3
+	bitbucketServerExpectedPrID = 3
 )
 
 func TestBitbucketServerParseIncomingPushWebhook(t *testing.T) {
@@ -46,7 +46,7 @@ func TestBitbucketServerParseIncomingPushWebhook(t *testing.T) {
 	// Create request
 	request := httptest.NewRequest("POST", "https://127.0.0.1", reader)
 	request.Header.Add(EventHeaderKey, "repo:refs_changed")
-	request.Header.Add(Sha256Signature, "sha256="+bitbucketServerPushSha256)
+	request.Header.Add(sha256Signature, "sha256="+bitbucketServerPushSha256)
 
 	// Parse webhook
 	actual, err := ParseIncomingWebhook(vcsutils.BitbucketServer, token, request)
@@ -119,14 +119,14 @@ func TestBitbucketServerParseIncomingPrWebhook(t *testing.T) {
 			// Create request
 			request := httptest.NewRequest("POST", "https://127.0.0.1", reader)
 			request.Header.Add(EventHeaderKey, tt.eventHeader)
-			request.Header.Add(Sha256Signature, "sha256="+tt.payloadSha)
+			request.Header.Add(sha256Signature, "sha256="+tt.payloadSha)
 
 			// Parse webhook
 			actual, err := ParseIncomingWebhook(vcsutils.BitbucketServer, token, request)
 			require.NoError(t, err)
 
 			// Check values
-			assert.Equal(t, bitbucketServerExpectedPrId, actual.PullRequestId)
+			assert.Equal(t, bitbucketServerExpectedPrID, actual.PullRequestId)
 			assert.Equal(t, expectedRepoName, actual.TargetRepositoryDetails.Name)
 			assert.Equal(t, formatOwnerForBitbucketServer(expectedOwner), actual.TargetRepositoryDetails.Owner)
 			assert.Equal(t, expectedBranch, actual.TargetBranch)
@@ -162,11 +162,11 @@ func TestBitbucketServerPayloadMismatchSignature(t *testing.T) {
 	// Create request
 	request := httptest.NewRequest("POST", "https://127.0.0.1", reader)
 	request.Header.Add(EventHeaderKey, "repo:refs_changed")
-	request.Header.Add(Sha256Signature, "sha256=wrongsianature")
+	request.Header.Add(sha256Signature, "sha256=wrongsianature")
 
 	// Parse webhook
 	_, err = ParseIncomingWebhook(vcsutils.BitbucketServer, token, request)
-	assert.EqualError(t, err, "Payload signature mismatch")
+	assert.EqualError(t, err, "payload signature mismatch")
 }
 
 func formatOwnerForBitbucketServer(owner string) string {

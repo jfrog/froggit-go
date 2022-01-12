@@ -19,7 +19,7 @@ func TestClientBuilder(t *testing.T) {
 			assert.NotNil(t, clientBuilder)
 			assert.Equal(t, vcsProvider, clientBuilder.vcsProvider)
 			assert.Equal(t, log.Default(), clientBuilder.logger)
-			assert.Equal(t, apiEndpoint, clientBuilder.vcsInfo.ApiEndpoint)
+			assert.Equal(t, apiEndpoint, clientBuilder.vcsInfo.APIEndpoint)
 			assert.Equal(t, username, clientBuilder.vcsInfo.Username)
 			assert.Equal(t, token, clientBuilder.vcsInfo.Token)
 		})

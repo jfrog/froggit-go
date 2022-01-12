@@ -14,6 +14,7 @@ import (
 	"github.com/google/uuid"
 )
 
+// CreateToken create a random UUID
 func CreateToken() string {
 	return uuid.New().String()
 }
@@ -78,7 +79,9 @@ func Untar(destDir string, reader io.Reader, shouldRemoveBaseDir bool) error {
 			}
 
 			// Copy file contents
-			err = safeCopy(targetFile, tarEntryReader)
+			if err = safeCopy(targetFile, tarEntryReader); err != nil {
+				return err
+			}
 
 			// Manually close here after each file operation; defering would cause each file close
 			// to wait until all operations have completed.
@@ -127,6 +130,7 @@ func safeCopy(targetFile *os.File, reader *tar.Reader) error {
 	}
 }
 
+// DiscardResponseBody prepare http response body for closing
 func DiscardResponseBody(resp *http.Response) error {
 	if resp != nil {
 		_, err := io.Copy(ioutil.Discard, resp.Body)

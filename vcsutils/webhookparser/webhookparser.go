@@ -6,9 +6,10 @@ import (
 	"github.com/jfrog/froggit-go/vcsutils"
 )
 
+// EventHeaderKey represents the event type of an incoming webhook from Bitbucket
 const EventHeaderKey = "X-Event-Key"
 
-// This struct is used for parsing an incoming webhook request from the VCS provider.
+// WebhookInfo used for parsing an incoming webhook request from the VCS provider.
 type WebhookInfo struct {
 	// The target repository for pull requests and push
 	TargetRepositoryDetails WebHookInfoRepoDetails `json:"target_repository_details,omitempty"`
@@ -26,11 +27,13 @@ type WebhookInfo struct {
 	Event vcsutils.WebhookEvent `json:"event,omitempty"`
 }
 
+// WebHookInfoRepoDetails represents repository info of an incoming webhook
 type WebHookInfoRepoDetails struct {
 	Name  string `json:"name,omitempty"`
 	Owner string `json:"owner,omitempty"`
 }
 
+// WebhookParser is a webhook parser of an incoming webhook from a VCS server
 type WebhookParser interface {
 	// Validate the webhook payload with the expected token and return the payload
 	validatePayload(token []byte) ([]byte, error)
@@ -38,7 +41,7 @@ type WebhookParser interface {
 	parseIncomingWebhook(payload []byte) (*WebhookInfo, error)
 }
 
-// Parse incoming webhook payload request into a structurized WebhookInfo object.
+// ParseIncomingWebhook parse incoming webhook payload request into a structurized WebhookInfo object.
 // provider - The VCS provider
 // token    - Token to authenticate incoming webhooks. If empty, signature will not be verified.
 // request  - The HTTP request of the incoming webhook

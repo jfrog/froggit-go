@@ -13,10 +13,12 @@ import (
 
 const gitLabKeyHeader = "X-GitLab-Token"
 
+// GitLabWebhook represents an incoming webhook on GitLab
 type GitLabWebhook struct {
 	request *http.Request
 }
 
+// NewGitLabWebhook create a new GitLabWebhook instance
 func NewGitLabWebhook(request *http.Request) *GitLabWebhook {
 	return &GitLabWebhook{
 		request: request,
@@ -27,7 +29,7 @@ func (webhook *GitLabWebhook) validatePayload(token []byte) ([]byte, error) {
 	actualToken := webhook.request.Header.Get(gitLabKeyHeader)
 	if len(token) != 0 || len(actualToken) > 0 {
 		if actualToken != string(token) {
-			return nil, errors.New("Token mismatch")
+			return nil, errors.New("token mismatch")
 		}
 	}
 

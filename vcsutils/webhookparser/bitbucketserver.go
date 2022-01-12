@@ -15,13 +15,15 @@ import (
 	"github.com/jfrog/froggit-go/vcsutils"
 )
 
-const Sha256Signature = "X-Hub-Signature"
-const BitbucketServerEventHeader = "X-Event-Key"
+const sha256Signature = "X-Hub-Signature"
+const bitbucketServerEventHeader = "X-Event-Key"
 
+// BitbucketServerWebhook represents an incoming webhook on Bitbucket server
 type BitbucketServerWebhook struct {
 	request *http.Request
 }
 
+// NewBitbucketServerWebhookWebhook create a new BitbucketServerWebhook instance
 func NewBitbucketServerWebhookWebhook(request *http.Request) *BitbucketServerWebhook {
 	return &BitbucketServerWebhook{
 		request: request,
@@ -34,11 +36,11 @@ func (webhook *BitbucketServerWebhook) validatePayload(token []byte) ([]byte, er
 		return nil, err
 	}
 
-	expectedSignature := webhook.request.Header.Get(Sha256Signature)
+	expectedSignature := webhook.request.Header.Get(sha256Signature)
 	if len(token) > 0 || len(expectedSignature) > 0 {
 		actualSignature := calculatePayloadSignature(payload.Bytes(), token)
 		if expectedSignature != "sha256="+actualSignature {
-			return nil, errors.New("Payload signature mismatch")
+			return nil, errors.New("payload signature mismatch")
 		}
 	}
 	return payload.Bytes(), nil
@@ -51,7 +53,7 @@ func (webhook *BitbucketServerWebhook) parseIncomingWebhook(payload []byte) (*We
 		return nil, err
 	}
 
-	event := webhook.request.Header.Get(BitbucketServerEventHeader)
+	event := webhook.request.Header.Get(bitbucketServerEventHeader)
 	switch event {
 	case "repo:refs_changed":
 		return webhook.parsePushEvent(bitbucketServerWebHook)
@@ -81,7 +83,7 @@ func (webhook *BitbucketServerWebhook) parsePushEvent(bitbucketCloudWebHook *bit
 	repository := bitbucketCloudWebHook.Repository
 	return &WebhookInfo{
 		TargetRepositoryDetails: webhook.getRepositoryDetails(repository),
-		TargetBranch:            strings.TrimPrefix(bitbucketCloudWebHook.Changes[0].RefId, "refs/heads/"),
+		TargetBranch:            strings.TrimPrefix(bitbucketCloudWebHook.Changes[0].RefID, "refs/heads/"),
 		Timestamp:               eventTime.UTC().Unix(),
 		Event:                   vcsutils.Push,
 	}, nil
@@ -116,6 +118,6 @@ type bitbucketServerWebHook struct {
 	Repository  bitbucketv1.Repository  `json:"repository,omitempty"`
 	PullRequest bitbucketv1.PullRequest `json:"pullRequest,omitempty"`
 	Changes     []struct {
-		RefId string `json:"refId,omitempty"`
+		RefID string `json:"refId,omitempty"`
 	} `json:"changes,omitempty"`
 }

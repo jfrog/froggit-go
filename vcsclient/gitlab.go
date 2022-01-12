@@ -10,15 +10,17 @@ import (
 	"github.com/xanzy/go-gitlab"
 )
 
+// GitLabClient API version 4
 type GitLabClient struct {
 	glClient *gitlab.Client
 }
 
+// NewGitLabClient create a new GitLabClient
 func NewGitLabClient(vcsInfo VcsInfo) (*GitLabClient, error) {
 	var client *gitlab.Client
 	var err error
-	if vcsInfo.ApiEndpoint != "" {
-		client, err = gitlab.NewClient(vcsInfo.Token, gitlab.WithBaseURL(vcsInfo.ApiEndpoint))
+	if vcsInfo.APIEndpoint != "" {
+		client, err = gitlab.NewClient(vcsInfo.Token, gitlab.WithBaseURL(vcsInfo.APIEndpoint))
 	} else {
 		client, err = gitlab.NewClient(vcsInfo.Token)
 	}
@@ -31,16 +33,18 @@ func NewGitLabClient(vcsInfo VcsInfo) (*GitLabClient, error) {
 	}, nil
 }
 
+// TestConnection on GitLab
 func (client *GitLabClient) TestConnection(ctx context.Context) error {
 	_, _, err := client.glClient.Projects.ListProjects(nil, gitlab.WithContext(ctx))
 	return err
 }
 
+// ListRepositories on GitLab
 func (client *GitLabClient) ListRepositories(ctx context.Context) (map[string][]string, error) {
 	simple := true
 	results := make(map[string][]string)
-	for pageId := 1; ; pageId++ {
-		options := &gitlab.ListProjectsOptions{ListOptions: gitlab.ListOptions{Page: pageId}, Simple: &simple}
+	for pageID := 1; ; pageID++ {
+		options := &gitlab.ListProjectsOptions{ListOptions: gitlab.ListOptions{Page: pageID}, Simple: &simple}
 		projects, response, err := client.glClient.Projects.ListProjects(options, gitlab.WithContext(ctx))
 		if err != nil {
 			return nil, err
@@ -49,15 +53,16 @@ func (client *GitLabClient) ListRepositories(ctx context.Context) (map[string][]
 			owner := project.Namespace.Path
 			results[owner] = append(results[owner], project.Path)
 		}
-		if pageId >= response.TotalPages {
+		if pageID >= response.TotalPages {
 			break
 		}
 	}
 	return results, nil
 }
 
+// ListBranches on GitLab
 func (client *GitLabClient) ListBranches(ctx context.Context, owner, repository string) ([]string, error) {
-	branches, _, err := client.glClient.Branches.ListBranches(getProjectId(owner, repository), nil,
+	branches, _, err := client.glClient.Branches.ListBranches(getProjectID(owner, repository), nil,
 		gitlab.WithContext(ctx))
 	if err != nil {
 		return nil, err
@@ -70,6 +75,7 @@ func (client *GitLabClient) ListBranches(ctx context.Context, owner, repository 
 	return results, nil
 }
 
+// AddSshKeyToRepository on GitLab
 func (client *GitLabClient) AddSshKeyToRepository(ctx context.Context, owner, repository, keyName, publicKey string, permission Permission) error {
 	err := validateParametersNotBlank(map[string]string{
 		"owner":      owner,
@@ -90,14 +96,15 @@ func (client *GitLabClient) AddSshKeyToRepository(ctx context.Context, owner, re
 		Key:     &publicKey,
 		CanPush: &canPush,
 	}
-	_, _, err = client.glClient.DeployKeys.AddDeployKey(getProjectId(owner, repository), options, gitlab.WithContext(ctx))
+	_, _, err = client.glClient.DeployKeys.AddDeployKey(getProjectID(owner, repository), options, gitlab.WithContext(ctx))
 	return err
 }
 
-func (client *GitLabClient) CreateWebhook(ctx context.Context, owner, repository, branch, payloadUrl string,
+// CreateWebhook on GitLab
+func (client *GitLabClient) CreateWebhook(ctx context.Context, owner, repository, branch, payloadURL string,
 	webhookEvents ...vcsutils.WebhookEvent) (string, string, error) {
 	token := vcsutils.CreateToken()
-	projectHook := createProjectHook(branch, payloadUrl, webhookEvents...)
+	projectHook := createProjectHook(branch, payloadURL, webhookEvents...)
 	options := &gitlab.AddProjectHookOptions{
 		Token:                  &token,
 		URL:                    &projectHook.URL,
@@ -105,7 +112,7 @@ func (client *GitLabClient) CreateWebhook(ctx context.Context, owner, repository
 		PushEvents:             &projectHook.PushEvents,
 		PushEventsBranchFilter: &projectHook.PushEventsBranchFilter,
 	}
-	response, _, err := client.glClient.Projects.AddProjectHook(getProjectId(owner, repository), options,
+	response, _, err := client.glClient.Projects.AddProjectHook(getProjectID(owner, repository), options,
 		gitlab.WithContext(ctx))
 	if err != nil {
 		return "", "", err
@@ -113,9 +120,10 @@ func (client *GitLabClient) CreateWebhook(ctx context.Context, owner, repository
 	return strconv.Itoa(response.ID), token, nil
 }
 
-func (client *GitLabClient) UpdateWebhook(ctx context.Context, owner, repository, branch, payloadUrl, token,
-	webhookId string, webhookEvents ...vcsutils.WebhookEvent) error {
-	projectHook := createProjectHook(branch, payloadUrl, webhookEvents...)
+// UpdateWebhook on GitLab
+func (client *GitLabClient) UpdateWebhook(ctx context.Context, owner, repository, branch, payloadURL, token,
+	webhookID string, webhookEvents ...vcsutils.WebhookEvent) error {
+	projectHook := createProjectHook(branch, payloadURL, webhookEvents...)
 	options := &gitlab.EditProjectHookOptions{
 		Token:                  &token,
 		URL:                    &projectHook.URL,
@@ -123,46 +131,49 @@ func (client *GitLabClient) UpdateWebhook(ctx context.Context, owner, repository
 		PushEvents:             &projectHook.PushEvents,
 		PushEventsBranchFilter: &projectHook.PushEventsBranchFilter,
 	}
-	intWebhook, err := strconv.Atoi(webhookId)
+	intWebhook, err := strconv.Atoi(webhookID)
 	if err != nil {
 		return err
 	}
-	_, _, err = client.glClient.Projects.EditProjectHook(getProjectId(owner, repository), intWebhook, options,
+	_, _, err = client.glClient.Projects.EditProjectHook(getProjectID(owner, repository), intWebhook, options,
 		gitlab.WithContext(ctx))
 	return err
 }
 
-func (client *GitLabClient) DeleteWebhook(ctx context.Context, owner, repository, webhookId string) error {
-	intWebhook, err := strconv.Atoi(webhookId)
+// DeleteWebhook on GitLab
+func (client *GitLabClient) DeleteWebhook(ctx context.Context, owner, repository, webhookID string) error {
+	intWebhook, err := strconv.Atoi(webhookID)
 	if err != nil {
 		return err
 	}
-	_, err = client.glClient.Projects.DeleteProjectHook(getProjectId(owner, repository), intWebhook,
+	_, err = client.glClient.Projects.DeleteProjectHook(getProjectID(owner, repository), intWebhook,
 		gitlab.WithContext(ctx))
 	return err
 }
 
+// SetCommitStatus on GitLab
 func (client *GitLabClient) SetCommitStatus(ctx context.Context, commitStatus CommitStatus, owner, repository, ref,
-	title, description, detailsUrl string) error {
+	title, description, detailsURL string) error {
 	options := &gitlab.SetCommitStatusOptions{
 		State:       gitlab.BuildStateValue(getGitLabCommitState(commitStatus)),
 		Ref:         &ref,
 		Name:        &title,
 		Description: &description,
-		TargetURL:   &detailsUrl,
+		TargetURL:   &detailsURL,
 	}
-	_, _, err := client.glClient.Commits.SetCommitStatus(getProjectId(owner, repository), ref, options,
+	_, _, err := client.glClient.Commits.SetCommitStatus(getProjectID(owner, repository), ref, options,
 		gitlab.WithContext(ctx))
 	return err
 }
 
+// DownloadRepository on GitLab
 func (client *GitLabClient) DownloadRepository(ctx context.Context, owner, repository, branch, localPath string) error {
 	format := "tar.gz"
 	options := &gitlab.ArchiveOptions{
 		Format: &format,
 		SHA:    &branch,
 	}
-	response, _, err := client.glClient.Repositories.Archive(getProjectId(owner, repository), options,
+	response, _, err := client.glClient.Repositories.Archive(getProjectID(owner, repository), options,
 		gitlab.WithContext(ctx))
 	if err != nil {
 		return err
@@ -170,6 +181,7 @@ func (client *GitLabClient) DownloadRepository(ctx context.Context, owner, repos
 	return vcsutils.Untar(localPath, bytes.NewReader(response), true)
 }
 
+// CreatePullRequest on GitLab
 func (client *GitLabClient) CreatePullRequest(ctx context.Context, owner, repository, sourceBranch, targetBranch,
 	title, description string) error {
 	options := &gitlab.CreateMergeRequestOptions{
@@ -178,11 +190,12 @@ func (client *GitLabClient) CreatePullRequest(ctx context.Context, owner, reposi
 		SourceBranch: &sourceBranch,
 		TargetBranch: &targetBranch,
 	}
-	_, _, err := client.glClient.MergeRequests.CreateMergeRequest(getProjectId(owner, repository), options,
+	_, _, err := client.glClient.MergeRequests.CreateMergeRequest(getProjectID(owner, repository), options,
 		gitlab.WithContext(ctx))
 	return err
 }
 
+// GetLatestCommit on GitLab
 func (client *GitLabClient) GetLatestCommit(ctx context.Context, owner, repository, branch string) (CommitInfo, error) {
 	err := validateParametersNotBlank(map[string]string{
 		"owner":      owner,
@@ -201,7 +214,7 @@ func (client *GitLabClient) GetLatestCommit(ctx context.Context, owner, reposito
 		},
 	}
 
-	commits, _, err := client.glClient.Commits.ListCommits(getProjectId(owner, repository), listOptions, gitlab.WithContext(ctx))
+	commits, _, err := client.glClient.Commits.ListCommits(getProjectID(owner, repository), listOptions, gitlab.WithContext(ctx))
 	if err != nil {
 		return CommitInfo{}, err
 	}
@@ -212,13 +225,14 @@ func (client *GitLabClient) GetLatestCommit(ctx context.Context, owner, reposito
 	return CommitInfo{}, nil
 }
 
+// GetRepositoryInfo on GitLab
 func (client *GitLabClient) GetRepositoryInfo(ctx context.Context, owner, repository string) (RepositoryInfo, error) {
 	err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository})
 	if err != nil {
 		return RepositoryInfo{}, err
 	}
 
-	project, _, err := client.glClient.Projects.GetProject(getProjectId(owner, repository), nil, gitlab.WithContext(ctx))
+	project, _, err := client.glClient.Projects.GetProject(getProjectID(owner, repository), nil, gitlab.WithContext(ctx))
 	if err != nil {
 		return RepositoryInfo{}, err
 	}
@@ -226,6 +240,7 @@ func (client *GitLabClient) GetRepositoryInfo(ctx context.Context, owner, reposi
 	return RepositoryInfo{CloneInfo: CloneInfo{HTTP: project.HTTPURLToRepo, SSH: project.SSHURLToRepo}}, nil
 }
 
+// GetCommitBySha on GitLab
 func (client *GitLabClient) GetCommitBySha(ctx context.Context, owner, repository, sha string) (CommitInfo, error) {
 	err := validateParametersNotBlank(map[string]string{
 		"owner":      owner,
@@ -236,19 +251,19 @@ func (client *GitLabClient) GetCommitBySha(ctx context.Context, owner, repositor
 		return CommitInfo{}, err
 	}
 
-	commit, _, err := client.glClient.Commits.GetCommit(getProjectId(owner, repository), sha, gitlab.WithContext(ctx))
+	commit, _, err := client.glClient.Commits.GetCommit(getProjectID(owner, repository), sha, gitlab.WithContext(ctx))
 	if err != nil {
 		return CommitInfo{}, err
 	}
 	return mapGitLabCommitToCommitInfo(commit), nil
 }
 
-func getProjectId(owner, project string) string {
+func getProjectID(owner, project string) string {
 	return fmt.Sprintf("%s/%s", owner, project)
 }
 
-func createProjectHook(branch string, payloadUrl string, webhookEvents ...vcsutils.WebhookEvent) *gitlab.ProjectHook {
-	options := &gitlab.ProjectHook{URL: payloadUrl}
+func createProjectHook(branch string, payloadURL string, webhookEvents ...vcsutils.WebhookEvent) *gitlab.ProjectHook {
+	options := &gitlab.ProjectHook{URL: payloadURL}
 	for _, webhookEvent := range webhookEvents {
 		switch webhookEvent {
 		case vcsutils.PrOpened, vcsutils.PrEdited, vcsutils.PrRejected, vcsutils.PrMerged:

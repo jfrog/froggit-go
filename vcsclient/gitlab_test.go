@@ -84,11 +84,11 @@ func TestGitLabClient_CreateWebhook(t *testing.T) {
 	client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, gitlab.ProjectHook{ID: id}, fmt.Sprintf("/api/v4/projects/%s/hooks", url.PathEscape(owner+"/"+repo1)), createGitLabHandler)
 	defer cleanUp()
 
-	actualId, token, err := client.CreateWebhook(ctx, owner, repo1, branch1, "https://jfrog.com", vcsutils.Push,
+	actualID, token, err := client.CreateWebhook(ctx, owner, repo1, branch1, "https://jfrog.com", vcsutils.Push,
 		vcsutils.PrOpened, vcsutils.PrEdited)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, token)
-	assert.Equal(t, actualId, strconv.Itoa(id))
+	assert.Equal(t, actualID, strconv.Itoa(id))
 }
 
 func TestGitLabClient_UpdateWebhook(t *testing.T) {
@@ -311,7 +311,7 @@ func TestGitlabClient_getGitlabCommitState(t *testing.T) {
 	assert.Equal(t, "", getGitLabCommitState(5))
 }
 
-func createGitLabHandler(t *testing.T, expectedUri string, response []byte, expectedStatusCode int) http.HandlerFunc {
+func createGitLabHandler(t *testing.T, expectedURI string, response []byte, expectedStatusCode int) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.RequestURI == "/api/v4/" {
 			w.WriteHeader(http.StatusOK)
@@ -320,20 +320,20 @@ func createGitLabHandler(t *testing.T, expectedUri string, response []byte, expe
 		w.WriteHeader(expectedStatusCode)
 		_, err := w.Write(response)
 		assert.NoError(t, err)
-		assert.Equal(t, expectedUri, r.RequestURI)
+		assert.Equal(t, expectedURI, r.RequestURI)
 		assert.Equal(t, token, r.Header.Get("Private-Token"))
 	}
 }
 
-func createGitLabWithBodyHandler(t *testing.T, expectedUri string, response []byte, expectedRequestBody []byte,
-	expectedStatusCode int, expectedHttpMethod string) http.HandlerFunc {
+func createGitLabWithBodyHandler(t *testing.T, expectedURI string, response []byte, expectedRequestBody []byte,
+	expectedStatusCode int, expectedHTTPMethod string) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		if request.RequestURI == "/api/v4/" {
 			writer.WriteHeader(http.StatusOK)
 			return
 		}
-		assert.Equal(t, expectedHttpMethod, request.Method)
-		assert.Equal(t, expectedUri, request.RequestURI)
+		assert.Equal(t, expectedHTTPMethod, request.Method)
+		assert.Equal(t, expectedURI, request.RequestURI)
 		assert.Equal(t, token, request.Header.Get("Private-Token"))
 
 		b, err := io.ReadAll(request.Body)
