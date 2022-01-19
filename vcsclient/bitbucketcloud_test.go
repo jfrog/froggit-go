@@ -198,6 +198,35 @@ func TestBitbucketCloud_GetLatestCommitNotFound(t *testing.T) {
 	assert.Empty(t, result)
 }
 
+func TestBitbucketCloud_GetLatestCommitUnknownBranch(t *testing.T) {
+	ctx := context.Background()
+	response := []byte(`{
+		"data": {
+			"shas": [
+				"unknown"
+			]
+		},
+		"error": {
+			"data": {
+				"shas": [
+					"unknown"
+				]
+			},
+			"message": "Commit not found"
+		},
+		"type": "error"
+	}`)
+
+	client, cleanUp := createServerAndClientReturningStatus(t, vcsutils.BitbucketCloud, true, response,
+		fmt.Sprintf("/repositories/%s/%s/commits/%s?pagelen=1", owner, repo1, "unknown"), http.StatusNotFound,
+		createBitbucketCloudHandler)
+	defer cleanUp()
+
+	result, err := client.GetLatestCommit(ctx, owner, repo1, "unknown")
+	require.EqualError(t, err, "404 Not Found")
+	assert.Empty(t, result)
+}
+
 func TestBitbucketCloud_AddSshKeyToRepository(t *testing.T) {
 	ctx := context.Background()
 	response, err := os.ReadFile(filepath.Join("testdata", "bitbucketcloud", "add_ssh_key_response.json"))

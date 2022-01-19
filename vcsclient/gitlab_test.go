@@ -195,6 +195,21 @@ func TestGitLabClient_GetLatestCommitNotFound(t *testing.T) {
 	assert.Empty(t, result)
 }
 
+func TestGitLabClient_GetLatestCommitUnknownBranch(t *testing.T) {
+	ctx := context.Background()
+
+	client, cleanUp := createServerAndClientReturningStatus(t, vcsutils.GitLab, false, []byte("[]"),
+		fmt.Sprintf("/api/v4/projects/%s/repository/commits?page=1&per_page=1&ref_name=unknown",
+			url.PathEscape(owner+"/"+repo1)), http.StatusOK, createGitLabHandler)
+	defer cleanUp()
+
+	result, err := client.GetLatestCommit(ctx, owner, repo1, "unknown")
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "404 Not Found")
+	assert.Empty(t, result)
+}
+
 func TestGitLabClient_AddSshKeyToRepository(t *testing.T) {
 	ctx := context.Background()
 	response := []byte(`{

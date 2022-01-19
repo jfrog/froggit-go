@@ -3,6 +3,7 @@ package vcsclient
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"strconv"
 
@@ -222,7 +223,7 @@ func (client *GitLabClient) GetLatestCommit(ctx context.Context, owner, reposito
 		latestCommit := commits[0]
 		return mapGitLabCommitToCommitInfo(latestCommit), nil
 	}
-	return CommitInfo{}, nil
+	return CommitInfo{}, errors.New(`{"message":"404 Not Found"}`)
 }
 
 // GetRepositoryInfo on GitLab
