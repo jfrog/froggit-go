@@ -232,6 +232,29 @@ func TestBitbucketServer_GetLatestCommitNotFound(t *testing.T) {
 	assert.Empty(t, result)
 }
 
+func TestBitbucketServer_GetLatestCommitUnknownBranch(t *testing.T) {
+	ctx := context.Background()
+	response := []byte(`{
+		"errors": [
+			{
+				"context": null,
+				"exceptionName": "com.atlassian.bitbucket.commit.NoSuchCommitException",
+				"message": "Commit 'unknown' does not exist in repository 'test'."
+			}
+		]
+	}`)
+	client, cleanUp := createServerAndClientReturningStatus(t, vcsutils.BitbucketServer, false, response,
+		fmt.Sprintf("/api/1.0/projects/%s/repos/%s/commits?limit=1&limit=1&until=unknown", owner, repo1),
+		http.StatusNotFound, createBitbucketServerHandler)
+	defer cleanUp()
+
+	result, err := client.GetLatestCommit(ctx, owner, repo1, "unknown")
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "Status: 404 Not Found")
+	assert.Empty(t, result)
+}
+
 func TestBitbucketServer_AddSshKeyToRepository(t *testing.T) {
 	ctx := context.Background()
 	response, err := os.ReadFile(filepath.Join("testdata", "bitbucketserver", "add_ssh_key_response.json"))
@@ -434,6 +457,7 @@ func createBitbucketServerWithBodyHandler(t *testing.T, expectedURI string, resp
 }
 
 func createBadBitbucketServerClient(t *testing.T) VcsClient {
-	client, _ := NewClientBuilder(vcsutils.BitbucketServer).ApiEndpoint("https://bad^endpoint").Build()
+	client, err := NewClientBuilder(vcsutils.BitbucketServer).ApiEndpoint("https://bad^endpoint").Build()
+	require.NoError(t, err)
 	return client
 }

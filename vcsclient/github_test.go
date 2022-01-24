@@ -210,6 +210,44 @@ func TestGitHubClient_GetLatestCommit(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestGitHubClient_GetLatestCommitNotFound(t *testing.T) {
+	ctx := context.Background()
+	response := []byte(`{
+    	"documentation_url": "https://docs.github.com/rest/reference/repos#list-commits",
+    	"message": "Not Found"
+	}`)
+
+	client, cleanUp := createServerAndClientReturningStatus(t, vcsutils.GitHub, false, response,
+		fmt.Sprintf("/repos/%s/%s/commits?page=1&per_page=1&sha=master", owner, "unknown"), http.StatusNotFound,
+		createGitHubHandler)
+	defer cleanUp()
+
+	result, err := client.GetLatestCommit(ctx, owner, "unknown", "master")
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "404 Not Found")
+	assert.Empty(t, result)
+}
+
+func TestGitHubClient_GetLatestCommitUnknownBranch(t *testing.T) {
+	ctx := context.Background()
+	response := []byte(`{
+    	"documentation_url": "https://docs.github.com/rest/reference/repos#list-commits",
+    	"message": "Not Found"
+	}`)
+
+	client, cleanUp := createServerAndClientReturningStatus(t, vcsutils.GitHub, false, response,
+		fmt.Sprintf("/repos/%s/%s/commits?page=1&per_page=1&sha=unknown", owner, repo1), http.StatusNotFound,
+		createGitHubHandler)
+	defer cleanUp()
+
+	result, err := client.GetLatestCommit(ctx, owner, repo1, "unknown")
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "404 Not Found")
+	assert.Empty(t, result)
+}
+
 func TestGitHubClient_AddSshKeyToRepository(t *testing.T) {
 	ctx := context.Background()
 	response := []byte(`{
@@ -327,7 +365,8 @@ func TestGitHubClient_GetRepositoryInfo(t *testing.T) {
 }
 
 func createBadGitHubClient(t *testing.T) VcsClient {
-	client, _ := NewClientBuilder(vcsutils.GitHub).ApiEndpoint("https://bad^endpoint").Build()
+	client, err := NewClientBuilder(vcsutils.GitHub).ApiEndpoint("https://bad^endpoint").Build()
+	require.NoError(t, err)
 	return client
 }
 
