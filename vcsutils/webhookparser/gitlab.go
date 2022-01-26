@@ -54,10 +54,14 @@ func (webhook *GitLabWebhook) parseIncomingWebhook(payload []byte) (*WebhookInfo
 }
 
 func (webhook *GitLabWebhook) parsePushEvent(event *gitlab.PushEvent) *WebhookInfo {
+	var localTimestamp int64
+	if len(event.Commits) > 0 {
+		localTimestamp = event.Commits[0].Timestamp.Local().Unix()
+	}
 	return &WebhookInfo{
 		TargetRepositoryDetails: webhook.parseRepoDetails(event.Project.PathWithNamespace),
 		TargetBranch:            strings.TrimPrefix(event.Ref, "refs/heads/"),
-		Timestamp:               event.Commits[0].Timestamp.Local().Unix(),
+		Timestamp:               localTimestamp,
 		Event:                   vcsutils.Push,
 	}
 }
