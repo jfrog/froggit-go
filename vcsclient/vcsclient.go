@@ -103,6 +103,13 @@ type VcsClient interface {
 	// description  - Pull request description
 	CreatePullRequest(ctx context.Context, owner, repository, sourceBranch, targetBranch, title, description string) error
 
+	// AddPullRequestComment Add a new comment on the requested pull request
+	// owner          - User or organization
+	// repository     - VCS repository name
+	// content        - The new comment content
+	// pullRequestID  - Pull request ID
+	AddPullRequestComment(ctx context.Context, owner, repository, content string, pullRequestID int) error
+
 	// GetLatestCommit Get the most recent commit of a branch
 	// owner      - User or organization
 	// repository - VCS repository name

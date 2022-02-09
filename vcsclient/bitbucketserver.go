@@ -6,14 +6,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	bitbucketv1 "github.com/gfleury/go-bitbucket-v1"
-	"github.com/jfrog/froggit-go/vcsutils"
-	"github.com/mitchellh/mapstructure"
-	"golang.org/x/oauth2"
 	"io/ioutil"
 	"net/http"
 	"strconv"
 	"strings"
+
+	bitbucketv1 "github.com/gfleury/go-bitbucket-v1"
+	"github.com/jfrog/froggit-go/vcsutils"
+	"github.com/mitchellh/mapstructure"
+	"golang.org/x/oauth2"
 )
 
 // BitbucketServerClient API version 1.0
@@ -284,6 +285,23 @@ func (client *BitbucketServerClient) CreatePullRequest(ctx context.Context, owne
 		},
 	}
 	_, err = bitbucketClient.CreatePullRequest(owner, repository, options)
+	return err
+}
+
+// AddPullRequestComment on Bitbucket server
+func (client *BitbucketServerClient) AddPullRequestComment(ctx context.Context, owner, repository, content string, pullRequestID int) error {
+	err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository, "content": content})
+	if err != nil {
+		return err
+	}
+	bitbucketClient, err := client.buildBitbucketClient(ctx)
+	if err != nil {
+		return err
+	}
+	_, err = bitbucketClient.CreatePullRequestComment(owner, repository, pullRequestID, bitbucketv1.Comment{
+		Text: content,
+	}, []string{"application/json"})
+
 	return err
 }
 

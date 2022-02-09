@@ -185,6 +185,18 @@ func TestGitHubClient_CreatePullRequest(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestGitHubClient_AddPullRequestComment(t *testing.T) {
+	ctx := context.Background()
+	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, github.IssueComment{}, "/repos/jfrog/repo-1/issues/1/comments", createGitHubHandler)
+	defer cleanUp()
+
+	err := client.AddPullRequestComment(ctx, owner, repo1, "Comment content", 1)
+	assert.NoError(t, err)
+
+	err = createBadGitHubClient(t).AddPullRequestComment(ctx, owner, repo1, "Comment content", 1)
+	assert.Error(t, err)
+}
+
 func TestGitHubClient_GetLatestCommit(t *testing.T) {
 	ctx := context.Background()
 	response, err := os.ReadFile(filepath.Join("testdata", "github", "commit_list_response.json"))

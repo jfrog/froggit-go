@@ -197,6 +197,21 @@ func (client *GitLabClient) CreatePullRequest(ctx context.Context, owner, reposi
 	return err
 }
 
+// AddPullRequestComment on GitLab
+func (client *GitLabClient) AddPullRequestComment(ctx context.Context, owner, repository, content string, pullRequestID int) error {
+	err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository, "content": content})
+	if err != nil {
+		return err
+	}
+	options := &gitlab.CreateMergeRequestNoteOptions{
+		Body: &content,
+	}
+	_, _, err = client.glClient.Notes.CreateMergeRequestNote(getProjectID(owner, repository), pullRequestID, options,
+		gitlab.WithContext(ctx))
+
+	return err
+}
+
 // GetLatestCommit on GitLab
 func (client *GitLabClient) GetLatestCommit(ctx context.Context, owner, repository, branch string) (CommitInfo, error) {
 	err := validateParametersNotBlank(map[string]string{

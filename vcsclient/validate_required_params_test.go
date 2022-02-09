@@ -113,6 +113,31 @@ func TestRequiredParams_GetCommitByShaInvalidPayload(t *testing.T) {
 	}
 }
 
+func TestRequiredParams_AddPullRequestComment(t *testing.T) {
+	tests := []struct {
+		name          string
+		owner         string
+		repo          string
+		content       string
+		missingParams []string
+	}{
+		{name: "all empty", missingParams: []string{"owner", "repository", "content"}},
+		{name: "empty owner", repo: "repo", content: "content", missingParams: []string{"owner"}},
+		{name: "empty repo", owner: "owner", content: "content", missingParams: []string{"repository"}},
+		{name: "empty content", owner: "owner", missingParams: []string{"content"}},
+	}
+
+	for _, p := range getAllProviders() {
+		for _, tt := range tests {
+			t.Run(p.String()+" "+tt.name, func(t *testing.T) {
+				ctx, client := createClientAndContext(t, p)
+				err := client.AddPullRequestComment(ctx, tt.owner, tt.repo, tt.content, 0)
+				assertMissingParam(t, err, tt.missingParams...)
+			})
+		}
+	}
+}
+
 func TestRequiredParams_CreateLabel(t *testing.T) {
 	tests := []struct {
 		name          string
