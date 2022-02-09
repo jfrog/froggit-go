@@ -3,8 +3,9 @@ package vcsclient
 import (
 	"context"
 	"fmt"
-	"github.com/jfrog/froggit-go/vcsutils"
 	"strings"
+
+	"github.com/jfrog/froggit-go/vcsutils"
 )
 
 // CommitStatus the status of the commit in the VCS
@@ -101,6 +102,20 @@ type VcsClient interface {
 	// title        - Pull request title
 	// description  - Pull request description
 	CreatePullRequest(ctx context.Context, owner, repository, sourceBranch, targetBranch, title, description string) error
+
+	// AddPullRequestComment Add a new comment on the requested pull request.
+	// owner          - User or organization
+	// repository     - VCS repository name
+	// content        - The new comment content
+	// pullRequestID  - Pull request ID
+	AddPullRequestComment(ctx context.Context, owner, repository, content string, pullRequestID int) error
+
+	// EditPullRequestComment Edit a pull request comment.
+	// owner        - User or organization
+	// repository   - VCS repository name
+	// content      - The new comment content
+	// commentID    - Pull request ID
+	EditPullRequestComment(ctx context.Context, owner, repository, content string, pullRequestID int, commentID int64) error
 
 	// GetLatestCommit Get the most recent commit of a branch
 	// owner        - User or organization

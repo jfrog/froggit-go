@@ -5,11 +5,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/mitchellh/mapstructure"
 	"net/http"
 	"net/url"
 	"strings"
 	"time"
+
+	"github.com/mitchellh/mapstructure"
 
 	"github.com/jfrog/froggit-go/vcsutils"
 	"github.com/ktrysmt/go-bitbucket"
@@ -257,6 +258,24 @@ func (client *BitbucketCloudClient) CreatePullRequest(ctx context.Context, owner
 	}
 	_, err := bitbucketClient.Repositories.PullRequests.Create(options)
 	return err
+}
+
+// AddPullRequestComment on Bitbucket cloud
+func (client *BitbucketCloudClient) AddPullRequestComment(ctx context.Context, owner, repository, content string, pullRequestID int) error {
+	bitbucketClient := client.buildBitbucketCloudClient(ctx)
+	options := &bitbucket.PullRequestCommentOptions{
+		Owner:         owner,
+		RepoSlug:      repository,
+		PullRequestID: fmt.Sprint(pullRequestID),
+		Content:       content,
+	}
+	_, err := bitbucketClient.Repositories.PullRequests.AddComment(options)
+	return err
+}
+
+// EditPullRequestComment on Bitbucket cloud
+func (client *BitbucketCloudClient) EditPullRequestComment(ctx context.Context, owner, repository, content string, pullRequestID int, commentID int64) error {
+	return fmt.Errorf("Not implemented.")
 }
 
 // GetLatestCommit on Bitbucket cloud

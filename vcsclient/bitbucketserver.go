@@ -6,14 +6,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	bitbucketv1 "github.com/gfleury/go-bitbucket-v1"
-	"github.com/jfrog/froggit-go/vcsutils"
-	"github.com/mitchellh/mapstructure"
-	"golang.org/x/oauth2"
 	"io/ioutil"
 	"net/http"
 	"strconv"
 	"strings"
+
+	bitbucketv1 "github.com/gfleury/go-bitbucket-v1"
+	"github.com/jfrog/froggit-go/vcsutils"
+	"github.com/mitchellh/mapstructure"
+	"golang.org/x/oauth2"
 )
 
 // BitbucketServerClient API version 1.0
@@ -285,6 +286,17 @@ func (client *BitbucketServerClient) CreatePullRequest(ctx context.Context, owne
 	}
 	_, err = bitbucketClient.CreatePullRequest(owner, repository, options)
 	return err
+}
+
+// AddPullRequestComment on GitHub
+func (client *BitbucketServerClient) AddPullRequestComment(ctx context.Context, owner, repository, content string, pullRequestID int) error {
+	// CreateComment_0 ?
+	return fmt.Errorf("Not implemented")
+}
+
+// EditPullRequestComment on GitHub
+func (client *BitbucketServerClient) EditPullRequestComment(ctx context.Context, owner, repository, content string, pullRequestID int, commentID int64) error {
+	return fmt.Errorf("Not implemented")
 }
 
 type projectsResponse struct {

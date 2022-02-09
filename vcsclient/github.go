@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/google/go-github/v41/github"
+	"github.com/google/go-github/v42/github"
 	"github.com/jfrog/froggit-go/vcsutils"
 	"golang.org/x/oauth2"
 )
@@ -222,6 +222,32 @@ func (client *GitHubClient) CreatePullRequest(ctx context.Context, owner, reposi
 		Head:  &head,
 		Base:  &targetBranch,
 	})
+	return err
+}
+
+// AddPullRequestComment on GitHub
+func (client *GitHubClient) AddPullRequestComment(ctx context.Context, owner, repository, content string, pullRequestID int) error {
+	ghClient, err := client.buildGithubClient(ctx)
+	if err != nil {
+		return err
+	}
+	_, _, err = ghClient.Issues.CreateComment(ctx, owner, repository, pullRequestID, &github.IssueComment{
+		Body: &content,
+	})
+
+	return err
+}
+
+// EditPullRequestComment on GitHub
+func (client *GitHubClient) EditPullRequestComment(ctx context.Context, owner, repository, content string, pullRequestID int, commentID int64) error {
+	ghClient, err := client.buildGithubClient(ctx)
+	if err != nil {
+		return err
+	}
+	_, _, err = ghClient.Issues.EditComment(ctx, owner, repository, commentID, &github.IssueComment{
+		Body: &content,
+	})
+
 	return err
 }
 
