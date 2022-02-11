@@ -156,14 +156,18 @@ func TestBitbucketServer_DownloadRepository(t *testing.T) {
 	assert.NoError(t, err)
 	defer func() { _ = os.RemoveAll(dir) }()
 
-	client, err := NewClientBuilder(vcsutils.BitbucketServer).ApiEndpoint("https://open-bitbucket.nrao.edu/rest").Build()
-	assert.NoError(t, err)
+	repoFile, err := os.ReadFile(filepath.Join("testdata", "bitbucketserver", "hello-world-main.tar.gz"))
+	require.NoError(t, err)
 
-	err = client.DownloadRepository(ctx, "ssa", "solr-system", "master", dir)
-	assert.NoError(t, err)
+	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, false, repoFile,
+		fmt.Sprintf("/api/1.0/projects/%s/repos/%s/archive?format=tgz", owner, repo1), createBitbucketServerHandler)
+	defer cleanUp()
+
+	err = client.DownloadRepository(ctx, owner, repo1, "irrelevant", dir)
+	require.NoError(t, err)
 
 	_, err = os.OpenFile(filepath.Join(dir, "README.md"), os.O_RDONLY, 0644)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	err = createBadBitbucketServerClient(t).DownloadRepository(ctx, "ssa", "solr-system", "master", dir)
 	assert.Error(t, err)
