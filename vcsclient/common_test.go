@@ -36,6 +36,14 @@ func createServerAndClient(t *testing.T, vcsProvider vcsutils.VcsProvider, basic
 
 func createServerAndClientReturningStatus(t *testing.T, vcsProvider vcsutils.VcsProvider, basicAuth bool, response interface{},
 	expectedURI string, expectedStatusCode int, createHandlerFunc createHandlerFunc) (VcsClient, func()) {
+	client, _, cleanUp := createServerWithUrlAndClientReturningStatus(t, vcsProvider, basicAuth, response,
+		expectedURI, expectedStatusCode, createHandlerFunc)
+	return client, cleanUp
+}
+
+func createServerWithUrlAndClientReturningStatus(t *testing.T, vcsProvider vcsutils.VcsProvider, basicAuth bool,
+	response interface{}, expectedURI string, expectedStatusCode int,
+	createHandlerFunc createHandlerFunc) (VcsClient, string, func()) {
 	var byteResponse []byte
 	var ok bool
 	if byteResponse, ok = response.([]byte); !ok {
@@ -46,7 +54,7 @@ func createServerAndClientReturningStatus(t *testing.T, vcsProvider vcsutils.Vcs
 	}
 	server := httptest.NewServer(createHandlerFunc(t, expectedURI, byteResponse, expectedStatusCode))
 	client := buildClient(t, vcsProvider, basicAuth, server)
-	return client, server.Close
+	return client, server.URL, server.Close
 }
 
 func createBodyHandlingServerAndClient(t *testing.T, vcsProvider vcsutils.VcsProvider, basicAuth bool, response interface{},

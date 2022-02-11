@@ -191,19 +191,22 @@ func TestBitbucketServer_GetLatestCommit(t *testing.T) {
 	assert.NoError(t, err)
 
 	// limit=1 appears twice because it is added twice by: github.com/gfleury/go-bitbucket-v1@v0.0.0-20210826163055-dff2223adeac/default_api.go:3848
-	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, false, response,
+	client, serverUrl, cleanUp := createServerWithUrlAndClientReturningStatus(t, vcsutils.BitbucketServer, false,
+		response,
 		fmt.Sprintf("/api/1.0/projects/%s/repos/%s/commits?limit=1&limit=1&until=master", owner, repo1),
-		createBitbucketServerHandler)
+		http.StatusOK, createBitbucketServerHandler)
 	defer cleanUp()
 
 	result, err := client.GetLatestCommit(ctx, owner, repo1, "master")
 
 	require.NoError(t, err)
+	expectedUrl := fmt.Sprintf("%s/api/1.0/projects/jfrog/repos/repo-1"+
+		"/commits/def0123abcdef4567abcdef8987abcdef6543abc", serverUrl)
 	assert.Equal(t, CommitInfo{
 		Hash:          "def0123abcdef4567abcdef8987abcdef6543abc",
 		AuthorName:    "charlie",
 		CommitterName: "mark",
-		Url:           "",
+		Url:           expectedUrl,
 		Timestamp:     1548720847610,
 		Message:       "More work on feature 1",
 		ParentHashes:  []string{"abcdef0123abcdef4567abcdef8987abcdef6543", "qwerty0123abcdef4567abcdef8987abcdef6543"},
@@ -364,19 +367,21 @@ func TestBitbucketServer_GetCommitBySha(t *testing.T) {
 	response, err := os.ReadFile(filepath.Join("testdata", "bitbucketserver", "commit_single_response.json"))
 	assert.NoError(t, err)
 
-	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, false, response,
-		fmt.Sprintf("/api/1.0/projects/%s/repos/%s/commits/%s", owner, repo1, sha),
-		createBitbucketServerHandler)
+	client, serverUrl, cleanUp := createServerWithUrlAndClientReturningStatus(t, vcsutils.BitbucketServer, false,
+		response, fmt.Sprintf("/api/1.0/projects/%s/repos/%s/commits/%s", owner, repo1, sha),
+		http.StatusOK, createBitbucketServerHandler)
 	defer cleanUp()
 
 	result, err := client.GetCommitBySha(ctx, owner, repo1, sha)
 
 	require.NoError(t, err)
+	expectedUrl := fmt.Sprintf("%s/api/1.0/projects/jfrog/repos/repo-1"+
+		"/commits/abcdef0123abcdef4567abcdef8987abcdef6543", serverUrl)
 	assert.Equal(t, CommitInfo{
 		Hash:          sha,
 		AuthorName:    "charlie",
 		CommitterName: "mark",
-		Url:           "",
+		Url:           expectedUrl,
 		Timestamp:     1636089306104,
 		Message:       "WIP on feature 1",
 		ParentHashes:  []string{"bbcdef0123abcdef4567abcdef8987abcdef6543"},
