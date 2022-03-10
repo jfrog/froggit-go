@@ -3,7 +3,6 @@ package vcsclient
 import (
 	"context"
 	"fmt"
-	"github.com/stretchr/testify/require"
 	"io"
 	"io/ioutil"
 	"math/rand"
@@ -14,6 +13,8 @@ import (
 	"strconv"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/require"
 
 	"github.com/jfrog/froggit-go/vcsutils"
 	"github.com/stretchr/testify/assert"
@@ -150,6 +151,24 @@ func TestGitLabClient_CreatePullRequest(t *testing.T) {
 	defer cleanUp()
 
 	err := client.CreatePullRequest(ctx, owner, repo1, branch1, branch2, "PR title", "PR body")
+	assert.NoError(t, err)
+}
+
+func TestGitLabClient_AddPullRequestComment(t *testing.T) {
+	ctx := context.Background()
+	client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, &gitlab.MergeRequest{}, fmt.Sprintf("/api/v4/projects/%s/merge_requests/1/notes", url.PathEscape(owner+"/"+repo1)), createGitLabHandler)
+	defer cleanUp()
+
+	err := client.AddPullRequestComment(ctx, owner, repo1, "Comment content", 1)
+	assert.NoError(t, err)
+}
+
+func TestGitLabClient_EditPullRequestComment(t *testing.T) {
+	ctx := context.Background()
+	client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, &gitlab.MergeRequest{}, fmt.Sprintf("/api/v4/projects/%s/merge_requests/2/notes/3", url.PathEscape(owner+"/"+repo1)), createGitLabHandler)
+	defer cleanUp()
+
+	err := client.EditPullRequestComment(ctx, owner, repo1, "Comment content", 2, 3)
 	assert.NoError(t, err)
 }
 
