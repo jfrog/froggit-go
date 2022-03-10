@@ -207,17 +207,6 @@ func (client *GitLabClient) AddPullRequestComment(ctx context.Context, owner, re
 	return err
 }
 
-// EditPullRequestComment on GitHub
-func (client *GitLabClient) EditPullRequestComment(ctx context.Context, owner, repository, content string, pullRequestID int, commentID int64) error {
-	options := &gitlab.UpdateMergeRequestNoteOptions{
-		Body: &content,
-	}
-	_, _, err := client.glClient.Notes.UpdateMergeRequestNote(getProjectID(owner, repository), pullRequestID, int(commentID), options,
-		gitlab.WithContext(ctx))
-
-	return err
-}
-
 // GetLatestCommit on GitLab
 func (client *GitLabClient) GetLatestCommit(ctx context.Context, owner, repository, branch string) (CommitInfo, error) {
 	err := validateParametersNotBlank(map[string]string{

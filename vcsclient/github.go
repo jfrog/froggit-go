@@ -239,20 +239,6 @@ func (client *GitHubClient) AddPullRequestComment(ctx context.Context, owner, re
 	return err
 }
 
-// EditPullRequestComment on GitHub
-func (client *GitHubClient) EditPullRequestComment(ctx context.Context, owner, repository, content string, pullRequestID int, commentID int64) error {
-	ghClient, err := client.buildGithubClient(ctx)
-	if err != nil {
-		return err
-	}
-	// We use the Issues API to add a regular comment. The PullRequests API adds a code review comment.
-	_, _, err = ghClient.Issues.EditComment(ctx, owner, repository, commentID, &github.IssueComment{
-		Body: &content,
-	})
-
-	return err
-}
-
 // GetLatestCommit on GitHub
 func (client *GitHubClient) GetLatestCommit(ctx context.Context, owner, repository, branch string) (CommitInfo, error) {
 	err := validateParametersNotBlank(map[string]string{

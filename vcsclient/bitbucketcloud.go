@@ -273,20 +273,6 @@ func (client *BitbucketCloudClient) AddPullRequestComment(ctx context.Context, o
 	return err
 }
 
-// EditPullRequestComment on Bitbucket cloud
-func (client *BitbucketCloudClient) EditPullRequestComment(ctx context.Context, owner, repository, content string, pullRequestID int, commentID int64) error {
-	bitbucketClient := client.buildBitbucketCloudClient(ctx)
-	options := &bitbucket.PullRequestCommentOptions{
-		Owner:         owner,
-		RepoSlug:      repository,
-		PullRequestID: fmt.Sprint(pullRequestID),
-		Content:       content,
-		CommentId:     fmt.Sprint(commentID),
-	}
-	_, err := bitbucketClient.Repositories.PullRequests.UpdateComment(options)
-	return err
-}
-
 // GetLatestCommit on Bitbucket cloud
 func (client *BitbucketCloudClient) GetLatestCommit(ctx context.Context, owner, repository, branch string) (CommitInfo, error) {
 	err := validateParametersNotBlank(map[string]string{

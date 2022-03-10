@@ -163,15 +163,6 @@ func TestGitLabClient_AddPullRequestComment(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestGitLabClient_EditPullRequestComment(t *testing.T) {
-	ctx := context.Background()
-	client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, &gitlab.MergeRequest{}, fmt.Sprintf("/api/v4/projects/%s/merge_requests/2/notes/3", url.PathEscape(owner+"/"+repo1)), createGitLabHandler)
-	defer cleanUp()
-
-	err := client.EditPullRequestComment(ctx, owner, repo1, "Comment content", 2, 3)
-	assert.NoError(t, err)
-}
-
 func TestGitLabClient_GetLatestCommit(t *testing.T) {
 	ctx := context.Background()
 	response, err := os.ReadFile(filepath.Join("testdata", "gitlab", "commit_list_response.json"))

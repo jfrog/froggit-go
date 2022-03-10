@@ -110,13 +110,6 @@ type VcsClient interface {
 	// pullRequestID  - Pull request ID
 	AddPullRequestComment(ctx context.Context, owner, repository, content string, pullRequestID int) error
 
-	// EditPullRequestComment Edit a pull request comment.
-	// owner        - User or organization
-	// repository   - VCS repository name
-	// content      - The new comment content
-	// commentID    - Pull request ID
-	EditPullRequestComment(ctx context.Context, owner, repository, content string, pullRequestID int, commentID int64) error
-
 	// GetLatestCommit Get the most recent commit of a branch
 	// owner        - User or organization
 	// repository   - VCS repository name
