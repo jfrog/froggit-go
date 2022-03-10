@@ -24,6 +24,7 @@ Currently supported providers are: [GitHub](#github), [Bitbucket Server](#bitbuc
   - [Delete Webhook](#delete-webhook)
   - [Set Commit Status](#set-commit-status)
   - [Create Pull Request](#create-pull-request)
+  - [Add Pull Request Comment](#add-pull-request-comment)
   - [Get Latest Commit](#get-latest-commit)
   - [Get Commit By SHA](#get-commit-by-sha)
   - [Add Public SSH Key](#add-public-ssh-key)
@@ -253,7 +254,24 @@ title := "Pull request title"
 // Pull request description
 description := "Pull request description"
 
-err := client.CreatePullRequest(ctx, owner, repository, sourceBranch, targetBranch, title, description string)
+err := client.CreatePullRequest(ctx, owner, repository, sourceBranch, targetBranch, title, description)
+```
+
+##### Add Pull Request Comment
+
+```go
+// Go context
+ctx := context.Background()
+// Organization or username
+owner := "jfrog"
+// VCS repository
+repository := "jfrog-cli"
+// Comment content
+content := "Comment content"
+// Pull Request ID
+pullRequestID := 5
+
+err := client.AddPullRequestComment(ctx, owner, repository, content, pullRequestID)
 ```
 
 #### Get Latest Commit
