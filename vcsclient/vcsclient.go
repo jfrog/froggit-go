@@ -103,7 +103,7 @@ type VcsClient interface {
 	// description  - Pull request description
 	CreatePullRequest(ctx context.Context, owner, repository, sourceBranch, targetBranch, title, description string) error
 
-	// AddPullRequestComment Add a new comment on the requested pull request.
+	// AddPullRequestComment Add a new comment on the requested pull request
 	// owner          - User or organization
 	// repository     - VCS repository name
 	// content        - The new comment content

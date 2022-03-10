@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/google/go-github/v42/github"
+	"github.com/google/go-github/v41/github"
 	"github.com/jfrog/froggit-go/vcsutils"
 )
 
