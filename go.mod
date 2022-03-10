@@ -12,3 +12,5 @@ require (
 	github.com/xanzy/go-gitlab v0.52.2
 	golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8
 )
+
+replace github.com/ktrysmt/go-bitbucket => github.com/yahavi/go-bitbucket v0.9.32-0.20220310104555-0278576736a6

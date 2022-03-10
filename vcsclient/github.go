@@ -231,6 +231,7 @@ func (client *GitHubClient) AddPullRequestComment(ctx context.Context, owner, re
 	if err != nil {
 		return err
 	}
+	// We use the Issues API to add a regular comment. The PullRequests API adds a code review comment.
 	_, _, err = ghClient.Issues.CreateComment(ctx, owner, repository, pullRequestID, &github.IssueComment{
 		Body: &content,
 	})
@@ -244,6 +245,7 @@ func (client *GitHubClient) EditPullRequestComment(ctx context.Context, owner, r
 	if err != nil {
 		return err
 	}
+	// We use the Issues API to add a regular comment. The PullRequests API adds a code review comment.
 	_, _, err = ghClient.Issues.EditComment(ctx, owner, repository, commentID, &github.IssueComment{
 		Body: &content,
 	})

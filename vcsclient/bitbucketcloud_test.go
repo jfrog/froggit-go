@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/stretchr/testify/require"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -12,6 +11,8 @@ import (
 	"path/filepath"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/require"
 
 	"github.com/google/uuid"
 	"github.com/jfrog/froggit-go/vcsutils"
@@ -158,6 +159,24 @@ func TestBitbucketCloud_CreatePullRequest(t *testing.T) {
 	defer cleanUp()
 
 	err := client.CreatePullRequest(ctx, owner, repo1, branch1, branch2, "PR title", "PR body")
+	assert.NoError(t, err)
+}
+
+func TestBitbucketCloud_AddPullRequestComment(t *testing.T) {
+	ctx := context.Background()
+	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketCloud, true, nil, "/repositories/jfrog/repo-1/pullrequests/1/comments", createBitbucketCloudHandler)
+	defer cleanUp()
+
+	err := client.AddPullRequestComment(ctx, owner, repo1, "Comment content", 1)
+	assert.NoError(t, err)
+}
+
+func TestBitbucketCloud_EditPullRequestComment(t *testing.T) {
+	ctx := context.Background()
+	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketCloud, true, nil, "/repositories/jfrog/repo-1/pullrequests/2/comments/3", createBitbucketCloudHandler)
+	defer cleanUp()
+
+	err := client.EditPullRequestComment(ctx, owner, repo1, "Comment content", 2, 3)
 	assert.NoError(t, err)
 }
 
