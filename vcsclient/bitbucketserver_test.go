@@ -185,6 +185,18 @@ func TestBitbucketServer_CreatePullRequest(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestBitbucketServer_AddPullRequestComment(t *testing.T) {
+	ctx := context.Background()
+	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, true, nil, "/api/1.0/projects/jfrog/repos/repo-1/pull-requests/1/comments", createBitbucketServerHandler)
+	defer cleanUp()
+
+	err := client.AddPullRequestComment(ctx, owner, repo1, "Comment content", 1)
+	assert.NoError(t, err)
+
+	err = createBadBitbucketServerClient(t).AddPullRequestComment(ctx, owner, repo1, "Comment content", 1)
+	assert.Error(t, err)
+}
+
 func TestBitbucketServer_GetLatestCommit(t *testing.T) {
 	ctx := context.Background()
 	response, err := os.ReadFile(filepath.Join("testdata", "bitbucketserver", "commit_list_response.json"))

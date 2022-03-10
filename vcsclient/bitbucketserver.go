@@ -290,13 +290,20 @@ func (client *BitbucketServerClient) CreatePullRequest(ctx context.Context, owne
 
 // AddPullRequestComment on GitHub
 func (client *BitbucketServerClient) AddPullRequestComment(ctx context.Context, owner, repository, content string, pullRequestID int) error {
-	// CreateComment_0 ?
-	return fmt.Errorf("Not implemented")
+	bitbucketClient, err := client.buildBitbucketClient(ctx)
+	if err != nil {
+		return err
+	}
+	_, err = bitbucketClient.CreatePullRequestComment(owner, repository, pullRequestID, bitbucketv1.Comment{
+		Text: content,
+	}, []string{"application/json"})
+
+	return err
 }
 
 // EditPullRequestComment on GitHub
 func (client *BitbucketServerClient) EditPullRequestComment(ctx context.Context, owner, repository, content string, pullRequestID int, commentID int64) error {
-	return fmt.Errorf("Not implemented")
+	return fmt.Errorf("not implemented")
 }
 
 type projectsResponse struct {
