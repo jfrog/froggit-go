@@ -185,6 +185,15 @@ func TestBitbucketServer_CreatePullRequest(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestBitbucketServer_UnlabelPullRequest(t *testing.T) {
+	ctx := context.Background()
+	client, err := NewClientBuilder(vcsutils.BitbucketServer).Build()
+	assert.NoError(t, err)
+
+	err = client.UnlabelPullRequest(ctx, owner, repo1, labelName, 1)
+	assert.ErrorIs(t, err, errLabelsNotSupported)
+}
+
 func TestBitbucketServer_GetLatestCommit(t *testing.T) {
 	ctx := context.Background()
 	response, err := os.ReadFile(filepath.Join("testdata", "bitbucketserver", "commit_list_response.json"))
@@ -359,6 +368,24 @@ func TestBitbucketServer_GetRepositoryInfo(t *testing.T) {
 
 	_, err = createBadBitbucketServerClient(t).GetRepositoryInfo(ctx, owner, repo1)
 	assert.Error(t, err)
+}
+
+func TestBitbucketServer_CreateLabel(t *testing.T) {
+	ctx := context.Background()
+	client, err := NewClientBuilder(vcsutils.BitbucketServer).Build()
+	assert.NoError(t, err)
+
+	err = client.CreateLabel(ctx, owner, repo1, LabelInfo{})
+	assert.ErrorIs(t, err, errLabelsNotSupported)
+}
+
+func TestBitbucketServer_GetLabel(t *testing.T) {
+	ctx := context.Background()
+	client, err := NewClientBuilder(vcsutils.BitbucketServer).Build()
+	assert.NoError(t, err)
+
+	_, err = client.GetLabel(ctx, owner, repo1, labelName)
+	assert.ErrorIs(t, err, errLabelsNotSupported)
 }
 
 func TestBitbucketServer_GetCommitBySha(t *testing.T) {
