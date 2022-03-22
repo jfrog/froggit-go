@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"math/rand"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -181,6 +182,18 @@ func TestGitHubClient_CreatePullRequest(t *testing.T) {
 	assert.NoError(t, err)
 
 	err = createBadGitHubClient(t).CreatePullRequest(ctx, owner, repo1, branch1, branch2, "PR title", "PR body")
+	assert.Error(t, err)
+}
+
+func TestGitHubClient_UnlabelPullRequest(t *testing.T) {
+	ctx := context.Background()
+	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, github.PullRequest{}, fmt.Sprintf("/repos/jfrog/repo-1/issues/1/labels/%s", url.PathEscape(labelName)), createGitHubHandler)
+	defer cleanUp()
+
+	err := client.UnlabelPullRequest(ctx, owner, repo1, labelName, 1)
+	assert.NoError(t, err)
+
+	err = createBadGitHubClient(t).UnlabelPullRequest(ctx, owner, repo1, labelName, 1)
 	assert.Error(t, err)
 }
 
@@ -362,6 +375,55 @@ func TestGitHubClient_GetRepositoryInfo(t *testing.T) {
 
 	_, err = createBadGitHubClient(t).GetRepositoryInfo(ctx, "octocat", "Hello-World")
 	assert.Error(t, err)
+}
+
+func TestGitHubClient_CreateLabel(t *testing.T) {
+	ctx := context.Background()
+	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, github.Label{}, fmt.Sprintf("/repos/jfrog/%s/labels", repo1), createGitHubHandler)
+	defer cleanUp()
+
+	err := client.CreateLabel(ctx, owner, repo1, LabelInfo{
+		Name:        labelName,
+		Description: "label-description",
+		Color:       "001122",
+	})
+	assert.NoError(t, err)
+
+	err = createBadGitHubClient(t).CreateLabel(ctx, owner, repo1, LabelInfo{
+		Name:        labelName,
+		Description: "label-description",
+		Color:       "001122",
+	})
+	assert.Error(t, err)
+}
+
+func TestGitHubClient_GetLabel(t *testing.T) {
+	ctx := context.Background()
+
+	expectedLabel := &LabelInfo{Name: labelName, Description: "label-description", Color: "001122"}
+	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false,
+		github.Label{Name: &expectedLabel.Name, Description: &expectedLabel.Description, Color: &expectedLabel.Color},
+		fmt.Sprintf("/repos/jfrog/%s/labels/%s", repo1, url.PathEscape(expectedLabel.Name)), createGitHubHandler)
+	defer cleanUp()
+
+	actualLabel, err := client.GetLabel(ctx, owner, repo1, expectedLabel.Name)
+	assert.NoError(t, err)
+
+	assert.Equal(t, expectedLabel, actualLabel)
+	_, err = createBadGitHubClient(t).GetLabel(ctx, owner, repo1, expectedLabel.Name)
+	assert.Error(t, err)
+}
+
+func TestGitGubClient_GetLabelNotExisted(t *testing.T) {
+	ctx := context.Background()
+
+	client, cleanUp := createBodyHandlingServerAndClient(t, vcsutils.GitHub, false, github.Label{},
+		fmt.Sprintf("/repos/jfrog/%s/labels/%s", repo1, "not-existed"), http.StatusNotFound, []byte{}, "GET", createGitHubWithBodyHandler)
+	defer cleanUp()
+
+	actualLabel, err := client.GetLabel(ctx, owner, repo1, "not-existed")
+	assert.NoError(t, err)
+	assert.Nil(t, actualLabel)
 }
 
 func createBadGitHubClient(t *testing.T) VcsClient {

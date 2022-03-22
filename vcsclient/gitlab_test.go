@@ -3,7 +3,6 @@ package vcsclient
 import (
 	"context"
 	"fmt"
-	"github.com/stretchr/testify/require"
 	"io"
 	"io/ioutil"
 	"math/rand"
@@ -14,6 +13,8 @@ import (
 	"strconv"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/require"
 
 	"github.com/jfrog/froggit-go/vcsutils"
 	"github.com/stretchr/testify/assert"
@@ -324,6 +325,38 @@ func TestGitlabClient_getGitlabCommitState(t *testing.T) {
 	assert.Equal(t, "failed", getGitLabCommitState(Error))
 	assert.Equal(t, "running", getGitLabCommitState(InProgress))
 	assert.Equal(t, "", getGitLabCommitState(5))
+}
+
+func TestGitlabClient_CreateLabel(t *testing.T) {
+	ctx := context.Background()
+	client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, gitlab.Label{},
+		fmt.Sprintf("/api/v4/projects/%s/labels", url.PathEscape(owner+"/"+repo1)), createGitLabHandler)
+	defer cleanUp()
+
+	err := client.CreateLabel(ctx, owner, repo1, LabelInfo{
+		Name:        labelName,
+		Description: "label-description",
+		Color:       "001122",
+	})
+	assert.NoError(t, err)
+}
+
+func TestGitlabClient_GetLabel(t *testing.T) {
+	ctx := context.Background()
+	expectedLabel := gitlab.Label{Name: labelName, Description: "label-description", Color: "001122"}
+	client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, []gitlab.Label{expectedLabel},
+		fmt.Sprintf("/api/v4/projects/%s/labels", url.PathEscape(owner+"/"+repo1)), createGitLabHandler)
+	defer cleanUp()
+
+	labelInfo, err := client.GetLabel(ctx, owner, repo1, labelName)
+	assert.NoError(t, err)
+	assert.Equal(t, labelInfo.Name, expectedLabel.Name)
+	assert.Equal(t, labelInfo.Description, expectedLabel.Description)
+	assert.Equal(t, labelInfo.Color, expectedLabel.Color)
+
+	labelInfo, err = client.GetLabel(ctx, owner, repo1, "not-existed")
+	assert.NoError(t, err)
+	assert.Nil(t, labelInfo)
 }
 
 func createGitLabHandler(t *testing.T, expectedURI string, response []byte, expectedStatusCode int) http.HandlerFunc {

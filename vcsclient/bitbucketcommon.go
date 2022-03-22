@@ -1,5 +1,7 @@
 package vcsclient
 
+import "fmt"
+
 func getBitbucketCommitState(commitState CommitStatus) string {
 	switch commitState {
 	case Pass:
@@ -10,4 +12,8 @@ func getBitbucketCommitState(commitState CommitStatus) string {
 		return "INPROGRESS"
 	}
 	return ""
+}
+
+func getLabelsUnsupportedError() error {
+	return fmt.Errorf("labels are not supported on Bitbucket")
 }

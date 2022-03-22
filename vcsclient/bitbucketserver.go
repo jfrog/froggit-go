@@ -287,6 +287,11 @@ func (client *BitbucketServerClient) CreatePullRequest(ctx context.Context, owne
 	return err
 }
 
+// UnlabelPullRequest on Bitbucket server
+func (client *BitbucketServerClient) UnlabelPullRequest(ctx context.Context, owner, repository, name string, pullRequestID int) error {
+	return getLabelsUnsupportedError()
+}
+
 type projectsResponse struct {
 	Values []struct {
 		Key string `json:"key,omitempty"`
@@ -396,6 +401,16 @@ func (client BitbucketServerClient) GetCommitBySha(ctx context.Context, owner, r
 		return CommitInfo{}, err
 	}
 	return client.mapBitbucketServerCommitToCommitInfo(commit, owner, repository), nil
+}
+
+// CreateLabel on Bitbucket server
+func (client BitbucketServerClient) CreateLabel(ctx context.Context, owner, repository string, labelInfo LabelInfo) error {
+	return getLabelsUnsupportedError()
+}
+
+// GetLabel on Bitbucket server
+func (client *BitbucketServerClient) GetLabel(ctx context.Context, owner, repository, name string) (*LabelInfo, error) {
+	return nil, getLabelsUnsupportedError()
 }
 
 // Get all projects for which the authenticated user has the PROJECT_VIEW permission

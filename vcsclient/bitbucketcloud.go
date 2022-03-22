@@ -259,6 +259,11 @@ func (client *BitbucketCloudClient) CreatePullRequest(ctx context.Context, owner
 	return err
 }
 
+// UnlabelPullRequest on Bitbucket cloud
+func (client *BitbucketCloudClient) UnlabelPullRequest(ctx context.Context, owner, repository, name string, pullRequestID int) error {
+	return getLabelsUnsupportedError()
+}
+
 // GetLatestCommit on Bitbucket cloud
 func (client *BitbucketCloudClient) GetLatestCommit(ctx context.Context, owner, repository, branch string) (CommitInfo, error) {
 	err := validateParametersNotBlank(map[string]string{
@@ -354,6 +359,16 @@ func (client *BitbucketCloudClient) GetCommitBySha(ctx context.Context, owner, r
 		return CommitInfo{}, err
 	}
 	return mapBitbucketCloudCommitToCommitInfo(parsedCommit), nil
+}
+
+// CreateLabel on Bitbucket cloud
+func (client *BitbucketCloudClient) CreateLabel(ctx context.Context, owner, repository string, labelInfo LabelInfo) error {
+	return getLabelsUnsupportedError()
+}
+
+// GetLabel on Bitbucket cloud
+func (client *BitbucketCloudClient) GetLabel(ctx context.Context, owner, repository, name string) (*LabelInfo, error) {
+	return nil, getLabelsUnsupportedError()
 }
 
 func extractCommitFromResponse(commits interface{}) (*commitResponse, error) {
