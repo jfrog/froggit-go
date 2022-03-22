@@ -197,14 +197,6 @@ func (client *GitLabClient) CreatePullRequest(ctx context.Context, owner, reposi
 	return err
 }
 
-// UnlabelPullRequest on GitLab
-func (client *GitLabClient) UnlabelPullRequest(ctx context.Context, owner, repository, name string, pullRequestID int) error {
-	_, _, err := client.glClient.MergeRequests.UpdateMergeRequest(getProjectID(owner, repository), pullRequestID, &gitlab.UpdateMergeRequestOptions{
-		RemoveLabels: gitlab.Labels{name},
-	}, gitlab.WithContext(ctx))
-	return err
-}
-
 // GetLatestCommit on GitLab
 func (client *GitLabClient) GetLatestCommit(ctx context.Context, owner, repository, branch string) (CommitInfo, error) {
 	err := validateParametersNotBlank(map[string]string{
@@ -284,6 +276,7 @@ func (client *GitLabClient) CreateLabel(ctx context.Context, owner, repository s
 	return err
 }
 
+// GetLabel on GitLub
 func (client *GitLabClient) GetLabel(ctx context.Context, owner, repository, name string) (*LabelInfo, error) {
 	err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository, "name": name})
 	if err != nil {
@@ -306,6 +299,14 @@ func (client *GitLabClient) GetLabel(ctx context.Context, owner, repository, nam
 	}
 
 	return nil, nil
+}
+
+// UnlabelPullRequest on GitLab
+func (client *GitLabClient) UnlabelPullRequest(ctx context.Context, owner, repository, name string, pullRequestID int) error {
+	_, _, err := client.glClient.MergeRequests.UpdateMergeRequest(getProjectID(owner, repository), pullRequestID, &gitlab.UpdateMergeRequestOptions{
+		RemoveLabels: gitlab.Labels{name},
+	}, gitlab.WithContext(ctx))
+	return err
 }
 
 func getProjectID(owner, project string) string {

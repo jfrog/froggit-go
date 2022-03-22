@@ -225,17 +225,6 @@ func (client *GitHubClient) CreatePullRequest(ctx context.Context, owner, reposi
 	return err
 }
 
-// UnlabelPullRequest on GitHub
-func (client *GitHubClient) UnlabelPullRequest(ctx context.Context, owner, repository, name string, pullRequestID int) error {
-	ghClient, err := client.buildGithubClient(ctx)
-	if err != nil {
-		return err
-	}
-
-	_, err = ghClient.Issues.RemoveLabelForIssue(ctx, owner, repository, pullRequestID, name)
-	return err
-}
-
 // GetLatestCommit on GitHub
 func (client *GitHubClient) GetLatestCommit(ctx context.Context, owner, repository, branch string) (CommitInfo, error) {
 	err := validateParametersNotBlank(map[string]string{
@@ -358,6 +347,17 @@ func (client *GitHubClient) GetLabel(ctx context.Context, owner, repository, nam
 		Description: *label.Description,
 		Color:       *label.Color,
 	}, err
+}
+
+// UnlabelPullRequest on GitHub
+func (client *GitHubClient) UnlabelPullRequest(ctx context.Context, owner, repository, name string, pullRequestID int) error {
+	ghClient, err := client.buildGithubClient(ctx)
+	if err != nil {
+		return err
+	}
+
+	_, err = ghClient.Issues.RemoveLabelForIssue(ctx, owner, repository, pullRequestID, name)
+	return err
 }
 
 func createGitHubHook(token, payloadURL string, webhookEvents ...vcsutils.WebhookEvent) *github.Hook {

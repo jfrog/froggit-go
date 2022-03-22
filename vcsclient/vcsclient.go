@@ -103,13 +103,6 @@ type VcsClient interface {
 	// description  - Pull request description
 	CreatePullRequest(ctx context.Context, owner, repository, sourceBranch, targetBranch, title, description string) error
 
-	// UnlabelPullRequest remove a label from a pull request
-	// owner         - User or organization
-	// repository    - VCS repository name
-	// name          - Label name
-	// pullRequestID - Pull request ID
-	UnlabelPullRequest(ctx context.Context, owner, repository, name string, pullRequestID int) error
-
 	// GetLatestCommit Get the most recent commit of a branch
 	// owner      - User or organization
 	// repository - VCS repository name
@@ -146,6 +139,13 @@ type VcsClient interface {
 	// repository - VCS repository name
 	// name       - Label name
 	GetLabel(ctx context.Context, owner, repository, name string) (*LabelInfo, error)
+
+	// UnlabelPullRequest remove a label from a pull request
+	// owner         - User or organization
+	// repository    - VCS repository name
+	// name          - Label name
+	// pullRequestID - Pull request ID
+	UnlabelPullRequest(ctx context.Context, owner, repository, name string, pullRequestID int) error
 }
 
 // CommitInfo contains the details of a commit

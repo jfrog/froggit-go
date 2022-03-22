@@ -359,6 +359,16 @@ func TestGitlabClient_GetLabel(t *testing.T) {
 	assert.Nil(t, labelInfo)
 }
 
+func TestGitlabClient_UnlabelPullRequest(t *testing.T) {
+	ctx := context.Background()
+	client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, nil,
+		fmt.Sprintf("/api/v4/projects/%s/merge_requests/1", url.PathEscape(owner+"/"+repo1)), createGitLabHandler)
+	defer cleanUp()
+
+	err := client.UnlabelPullRequest(ctx, owner, repo1, labelName, 1)
+	assert.NoError(t, err)
+}
+
 func createGitLabHandler(t *testing.T, expectedURI string, response []byte, expectedStatusCode int) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.RequestURI == "/api/v4/" {

@@ -162,15 +162,6 @@ func TestBitbucketCloud_CreatePullRequest(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestBitbucketCloud_UnlabelPullRequest(t *testing.T) {
-	ctx := context.Background()
-	client, err := NewClientBuilder(vcsutils.BitbucketCloud).Build()
-	assert.NoError(t, err)
-
-	err = client.UnlabelPullRequest(ctx, owner, repo1, labelName, 1)
-	assert.ErrorIs(t, err, errLabelsNotSupported)
-}
-
 func TestBitbucketCloud_GetLatestCommit(t *testing.T) {
 	ctx := context.Background()
 	response, err := os.ReadFile(filepath.Join("testdata", "bitbucketcloud", "commit_list_response.json"))
@@ -367,6 +358,15 @@ func TestBitbucketCloud_GetLabel(t *testing.T) {
 	assert.NoError(t, err)
 
 	_, err = client.GetLabel(ctx, owner, repo1, labelName)
+	assert.ErrorIs(t, err, errLabelsNotSupported)
+}
+
+func TestBitbucketCloud_UnlabelPullRequest(t *testing.T) {
+	ctx := context.Background()
+	client, err := NewClientBuilder(vcsutils.BitbucketCloud).Build()
+	assert.NoError(t, err)
+
+	err = client.UnlabelPullRequest(ctx, owner, repo1, labelName, 1)
 	assert.ErrorIs(t, err, errLabelsNotSupported)
 }
 

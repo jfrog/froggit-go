@@ -287,11 +287,6 @@ func (client *BitbucketServerClient) CreatePullRequest(ctx context.Context, owne
 	return err
 }
 
-// UnlabelPullRequest on Bitbucket server
-func (client *BitbucketServerClient) UnlabelPullRequest(ctx context.Context, owner, repository, name string, pullRequestID int) error {
-	return errLabelsNotSupported
-}
-
 type projectsResponse struct {
 	Values []struct {
 		Key string `json:"key,omitempty"`
@@ -411,6 +406,11 @@ func (client BitbucketServerClient) CreateLabel(ctx context.Context, owner, repo
 // GetLabel on Bitbucket server
 func (client *BitbucketServerClient) GetLabel(ctx context.Context, owner, repository, name string) (*LabelInfo, error) {
 	return nil, errLabelsNotSupported
+}
+
+// UnlabelPullRequest on Bitbucket server
+func (client *BitbucketServerClient) UnlabelPullRequest(ctx context.Context, owner, repository, name string, pullRequestID int) error {
+	return errLabelsNotSupported
 }
 
 // Get all projects for which the authenticated user has the PROJECT_VIEW permission

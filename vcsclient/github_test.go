@@ -185,18 +185,6 @@ func TestGitHubClient_CreatePullRequest(t *testing.T) {
 	assert.Error(t, err)
 }
 
-func TestGitHubClient_UnlabelPullRequest(t *testing.T) {
-	ctx := context.Background()
-	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, github.PullRequest{}, fmt.Sprintf("/repos/jfrog/repo-1/issues/1/labels/%s", url.PathEscape(labelName)), createGitHubHandler)
-	defer cleanUp()
-
-	err := client.UnlabelPullRequest(ctx, owner, repo1, labelName, 1)
-	assert.NoError(t, err)
-
-	err = createBadGitHubClient(t).UnlabelPullRequest(ctx, owner, repo1, labelName, 1)
-	assert.Error(t, err)
-}
-
 func TestGitHubClient_GetLatestCommit(t *testing.T) {
 	ctx := context.Background()
 	response, err := os.ReadFile(filepath.Join("testdata", "github", "commit_list_response.json"))
@@ -424,6 +412,18 @@ func TestGitGubClient_GetLabelNotExisted(t *testing.T) {
 	actualLabel, err := client.GetLabel(ctx, owner, repo1, "not-existed")
 	assert.NoError(t, err)
 	assert.Nil(t, actualLabel)
+}
+
+func TestGitHubClient_UnlabelPullRequest(t *testing.T) {
+	ctx := context.Background()
+	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, github.PullRequest{}, fmt.Sprintf("/repos/jfrog/repo-1/issues/1/labels/%s", url.PathEscape(labelName)), createGitHubHandler)
+	defer cleanUp()
+
+	err := client.UnlabelPullRequest(ctx, owner, repo1, labelName, 1)
+	assert.NoError(t, err)
+
+	err = createBadGitHubClient(t).UnlabelPullRequest(ctx, owner, repo1, labelName, 1)
+	assert.Error(t, err)
 }
 
 func createBadGitHubClient(t *testing.T) VcsClient {
