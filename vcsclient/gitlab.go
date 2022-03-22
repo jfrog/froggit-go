@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/jfrog/froggit-go/vcsutils"
 	"github.com/xanzy/go-gitlab"
@@ -257,6 +258,55 @@ func (client *GitLabClient) GetCommitBySha(ctx context.Context, owner, repositor
 		return CommitInfo{}, err
 	}
 	return mapGitLabCommitToCommitInfo(commit), nil
+}
+
+// CreateLabel on GitLab
+func (client *GitLabClient) CreateLabel(ctx context.Context, owner, repository string, labelInfo LabelInfo) error {
+	err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository, "LabelInfo.name": labelInfo.Name})
+	if err != nil {
+		return err
+	}
+
+	_, _, err = client.glClient.Labels.CreateLabel(getProjectID(owner, repository), &gitlab.CreateLabelOptions{
+		Name:        &labelInfo.Name,
+		Description: &labelInfo.Description,
+		Color:       &labelInfo.Color,
+	}, gitlab.WithContext(ctx))
+
+	return err
+}
+
+// GetLabel on GitLub
+func (client *GitLabClient) GetLabel(ctx context.Context, owner, repository, name string) (*LabelInfo, error) {
+	err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository, "name": name})
+	if err != nil {
+		return nil, err
+	}
+
+	labels, _, err := client.glClient.Labels.ListLabels(getProjectID(owner, repository), &gitlab.ListLabelsOptions{}, gitlab.WithContext(ctx))
+	if err != nil {
+		return nil, err
+	}
+
+	for _, label := range labels {
+		if label.Name == name {
+			return &LabelInfo{
+				Name:        label.Name,
+				Description: label.Description,
+				Color:       strings.TrimPrefix(label.Color, "#"),
+			}, err
+		}
+	}
+
+	return nil, nil
+}
+
+// UnlabelPullRequest on GitLab
+func (client *GitLabClient) UnlabelPullRequest(ctx context.Context, owner, repository, name string, pullRequestID int) error {
+	_, _, err := client.glClient.MergeRequests.UpdateMergeRequest(getProjectID(owner, repository), pullRequestID, &gitlab.UpdateMergeRequestOptions{
+		RemoveLabels: gitlab.Labels{name},
+	}, gitlab.WithContext(ctx))
+	return err
 }
 
 func getProjectID(owner, project string) string {

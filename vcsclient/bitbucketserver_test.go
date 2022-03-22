@@ -361,6 +361,33 @@ func TestBitbucketServer_GetRepositoryInfo(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestBitbucketServer_CreateLabel(t *testing.T) {
+	ctx := context.Background()
+	client, err := NewClientBuilder(vcsutils.BitbucketServer).Build()
+	assert.NoError(t, err)
+
+	err = client.CreateLabel(ctx, owner, repo1, LabelInfo{})
+	assert.ErrorIs(t, err, errLabelsNotSupported)
+}
+
+func TestBitbucketServer_GetLabel(t *testing.T) {
+	ctx := context.Background()
+	client, err := NewClientBuilder(vcsutils.BitbucketServer).Build()
+	assert.NoError(t, err)
+
+	_, err = client.GetLabel(ctx, owner, repo1, labelName)
+	assert.ErrorIs(t, err, errLabelsNotSupported)
+}
+
+func TestBitbucketServer_UnlabelPullRequest(t *testing.T) {
+	ctx := context.Background()
+	client, err := NewClientBuilder(vcsutils.BitbucketServer).Build()
+	assert.NoError(t, err)
+
+	err = client.UnlabelPullRequest(ctx, owner, repo1, labelName, 1)
+	assert.ErrorIs(t, err, errLabelsNotSupported)
+}
+
 func TestBitbucketServer_GetCommitBySha(t *testing.T) {
 	ctx := context.Background()
 	sha := "abcdef0123abcdef4567abcdef8987abcdef6543"

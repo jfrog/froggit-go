@@ -301,6 +301,65 @@ func (client *GitHubClient) GetCommitBySha(ctx context.Context, owner, repositor
 	return mapGitHubCommitToCommitInfo(commit), nil
 }
 
+// CreateLabel on GitHub
+func (client *GitHubClient) CreateLabel(ctx context.Context, owner, repository string, labelInfo LabelInfo) error {
+	err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository, "LabelInfo.name": labelInfo.Name})
+	if err != nil {
+		return err
+	}
+
+	ghClient, err := client.buildGithubClient(ctx)
+	if err != nil {
+		return err
+	}
+
+	_, _, err = ghClient.Issues.CreateLabel(ctx, owner, repository, &github.Label{
+		Name:        &labelInfo.Name,
+		Description: &labelInfo.Description,
+		Color:       &labelInfo.Color,
+	})
+
+	return err
+}
+
+// GetLabel on GitHub
+func (client *GitHubClient) GetLabel(ctx context.Context, owner, repository, name string) (*LabelInfo, error) {
+	err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository, "name": name})
+	if err != nil {
+		return nil, err
+	}
+
+	ghClient, err := client.buildGithubClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	label, response, err := ghClient.Issues.GetLabel(ctx, owner, repository, name)
+	if err != nil {
+		if response.Response.StatusCode == http.StatusNotFound {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return &LabelInfo{
+		Name:        *label.Name,
+		Description: *label.Description,
+		Color:       *label.Color,
+	}, err
+}
+
+// UnlabelPullRequest on GitHub
+func (client *GitHubClient) UnlabelPullRequest(ctx context.Context, owner, repository, name string, pullRequestID int) error {
+	ghClient, err := client.buildGithubClient(ctx)
+	if err != nil {
+		return err
+	}
+
+	_, err = ghClient.Issues.RemoveLabelForIssue(ctx, owner, repository, pullRequestID, name)
+	return err
+}
+
 func createGitHubHook(token, payloadURL string, webhookEvents ...vcsutils.WebhookEvent) *github.Hook {
 	return &github.Hook{
 		Events: getGitHubWebhookEvents(webhookEvents...),

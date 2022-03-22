@@ -28,6 +28,9 @@ Currently supported providers are: [GitHub](#github), [Bitbucket Server](#bitbuc
   - [Get Commit By SHA](#get-commit-by-sha)
   - [Add Public SSH Key](#add-public-ssh-key)
   - [Get Repository Info](#get-repository-info)
+  - [Create a Label](#create-a-label)
+  - [Get a Label](#get-a-label)
+  - [Unlabel Pull Request](#unlabel-pull-request)
 - [Webhook Parser](#webhook-parser)
 
 ### VCS Clients
@@ -253,7 +256,7 @@ title := "Pull request title"
 // Pull request description
 description := "Pull request description"
 
-err := client.CreatePullRequest(ctx, owner, repository, sourceBranch, targetBranch, title, description string)
+err := client.CreatePullRequest(ctx, owner, repository, sourceBranch, targetBranch, title, description)
 ```
 
 #### Get Latest Commit
@@ -320,6 +323,65 @@ repository := "jfrog-cli"
 
 // Get information about repository
 repoInfo, err := client.GetRepositoryInfo(ctx, owner, repository)
+```
+
+#### Create a label
+
+Notice - Labels are not supported in Bitbucket
+
+```go
+// Go context
+ctx := context.Background()
+// Organization or username
+owner := "jfrog"
+// VCS repository
+repository := "jfrog-cli"
+// Label info
+labelInfo := LabelInfo{
+  Name:        "label-name",
+  Description: "label description",
+  Color:       "4AB548",
+}
+// Create a label
+err := client.CreateLabel(ctx, owner, repository, labelInfo)
+```
+
+#### Get a label
+
+Notice - Labels are not supported in Bitbucket
+
+```go
+// Go context
+ctx := context.Background()
+// Organization or username
+owner := "jfrog"
+// VCS repository
+repository := "jfrog-cli"
+// Label name
+labelName := "label-name"
+
+// Get a label named "label-name"
+labelInfo, err := client.GetLabel(ctx, owner, repository, labelName)
+```
+
+#### Unlabel Pull Request
+
+Notice - Labels are not supported in Bitbucket
+
+```go
+// Go context
+ctx := context.Background()
+// Organization or username
+owner := "jfrog"
+// VCS repository
+repository := "jfrog-cli"
+// Label name
+name := "label-name"
+// Pull Request ID
+pullRequestID := 5
+
+// Remove label "label-name" from pull request 5
+err := client.UnlabelPullRequest(ctx, owner, repository, name, pullRequestID)
 ```
 
 ### Webhook Parser

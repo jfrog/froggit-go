@@ -1,5 +1,11 @@
 package vcsclient
 
+import (
+	"errors"
+)
+
+var errLabelsNotSupported = errors.New("labels are not supported on Bitbucket")
+
 func getBitbucketCommitState(commitState CommitStatus) string {
 	switch commitState {
 	case Pass:

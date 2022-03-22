@@ -356,6 +356,21 @@ func (client *BitbucketCloudClient) GetCommitBySha(ctx context.Context, owner, r
 	return mapBitbucketCloudCommitToCommitInfo(parsedCommit), nil
 }
 
+// CreateLabel on Bitbucket cloud
+func (client *BitbucketCloudClient) CreateLabel(ctx context.Context, owner, repository string, labelInfo LabelInfo) error {
+	return errLabelsNotSupported
+}
+
+// GetLabel on Bitbucket cloud
+func (client *BitbucketCloudClient) GetLabel(ctx context.Context, owner, repository, name string) (*LabelInfo, error) {
+	return nil, errLabelsNotSupported
+}
+
+// UnlabelPullRequest on Bitbucket cloud
+func (client *BitbucketCloudClient) UnlabelPullRequest(ctx context.Context, owner, repository, name string, pullRequestID int) error {
+	return errLabelsNotSupported
+}
+
 func extractCommitFromResponse(commits interface{}) (*commitResponse, error) {
 	var res commitResponse
 	b, err := json.Marshal(commits)

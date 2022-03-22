@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/stretchr/testify/require"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -12,6 +11,8 @@ import (
 	"path/filepath"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/require"
 
 	"github.com/google/uuid"
 	"github.com/jfrog/froggit-go/vcsutils"
@@ -340,6 +341,33 @@ func TestBitbucketCloud_GetRepositoryInfo(t *testing.T) {
 		},
 		res,
 	)
+}
+
+func TestBitbucketCloud_CreateLabel(t *testing.T) {
+	ctx := context.Background()
+	client, err := NewClientBuilder(vcsutils.BitbucketCloud).Build()
+	assert.NoError(t, err)
+
+	err = client.CreateLabel(ctx, owner, repo1, LabelInfo{})
+	assert.ErrorIs(t, err, errLabelsNotSupported)
+}
+
+func TestBitbucketCloud_GetLabel(t *testing.T) {
+	ctx := context.Background()
+	client, err := NewClientBuilder(vcsutils.BitbucketCloud).Build()
+	assert.NoError(t, err)
+
+	_, err = client.GetLabel(ctx, owner, repo1, labelName)
+	assert.ErrorIs(t, err, errLabelsNotSupported)
+}
+
+func TestBitbucketCloud_UnlabelPullRequest(t *testing.T) {
+	ctx := context.Background()
+	client, err := NewClientBuilder(vcsutils.BitbucketCloud).Build()
+	assert.NoError(t, err)
+
+	err = client.UnlabelPullRequest(ctx, owner, repo1, labelName, 1)
+	assert.ErrorIs(t, err, errLabelsNotSupported)
 }
 
 func createBitbucketCloudHandler(t *testing.T, expectedURI string, response []byte, expectedStatusCode int) http.HandlerFunc {

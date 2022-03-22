@@ -3,8 +3,9 @@ package vcsclient
 import (
 	"context"
 	"fmt"
-	"github.com/jfrog/froggit-go/vcsutils"
 	"strings"
+
+	"github.com/jfrog/froggit-go/vcsutils"
 )
 
 // CommitStatus the status of the commit in the VCS
@@ -103,29 +104,48 @@ type VcsClient interface {
 	CreatePullRequest(ctx context.Context, owner, repository, sourceBranch, targetBranch, title, description string) error
 
 	// GetLatestCommit Get the most recent commit of a branch
-	// owner        - User or organization
-	// repository   - VCS repository name
-	// branch       - The name of the branch
+	// owner      - User or organization
+	// repository - VCS repository name
+	// branch     - The name of the branch
 	GetLatestCommit(ctx context.Context, owner, repository, branch string) (CommitInfo, error)
 
 	// AddSshKeyToRepository Add a public ssh key to a repository
-	// owner        - User or organization
-	// repository   - VCS repository name
-	// keyName      - Name of the key
-	// publicKey    - SSH public key
-	// permission   - Access permission of the key: read or readWrite
+	// owner      - User or organization
+	// repository - VCS repository name
+	// keyName    - Name of the key
+	// publicKey  - SSH public key
+	// permission - Access permission of the key: read or readWrite
 	AddSshKeyToRepository(ctx context.Context, owner, repository, keyName, publicKey string, permission Permission) error
 
 	// GetRepositoryInfo Returns information about repository.
-	// owner        - User or organization
-	// repository   - VCS repository name
+	// owner      - User or organization
+	// repository - VCS repository name
 	GetRepositoryInfo(ctx context.Context, owner, repository string) (RepositoryInfo, error)
 
 	// GetCommitBySha Get the commit by its SHA
-	// owner        - User or organization
-	// repository   - VCS repository name
-	// sha          - The commit hash
+	// owner      - User or organization
+	// repository - VCS repository name
+	// sha        - The commit hash
 	GetCommitBySha(ctx context.Context, owner, repository, sha string) (CommitInfo, error)
+
+	// CreateLabel create a label in repository
+	// owner      - User or organization
+	// repository - VCS repository name
+	// labelInfo  - The label info
+	CreateLabel(ctx context.Context, owner, repository string, labelInfo LabelInfo) error
+
+	// GetLabel get a label related to a repository. Returns (nil, nil) if label doesn't exist.
+	// owner      - User or organization
+	// repository - VCS repository name
+	// name       - Label name
+	GetLabel(ctx context.Context, owner, repository, name string) (*LabelInfo, error)
+
+	// UnlabelPullRequest remove a label from a pull request
+	// owner         - User or organization
+	// repository    - VCS repository name
+	// name          - Label name
+	// pullRequestID - Pull request ID
+	UnlabelPullRequest(ctx context.Context, owner, repository, name string, pullRequestID int) error
 }
 
 // CommitInfo contains the details of a commit
@@ -157,6 +177,14 @@ type CloneInfo struct {
 	HTTP string
 	// SSH is a URL string to clone repository using SSH protocol.
 	SSH string
+}
+
+// LabelInfo contains a label information
+type LabelInfo struct {
+	Name        string
+	Description string
+	// Label color is a hexadecimal color code, for example: 4AB548
+	Color string
 }
 
 func validateParametersNotBlank(paramNameValueMap map[string]string) error {
