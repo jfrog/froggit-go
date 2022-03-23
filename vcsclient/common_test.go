@@ -103,3 +103,9 @@ func getAllProviders() []vcsutils.VcsProvider {
 		vcsutils.GitHub, vcsutils.GitLab, vcsutils.BitbucketServer, vcsutils.BitbucketCloud,
 	}
 }
+
+func getNonBitbucketProviders() []vcsutils.VcsProvider {
+	return []vcsutils.VcsProvider{
+		vcsutils.GitHub, vcsutils.GitLab,
+	}
+}

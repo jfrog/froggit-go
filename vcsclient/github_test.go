@@ -414,9 +414,23 @@ func TestGitGubClient_GetLabelNotExisted(t *testing.T) {
 	assert.Nil(t, actualLabel)
 }
 
+func TestGitHubClient_ListPullRequestLabels(t *testing.T) {
+	ctx := context.Background()
+	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, []*github.Label{{Name: &labelName}}, "/repos/jfrog/repo-1/issues/1/labels", createGitHubHandler)
+	defer cleanUp()
+
+	labels, err := client.ListPullRequestLabels(ctx, owner, repo1, 1)
+	assert.NoError(t, err)
+	assert.Len(t, labels, 1)
+	assert.Equal(t, labelName, labels[0])
+
+	_, err = createBadGitHubClient(t).ListPullRequestLabels(ctx, owner, repo1, 1)
+	assert.Error(t, err)
+}
+
 func TestGitHubClient_UnlabelPullRequest(t *testing.T) {
 	ctx := context.Background()
-	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, github.PullRequest{}, fmt.Sprintf("/repos/jfrog/repo-1/issues/1/labels/%s", url.PathEscape(labelName)), createGitHubHandler)
+	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, &github.PullRequest{}, fmt.Sprintf("/repos/jfrog/repo-1/issues/1/labels/%s", url.PathEscape(labelName)), createGitHubHandler)
 	defer cleanUp()
 
 	err := client.UnlabelPullRequest(ctx, owner, repo1, labelName, 1)

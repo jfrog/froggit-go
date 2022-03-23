@@ -359,6 +359,18 @@ func TestGitlabClient_GetLabel(t *testing.T) {
 	assert.Nil(t, labelInfo)
 }
 
+func TestGitlabClient_ListPullRequestLabels(t *testing.T) {
+	ctx := context.Background()
+	client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, &gitlab.MergeRequest{Labels: gitlab.Labels{labelName}},
+		fmt.Sprintf("/api/v4/projects/%s/merge_requests/1", url.PathEscape(owner+"/"+repo1)), createGitLabHandler)
+	defer cleanUp()
+
+	labels, err := client.ListPullRequestLabels(ctx, owner, repo1, 1)
+	assert.NoError(t, err)
+	assert.Len(t, labels, 1)
+	assert.Equal(t, labelName, labels[0])
+}
+
 func TestGitlabClient_UnlabelPullRequest(t *testing.T) {
 	ctx := context.Background()
 	client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, nil,

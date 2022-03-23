@@ -140,6 +140,12 @@ type VcsClient interface {
 	// name       - Label name
 	GetLabel(ctx context.Context, owner, repository, name string) (*LabelInfo, error)
 
+	// ListPullRequestLabels get all labels assigned to a pull request.
+	// owner         - User or organization
+	// repository    - VCS repository name
+	// pullRequestID - Pull request ID
+	ListPullRequestLabels(ctx context.Context, owner, repository string, pullRequestID int) ([]string, error)
+
 	// UnlabelPullRequest remove a label from a pull request
 	// owner         - User or organization
 	// repository    - VCS repository name

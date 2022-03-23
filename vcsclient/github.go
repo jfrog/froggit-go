@@ -349,8 +349,40 @@ func (client *GitHubClient) GetLabel(ctx context.Context, owner, repository, nam
 	}, err
 }
 
+// ListPullRequestLabels on GitHub
+func (client *GitHubClient) ListPullRequestLabels(ctx context.Context, owner, repository string, pullRequestID int) ([]string, error) {
+	err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository})
+	if err != nil {
+		return nil, err
+	}
+	ghClient, err := client.buildGithubClient(ctx)
+	if err != nil {
+		return []string{}, err
+	}
+
+	results := []string{}
+	for nextPage := 0; ; nextPage++ {
+		options := &github.ListOptions{Page: nextPage}
+		labels, response, err := ghClient.Issues.ListLabelsByIssue(ctx, owner, repository, pullRequestID, options)
+		if err != nil {
+			return []string{}, err
+		}
+		for _, label := range labels {
+			results = append(results, *label.Name)
+		}
+		if nextPage+1 >= response.LastPage {
+			break
+		}
+	}
+	return results, nil
+}
+
 // UnlabelPullRequest on GitHub
 func (client *GitHubClient) UnlabelPullRequest(ctx context.Context, owner, repository, name string, pullRequestID int) error {
+	err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository})
+	if err != nil {
+		return err
+	}
 	ghClient, err := client.buildGithubClient(ctx)
 	if err != nil {
 		return err

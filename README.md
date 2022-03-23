@@ -30,6 +30,7 @@ Currently supported providers are: [GitHub](#github), [Bitbucket Server](#bitbuc
   - [Get Repository Info](#get-repository-info)
   - [Create a Label](#create-a-label)
   - [Get a Label](#get-a-label)
+  - [List Pull Request Labels](#list-pull-request-labels)
   - [Unlabel Pull Request](#unlabel-pull-request)
 - [Webhook Parser](#webhook-parser)
 
@@ -362,6 +363,24 @@ labelName := "label-name"
 
 // Get a label named "label-name"
 labelInfo, err := client.GetLabel(ctx, owner, repository, labelName)
+```
+
+#### List Pull Request Labels
+
+Notice - Labels are not supported in Bitbucket
+
+```go
+// Go context
+ctx := context.Background()
+// Organization or username
+owner := "jfrog"
+// VCS repository
+repository := "jfrog-cli"
+// Pull Request ID
+pullRequestID := 5
+
+// List all labels assigned to pull request 5
+err := client.ListPullRequestLabels(ctx, owner, repository, pullRequestID)
 ```
 
 #### Unlabel Pull Request

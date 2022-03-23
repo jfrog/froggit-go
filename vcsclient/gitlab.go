@@ -301,9 +301,28 @@ func (client *GitLabClient) GetLabel(ctx context.Context, owner, repository, nam
 	return nil, nil
 }
 
+// ListPullRequestLabels on GitLab
+func (client *GitLabClient) ListPullRequestLabels(ctx context.Context, owner, repository string, pullRequestID int) ([]string, error) {
+	err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository})
+	if err != nil {
+		return []string{}, err
+	}
+	mergeRequest, _, err := client.glClient.MergeRequests.GetMergeRequest(getProjectID(owner, repository), pullRequestID,
+		&gitlab.GetMergeRequestsOptions{}, gitlab.WithContext(ctx))
+	if err != nil {
+		return []string{}, err
+	}
+
+	return mergeRequest.Labels, nil
+}
+
 // UnlabelPullRequest on GitLab
 func (client *GitLabClient) UnlabelPullRequest(ctx context.Context, owner, repository, name string, pullRequestID int) error {
-	_, _, err := client.glClient.MergeRequests.UpdateMergeRequest(getProjectID(owner, repository), pullRequestID, &gitlab.UpdateMergeRequestOptions{
+	err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository})
+	if err != nil {
+		return err
+	}
+	_, _, err = client.glClient.MergeRequests.UpdateMergeRequest(getProjectID(owner, repository), pullRequestID, &gitlab.UpdateMergeRequestOptions{
 		RemoveLabels: gitlab.Labels{name},
 	}, gitlab.WithContext(ctx))
 	return err
