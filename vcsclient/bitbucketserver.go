@@ -408,6 +408,11 @@ func (client *BitbucketServerClient) GetLabel(ctx context.Context, owner, reposi
 	return nil, errLabelsNotSupported
 }
 
+// ListPullRequestLabels on Bitbucket server
+func (client *BitbucketServerClient) ListPullRequestLabels(ctx context.Context, owner, repository string, pullRequestID int) ([]string, error) {
+	return nil, errLabelsNotSupported
+}
+
 // UnlabelPullRequest on Bitbucket server
 func (client *BitbucketServerClient) UnlabelPullRequest(ctx context.Context, owner, repository, name string, pullRequestID int) error {
 	return errLabelsNotSupported

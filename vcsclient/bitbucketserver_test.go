@@ -379,6 +379,15 @@ func TestBitbucketServer_GetLabel(t *testing.T) {
 	assert.ErrorIs(t, err, errLabelsNotSupported)
 }
 
+func TestBitbucketServer_ListPullRequestLabels(t *testing.T) {
+	ctx := context.Background()
+	client, err := NewClientBuilder(vcsutils.BitbucketServer).Build()
+	assert.NoError(t, err)
+
+	_, err = client.ListPullRequestLabels(ctx, owner, repo1, 1)
+	assert.ErrorIs(t, err, errLabelsNotSupported)
+}
+
 func TestBitbucketServer_UnlabelPullRequest(t *testing.T) {
 	ctx := context.Background()
 	client, err := NewClientBuilder(vcsutils.BitbucketServer).Build()
