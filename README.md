@@ -380,7 +380,7 @@ repository := "jfrog-cli"
 pullRequestID := 5
 
 // List all labels assigned to pull request 5
-err := client.ListPullRequestLabels(ctx, owner, repository, pullRequestID)
+pullRequestLabels, err := client.ListPullRequestLabels(ctx, owner, repository, pullRequestID)
 ```
 
 #### Unlabel Pull Request
