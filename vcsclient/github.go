@@ -84,7 +84,7 @@ func (client *GitHubClient) ListRepositories(ctx context.Context) (map[string][]
 		return nil, err
 	}
 	results := make(map[string][]string)
-	for nextPage := 0; ; nextPage++ {
+	for nextPage := 1; ; nextPage++ {
 		options := &github.RepositoryListOptions{ListOptions: github.ListOptions{Page: nextPage}}
 		repos, response, err := ghClient.Repositories.List(ctx, "", options)
 		if err != nil {
@@ -93,7 +93,7 @@ func (client *GitHubClient) ListRepositories(ctx context.Context) (map[string][]
 		for _, repo := range repos {
 			results[*repo.Owner.Login] = append(results[*repo.Owner.Login], *repo.Name)
 		}
-		if nextPage+1 >= response.LastPage {
+		if nextPage+1 > response.LastPage {
 			break
 		}
 	}
