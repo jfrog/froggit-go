@@ -62,7 +62,7 @@ func TestGitHubClient_ListRepositories(t *testing.T) {
 	ctx := context.Background()
 	expectedRepo1 := github.Repository{Name: &repo1, Owner: &github.User{Login: &username}}
 	expectedRepo2 := github.Repository{Name: &repo2, Owner: &github.User{Login: &username}}
-	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, []github.Repository{expectedRepo1, expectedRepo2}, "/user/repos", createGitHubHandler)
+	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, []github.Repository{expectedRepo1, expectedRepo2}, "/user/repos?page=1", createGitHubHandler)
 	defer cleanUp()
 
 	actualRepositories, err := client.ListRepositories(ctx)
