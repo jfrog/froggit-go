@@ -2,9 +2,11 @@ package vcsclient
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
+	"math"
 	"math/rand"
 	"net/http"
 	"net/url"
@@ -60,12 +62,46 @@ func TestGitHubClient_ListRepositories(t *testing.T) {
 	ctx := context.Background()
 	expectedRepo1 := github.Repository{Name: &repo1, Owner: &github.User{Login: &username}}
 	expectedRepo2 := github.Repository{Name: &repo2, Owner: &github.User{Login: &username}}
-	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, []github.Repository{expectedRepo1, expectedRepo2}, "/user/repos", createGitHubHandler)
+	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, []github.Repository{expectedRepo1, expectedRepo2}, "/user/repos?page=1", createGitHubHandler)
 	defer cleanUp()
 
 	actualRepositories, err := client.ListRepositories(ctx)
 	assert.NoError(t, err)
 	assert.Equal(t, actualRepositories, map[string][]string{username: {repo1, repo2}})
+
+	_, err = createBadGitHubClient(t).ListRepositories(ctx)
+	assert.Error(t, err)
+}
+
+func TestGitHubClient_ListRepositoriesWithPagination(t *testing.T) {
+	ctx := context.Background()
+	const repo = "repo"
+	repos := make([]github.Repository, 0)
+	repoNames := make([]string, 0)
+	for i := 1; i <= 31; i++ {
+		repoName := fmt.Sprintf("%v%v", repo, i)
+		repos = append(repos, github.Repository{Name: &repoName, Owner: &github.User{Login: &username}})
+		repoNames = append(repoNames, repoName)
+	}
+
+	client, cleanUp := createBodyHandlingServerAndClient(t, vcsutils.GitHub, false, repos, "/user/repos",
+		http.StatusOK, nil, "GET", createGitHubWithPaginationHandler)
+	defer cleanUp()
+
+	actualRepositories, err := client.ListRepositories(ctx)
+	assert.NoError(t, err)
+	assert.Equal(t, len(repos), len(actualRepositories[username]))
+	assert.Equal(t, repoNames, actualRepositories[username])
+
+	// Test Case 2 - No Items to return
+	repos = make([]github.Repository, 0)
+	client, cleanUp = createBodyHandlingServerAndClient(t, vcsutils.GitHub, false, repos, "/user/repos",
+		http.StatusOK, nil, "GET", createGitHubWithPaginationHandler)
+	defer cleanUp()
+
+	actualRepositories, err = client.ListRepositories(ctx)
+	assert.NoError(t, err)
+	assert.Nil(t, actualRepositories[username])
 
 	_, err = createBadGitHubClient(t).ListRepositories(ctx)
 	assert.Error(t, err)
@@ -471,6 +507,60 @@ func createGitHubWithBodyHandler(t *testing.T, expectedURI string, response []by
 
 		writer.WriteHeader(expectedStatusCode)
 		_, err = writer.Write(response)
+		assert.NoError(t, err)
+	}
+}
+
+func createGitHubWithPaginationHandler(t *testing.T, _ string, response []byte, _ []byte, expectedStatusCode int, expectedHttpMethod string) http.HandlerFunc {
+
+	var repos []github.Repository
+	err := json.Unmarshal(response, &repos)
+	assert.NoError(t, err)
+	const (
+		defaultPerPage = 30
+		perPageKey     = "perPage"
+		pageKey        = "page"
+		link           = "Link"
+	)
+	count := len(repos)
+	return func(writer http.ResponseWriter, request *http.Request) {
+		assert.Equal(t, expectedHttpMethod, request.Method)
+		pageSize := defaultPerPage
+		page := 1
+		uri, err := url.Parse(request.RequestURI)
+		assert.NoError(t, err)
+		if uri.Query().Has(perPageKey) {
+			pageSize, err = strconv.Atoi(uri.Query().Get(perPageKey))
+			assert.NoError(t, err)
+		}
+		if uri.Query().Has(pageKey) {
+			page, err = strconv.Atoi(uri.Query().Get(pageKey))
+			assert.NoError(t, err)
+			if page <= 0 {
+				page = 1
+			}
+		}
+
+		lastPage := int(math.Ceil(float64(count) / float64(pageSize)))
+		lastLink := fmt.Sprintf("<https://api.github.com/user/repos?page=%v>; rel=\"last\"", lastPage) //https://docs.github.com/en/rest/guides/traversing-with-pagination
+
+		writer.Header().Add(link, lastLink)
+		writer.WriteHeader(expectedStatusCode)
+
+		var pageItems []github.Repository
+		if page <= lastPage {
+			low := (page - 1) * pageSize
+			high := page * pageSize
+			if (count - page*pageSize) < 0 {
+				high = count
+			}
+			pageItems = repos[low:high]
+		}
+
+		pageResponse, err := json.Marshal(pageItems)
+		assert.NoError(t, err)
+
+		_, err = writer.Write(pageResponse)
 		assert.NoError(t, err)
 	}
 }
