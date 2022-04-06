@@ -434,16 +434,11 @@ func createGitLabWithPaginationHandler(t *testing.T, _ string, response []byte, 
 		page := 1
 		uri, err := url.Parse(request.RequestURI)
 		assert.NoError(t, err)
-		//if !uri.Query().Has(qMembership) {
-		//	assert.Fail(t, "'membership=true' expected in the request uri")
-		//	return
-		//}
 
 		if uri.Query().Get(qMembership) != "true" {
 			assert.Fail(t, "'membership=true' expected in the request uri", "actual 'membership=%v'", uri.Query().Get(qMembership))
 			return
 		}
-
 		if uri.Query().Has(qPerPage) {
 			pageSize, err = strconv.Atoi(uri.Query().Get(qPerPage))
 			assert.NoError(t, err)
