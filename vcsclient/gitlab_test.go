@@ -2,9 +2,11 @@ package vcsclient
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
+	"math"
 	"math/rand"
 	"net/http"
 	"net/url"
@@ -58,15 +60,17 @@ func TestGitLabClient_ListRepositories(t *testing.T) {
 	response, err := os.ReadFile(filepath.Join("testdata", "gitlab", "projects_response.json"))
 	assert.NoError(t, err)
 
-	client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, response, "/api/v4/projects?page=1&simple=true", createGitLabHandler)
+	client, cleanUp := createBodyHandlingServerAndClient(t, vcsutils.GitLab, false, response, "", http.StatusOK, nil, http.MethodGet, createGitLabWithPaginationHandler)
 	defer cleanUp()
 
 	actualRepositories, err := client.ListRepositories(ctx)
 	assert.NoError(t, err)
-	assert.Equal(t, actualRepositories, map[string][]string{
+	assert.Equal(t, map[string][]string{
 		"example-user":             {"example-project"},
 		"root":                     {"my-project", "go-micro"},
-		"gitlab-instance-ba535d0c": {"Monitoring"}})
+		"gitlab-instance-ba535d0c": {"Monitoring"},
+		"froggit-go":               {"repo21", "repo20", "repo19", "repo18", "repo17", "repo16", "repo15", "repo14", "repo13", "repo12", "repo11", "repo10", "repo9", "repo8", "repo7", "repo6", "repo5", "repo4", "repo3", "repo2", "repo1"},
+	}, actualRepositories)
 }
 
 func TestGitLabClient_ListBranches(t *testing.T) {
@@ -401,6 +405,76 @@ func createGitLabHandler(t *testing.T, expectedURI string, response []byte, expe
 		assert.NoError(t, err)
 		assert.Equal(t, expectedURI, r.RequestURI)
 		assert.Equal(t, token, r.Header.Get("Private-Token"))
+	}
+}
+func createGitLabWithPaginationHandler(t *testing.T, _ string, response []byte, _ []byte, expectedStatusCode int, expectedHttpMethod string) http.HandlerFunc {
+
+	var repos []gitlab.Project
+	err := json.Unmarshal(response, &repos)
+	assert.NoError(t, err)
+	const (
+		defaultPerPage = 20
+		xTotalPages    = "X-Total-Pages"
+		qPage          = "page"
+		qPerPage       = "per_page"
+		qMembership    = "membership"
+	)
+	count := len(repos)
+
+	return func(writer http.ResponseWriter, request *http.Request) {
+		if request.RequestURI == "/api/v4/" {
+			writer.WriteHeader(http.StatusOK)
+			return
+		}
+
+		assert.Equal(t, expectedHttpMethod, request.Method)
+		assert.Equal(t, token, request.Header.Get("Private-Token"))
+
+		pageSize := defaultPerPage
+		page := 1
+		uri, err := url.Parse(request.RequestURI)
+		assert.NoError(t, err)
+		//if !uri.Query().Has(qMembership) {
+		//	assert.Fail(t, "'membership=true' expected in the request uri")
+		//	return
+		//}
+
+		if uri.Query().Get(qMembership) != "true" {
+			assert.Fail(t, "'membership=true' expected in the request uri", "actual 'membership=%v'", uri.Query().Get(qMembership))
+			return
+		}
+
+		if uri.Query().Has(qPerPage) {
+			pageSize, err = strconv.Atoi(uri.Query().Get(qPerPage))
+			assert.NoError(t, err)
+		}
+		if uri.Query().Has(qPage) {
+			page, err = strconv.Atoi(uri.Query().Get(qPage))
+			assert.NoError(t, err)
+			if page <= 0 {
+				page = 1
+			}
+		}
+
+		lastPage := int(math.Ceil(float64(count) / float64(pageSize)))
+		writer.Header().Add(xTotalPages, strconv.Itoa(lastPage))
+		writer.WriteHeader(expectedStatusCode)
+
+		var pageItems []gitlab.Project
+		if page <= lastPage {
+			low := (page - 1) * pageSize
+			high := page * pageSize
+			if (count - page*pageSize) < 0 {
+				high = count
+			}
+			pageItems = repos[low:high]
+		}
+
+		pageResponse, err := json.Marshal(pageItems)
+		assert.NoError(t, err)
+
+		_, err = writer.Write(pageResponse)
+		assert.NoError(t, err)
 	}
 }
 
