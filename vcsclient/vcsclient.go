@@ -16,7 +16,7 @@ const (
 	Pass CommitStatus = iota
 	// Fail means that the commit failed the tests
 	Fail
-	// Error means that an unexpected error occured
+	// Error means that an unexpected error occurred
 	Error
 	// InProgress means than the status check is in progress
 	InProgress
