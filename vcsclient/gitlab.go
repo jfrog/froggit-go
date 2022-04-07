@@ -45,8 +45,9 @@ func (client *GitLabClient) TestConnection(ctx context.Context) error {
 func (client *GitLabClient) ListRepositories(ctx context.Context) (map[string][]string, error) {
 	simple := true
 	results := make(map[string][]string)
+	membership := true
 	for pageID := 1; ; pageID++ {
-		options := &gitlab.ListProjectsOptions{ListOptions: gitlab.ListOptions{Page: pageID}, Simple: &simple}
+		options := &gitlab.ListProjectsOptions{ListOptions: gitlab.ListOptions{Page: pageID}, Simple: &simple, Membership: &membership}
 		projects, response, err := client.glClient.Projects.ListProjects(options, gitlab.WithContext(ctx))
 		if err != nil {
 			return nil, err
