@@ -110,6 +110,19 @@ type VcsClient interface {
 	// pullRequestID  - Pull request ID
 	AddPullRequestComment(ctx context.Context, owner, repository, content string, pullRequestID int) error
 
+	// DeletePullRequestComment Delete a pull request comment
+	// owner        - User or organization
+	// repository   - VCS repository name
+	// pullRequestID  - Pull request ID
+	// commentID    - The comment ID to be delted
+	DeletePullRequestComment(ctx context.Context, owner, repository string, pullRequestID int, commentID int64) error
+
+	// ListPullRequestComments get all comments assigned to a pull request.
+	// owner          - User or organization
+	// repository     - VCS repository name
+	// pullRequestID  - Pull request ID
+	ListPullRequestComments(ctx context.Context, owner, repository string, pullRequestID int) ([]CommentInfo, error)
+
 	// GetLatestCommit Get the most recent commit of a branch
 	// owner      - User or organization
 	// repository - VCS repository name
@@ -177,6 +190,11 @@ type CommitInfo struct {
 	Message string
 	// The SHA-1 hashes of the parent commits
 	ParentHashes []string
+}
+
+type CommentInfo struct {
+	ID      int64
+	Content string
 }
 
 // RepositoryInfo contains general information about repository.

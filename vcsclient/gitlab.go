@@ -213,6 +213,18 @@ func (client *GitLabClient) AddPullRequestComment(ctx context.Context, owner, re
 	return err
 }
 
+// ListPullRequestComments on GitLab
+func (client *GitLabClient) ListPullRequestComments(ctx context.Context, owner, repository string, pullRequestID int) ([]CommentInfo, error) {
+	err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository})
+	if err != nil {
+		return []CommentInfo{}, err
+	}
+	commentsList, _, err := client.glClient.Notes.ListMergeRequestNotes(getProjectID(owner, repository), pullRequestID, &gitlab.ListMergeRequestNotesOptions{},
+		gitlab.WithContext(ctx))
+
+	return mapGitLabNotesToCommentInfoList(commentsList)
+}
+
 // GetLatestCommit on GitLab
 func (client *GitLabClient) GetLatestCommit(ctx context.Context, owner, repository, branch string) (CommitInfo, error) {
 	err := validateParametersNotBlank(map[string]string{
@@ -386,4 +398,15 @@ func mapGitLabCommitToCommitInfo(commit *gitlab.Commit) CommitInfo {
 		Message:       commit.Message,
 		ParentHashes:  commit.ParentIDs,
 	}
+}
+
+func mapGitLabNotesToCommentInfoList(notes []*gitlab.Note) (res []CommentInfo, err error) {
+	for _, note := range notes {
+		res = append(res, CommentInfo{
+			ID:      int64(note.ID),
+			Content: note.Body,
+		})
+	}
+	return
+
 }

@@ -277,6 +277,40 @@ func (client *BitbucketCloudClient) AddPullRequestComment(ctx context.Context, o
 	return err
 }
 
+// DeletePullRequestComment on Bitbucket cloud
+func (client *BitbucketCloudClient) DeletePullRequestComment(ctx context.Context, owner, repository string, pullRequestID int, commentID int64) error {
+	err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository})
+	if err != nil {
+		return err
+	}
+	bitbucketClient := client.buildBitbucketCloudClient(ctx)
+	options := &bitbucket.PullRequestsOptions{
+		Owner:     owner,
+		RepoSlug:  repository,
+		ID:        fmt.Sprint(pullRequestID),
+		CommentID: fmt.Sprint(commentID),
+	}
+	_, err = bitbucketClient.Repositories.PullRequests.DeleteComment(options)
+	return err
+
+}
+
+// ListPullRequestComments  on Bitbucket cloud
+func (client *BitbucketCloudClient) ListPullRequestComments(ctx context.Context, owner, repository string, pullRequestID int) ([]CommentInfo, error) {
+	err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository})
+	if err != nil {
+		return nil, err
+	}
+	bitbucketClient := client.buildBitbucketCloudClient(ctx)
+	options := &bitbucket.PullRequestsOptions{
+		Owner:    owner,
+		RepoSlug: repository,
+		ID:       fmt.Sprint(pullRequestID),
+	}
+	comments, err = bitbucketClient.Repositories.PullRequests.GetComments(options)
+	return err
+}
+
 // GetLatestCommit on Bitbucket cloud
 func (client *BitbucketCloudClient) GetLatestCommit(ctx context.Context, owner, repository, branch string) (CommitInfo, error) {
 	err := validateParametersNotBlank(map[string]string{
@@ -420,6 +454,28 @@ func extractCommitDetailsFromResponse(commit interface{}) (commitDetails, error)
 	return res, nil
 }
 
+func extractCommentsFromResponse(comments interface{}) (*[]commentsResponse, error) {
+	var res []commentsResponse
+	b, err := json.Marshal(comments)
+	if err != nil {
+		return nil, err
+	}
+	err = json.Unmarshal(b, &res)
+	if err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+type commentsResponse struct {
+	Values []commentDetails `json:"values"`
+}
+
+type commentDetails struct {
+	User      user `json:"user"`
+	IsDeleted bool `json:deleted`
+}
+
 type commitResponse struct {
 	Values []commitDetails `json:"values"`
 }
@@ -429,9 +485,7 @@ type commitDetails struct {
 	Date    time.Time `json:"date"`
 	Message string    `json:"message"`
 	Author  struct {
-		User struct {
-			DisplayName string `json:"display_name"`
-		} `json:"user"`
+		User user `json:"user"`
 	} `json:"author"`
 	Links struct {
 		Self link `json:"self"`
@@ -441,6 +495,9 @@ type commitDetails struct {
 	} `json:"parents"`
 }
 
+type user struct {
+	DisplayName string `json:"display_name"`
+}
 type link struct {
 	Href string `json:"href"`
 }

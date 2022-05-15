@@ -242,6 +242,37 @@ func (client *GitHubClient) AddPullRequestComment(ctx context.Context, owner, re
 	return err
 }
 
+// DeletePullRequestComment on GitHub
+func (client *GitHubClient) DeletePullRequestComment(ctx context.Context, owner, repository string, pullRequestID int, commentID int64) error {
+	err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository})
+	if err != nil {
+		return err
+	}
+	ghClient, err := client.buildGithubClient(ctx)
+	if err != nil {
+		return err
+	}
+	_, err = ghClient.Issues.DeleteComment(ctx, owner, repository, commentID)
+	return err
+}
+
+// ListPullRequestComments on GitHub
+func (client *GitHubClient) ListPullRequestComments(ctx context.Context, owner, repository string, pullRequestID int) ([]CommentInfo, error) {
+	err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository})
+	if err != nil {
+		return []CommentInfo{}, err
+	}
+	ghClient, err := client.buildGithubClient(ctx)
+	if err != nil {
+		return []CommentInfo{}, err
+	}
+	commentsList, _, err := ghClient.Issues.ListComments(ctx, owner, repository, pullRequestID, &github.IssueListCommentsOptions{})
+	if err != nil {
+		return []CommentInfo{}, err
+	}
+	return mapGitHubCommentToCommentInfoList(commentsList)
+}
+
 // GetLatestCommit on GitHub
 func (client *GitHubClient) GetLatestCommit(ctx context.Context, owner, repository, branch string) (CommitInfo, error) {
 	err := validateParametersNotBlank(map[string]string{
@@ -463,4 +494,14 @@ func mapGitHubCommitToCommitInfo(commit *github.RepositoryCommit) CommitInfo {
 		Message:       details.GetMessage(),
 		ParentHashes:  parents,
 	}
+}
+
+func mapGitHubCommentToCommentInfoList(commentsList []*github.IssueComment) (res []CommentInfo, err error) {
+	for _, comment := range commentsList {
+		res = append(res, CommentInfo{
+			ID:      *comment.ID,
+			Content: *comment.Body,
+		})
+	}
+	return
 }
