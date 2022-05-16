@@ -191,6 +191,7 @@ func TestBitbucketCloud_ListPullRequestComments(t *testing.T) {
 		Created: expectedCreated,
 	}, result[0])
 }
+
 func TestBitbucketCloud_GetLatestCommit(t *testing.T) {
 	ctx := context.Background()
 	response, err := os.ReadFile(filepath.Join("testdata", "bitbucketcloud", "commit_list_response.json"))

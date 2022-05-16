@@ -409,5 +409,4 @@ func mapGitLabNotesToCommentInfoList(notes []*gitlab.Note) (res []CommentInfo, e
 		})
 	}
 	return
-
 }

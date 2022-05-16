@@ -480,7 +480,6 @@ func TestGitHubClient_ListPullRequestComments(t *testing.T) {
 	ctx := context.Background()
 	response, err := os.ReadFile(filepath.Join("testdata", "github", "pull_request_comments_list_response.json"))
 	assert.NoError(t, err)
-	// /repos/{owner}/{repo}/issues/{pull_number}/comments
 	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, response,
 		fmt.Sprintf("/repos/%s/%s/issues/1/comments", owner, repo1), createGitHubHandler)
 	defer cleanUp()

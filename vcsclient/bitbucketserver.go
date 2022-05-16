@@ -323,7 +323,6 @@ func (client *BitbucketServerClient) ListPullRequestComments(ctx context.Context
 		if err != nil {
 			return nil, err
 		}
-
 		for _, activity := range activities.Values {
 			// Add activity only if from type new comment.
 			if activity.Action == "COMMENTED" && activity.CommentAction == "ADDED" {
@@ -335,7 +334,6 @@ func (client *BitbucketServerClient) ListPullRequestComments(ctx context.Context
 			}
 		}
 	}
-
 	return results, nil
 }
 
