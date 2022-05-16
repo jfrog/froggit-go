@@ -221,8 +221,10 @@ func (client *GitLabClient) ListPullRequestComments(ctx context.Context, owner, 
 	}
 	commentsList, _, err := client.glClient.Notes.ListMergeRequestNotes(getProjectID(owner, repository), pullRequestID, &gitlab.ListMergeRequestNotesOptions{},
 		gitlab.WithContext(ctx))
-
-	return mapGitLabNotesToCommentInfoList(commentsList)
+	if err != nil {
+		return []CommentInfo{}, err
+	}
+	return mapGitLabNotesToCommentInfoList(commentsList), nil
 }
 
 // GetLatestCommit on GitLab
@@ -400,7 +402,7 @@ func mapGitLabCommitToCommitInfo(commit *gitlab.Commit) CommitInfo {
 	}
 }
 
-func mapGitLabNotesToCommentInfoList(notes []*gitlab.Note) (res []CommentInfo, err error) {
+func mapGitLabNotesToCommentInfoList(notes []*gitlab.Note) (res []CommentInfo) {
 	for _, note := range notes {
 		res = append(res, CommentInfo{
 			ID:      int64(note.ID),
