@@ -405,6 +405,7 @@ func mapGitLabNotesToCommentInfoList(notes []*gitlab.Note) (res []CommentInfo, e
 		res = append(res, CommentInfo{
 			ID:      int64(note.ID),
 			Content: note.Body,
+			Created: *note.CreatedAt,
 		})
 	}
 	return

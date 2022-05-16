@@ -167,6 +167,27 @@ func TestGitLabClient_AddPullRequestComment(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestGitLabClient_ListPullRequestComments(t *testing.T) {
+	ctx := context.Background()
+	response, err := os.ReadFile(filepath.Join("testdata", "gitlab", "pull_request_comments_list_response.json"))
+	assert.NoError(t, err)
+
+	client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, response,
+		fmt.Sprintf("/api/v4/projects/%s/merge_requests/1/notes", url.PathEscape(owner+"/"+repo1)), createGitLabHandler)
+	defer cleanUp()
+
+	result, err := client.ListPullRequestComments(ctx, owner, repo1, 1)
+	require.NoError(t, err)
+	expectedCreated, err := time.Parse(time.RFC3339, "2013-10-02T09:56:03Z")
+	assert.NoError(t, err)
+	assert.Len(t, result, 2)
+	assert.Equal(t, CommentInfo{
+		ID:      305,
+		Content: "Text of the comment\r\n",
+		Created: expectedCreated,
+	}, result[1])
+}
+
 func TestGitLabClient_GetLatestCommit(t *testing.T) {
 	ctx := context.Background()
 	response, err := os.ReadFile(filepath.Join("testdata", "gitlab", "commit_list_response.json"))

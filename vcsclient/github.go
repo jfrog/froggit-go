@@ -242,20 +242,6 @@ func (client *GitHubClient) AddPullRequestComment(ctx context.Context, owner, re
 	return err
 }
 
-// DeletePullRequestComment on GitHub
-func (client *GitHubClient) DeletePullRequestComment(ctx context.Context, owner, repository string, pullRequestID int, commentID int64) error {
-	err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository})
-	if err != nil {
-		return err
-	}
-	ghClient, err := client.buildGithubClient(ctx)
-	if err != nil {
-		return err
-	}
-	_, err = ghClient.Issues.DeleteComment(ctx, owner, repository, commentID)
-	return err
-}
-
 // ListPullRequestComments on GitHub
 func (client *GitHubClient) ListPullRequestComments(ctx context.Context, owner, repository string, pullRequestID int) ([]CommentInfo, error) {
 	err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository})
@@ -501,6 +487,7 @@ func mapGitHubCommentToCommentInfoList(commentsList []*github.IssueComment) (res
 		res = append(res, CommentInfo{
 			ID:      *comment.ID,
 			Content: *comment.Body,
+			Created: *comment.CreatedAt,
 		})
 	}
 	return

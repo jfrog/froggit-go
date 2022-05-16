@@ -171,6 +171,26 @@ func TestBitbucketCloud_AddPullRequestComment(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestBitbucketCloud_ListPullRequestComments(t *testing.T) {
+	ctx := context.Background()
+	response, err := os.ReadFile(filepath.Join("testdata", "bitbucketcloud", "pull_request_comments_list_response.json"))
+	assert.NoError(t, err)
+	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketCloud, true, response,
+		fmt.Sprintf("/repositories/%s/%s/pullrequests/1/comments/", owner, repo1), createBitbucketCloudHandler)
+	defer cleanUp()
+
+	result, err := client.ListPullRequestComments(ctx, owner, repo1, 1)
+
+	require.NoError(t, err)
+	expectedCreated, err := time.Parse(time.RFC3339, "2022-05-16T11:04:07.075827+00:00")
+	assert.NoError(t, err)
+	assert.Len(t, result, 2)
+	assert.Equal(t, CommentInfo{
+		ID:      301545835,
+		Content: "I’m a comment ",
+		Created: expectedCreated,
+	}, result[0])
+}
 func TestBitbucketCloud_GetLatestCommit(t *testing.T) {
 	ctx := context.Background()
 	response, err := os.ReadFile(filepath.Join("testdata", "bitbucketcloud", "commit_list_response.json"))

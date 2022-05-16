@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	bitbucketv1 "github.com/gfleury/go-bitbucket-v1"
 	"github.com/jfrog/froggit-go/vcsutils"
@@ -303,6 +304,39 @@ func (client *BitbucketServerClient) AddPullRequestComment(ctx context.Context, 
 	}, []string{"application/json"})
 
 	return err
+}
+
+// ListBranches on Bitbucket server
+func (client *BitbucketServerClient) ListPullRequestComments(ctx context.Context, owner, repository string, pullRequestID int) ([]CommentInfo, error) {
+	bitbucketClient, err := client.buildBitbucketClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var results []CommentInfo
+	var apiResponse *bitbucketv1.APIResponse
+	for isLastPage, nextPageStart := true, 0; isLastPage; isLastPage, nextPageStart = bitbucketv1.HasNextPage(apiResponse) {
+		apiResponse, err = bitbucketClient.GetActivities(owner, repository, int64(pullRequestID), createPaginationOptions(nextPageStart))
+		if err != nil {
+			return nil, err
+		}
+		activities, err := bitbucketv1.GetActivitiesResponse(apiResponse)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, activity := range activities.Values {
+			// Add activity only if from type new comment.
+			if activity.Action == "COMMENTED" && activity.CommentAction == "ADDED" {
+				results = append(results, CommentInfo{
+					ID:      int64(activity.Comment.ID),
+					Created: time.Unix(activity.Comment.CreatedDate, 0),
+					Content: activity.Comment.Text,
+				})
+			}
+		}
+	}
+
+	return results, nil
 }
 
 type projectsResponse struct {
