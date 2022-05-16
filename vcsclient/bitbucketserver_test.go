@@ -76,7 +76,7 @@ func TestBitbucketServer_ListBranches(t *testing.T) {
 	mockResponse := map[string][]bitbucketv1.Branch{
 		"values": {{ID: branch1}, {ID: branch2}},
 	}
-	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, false, mockResponse, "/api/1.0/projects/jfrog/repos/repo-1/branches", createBitbucketServerHandler)
+	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, false, mockResponse, "/api/1.0/projects/jfrog/repos/repo-1/branches?start=0", createBitbucketServerHandler)
 	defer cleanUp()
 
 	actualRepositories, err := client.ListBranches(ctx, owner, repo1)
