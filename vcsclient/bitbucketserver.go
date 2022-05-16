@@ -306,7 +306,7 @@ func (client *BitbucketServerClient) AddPullRequestComment(ctx context.Context, 
 	return err
 }
 
-// ListBranches on Bitbucket server
+// ListPullRequestComments on Bitbucket server
 func (client *BitbucketServerClient) ListPullRequestComments(ctx context.Context, owner, repository string, pullRequestID int) ([]CommentInfo, error) {
 	bitbucketClient, err := client.buildBitbucketClient(ctx)
 	if err != nil {
