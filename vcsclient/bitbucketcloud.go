@@ -260,6 +260,29 @@ func (client *BitbucketCloudClient) CreatePullRequest(ctx context.Context, owner
 	return err
 }
 
+// CreatePullRequest on Bitbucket cloud
+func (client *BitbucketCloudClient) ListOpenPullRequests(ctx context.Context, owner, repository string) (res []PullRequestInfo, err error) {
+	err = validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository})
+	if err != nil {
+		return nil, err
+	}
+	bitbucketClient := client.buildBitbucketCloudClient(ctx)
+	options := &bitbucket.PullRequestsOptions{
+		Owner:    owner,
+		RepoSlug: repository,
+		States:   []string{"OPEN"},
+	}
+	pullRequests, err := bitbucketClient.Repositories.PullRequests.Gets(options)
+	if err != nil {
+		return
+	}
+	parsedPullRequests, err := extractPullRequestsFromResponse(pullRequests)
+	if err != nil {
+		return
+	}
+	return mapBitbucketCloudPullRequestToPullRequestInfo(parsedPullRequests), nil
+}
+
 // AddPullRequestComment on Bitbucket cloud
 func (client *BitbucketCloudClient) AddPullRequestComment(ctx context.Context, owner, repository, content string, pullRequestID int) error {
 	err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository, "content": content})
@@ -444,6 +467,27 @@ func extractStructFromResponse(response, aStructPointer interface{}) error {
 	return err
 }
 
+func extractPullRequestsFromResponse(pullRequests interface{}) (*pullRequestsResponse, error) {
+	var res pullRequestsResponse
+	b, err := json.Marshal(pullRequests)
+	if err != nil {
+		return nil, err
+	}
+	err = json.Unmarshal(b, &res)
+	if err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+type pullRequestsResponse struct {
+	Values []pullRequestsDetails `json:"values"`
+}
+
+type pullRequestsDetails struct {
+	ID int64 `json:"id"`
+}
+
 type commentsResponse struct {
 	Values []commentDetails `json:"values"`
 }
@@ -564,4 +608,14 @@ func mapBitbucketCloudCommentToCommentInfo(parsedComments *commentsResponse) []C
 		}
 	}
 	return comments
+}
+
+func mapBitbucketCloudPullRequestToPullRequestInfo(parsedPullRequests *pullRequestsResponse) []PullRequestInfo {
+	pullRequests := make([]PullRequestInfo, len(parsedPullRequests.Values))
+	for i, pullRequest := range parsedPullRequests.Values {
+		pullRequests[i] = PullRequestInfo{
+			ID: pullRequest.ID,
+		}
+	}
+	return pullRequests
 }

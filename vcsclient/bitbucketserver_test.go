@@ -197,6 +197,23 @@ func TestBitbucketServer_AddPullRequestComment(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestBitbucketServer_ListOpenPullRequests(t *testing.T) {
+	ctx := context.Background()
+	response, err := os.ReadFile(filepath.Join("testdata", "bitbucketserver", "pull_requests_list_response.json"))
+	assert.NoError(t, err)
+	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, true, response,
+		fmt.Sprintf("/api/1.0/projects/%s/repos/%s/pull-requests?start=0", owner, repo1), createBitbucketServerHandler)
+	defer cleanUp()
+
+	result, err := client.ListOpenPullRequests(ctx, owner, repo1)
+
+	require.NoError(t, err)
+	assert.Len(t, result, 1)
+	assert.Equal(t, PullRequestInfo{
+		ID: 101,
+	}, result[0])
+}
+
 func TestBitbucketServer_ListPullRequestComments(t *testing.T) {
 	ctx := context.Background()
 	response, err := os.ReadFile(filepath.Join("testdata", "bitbucketserver", "pull_request_comments_list_response.json"))

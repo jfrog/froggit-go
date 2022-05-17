@@ -188,6 +188,23 @@ func TestGitLabClient_ListPullRequestComments(t *testing.T) {
 	}, result[1])
 }
 
+func TestGitLabClient_ListOpenPullRequests(t *testing.T) {
+	ctx := context.Background()
+	response, err := os.ReadFile(filepath.Join("testdata", "gitlab", "pull_requests_list_response.json"))
+	assert.NoError(t, err)
+
+	client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, response,
+		"/api/v4/merge_requests?scope=all&state=open", createGitLabHandler)
+	defer cleanUp()
+
+	result, err := client.ListOpenPullRequests(ctx, owner, repo1)
+	require.NoError(t, err)
+	assert.Len(t, result, 1)
+	assert.Equal(t, PullRequestInfo{
+		ID: 302,
+	}, result[0])
+}
+
 func TestGitLabClient_GetLatestCommit(t *testing.T) {
 	ctx := context.Background()
 	response, err := os.ReadFile(filepath.Join("testdata", "gitlab", "commit_list_response.json"))

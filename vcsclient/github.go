@@ -225,6 +225,21 @@ func (client *GitHubClient) CreatePullRequest(ctx context.Context, owner, reposi
 	return err
 }
 
+// ListOpenPullRequests on GitHub
+func (client *GitHubClient) ListOpenPullRequests(ctx context.Context, owner, repository string) ([]PullRequestInfo, error) {
+	ghClient, err := client.buildGithubClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+	pullRequests, _, err := ghClient.PullRequests.List(ctx, owner, repository, &github.PullRequestListOptions{
+		State: "open",
+	})
+	if err != nil {
+		return []PullRequestInfo{}, err
+	}
+	return mapGitHubPullRequestToPullRequestInfoList(pullRequests)
+}
+
 // AddPullRequestComment on GitHub
 func (client *GitHubClient) AddPullRequestComment(ctx context.Context, owner, repository, content string, pullRequestID int) error {
 	err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository, "content": content})
@@ -488,6 +503,15 @@ func mapGitHubCommentToCommentInfoList(commentsList []*github.IssueComment) (res
 			ID:      *comment.ID,
 			Content: *comment.Body,
 			Created: *comment.CreatedAt,
+		})
+	}
+	return
+}
+
+func mapGitHubPullRequestToPullRequestInfoList(pullRequestList []*github.PullRequest) (res []PullRequestInfo, err error) {
+	for _, pullRequest := range pullRequestList {
+		res = append(res, PullRequestInfo{
+			ID: *pullRequest.ID,
 		})
 	}
 	return

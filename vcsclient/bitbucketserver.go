@@ -289,6 +289,34 @@ func (client *BitbucketServerClient) CreatePullRequest(ctx context.Context, owne
 	return err
 }
 
+// ListOpenPullRequests on Bitbucket server
+func (client *BitbucketServerClient) ListOpenPullRequests(ctx context.Context, owner, repository string) ([]PullRequestInfo, error) {
+	bitbucketClient, err := client.buildBitbucketClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var results []PullRequestInfo
+	var apiResponse *bitbucketv1.APIResponse
+	for isLastPage, nextPageStart := true, 0; isLastPage; isLastPage, nextPageStart = bitbucketv1.HasNextPage(apiResponse) {
+		apiResponse, err = bitbucketClient.GetPullRequestsPage(owner, repository, createPaginationOptions(nextPageStart))
+		if err != nil {
+			return nil, err
+		}
+		pullRequests, err := bitbucketv1.GetPullRequestsResponse(apiResponse)
+		if err != nil {
+			return nil, err
+		}
+		for _, pullRequest := range pullRequests {
+			if pullRequest.Open {
+				results = append(results, PullRequestInfo{
+					ID: int64(pullRequest.ID),
+				})
+			}
+		}
+	}
+	return results, nil
+}
+
 // AddPullRequestComment on Bitbucket server
 func (client *BitbucketServerClient) AddPullRequestComment(ctx context.Context, owner, repository, content string, pullRequestID int) error {
 	err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository, "content": content})
