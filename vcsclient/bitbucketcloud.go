@@ -610,12 +610,11 @@ func mapBitbucketCloudCommentToCommentInfo(parsedComments *commentsResponse) []C
 	return comments
 }
 
-func mapBitbucketCloudPullRequestToPullRequestInfo(parsedPullRequests *pullRequestsResponse) []PullRequestInfo {
-	pullRequests := make([]PullRequestInfo, len(parsedPullRequests.Values))
-	for i, pullRequest := range parsedPullRequests.Values {
-		pullRequests[i] = PullRequestInfo{
+func mapBitbucketCloudPullRequestToPullRequestInfo(parsedPullRequests *pullRequestsResponse) (res []PullRequestInfo) {
+	for _, pullRequest := range parsedPullRequests.Values {
+		res = append(res, PullRequestInfo{
 			ID: pullRequest.ID,
-		}
+		})
 	}
-	return pullRequests
+	return
 }
