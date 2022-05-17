@@ -610,11 +610,13 @@ func mapBitbucketCloudCommentToCommentInfo(parsedComments *commentsResponse) []C
 	return comments
 }
 
-func mapBitbucketCloudPullRequestToPullRequestInfo(parsedPullRequests *pullRequestsResponse) (res []PullRequestInfo) {
-	for _, pullRequest := range parsedPullRequests.Values {
-		res = append(res, PullRequestInfo{
+func mapBitbucketCloudPullRequestToPullRequestInfo(parsedPullRequests *pullRequestsResponse) []PullRequestInfo {
+	// #nosec S1016 -- This is a false positive
+	pullRequests := make([]PullRequestInfo, len(parsedPullRequests.Values))
+	for i, pullRequest := range parsedPullRequests.Values {
+		pullRequests[i] = PullRequestInfo{
 			ID: pullRequest.ID,
-		})
+		}
 	}
-	return
+	return pullRequests
 }
