@@ -458,6 +458,12 @@ func extractCommentsFromResponse(comments interface{}) (*commentsResponse, error
 	return &res, err
 }
 
+func extractPullRequestsFromResponse(pullRequests interface{}) (*pullRequestsResponse, error) {
+	var res pullRequestsResponse
+	err := extractStructFromResponse(pullRequests, &res)
+	return &res, err
+}
+
 func extractStructFromResponse(response, aStructPointer interface{}) error {
 	b, err := json.Marshal(response)
 	if err != nil {
@@ -465,19 +471,6 @@ func extractStructFromResponse(response, aStructPointer interface{}) error {
 	}
 	err = json.Unmarshal(b, aStructPointer)
 	return err
-}
-
-func extractPullRequestsFromResponse(pullRequests interface{}) (*pullRequestsResponse, error) {
-	var res pullRequestsResponse
-	b, err := json.Marshal(pullRequests)
-	if err != nil {
-		return nil, err
-	}
-	err = json.Unmarshal(b, &res)
-	if err != nil {
-		return nil, err
-	}
-	return &res, nil
 }
 
 type pullRequestsResponse struct {
@@ -611,9 +604,9 @@ func mapBitbucketCloudCommentToCommentInfo(parsedComments *commentsResponse) []C
 }
 
 func mapBitbucketCloudPullRequestToPullRequestInfo(parsedPullRequests *pullRequestsResponse) []PullRequestInfo {
-	// #nosec S1016 -- This is a false positive
 	pullRequests := make([]PullRequestInfo, len(parsedPullRequests.Values))
 	for i, pullRequest := range parsedPullRequests.Values {
+		//lint:ignore S1016 Ignoring because PullRequestInfo is necessary for extends the pr info in the future
 		pullRequests[i] = PullRequestInfo{
 			ID: pullRequest.ID,
 		}
