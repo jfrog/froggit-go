@@ -419,41 +419,29 @@ func (client *BitbucketCloudClient) UnlabelPullRequest(ctx context.Context, owne
 
 func extractCommitFromResponse(commits interface{}) (*commitResponse, error) {
 	var res commitResponse
-	b, err := json.Marshal(commits)
-	if err != nil {
-		return nil, err
-	}
-	err = json.Unmarshal(b, &res)
-	if err != nil {
-		return nil, err
-	}
-	return &res, nil
+	err := extractStructFromResponse(commits, &res)
+	return &res, err
 }
 
 func extractCommitDetailsFromResponse(commit interface{}) (commitDetails, error) {
 	var res commitDetails
-	b, err := json.Marshal(commit)
-	if err != nil {
-		return commitDetails{}, err
-	}
-	err = json.Unmarshal(b, &res)
-	if err != nil {
-		return commitDetails{}, err
-	}
-	return res, nil
+	err := extractStructFromResponse(commit, &res)
+	return res, err
 }
 
 func extractCommentsFromResponse(comments interface{}) (*commentsResponse, error) {
 	var res commentsResponse
-	b, err := json.Marshal(comments)
+	err := extractStructFromResponse(comments, &res)
+	return &res, err
+}
+
+func extractStructFromResponse(response, aStructPointer interface{}) error {
+	b, err := json.Marshal(response)
 	if err != nil {
-		return nil, err
+		return nil
 	}
-	err = json.Unmarshal(b, &res)
-	if err != nil {
-		return nil, err
-	}
-	return &res, nil
+	err = json.Unmarshal(b, aStructPointer)
+	return err
 }
 
 type commentsResponse struct {
