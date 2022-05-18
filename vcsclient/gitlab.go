@@ -432,7 +432,9 @@ func mapGitLabNotesToCommentInfoList(notes []*gitlab.Note) (res []CommentInfo) {
 func mapGitLabMergeRequestToPullRequestInfoList(mergeRequests []*gitlab.MergeRequest) (res []PullRequestInfo) {
 	for _, mergeRequest := range mergeRequests {
 		res = append(res, PullRequestInfo{
-			ID: int64(mergeRequest.IID),
+			ID:     int64(mergeRequest.IID),
+			Source: BranchInfo{Name: mergeRequest.SourceBranch},
+			Target: BranchInfo{Name: mergeRequest.TargetBranch},
 		})
 	}
 	return

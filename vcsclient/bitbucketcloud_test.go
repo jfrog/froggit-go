@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
 	"time"
 
@@ -162,7 +163,7 @@ func TestBitbucketCloud_CreatePullRequest(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestBitbucketCloud_openPullRequests(t *testing.T) {
+func TestBitbucketCloud_ListOpenPullRequests(t *testing.T) {
 	ctx := context.Background()
 	response, err := os.ReadFile(filepath.Join("testdata", "bitbucketcloud", "pull_requests_list_response.json"))
 	assert.NoError(t, err)
@@ -174,9 +175,11 @@ func TestBitbucketCloud_openPullRequests(t *testing.T) {
 
 	require.NoError(t, err)
 	assert.Len(t, result, 3)
-	assert.Equal(t, PullRequestInfo{
-		ID: 3,
-	}, result[0])
+	assert.True(t, reflect.DeepEqual(PullRequestInfo{
+		ID:     3,
+		Source: BranchInfo{Name: "test-2", Repository: "user17/test"},
+		Target: BranchInfo{Name: "master", Repository: "user17/test"},
+	}, result[0]))
 }
 
 func TestBitbucketCloud_AddPullRequestComment(t *testing.T) {

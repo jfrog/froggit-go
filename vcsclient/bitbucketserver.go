@@ -310,6 +310,12 @@ func (client *BitbucketServerClient) ListOpenPullRequests(ctx context.Context, o
 			if pullRequest.Open {
 				results = append(results, PullRequestInfo{
 					ID: int64(pullRequest.ID),
+					Source: BranchInfo{
+						Name:       pullRequest.FromRef.ID,
+						Repository: pullRequest.FromRef.Repository.Slug},
+					Target: BranchInfo{
+						Name:       pullRequest.ToRef.ID,
+						Repository: pullRequest.ToRef.Repository.Slug},
 				})
 			}
 		}

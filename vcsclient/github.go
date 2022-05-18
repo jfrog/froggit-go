@@ -512,6 +512,14 @@ func mapGitHubPullRequestToPullRequestInfoList(pullRequestList []*github.PullReq
 	for _, pullRequest := range pullRequestList {
 		res = append(res, PullRequestInfo{
 			ID: *pullRequest.ID,
+			Source: BranchInfo{
+				Name:       *pullRequest.Head.Ref,
+				Repository: *pullRequest.Head.Repo.FullName,
+			},
+			Target: BranchInfo{
+				Name:       *pullRequest.Base.Ref,
+				Repository: *pullRequest.Base.Repo.FullName,
+			},
 		})
 	}
 	return

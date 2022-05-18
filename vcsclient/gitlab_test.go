@@ -12,6 +12,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strconv"
 	"testing"
 	"time"
@@ -200,9 +201,11 @@ func TestGitLabClient_ListOpenPullRequests(t *testing.T) {
 	result, err := client.ListOpenPullRequests(ctx, owner, repo1)
 	require.NoError(t, err)
 	assert.Len(t, result, 1)
-	assert.Equal(t, PullRequestInfo{
-		ID: 302,
-	}, result[0])
+	assert.True(t, reflect.DeepEqual(PullRequestInfo{
+		ID:     302,
+		Source: BranchInfo{Name: "test1", Repository: ""},
+		Target: BranchInfo{Name: "master", Repository: ""},
+	}, result[0]))
 }
 
 func TestGitLabClient_GetLatestCommit(t *testing.T) {

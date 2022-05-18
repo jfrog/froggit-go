@@ -198,7 +198,14 @@ type CommentInfo struct {
 }
 
 type PullRequestInfo struct {
-	ID int64
+	ID     int64
+	Source BranchInfo
+	Target BranchInfo
+}
+
+type BranchInfo struct {
+	Name       string
+	Repository string
 }
 
 // RepositoryInfo contains general information about repository.

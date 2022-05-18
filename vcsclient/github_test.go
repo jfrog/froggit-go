@@ -12,6 +12,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strconv"
 	"strings"
 	"testing"
@@ -488,9 +489,11 @@ func TestGitHubClient_ListOpenPullRequests(t *testing.T) {
 	require.NoError(t, err)
 	assert.Len(t, result, 1)
 	assert.NoError(t, err)
-	assert.Equal(t, PullRequestInfo{
-		ID: 1,
-	}, result[0])
+	assert.True(t, reflect.DeepEqual(PullRequestInfo{
+		ID:     1,
+		Source: BranchInfo{Name: "new-topic", Repository: "octocat/Hello-World"},
+		Target: BranchInfo{Name: "master", Repository: "octocat/Hello-World"},
+	}, result[0]))
 
 	_, err = createBadGitHubClient(t).ListPullRequestComments(ctx, owner, repo1, 1)
 	assert.Error(t, err)

@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strconv"
 	"strings"
 	"testing"
@@ -209,9 +210,11 @@ func TestBitbucketServer_ListOpenPullRequests(t *testing.T) {
 
 	require.NoError(t, err)
 	assert.Len(t, result, 1)
-	assert.Equal(t, PullRequestInfo{
-		ID: 101,
-	}, result[0])
+	assert.True(t, reflect.DeepEqual(PullRequestInfo{
+		ID:     101,
+		Source: BranchInfo{Name: "refs/heads/feature-ABC-123", Repository: "my-repo"},
+		Target: BranchInfo{Name: "refs/heads/master", Repository: "my-repo"},
+	}, result[0]))
 }
 
 func TestBitbucketServer_ListPullRequestComments(t *testing.T) {

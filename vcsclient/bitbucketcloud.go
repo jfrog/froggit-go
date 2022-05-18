@@ -478,7 +478,20 @@ type pullRequestsResponse struct {
 }
 
 type pullRequestsDetails struct {
-	ID int64 `json:"id"`
+	ID     int64             `json:"id"`
+	Target pullRequestBranch `json:"destination"`
+	Source pullRequestBranch `json:"source"`
+}
+
+type pullRequestBranch struct {
+	Name struct {
+		Str string `json:"name"`
+	} `json:"branch"`
+	Repository pullRequestRepository `json:"repository"`
+}
+
+type pullRequestRepository struct {
+	Name string `json:"full_name"`
 }
 
 type commentsResponse struct {
@@ -606,9 +619,16 @@ func mapBitbucketCloudCommentToCommentInfo(parsedComments *commentsResponse) []C
 func mapBitbucketCloudPullRequestToPullRequestInfo(parsedPullRequests *pullRequestsResponse) []PullRequestInfo {
 	pullRequests := make([]PullRequestInfo, len(parsedPullRequests.Values))
 	for i, pullRequest := range parsedPullRequests.Values {
-		//lint:ignore S1016 Ignoring because PullRequestInfo is necessary for extends the pr info in the future
 		pullRequests[i] = PullRequestInfo{
 			ID: pullRequest.ID,
+			Source: BranchInfo{
+				Name:       pullRequest.Source.Name.Str,
+				Repository: pullRequest.Source.Repository.Name,
+			},
+			Target: BranchInfo{
+				Name:       pullRequest.Target.Name.Str,
+				Repository: pullRequest.Target.Repository.Name,
+			},
 		}
 	}
 	return pullRequests
