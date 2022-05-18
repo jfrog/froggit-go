@@ -438,7 +438,7 @@ func extractCommentsFromResponse(comments interface{}) (*commentsResponse, error
 func extractStructFromResponse(response, aStructPointer interface{}) error {
 	b, err := json.Marshal(response)
 	if err != nil {
-		return nil
+		return err
 	}
 	err = json.Unmarshal(b, aStructPointer)
 	return err
