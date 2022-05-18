@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/jfrog/froggit-go/vcsutils"
 )
@@ -41,18 +42,18 @@ type VcsInfo struct {
 
 // VcsClient is a base class of all Vcs clients - GitHub, GitLab, Bitbucket server and cloud clients
 type VcsClient interface {
-	// TestConnection Return nil if connection and authorization established successfully
+	// TestConnection Returns nil if connection and authorization established successfully
 	TestConnection(ctx context.Context) error
 
-	// ListRepositories Return a map between all accessible owners to their list of repositories
+	// ListRepositories Returns a map between all accessible owners to their list of repositories
 	ListRepositories(ctx context.Context) (map[string][]string, error)
 
-	// ListBranches List all branches under the input repository
+	// ListBranches Lists all branches under the input repository
 	// owner      - User or organization
 	// repository - VCS repository name
 	ListBranches(ctx context.Context, owner, repository string) ([]string, error)
 
-	// CreateWebhook Create a webhook
+	// CreateWebhook Creates a webhook
 	// owner         - User or organization
 	// repository    - VCS repository name
 	// branch        - VCS branch name
@@ -61,7 +62,7 @@ type VcsClient interface {
 	// Return the webhook ID, token and an error, if occurred
 	CreateWebhook(ctx context.Context, owner, repository, branch, payloadURL string, webhookEvents ...vcsutils.WebhookEvent) (string, string, error)
 
-	// UpdateWebhook Update a webhook
+	// UpdateWebhook Updates a webhook
 	// owner         - User or organization
 	// repository    - VCS repository name
 	// branch        - VCS branch name
@@ -71,13 +72,13 @@ type VcsClient interface {
 	// webhookEvents - The event type
 	UpdateWebhook(ctx context.Context, owner, repository, branch, payloadURL, token, webhookID string, webhookEvents ...vcsutils.WebhookEvent) error
 
-	// DeleteWebhook Delete a webhook
+	// DeleteWebhook Deletes a webhook
 	// owner        - User or organization
 	// repository   - VCS repository name
 	// webhookID    - The webhook ID returned from a previous CreateWebhook command
 	DeleteWebhook(ctx context.Context, owner, repository, webhookID string) error
 
-	// SetCommitStatus Set commit status
+	// SetCommitStatus Sets commit status
 	// commitStatus - One of Pass, Fail, Error, or InProgress
 	// owner        - User or organization
 	// repository   - VCS repository name
@@ -87,14 +88,14 @@ type VcsClient interface {
 	// detailsUrl   - The URL for component status link
 	SetCommitStatus(ctx context.Context, commitStatus CommitStatus, owner, repository, ref, title, description, detailsURL string) error
 
-	// DownloadRepository Download and extract a VCS repository
+	// DownloadRepository Downloads and extracts a VCS repository
 	// owner      - User or organization
 	// repository - VCS repository name
 	// branch     - VCS branch name
 	// localPath  - Local file system path
 	DownloadRepository(ctx context.Context, owner, repository, branch, localPath string) error
 
-	// CreatePullRequest Create a pull request between 2 different branches in the same repository
+	// CreatePullRequest Creates a pull request between 2 different branches in the same repository
 	// owner        - User or organization
 	// repository   - VCS repository name
 	// sourceBranch - Source branch
@@ -103,20 +104,26 @@ type VcsClient interface {
 	// description  - Pull request description
 	CreatePullRequest(ctx context.Context, owner, repository, sourceBranch, targetBranch, title, description string) error
 
-	// AddPullRequestComment Add a new comment on the requested pull request
+	// AddPullRequestComment Adds a new comment on the requested pull request
 	// owner          - User or organization
 	// repository     - VCS repository name
 	// content        - The new comment content
 	// pullRequestID  - Pull request ID
 	AddPullRequestComment(ctx context.Context, owner, repository, content string, pullRequestID int) error
 
-	// GetLatestCommit Get the most recent commit of a branch
+	// ListPullRequestComments Gets all comments assigned to a pull request.
+	// owner          - User or organization
+	// repository     - VCS repository name
+	// pullRequestID  - Pull request ID
+	ListPullRequestComments(ctx context.Context, owner, repository string, pullRequestID int) ([]CommentInfo, error)
+
+	// GetLatestCommit Gets the most recent commit of a branch
 	// owner      - User or organization
 	// repository - VCS repository name
 	// branch     - The name of the branch
 	GetLatestCommit(ctx context.Context, owner, repository, branch string) (CommitInfo, error)
 
-	// AddSshKeyToRepository Add a public ssh key to a repository
+	// AddSshKeyToRepository Adds a public ssh key to a repository
 	// owner      - User or organization
 	// repository - VCS repository name
 	// keyName    - Name of the key
@@ -129,31 +136,31 @@ type VcsClient interface {
 	// repository - VCS repository name
 	GetRepositoryInfo(ctx context.Context, owner, repository string) (RepositoryInfo, error)
 
-	// GetCommitBySha Get the commit by its SHA
+	// GetCommitBySha Gets the commit by its SHA
 	// owner      - User or organization
 	// repository - VCS repository name
 	// sha        - The commit hash
 	GetCommitBySha(ctx context.Context, owner, repository, sha string) (CommitInfo, error)
 
-	// CreateLabel create a label in repository
+	// CreateLabel Creates a label in repository
 	// owner      - User or organization
 	// repository - VCS repository name
 	// labelInfo  - The label info
 	CreateLabel(ctx context.Context, owner, repository string, labelInfo LabelInfo) error
 
-	// GetLabel get a label related to a repository. Returns (nil, nil) if label doesn't exist.
+	// GetLabel Gets a label related to a repository. Returns (nil, nil) if label doesn't exist.
 	// owner      - User or organization
 	// repository - VCS repository name
 	// name       - Label name
 	GetLabel(ctx context.Context, owner, repository, name string) (*LabelInfo, error)
 
-	// ListPullRequestLabels get all labels assigned to a pull request.
+	// ListPullRequestLabels Gets all labels assigned to a pull request.
 	// owner         - User or organization
 	// repository    - VCS repository name
 	// pullRequestID - Pull request ID
 	ListPullRequestLabels(ctx context.Context, owner, repository string, pullRequestID int) ([]string, error)
 
-	// UnlabelPullRequest remove a label from a pull request
+	// UnlabelPullRequest Removes a label from a pull request
 	// owner         - User or organization
 	// repository    - VCS repository name
 	// name          - Label name
@@ -177,6 +184,12 @@ type CommitInfo struct {
 	Message string
 	// The SHA-1 hashes of the parent commits
 	ParentHashes []string
+}
+
+type CommentInfo struct {
+	ID      int64
+	Content string
+	Created time.Time
 }
 
 // RepositoryInfo contains general information about repository.

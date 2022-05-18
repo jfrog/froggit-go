@@ -277,6 +277,29 @@ func (client *BitbucketCloudClient) AddPullRequestComment(ctx context.Context, o
 	return err
 }
 
+// ListPullRequestComments on Bitbucket cloud
+func (client *BitbucketCloudClient) ListPullRequestComments(ctx context.Context, owner, repository string, pullRequestID int) (res []CommentInfo, err error) {
+	err = validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository})
+	if err != nil {
+		return nil, err
+	}
+	bitbucketClient := client.buildBitbucketCloudClient(ctx)
+	options := &bitbucket.PullRequestsOptions{
+		Owner:    owner,
+		RepoSlug: repository,
+		ID:       fmt.Sprint(pullRequestID),
+	}
+	comments, err := bitbucketClient.Repositories.PullRequests.GetComments(options)
+	if err != nil {
+		return
+	}
+	parsedComments, err := extractCommentsFromResponse(comments)
+	if err != nil {
+		return
+	}
+	return mapBitbucketCloudCommentToCommentInfo(parsedComments), nil
+}
+
 // GetLatestCommit on Bitbucket cloud
 func (client *BitbucketCloudClient) GetLatestCommit(ctx context.Context, owner, repository, branch string) (CommitInfo, error) {
 	err := validateParametersNotBlank(map[string]string{
@@ -396,28 +419,45 @@ func (client *BitbucketCloudClient) UnlabelPullRequest(ctx context.Context, owne
 
 func extractCommitFromResponse(commits interface{}) (*commitResponse, error) {
 	var res commitResponse
-	b, err := json.Marshal(commits)
-	if err != nil {
-		return nil, err
-	}
-	err = json.Unmarshal(b, &res)
-	if err != nil {
-		return nil, err
-	}
-	return &res, nil
+	err := extractStructFromResponse(commits, &res)
+	return &res, err
 }
 
 func extractCommitDetailsFromResponse(commit interface{}) (commitDetails, error) {
 	var res commitDetails
-	b, err := json.Marshal(commit)
+	err := extractStructFromResponse(commit, &res)
+	return res, err
+}
+
+func extractCommentsFromResponse(comments interface{}) (*commentsResponse, error) {
+	var res commentsResponse
+	err := extractStructFromResponse(comments, &res)
+	return &res, err
+}
+
+func extractStructFromResponse(response, aStructPointer interface{}) error {
+	b, err := json.Marshal(response)
 	if err != nil {
-		return commitDetails{}, err
+		return err
 	}
-	err = json.Unmarshal(b, &res)
-	if err != nil {
-		return commitDetails{}, err
-	}
-	return res, nil
+	err = json.Unmarshal(b, aStructPointer)
+	return err
+}
+
+type commentsResponse struct {
+	Values []commentDetails `json:"values"`
+}
+
+type commentDetails struct {
+	ID        int64          `json:"id"`
+	User      user           `json:"user"`
+	IsDeleted bool           `json:"deleted"`
+	Content   commentContent `json:"content"`
+	Created   time.Time      `json:"created_on"`
+}
+
+type commentContent struct {
+	Raw string `json:"raw"`
 }
 
 type commitResponse struct {
@@ -429,9 +469,7 @@ type commitDetails struct {
 	Date    time.Time `json:"date"`
 	Message string    `json:"message"`
 	Author  struct {
-		User struct {
-			DisplayName string `json:"display_name"`
-		} `json:"user"`
+		User user `json:"user"`
 	} `json:"author"`
 	Links struct {
 		Self link `json:"self"`
@@ -441,6 +479,9 @@ type commitDetails struct {
 	} `json:"parents"`
 }
 
+type user struct {
+	DisplayName string `json:"display_name"`
+}
 type link struct {
 	Href string `json:"href"`
 }
@@ -511,4 +552,16 @@ func mapBitbucketCloudCommitToCommitInfo(parsedCommit commitDetails) CommitInfo 
 		Message:       parsedCommit.Message,
 		ParentHashes:  parents,
 	}
+}
+
+func mapBitbucketCloudCommentToCommentInfo(parsedComments *commentsResponse) []CommentInfo {
+	comments := make([]CommentInfo, len(parsedComments.Values))
+	for i, comment := range parsedComments.Values {
+		comments[i] = CommentInfo{
+			ID:      comment.ID,
+			Content: comment.Content.Raw,
+			Created: comment.Created,
+		}
+	}
+	return comments
 }

@@ -476,6 +476,29 @@ func TestGitHubClient_ListPullRequestLabels(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestGitHubClient_ListPullRequestComments(t *testing.T) {
+	ctx := context.Background()
+	response, err := os.ReadFile(filepath.Join("testdata", "github", "pull_request_comments_list_response.json"))
+	assert.NoError(t, err)
+	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, response,
+		fmt.Sprintf("/repos/%s/%s/issues/1/comments", owner, repo1), createGitHubHandler)
+	defer cleanUp()
+
+	result, err := client.ListPullRequestComments(ctx, owner, repo1, 1)
+	require.NoError(t, err)
+	assert.Len(t, result, 2)
+	expectedCreated, err := time.Parse(time.RFC3339, "2011-04-14T16:00:49Z")
+	assert.NoError(t, err)
+	assert.Equal(t, CommentInfo{
+		ID:      10,
+		Content: "Great stuff!",
+		Created: expectedCreated,
+	}, result[0])
+
+	_, err = createBadGitHubClient(t).ListPullRequestComments(ctx, owner, repo1, 1)
+	assert.Error(t, err)
+}
+
 func TestGitHubClient_UnlabelPullRequest(t *testing.T) {
 	ctx := context.Background()
 	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, &github.PullRequest{}, fmt.Sprintf("/repos/jfrog/repo-1/issues/1/labels/%s", url.PathEscape(labelName)), createGitHubHandler)

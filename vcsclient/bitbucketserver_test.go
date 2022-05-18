@@ -76,7 +76,7 @@ func TestBitbucketServer_ListBranches(t *testing.T) {
 	mockResponse := map[string][]bitbucketv1.Branch{
 		"values": {{ID: branch1}, {ID: branch2}},
 	}
-	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, false, mockResponse, "/api/1.0/projects/jfrog/repos/repo-1/branches", createBitbucketServerHandler)
+	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, false, mockResponse, "/api/1.0/projects/jfrog/repos/repo-1/branches?start=0", createBitbucketServerHandler)
 	defer cleanUp()
 
 	actualRepositories, err := client.ListBranches(ctx, owner, repo1)
@@ -195,6 +195,25 @@ func TestBitbucketServer_AddPullRequestComment(t *testing.T) {
 
 	err = createBadBitbucketServerClient(t).AddPullRequestComment(ctx, owner, repo1, "Comment content", 1)
 	assert.Error(t, err)
+}
+
+func TestBitbucketServer_ListPullRequestComments(t *testing.T) {
+	ctx := context.Background()
+	response, err := os.ReadFile(filepath.Join("testdata", "bitbucketserver", "pull_request_comments_list_response.json"))
+	assert.NoError(t, err)
+	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, true, response,
+		fmt.Sprintf("/api/1.0/projects/%s/repos/%s/pull-requests/1/activities?start=0", owner, repo1), createBitbucketServerHandler)
+	defer cleanUp()
+
+	result, err := client.ListPullRequestComments(ctx, owner, repo1, 1)
+
+	require.NoError(t, err)
+	assert.Len(t, result, 1)
+	assert.Equal(t, CommentInfo{
+		ID:      1,
+		Content: "A measured reply.",
+		Created: time.Unix(1548720847370, 0),
+	}, result[0])
 }
 
 func TestBitbucketServer_GetLatestCommit(t *testing.T) {
