@@ -12,6 +12,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strconv"
 	"strings"
 	"testing"
@@ -473,6 +474,28 @@ func TestGitHubClient_ListPullRequestLabels(t *testing.T) {
 	assert.Equal(t, labelName, labels[0])
 
 	_, err = createBadGitHubClient(t).ListPullRequestLabels(ctx, owner, repo1, 1)
+	assert.Error(t, err)
+}
+
+func TestGitHubClient_ListOpenPullRequests(t *testing.T) {
+	ctx := context.Background()
+	response, err := os.ReadFile(filepath.Join("testdata", "github", "pull_requests_list_response.json"))
+	assert.NoError(t, err)
+	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, response,
+		fmt.Sprintf("/repos/%s/%s/pulls?state=open", owner, repo1), createGitHubHandler)
+	defer cleanUp()
+
+	result, err := client.ListOpenPullRequests(ctx, owner, repo1)
+	require.NoError(t, err)
+	assert.Len(t, result, 1)
+	assert.NoError(t, err)
+	assert.True(t, reflect.DeepEqual(PullRequestInfo{
+		ID:     1,
+		Source: BranchInfo{Name: "new-topic", Repository: "octocat/Hello-World"},
+		Target: BranchInfo{Name: "master", Repository: "octocat/Hello-World"},
+	}, result[0]))
+
+	_, err = createBadGitHubClient(t).ListPullRequestComments(ctx, owner, repo1, 1)
 	assert.Error(t, err)
 }
 

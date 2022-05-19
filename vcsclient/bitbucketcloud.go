@@ -260,6 +260,29 @@ func (client *BitbucketCloudClient) CreatePullRequest(ctx context.Context, owner
 	return err
 }
 
+// CreatePullRequest on Bitbucket cloud
+func (client *BitbucketCloudClient) ListOpenPullRequests(ctx context.Context, owner, repository string) (res []PullRequestInfo, err error) {
+	err = validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository})
+	if err != nil {
+		return nil, err
+	}
+	bitbucketClient := client.buildBitbucketCloudClient(ctx)
+	options := &bitbucket.PullRequestsOptions{
+		Owner:    owner,
+		RepoSlug: repository,
+		States:   []string{"OPEN"},
+	}
+	pullRequests, err := bitbucketClient.Repositories.PullRequests.Gets(options)
+	if err != nil {
+		return
+	}
+	parsedPullRequests, err := extractPullRequestsFromResponse(pullRequests)
+	if err != nil {
+		return
+	}
+	return mapBitbucketCloudPullRequestToPullRequestInfo(parsedPullRequests), nil
+}
+
 // AddPullRequestComment on Bitbucket cloud
 func (client *BitbucketCloudClient) AddPullRequestComment(ctx context.Context, owner, repository, content string, pullRequestID int) error {
 	err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository, "content": content})
@@ -435,6 +458,12 @@ func extractCommentsFromResponse(comments interface{}) (*commentsResponse, error
 	return &res, err
 }
 
+func extractPullRequestsFromResponse(pullRequests interface{}) (*pullRequestsResponse, error) {
+	var res pullRequestsResponse
+	err := extractStructFromResponse(pullRequests, &res)
+	return &res, err
+}
+
 func extractStructFromResponse(response, aStructPointer interface{}) error {
 	b, err := json.Marshal(response)
 	if err != nil {
@@ -442,6 +471,27 @@ func extractStructFromResponse(response, aStructPointer interface{}) error {
 	}
 	err = json.Unmarshal(b, aStructPointer)
 	return err
+}
+
+type pullRequestsResponse struct {
+	Values []pullRequestsDetails `json:"values"`
+}
+
+type pullRequestsDetails struct {
+	ID     int64             `json:"id"`
+	Target pullRequestBranch `json:"destination"`
+	Source pullRequestBranch `json:"source"`
+}
+
+type pullRequestBranch struct {
+	Name struct {
+		Str string `json:"name"`
+	} `json:"branch"`
+	Repository pullRequestRepository `json:"repository"`
+}
+
+type pullRequestRepository struct {
+	Name string `json:"full_name"`
 }
 
 type commentsResponse struct {
@@ -564,4 +614,22 @@ func mapBitbucketCloudCommentToCommentInfo(parsedComments *commentsResponse) []C
 		}
 	}
 	return comments
+}
+
+func mapBitbucketCloudPullRequestToPullRequestInfo(parsedPullRequests *pullRequestsResponse) []PullRequestInfo {
+	pullRequests := make([]PullRequestInfo, len(parsedPullRequests.Values))
+	for i, pullRequest := range parsedPullRequests.Values {
+		pullRequests[i] = PullRequestInfo{
+			ID: pullRequest.ID,
+			Source: BranchInfo{
+				Name:       pullRequest.Source.Name.Str,
+				Repository: pullRequest.Source.Repository.Name,
+			},
+			Target: BranchInfo{
+				Name:       pullRequest.Target.Name.Str,
+				Repository: pullRequest.Target.Repository.Name,
+			},
+		}
+	}
+	return pullRequests
 }

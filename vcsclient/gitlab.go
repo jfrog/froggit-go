@@ -198,6 +198,22 @@ func (client *GitLabClient) CreatePullRequest(ctx context.Context, owner, reposi
 	return err
 }
 
+// ListOpenPullRequests on GitLab
+func (client *GitLabClient) ListOpenPullRequests(ctx context.Context, owner, repository string) ([]PullRequestInfo, error) {
+	openState := "open"
+	allScope := "all"
+	options := &gitlab.ListMergeRequestsOptions{
+		State: &openState,
+		Scope: &allScope,
+	}
+	mergeRequests, _, err := client.glClient.MergeRequests.ListMergeRequests(options,
+		gitlab.WithContext(ctx))
+	if err != nil {
+		return []PullRequestInfo{}, err
+	}
+	return mapGitLabMergeRequestToPullRequestInfoList(mergeRequests), nil
+}
+
 // AddPullRequestComment on GitLab
 func (client *GitLabClient) AddPullRequestComment(ctx context.Context, owner, repository, content string, pullRequestID int) error {
 	err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository, "content": content})
@@ -408,6 +424,17 @@ func mapGitLabNotesToCommentInfoList(notes []*gitlab.Note) (res []CommentInfo) {
 			ID:      int64(note.ID),
 			Content: note.Body,
 			Created: *note.CreatedAt,
+		})
+	}
+	return
+}
+
+func mapGitLabMergeRequestToPullRequestInfoList(mergeRequests []*gitlab.MergeRequest) (res []PullRequestInfo) {
+	for _, mergeRequest := range mergeRequests {
+		res = append(res, PullRequestInfo{
+			ID:     int64(mergeRequest.IID),
+			Source: BranchInfo{Name: mergeRequest.SourceBranch},
+			Target: BranchInfo{Name: mergeRequest.TargetBranch},
 		})
 	}
 	return

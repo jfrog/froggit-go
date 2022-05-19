@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strconv"
 	"strings"
 	"testing"
@@ -195,6 +196,25 @@ func TestBitbucketServer_AddPullRequestComment(t *testing.T) {
 
 	err = createBadBitbucketServerClient(t).AddPullRequestComment(ctx, owner, repo1, "Comment content", 1)
 	assert.Error(t, err)
+}
+
+func TestBitbucketServer_ListOpenPullRequests(t *testing.T) {
+	ctx := context.Background()
+	response, err := os.ReadFile(filepath.Join("testdata", "bitbucketserver", "pull_requests_list_response.json"))
+	assert.NoError(t, err)
+	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, true, response,
+		fmt.Sprintf("/api/1.0/projects/%s/repos/%s/pull-requests?start=0", owner, repo1), createBitbucketServerHandler)
+	defer cleanUp()
+
+	result, err := client.ListOpenPullRequests(ctx, owner, repo1)
+
+	require.NoError(t, err)
+	assert.Len(t, result, 1)
+	assert.True(t, reflect.DeepEqual(PullRequestInfo{
+		ID:     101,
+		Source: BranchInfo{Name: "refs/heads/feature-ABC-123", Repository: "my-repo"},
+		Target: BranchInfo{Name: "refs/heads/master", Repository: "my-repo"},
+	}, result[0]))
 }
 
 func TestBitbucketServer_ListPullRequestComments(t *testing.T) {

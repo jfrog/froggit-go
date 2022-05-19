@@ -9,31 +9,36 @@ Currently supported providers are: [GitHub](#github), [Bitbucket Server](#bitbuc
 
 ## Usage
 
-- [VCS Clients](#vcs-clients)
-  - [Create Clients](#create-clients)
-    - [GitHub](#github)
-    - [GitLab](#gitlab)
-    - [Bitbucket Server](#bitbucket-server)
-    - [Bitbucket Cloud](#bitbucket-cloud)
-  - [Test Connection](#test-connection)
-  - [List Repositories](#list-repositories)
-  - [List Branches](#list-branches)
-  - [Download Repository](#download-repository)
-  - [Create Webhook](#create-webhook)
-  - [Update Webhook](#update-webhook)
-  - [Delete Webhook](#delete-webhook)
-  - [Set Commit Status](#set-commit-status)
-  - [Create Pull Request](#create-pull-request)
-  - [Add Pull Request Comment](#add-pull-request-comment)
-  - [Get Latest Commit](#get-latest-commit)
-  - [Get Commit By SHA](#get-commit-by-sha)
-  - [Add Public SSH Key](#add-public-ssh-key)
-  - [Get Repository Info](#get-repository-info)
-  - [Create a Label](#create-a-label)
-  - [Get a Label](#get-a-label)
-  - [List Pull Request Labels](#list-pull-request-labels)
-  - [Unlabel Pull Request](#unlabel-pull-request)
-- [Webhook Parser](#webhook-parser)
+- [Froggit-Go](#froggit-go)
+  - [Project status](#project-status)
+  - [Usage](#usage)
+    - [VCS Clients](#vcs-clients)
+      - [Create Clients](#create-clients)
+        - [GitHub](#github)
+        - [GitLab](#gitlab)
+        - [Bitbucket Server](#bitbucket-server)
+        - [Bitbucket Cloud](#bitbucket-cloud)
+      - [Test Connection](#test-connection)
+      - [List Repositories](#list-repositories)
+      - [List Branches](#list-branches)
+      - [Download Repository](#download-repository)
+      - [Create Webhook](#create-webhook)
+      - [Update Webhook](#update-webhook)
+      - [Delete Webhook](#delete-webhook)
+      - [Set Commit Status](#set-commit-status)
+        - [Create Pull Request](#create-pull-request)
+      - [List Open Pull Requests](#list-open-pull-requests)
+        - [Add Pull Request Comment](#add-pull-request-comment)
+        - [List Pull Request Comments](#list-pull-request-comments)
+      - [Get Latest Commit](#get-latest-commit)
+      - [Get Commit By SHA](#get-commit-by-sha)
+      - [Add Public SSH Key](#add-public-ssh-key)
+      - [Get Repository Info](#get-repository-info)
+      - [Create a label](#create-a-label)
+      - [Get a label](#get-a-label)
+      - [List Pull Request Labels](#list-pull-request-labels)
+      - [Unlabel Pull Request](#unlabel-pull-request)
+    - [Webhook Parser](#webhook-parser)
 
 ### VCS Clients
 
@@ -261,6 +266,19 @@ description := "Pull request description"
 err := client.CreatePullRequest(ctx, owner, repository, sourceBranch, targetBranch, title, description)
 ```
 
+#### List Open Pull Requests
+
+```go
+// Go context
+ctx := context.Background()
+// Organization or username
+owner := "jfrog"
+// VCS repository
+repository := "jfrog-cli"
+
+openPullRequests, err := client.ListOpenPullRequests(ctx, owner, repository)
+```
+
 ##### Add Pull Request Comment
 
 ```go
@@ -276,6 +294,21 @@ content := "Comment content"
 pullRequestID := 5
 
 err := client.AddPullRequestComment(ctx, owner, repository, content, pullRequestID)
+```
+
+##### List Pull Request Comments
+
+```go
+// Go context
+ctx := context.Background()
+// Organization or username
+owner := "jfrog"
+// VCS repository
+repository := "jfrog-cli"
+// Pull Request ID
+pullRequestID := 5
+
+pullRequestComments, err := client.ListPullRequestComment(ctx, owner, repository, pullRequestID)
 ```
 
 #### Get Latest Commit

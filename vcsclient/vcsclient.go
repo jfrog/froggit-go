@@ -117,6 +117,11 @@ type VcsClient interface {
 	// pullRequestID  - Pull request ID
 	ListPullRequestComments(ctx context.Context, owner, repository string, pullRequestID int) ([]CommentInfo, error)
 
+	// ListOpenPullRequests Gets all open pull requests ids.
+	// owner          - User or organization
+	// repository     - VCS repository name
+	ListOpenPullRequests(ctx context.Context, owner, repository string) ([]PullRequestInfo, error)
+
 	// GetLatestCommit Gets the most recent commit of a branch
 	// owner      - User or organization
 	// repository - VCS repository name
@@ -190,6 +195,17 @@ type CommentInfo struct {
 	ID      int64
 	Content string
 	Created time.Time
+}
+
+type PullRequestInfo struct {
+	ID     int64
+	Source BranchInfo
+	Target BranchInfo
+}
+
+type BranchInfo struct {
+	Name       string
+	Repository string
 }
 
 // RepositoryInfo contains general information about repository.

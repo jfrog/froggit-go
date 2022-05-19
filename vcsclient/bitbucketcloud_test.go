@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
 	"time"
 
@@ -160,6 +161,25 @@ func TestBitbucketCloud_CreatePullRequest(t *testing.T) {
 
 	err := client.CreatePullRequest(ctx, owner, repo1, branch1, branch2, "PR title", "PR body")
 	assert.NoError(t, err)
+}
+
+func TestBitbucketCloud_ListOpenPullRequests(t *testing.T) {
+	ctx := context.Background()
+	response, err := os.ReadFile(filepath.Join("testdata", "bitbucketcloud", "pull_requests_list_response.json"))
+	assert.NoError(t, err)
+	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketCloud, true, response,
+		fmt.Sprintf("/repositories/%s/%s/pullrequests/?state=OPEN", owner, repo1), createBitbucketCloudHandler)
+	defer cleanUp()
+
+	result, err := client.ListOpenPullRequests(ctx, owner, repo1)
+
+	require.NoError(t, err)
+	assert.Len(t, result, 3)
+	assert.True(t, reflect.DeepEqual(PullRequestInfo{
+		ID:     3,
+		Source: BranchInfo{Name: "test-2", Repository: "user17/test"},
+		Target: BranchInfo{Name: "master", Repository: "user17/test"},
+	}, result[0]))
 }
 
 func TestBitbucketCloud_AddPullRequestComment(t *testing.T) {

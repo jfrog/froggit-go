@@ -12,6 +12,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strconv"
 	"testing"
 	"time"
@@ -186,6 +187,25 @@ func TestGitLabClient_ListPullRequestComments(t *testing.T) {
 		Content: "Text of the comment\r\n",
 		Created: expectedCreated,
 	}, result[1])
+}
+
+func TestGitLabClient_ListOpenPullRequests(t *testing.T) {
+	ctx := context.Background()
+	response, err := os.ReadFile(filepath.Join("testdata", "gitlab", "pull_requests_list_response.json"))
+	assert.NoError(t, err)
+
+	client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, response,
+		"/api/v4/merge_requests?scope=all&state=open", createGitLabHandler)
+	defer cleanUp()
+
+	result, err := client.ListOpenPullRequests(ctx, owner, repo1)
+	require.NoError(t, err)
+	assert.Len(t, result, 1)
+	assert.True(t, reflect.DeepEqual(PullRequestInfo{
+		ID:     302,
+		Source: BranchInfo{Name: "test1", Repository: ""},
+		Target: BranchInfo{Name: "master", Repository: ""},
+	}, result[0]))
 }
 
 func TestGitLabClient_GetLatestCommit(t *testing.T) {
