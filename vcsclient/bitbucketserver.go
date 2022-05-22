@@ -248,12 +248,12 @@ func (client *BitbucketServerClient) SetCommitStatus(ctx context.Context, commit
 }
 
 // DownloadRepository on Bitbucket server
-func (client *BitbucketServerClient) DownloadRepository(ctx context.Context, owner, repository, _, localPath string) error {
+func (client *BitbucketServerClient) DownloadRepository(ctx context.Context, owner, repository, branch, localPath string) error {
 	bitbucketClient, err := client.buildBitbucketClient(ctx)
 	if err != nil {
 		return err
 	}
-	response, err := bitbucketClient.GetArchive(owner, repository, map[string]interface{}{"format": "tgz"})
+	response, err := bitbucketClient.GetArchive(owner, repository, map[string]interface{}{"format": "tgz", "at": branch})
 	if err != nil {
 		return err
 	}
