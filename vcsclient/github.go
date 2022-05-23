@@ -1,15 +1,18 @@
 package vcsclient
 
 import (
+	"bytes"
+	"compress/gzip"
 	"context"
+	b64 "encoding/base64"
+	"encoding/json"
+	"github.com/google/go-github/v45/github"
+	"github.com/jfrog/froggit-go/vcsutils"
+	"golang.org/x/oauth2"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
-
-	"github.com/google/go-github/v41/github"
-	"github.com/jfrog/froggit-go/vcsutils"
-	"golang.org/x/oauth2"
 )
 
 // GitHubClient API version 3
@@ -73,6 +76,7 @@ func (client *GitHubClient) AddSshKeyToRepository(ctx context.Context, owner, re
 		Title:    &keyName,
 		ReadOnly: &readOnly,
 	}
+
 	_, _, err = ghClient.Repositories.CreateKey(ctx, owner, repository, &key)
 	return err
 }
@@ -441,6 +445,45 @@ func (client *GitHubClient) UnlabelPullRequest(ctx context.Context, owner, repos
 	return err
 }
 
+// UploadScanningAnalysis to GitHub Security tab
+func (client *GitHubClient) UploadScanningAnalysis(ctx context.Context, owner, repository, branch, scan string) (string, error) {
+	packagedScan, err := packScanningResult([]byte(scan))
+	if err != nil {
+		return "", err
+	}
+	commit, err := client.GetLatestCommit(ctx, owner, repository, branch)
+	if err != nil {
+		return "", err
+	}
+	commitSHA := commit.Hash
+	ref := "refs/heads/" + branch
+	ghClient, err := client.buildGithubClient(ctx)
+	if err != nil {
+		return "", err
+	}
+	_, resp, err := ghClient.CodeScanning.UploadSarif(ctx, owner, repository, &github.SarifAnalysis{
+		CommitSHA:   &commitSHA,
+		Ref:         &ref,
+		Sarif:       &packagedScan,
+		CheckoutURI: nil,
+	})
+	if err != nil && resp.Response.StatusCode != 202 {
+		return "", err
+	}
+
+	aerr, ok := err.(*github.AcceptedError)
+	var result map[string]string
+	if ok {
+		err = json.Unmarshal(aerr.Raw, &result)
+		if err != nil {
+			return "", nil
+		}
+		return result["id"], nil
+	}
+
+	return "", nil
+}
+
 func createGitHubHook(token, payloadURL string, webhookEvents ...vcsutils.WebhookEvent) *github.Hook {
 	return &github.Hook{
 		Events: getGitHubWebhookEvents(webhookEvents...),
@@ -523,4 +566,33 @@ func mapGitHubPullRequestToPullRequestInfoList(pullRequestList []*github.PullReq
 		})
 	}
 	return
+}
+
+func convertToBase64(data []byte) string {
+	sEnc := b64.StdEncoding.EncodeToString(data)
+	return sEnc
+}
+
+func packScanningResult(data []byte) (string, error) {
+	compressedScan, err := compressPackage(data)
+	if err != nil {
+		return "", err
+	}
+	packScan := convertToBase64(compressedScan)
+
+	return packScan, nil
+}
+
+func compressPackage(stream []byte) ([]byte, error) {
+	var b bytes.Buffer
+	w := gzip.NewWriter(&b)
+	_, err := w.Write(stream)
+	if err == nil {
+		return nil, err
+	}
+	err = w.Close()
+	if err == nil {
+		return nil, err
+	}
+	return b.Bytes(), nil
 }

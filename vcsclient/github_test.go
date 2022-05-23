@@ -534,6 +534,21 @@ func TestGitHubClient_UnlabelPullRequest(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestGitHubClient_UploadScanningAnalysis(t *testing.T) {
+	ctx := context.Background()
+	scan := "{\n    \"version\": \"2.1.0\",\n    \"$schema\": \"https://json.schemastore.org/sarif-2.1.0-rtm.5.json\",\n    \"runs\": [\n      {\n        \"tool\": {\n          \"driver\": {\n            \"informationUri\": \"https://jfrog.com/xray/\",\n            \"name\": \"Xray\",\n            \"rules\": [\n              {\n                \"id\": \"XRAY-174176\",\n                \"shortDescription\": null,\n                \"fullDescription\": {\n                  \"text\": \"json Package for Node.js lib/json.js _parseString() Function -d Argument Handling Local Code Execution Weakness\"\n                },\n                \"properties\": {\n                  \"security-severity\": \"8\"\n                }\n              }\n            ]\n          }\n        },\n        \"results\": [\n          {\n            \"ruleId\": \"XRAY-174176\",\n            \"ruleIndex\": 1,\n            \"message\": {\n              \"text\": \"json 9.0.6. Fixed in Versions: [11.0.0]\"\n            },\n            \"locations\": [\n              {\n                \"physicalLocation\": {\n                  \"artifactLocation\": {\n                    \"uri\": \"package.json\"\n                  }\n                }\n              }\n            ]\n          }\n        ]\n      }\n    ]\n  }"
+	response, err := os.ReadFile(filepath.Join("testdata", "github", "commit_list_response.json"))
+	assert.NoError(t, err)
+	expectedUploadSarifID := "b16b0368-01b9-11ed-90a3-cabff0b8ad31"
+	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, response,
+		fmt.Sprintf("/repos/%s/%s/commits?page=1&per_page=1&sha=master", owner, repo1), createGitHubSarifUploadHandler)
+	defer cleanUp()
+
+	sarifID, err := client.UploadScanningAnalysis(ctx, owner, repo1, "master", scan)
+	assert.NoError(t, err)
+	assert.Equal(t, expectedUploadSarifID, sarifID)
+}
+
 func createBadGitHubClient(t *testing.T) VcsClient {
 	client, err := NewClientBuilder(vcsutils.GitHub).ApiEndpoint("https://bad^endpoint").Build()
 	require.NoError(t, err)
@@ -558,7 +573,6 @@ func createGitHubWithBodyHandler(t *testing.T, expectedURI string, response []by
 }
 
 func createGitHubWithPaginationHandler(t *testing.T, _ string, response []byte, _ []byte, expectedStatusCode int, expectedHttpMethod string) http.HandlerFunc {
-
 	var repos []github.Repository
 	err := json.Unmarshal(response, &repos)
 	assert.NoError(t, err)
@@ -623,5 +637,36 @@ func createGitHubHandler(t *testing.T, expectedURI string, response []byte, expe
 		w.WriteHeader(expectedStatusCode)
 		_, err := w.Write(response)
 		require.NoError(t, err)
+	}
+}
+
+func createGitHubSarifUploadHandler(t *testing.T, _ string, _ []byte, _ int) http.HandlerFunc {
+	resultSHA := "66d9a06b02a9f3f5fb47bb026a6fa5577647d96e"
+	return func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "Bearer "+token, r.Header.Get("Authorization"))
+		if r.RequestURI == "/repos/jfrog/repo-1/commits?page=1&per_page=1&sha=master" {
+			w.WriteHeader(200)
+			repositoryCommits := []*github.RepositoryCommit{
+				{
+					SHA: &resultSHA,
+				},
+			}
+			jsonRepositoryCommits, err := json.Marshal(repositoryCommits)
+			require.NoError(t, err)
+			_, err = w.Write(jsonRepositoryCommits)
+			require.NoError(t, err)
+		} else if r.RequestURI == "/repos/jfrog/repo-1/code-scanning/sarifs" {
+			body, err := ioutil.ReadAll(r.Body)
+			require.NoError(t, err)
+			bodyAsString := string(body)
+			if !strings.Contains(bodyAsString, resultSHA) {
+				assert.Fail(t, "Unexpected Commit SHA")
+			}
+			w.WriteHeader(200)
+			_, err = w.Write([]byte(`{"id" : "b16b0368-01b9-11ed-90a3-cabff0b8ad31", "url": ""}`))
+			require.NoError(t, err)
+		} else {
+			assert.Fail(t, "Unexpected Request URI", r.RequestURI)
+		}
 	}
 }

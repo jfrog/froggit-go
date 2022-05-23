@@ -374,6 +374,10 @@ func (client *GitLabClient) UnlabelPullRequest(ctx context.Context, owner, repos
 	return err
 }
 
+func (client *GitLabClient) UploadScanningAnalysis(ctx context.Context, owner string, repository string, branch string, scan string) (string, error) {
+	return "", errLabelsNotSupported
+}
+
 func getProjectID(owner, project string) string {
 	return fmt.Sprintf("%s/%s", owner, project)
 }
