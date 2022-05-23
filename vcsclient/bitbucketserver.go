@@ -253,7 +253,12 @@ func (client *BitbucketServerClient) DownloadRepository(ctx context.Context, own
 	if err != nil {
 		return err
 	}
-	response, err := bitbucketClient.GetArchive(owner, repository, map[string]interface{}{"format": "tgz", "at": branch})
+	params := map[string]interface{}{"format": "tgz"}
+	branch = strings.TrimSpace(branch)
+	if branch != "" {
+		params["at"] = branch
+	}
+	response, err := bitbucketClient.GetArchive(owner, repository, params)
 	if err != nil {
 		return err
 	}

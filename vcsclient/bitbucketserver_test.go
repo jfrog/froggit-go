@@ -164,7 +164,7 @@ func TestBitbucketServer_DownloadRepository(t *testing.T) {
 		fmt.Sprintf("/api/1.0/projects/%s/repos/%s/archive?format=tgz", owner, repo1), createBitbucketServerHandler)
 	defer cleanUp()
 
-	err = client.DownloadRepository(ctx, owner, repo1, "irrelevant", dir)
+	err = client.DownloadRepository(ctx, owner, repo1, "", dir)
 	require.NoError(t, err)
 
 	_, err = os.OpenFile(filepath.Join(dir, "README.md"), os.O_RDONLY, 0644)
