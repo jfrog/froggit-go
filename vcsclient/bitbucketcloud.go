@@ -440,6 +440,10 @@ func (client *BitbucketCloudClient) UnlabelPullRequest(ctx context.Context, owne
 	return errLabelsNotSupported
 }
 
+func (client *BitbucketCloudClient) UploadScanningAnalysis(ctx context.Context, owner string, repository string, branch string, scan string) (string, error) {
+	return "", errLabelsNotSupported
+}
+
 func extractCommitFromResponse(commits interface{}) (*commitResponse, error) {
 	var res commitResponse
 	err := extractStructFromResponse(commits, &res)

@@ -248,12 +248,17 @@ func (client *BitbucketServerClient) SetCommitStatus(ctx context.Context, commit
 }
 
 // DownloadRepository on Bitbucket server
-func (client *BitbucketServerClient) DownloadRepository(ctx context.Context, owner, repository, _, localPath string) error {
+func (client *BitbucketServerClient) DownloadRepository(ctx context.Context, owner, repository, branch, localPath string) error {
 	bitbucketClient, err := client.buildBitbucketClient(ctx)
 	if err != nil {
 		return err
 	}
-	response, err := bitbucketClient.GetArchive(owner, repository, map[string]interface{}{"format": "tgz"})
+	params := map[string]interface{}{"format": "tgz"}
+	branch = strings.TrimSpace(branch)
+	if branch != "" {
+		params["at"] = branch
+	}
+	response, err := bitbucketClient.GetArchive(owner, repository, params)
 	if err != nil {
 		return err
 	}
@@ -597,4 +602,8 @@ func (client *BitbucketServerClient) mapBitbucketServerCommitToCommitInfo(commit
 		Message:       commit.Message,
 		ParentHashes:  parents,
 	}
+}
+
+func (client *BitbucketServerClient) UploadScanningAnalysis(ctx context.Context, owner string, repository string, branch string, scan string) (string, error) {
+	return "", errLabelsNotSupported
 }
