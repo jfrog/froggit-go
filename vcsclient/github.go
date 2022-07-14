@@ -76,7 +76,6 @@ func (client *GitHubClient) AddSshKeyToRepository(ctx context.Context, owner, re
 		Title:    &keyName,
 		ReadOnly: &readOnly,
 	}
-
 	_, _, err = ghClient.Repositories.CreateKey(ctx, owner, repository, &key)
 	return err
 }
@@ -470,7 +469,7 @@ func (client *GitHubClient) UploadScanningAnalysis(ctx context.Context, owner, r
 	if err != nil && resp.Response.StatusCode != 202 {
 		return "", err
 	}
-	if sarifID != nil {
+	if sarifID != nil && *sarifID.ID != "" {
 		return *sarifID.ID, err
 	}
 	aerr, ok := err.(*github.AcceptedError)
