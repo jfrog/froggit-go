@@ -374,7 +374,7 @@ func (client *GitLabClient) UnlabelPullRequest(ctx context.Context, owner, repos
 	return err
 }
 
-func (client *GitLabClient) UploadScanningAnalysis(ctx context.Context, owner string, repository string, branch string, scan string) (string, error) {
+func (client *GitLabClient) UploadCodeScanning(ctx context.Context, owner string, repository string, branch string, scan string) (string, error) {
 	return "", errLabelsNotSupported
 }
 

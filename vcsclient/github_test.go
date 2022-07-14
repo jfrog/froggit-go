@@ -544,7 +544,7 @@ func TestGitHubClient_UploadScanningAnalysis(t *testing.T) {
 		fmt.Sprintf("/repos/%s/%s/commits?page=1&per_page=1&sha=master", owner, repo1), createGitHubSarifUploadHandler)
 	defer cleanUp()
 
-	sarifID, err := client.UploadScanningAnalysis(ctx, owner, repo1, "master", scan)
+	sarifID, err := client.UploadCodeScanning(ctx, owner, repo1, "master", scan)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedUploadSarifID, sarifID)
 }

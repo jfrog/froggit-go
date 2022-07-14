@@ -177,7 +177,7 @@ type VcsClient interface {
 	// repository    - VCS repository name
 	// branch        - The name of the branch
 	// scan  		 - Code scanning analysis
-	UploadScanningAnalysis(ctx context.Context, owner, repository, branch, scan string) (string, error)
+	UploadCodeScanning(ctx context.Context, owner, repository, branch, scan string) (string, error)
 }
 
 // CommitInfo contains the details of a commit
