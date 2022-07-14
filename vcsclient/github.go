@@ -76,7 +76,6 @@ func (client *GitHubClient) AddSshKeyToRepository(ctx context.Context, owner, re
 		Title:    &keyName,
 		ReadOnly: &readOnly,
 	}
-
 	_, _, err = ghClient.Repositories.CreateKey(ctx, owner, repository, &key)
 	return err
 }
