@@ -605,5 +605,5 @@ func (client *BitbucketServerClient) mapBitbucketServerCommitToCommitInfo(commit
 }
 
 func (client *BitbucketServerClient) UploadCodeScanning(ctx context.Context, owner string, repository string, branch string, scan string) (string, error) {
-	return "", errLabelsNotSupported
+	return "", errCodeScanningNotSupported
 }

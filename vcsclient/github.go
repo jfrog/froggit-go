@@ -466,9 +466,12 @@ func (client *GitHubClient) UploadCodeScanning(ctx context.Context, owner, repos
 		Sarif:       &packagedScan,
 		CheckoutURI: nil,
 	})
+	// According to go-github API - successful response will return 202 status code
+	// The body of the response will appear in the error, and the Sarif struct will be empty.
 	if err != nil && resp.Response.StatusCode != 202 {
 		return "", err
 	}
+	// We are still using the Sarif struct because we need it for the unit-test of this function
 	if sarifID != nil && *sarifID.ID != "" {
 		return *sarifID.ID, err
 	}
@@ -570,8 +573,7 @@ func mapGitHubPullRequestToPullRequestInfoList(pullRequestList []*github.PullReq
 }
 
 func convertToBase64(data []byte) string {
-	sEnc := b64.StdEncoding.EncodeToString(data)
-	return sEnc
+	return b64.StdEncoding.EncodeToString(data)
 }
 
 func packScanningResult(data []byte) (string, error) {
@@ -579,21 +581,22 @@ func packScanningResult(data []byte) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	packScan := convertToBase64(compressedScan)
 
-	return packScan, nil
+	return convertToBase64(compressedScan), nil
 }
 
-func compressPackage(stream []byte) ([]byte, error) {
+func compressPackage(stream []byte) (data []byte, err error) {
 	var b bytes.Buffer
 	w := gzip.NewWriter(&b)
-	_, err := w.Write(stream)
-	if err == nil {
+	_, err = w.Write(stream)
+	defer func() {
+		e := w.Close()
+		if err == nil {
+			err = e
+		}
+	}()
+	if err != nil {
 		return nil, err
 	}
-	err = w.Close()
-	if err == nil {
-		return nil, err
-	}
-	return b.Bytes(), nil
+	return b.Bytes(), err
 }

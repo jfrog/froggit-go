@@ -375,7 +375,7 @@ func (client *GitLabClient) UnlabelPullRequest(ctx context.Context, owner, repos
 }
 
 func (client *GitLabClient) UploadCodeScanning(ctx context.Context, owner string, repository string, branch string, scan string) (string, error) {
-	return "", errLabelsNotSupported
+	return "", errCodeScanningNotSupported
 }
 
 func getProjectID(owner, project string) string {
