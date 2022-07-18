@@ -38,6 +38,7 @@ Currently supported providers are: [GitHub](#github), [Bitbucket Server](#bitbuc
       - [Get a label](#get-a-label)
       - [List Pull Request Labels](#list-pull-request-labels)
       - [Unlabel Pull Request](#unlabel-pull-request)
+      - [Upload Code Scanning](#upload-code-scanning)
     - [Webhook Parser](#webhook-parser)
 
 ### VCS Clients
@@ -454,23 +455,7 @@ pullRequestID := 5
 err := client.UnlabelPullRequest(ctx, owner, repository, name, pullRequestID)
 ```
 
-### Webhook Parser
-
-```go
-// Go context
-ctx := context.Background()
-// Token to authenticate incoming webhooks. If empty, signature will not be verified.
-// The token is a random key generated in the CreateWebhook command.
-token := "abc123"
-// The HTTP request of the incoming webhook
-request := http.Request{}
-// The VCS provider
-provider := vcsutils.GitHub
-
-webhookInfo, err := webhookparser.ParseIncomingWebhook(provider, token, request)
-```
-
-### Upload Code Scanning
+#### Upload Code Scanning
 
 Notice - Code Scanning is not supported on Bitbucket and currently in GitLab also.
 
@@ -489,3 +474,20 @@ scan := "sarif_file"
 // Uploads the scanning analysis file to the relevant git provider
 sarifID, err := client.UploadCodeScanning(ctx, owner, repo, branch, scan)
 ```
+
+### Webhook Parser
+
+```go
+// Go context
+ctx := context.Background()
+// Token to authenticate incoming webhooks. If empty, signature will not be verified.
+// The token is a random key generated in the CreateWebhook command.
+token := "abc123"
+// The HTTP request of the incoming webhook
+request := http.Request{}
+// The VCS provider
+provider := vcsutils.GitHub
+
+webhookInfo, err := webhookparser.ParseIncomingWebhook(provider, token, request)
+```
+
