@@ -5,7 +5,7 @@ import (
 )
 
 var errLabelsNotSupported = errors.New("labels are not supported on Bitbucket")
-var errCodeScanningNotSupported = errors.New("code Scanning is not supported on Bitbucket")
+var errCodeScanningNotSupported = errors.New("code scanning is not supported on Bitbucket")
 
 func getBitbucketCommitState(commitState CommitStatus) string {
 	switch commitState {
