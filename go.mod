@@ -4,7 +4,6 @@ go 1.17
 
 require (
 	github.com/gfleury/go-bitbucket-v1 v0.0.0-20220418082332-711d7d5e805f
-	github.com/google/go-github/v41 v41.0.0
 	github.com/google/go-github/v45 v45.2.0
 	github.com/google/uuid v1.3.0
 	github.com/ktrysmt/go-bitbucket v0.9.32

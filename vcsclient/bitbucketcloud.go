@@ -441,7 +441,7 @@ func (client *BitbucketCloudClient) UnlabelPullRequest(ctx context.Context, owne
 }
 
 func (client *BitbucketCloudClient) UploadCodeScanning(ctx context.Context, owner string, repository string, branch string, scan string) (string, error) {
-	return "", errCodeScanningNotSupported
+	return "", errBitbucketCodeScanningNotSupported
 }
 
 func extractCommitFromResponse(commits interface{}) (*commitResponse, error) {

@@ -469,3 +469,23 @@ provider := vcsutils.GitHub
 
 webhookInfo, err := webhookparser.ParseIncomingWebhook(provider, token, request)
 ```
+
+### Upload Code Scanning
+
+Notice - Code Scanning is not supported on Bitbucket and currently in GitLab also.
+
+```go
+// Go context
+ctx := context.Background()
+// The account owner of the git repository
+owner := "user"
+// The name of the repository
+repo := "my_repo"
+// The branch name for which the code scanning is relevant
+branch := "my_branch"
+// A string representing the SARIF file to upload
+scan := "sarif_file"
+
+// Uploads the scanning analysis file to the relevant git provider
+sarifID, err := client.UploadCodeScanning(ctx, owner, repo, branch, scan)
+```
