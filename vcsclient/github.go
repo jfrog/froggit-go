@@ -444,7 +444,7 @@ func (client *GitHubClient) UnlabelPullRequest(ctx context.Context, owner, repos
 	return err
 }
 
-// UploadScanningAnalysis to GitHub Security tab
+// UploadCodeScanning to GitHub Security tab
 func (client *GitHubClient) UploadCodeScanning(ctx context.Context, owner, repository, branch, scan string) (string, error) {
 	packagedScan, err := packScanningResult([]byte(scan))
 	if err != nil {

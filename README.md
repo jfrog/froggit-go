@@ -457,7 +457,7 @@ err := client.UnlabelPullRequest(ctx, owner, repository, name, pullRequestID)
 
 #### Upload Code Scanning
 
-Notice - Code Scanning is not supported on Bitbucket and currently in GitLab also.
+Notice - Code Scanning is currently supported on GitHub only.
 
 ```go
 // Go context
