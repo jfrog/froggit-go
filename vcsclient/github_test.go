@@ -547,6 +547,9 @@ func TestGitHubClient_UploadScanningAnalysis(t *testing.T) {
 	sarifID, err := client.UploadCodeScanning(ctx, owner, repo1, "master", scan)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedUploadSarifID, sarifID)
+
+	_, err = createBadGitHubClient(t).UploadCodeScanning(ctx, owner, repo1, "master", scan)
+	assert.Error(t, err)
 }
 
 func createBadGitHubClient(t *testing.T) VcsClient {
