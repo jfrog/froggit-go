@@ -1,12 +1,10 @@
 package vcsclient
 
 import (
-	"bytes"
-	"compress/gzip"
 	"context"
-	b64 "encoding/base64"
 	"encoding/json"
 	"github.com/google/go-github/v45/github"
+	"github.com/grokify/mogo/encoding/base64"
 	"github.com/jfrog/froggit-go/vcsutils"
 	"golang.org/x/oauth2"
 	"net/http"
@@ -446,7 +444,7 @@ func (client *GitHubClient) UnlabelPullRequest(ctx context.Context, owner, repos
 
 // UploadCodeScanning to GitHub Security tab
 func (client *GitHubClient) UploadCodeScanning(ctx context.Context, owner, repository, branch, scan string) (string, error) {
-	packagedScan, err := packScanningResult([]byte(scan))
+	packagedScan, err := packScanningResult(scan)
 	if err != nil {
 		return "", err
 	}
@@ -572,31 +570,11 @@ func mapGitHubPullRequestToPullRequestInfoList(pullRequestList []*github.PullReq
 	return
 }
 
-func convertToBase64(data []byte) string {
-	return b64.StdEncoding.EncodeToString(data)
-}
-
-func packScanningResult(data []byte) (string, error) {
-	compressedScan, err := compressPackage(data)
+func packScanningResult(data string) (string, error) {
+	compressedScan, err := base64.EncodeGzip([]byte(data), 6)
 	if err != nil {
 		return "", err
 	}
 
-	return convertToBase64(compressedScan), nil
-}
-
-func compressPackage(stream []byte) (data []byte, err error) {
-	var b bytes.Buffer
-	w := gzip.NewWriter(&b)
-	_, err = w.Write(stream)
-	defer func() {
-		e := w.Close()
-		if err == nil {
-			err = e
-		}
-	}()
-	if err != nil {
-		return nil, err
-	}
-	return b.Bytes(), err
+	return compressedScan, err
 }
