@@ -443,8 +443,8 @@ func (client *GitHubClient) UnlabelPullRequest(ctx context.Context, owner, repos
 }
 
 // UploadCodeScanning to GitHub Security tab
-func (client *GitHubClient) UploadCodeScanning(ctx context.Context, owner, repository, branch, scan string) (string, error) {
-	packagedScan, err := packScanningResult(scan)
+func (client *GitHubClient) UploadCodeScanning(ctx context.Context, owner, repository, branch, scanResults string) (string, error) {
+	packagedScan, err := packScanningResult(scanResults)
 	if err != nil {
 		return "", err
 	}

@@ -468,11 +468,11 @@ owner := "user"
 repo := "my_repo"
 // The branch name for which the code scanning is relevant
 branch := "my_branch"
-// A string representing the SARIF file to upload
-scan := "sarif_file"
+// A string representing the code scanning results
+scanResults := "results"
 
 // Uploads the scanning analysis file to the relevant git provider
-sarifID, err := client.UploadCodeScanning(ctx, owner, repo, branch, scan)
+sarifID, err := client.UploadCodeScanning(ctx, owner, repo, branch, scanResults)
 ```
 
 ### Webhook Parser
