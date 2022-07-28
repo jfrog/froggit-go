@@ -2,14 +2,15 @@ package vcsclient
 
 import (
 	"context"
+	"encoding/json"
+	"github.com/google/go-github/v45/github"
+	"github.com/grokify/mogo/encoding/base64"
+	"github.com/jfrog/froggit-go/vcsutils"
+	"golang.org/x/oauth2"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
-
-	"github.com/google/go-github/v41/github"
-	"github.com/jfrog/froggit-go/vcsutils"
-	"golang.org/x/oauth2"
 )
 
 // GitHubClient API version 3
@@ -441,6 +442,50 @@ func (client *GitHubClient) UnlabelPullRequest(ctx context.Context, owner, repos
 	return err
 }
 
+// UploadCodeScanning to GitHub Security tab
+func (client *GitHubClient) UploadCodeScanning(ctx context.Context, owner, repository, branch, scanResults string) (string, error) {
+	packagedScan, err := packScanningResult(scanResults)
+	if err != nil {
+		return "", err
+	}
+	commit, err := client.GetLatestCommit(ctx, owner, repository, branch)
+	if err != nil {
+		return "", err
+	}
+	commitSHA := commit.Hash
+	ref := "refs/heads/" + branch
+	ghClient, err := client.buildGithubClient(ctx)
+	if err != nil {
+		return "", err
+	}
+	sarifID, resp, err := ghClient.CodeScanning.UploadSarif(ctx, owner, repository, &github.SarifAnalysis{
+		CommitSHA:   &commitSHA,
+		Ref:         &ref,
+		Sarif:       &packagedScan,
+		CheckoutURI: nil,
+	})
+	// According to go-github API - successful response will return 202 status code
+	// The body of the response will appear in the error, and the Sarif struct will be empty.
+	if err != nil && resp.Response.StatusCode != 202 {
+		return "", err
+	}
+	// We are still using the Sarif struct because we need it for the unit-test of this function
+	if sarifID != nil && *sarifID.ID != "" {
+		return *sarifID.ID, err
+	}
+	aerr, ok := err.(*github.AcceptedError)
+	var result map[string]string
+	if ok {
+		err = json.Unmarshal(aerr.Raw, &result)
+		if err != nil {
+			return "", nil
+		}
+		return result["id"], nil
+	}
+
+	return "", nil
+}
+
 func createGitHubHook(token, payloadURL string, webhookEvents ...vcsutils.WebhookEvent) *github.Hook {
 	return &github.Hook{
 		Events: getGitHubWebhookEvents(webhookEvents...),
@@ -523,4 +568,13 @@ func mapGitHubPullRequestToPullRequestInfoList(pullRequestList []*github.PullReq
 		})
 	}
 	return
+}
+
+func packScanningResult(data string) (string, error) {
+	compressedScan, err := base64.EncodeGzip([]byte(data), 6)
+	if err != nil {
+		return "", err
+	}
+
+	return compressedScan, err
 }

@@ -4,14 +4,13 @@ import (
 	"archive/tar"
 	"compress/gzip"
 	"fmt"
+	"github.com/google/uuid"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
-
-	"github.com/google/uuid"
 )
 
 // CreateToken create a random UUID

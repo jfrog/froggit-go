@@ -38,6 +38,7 @@ Currently supported providers are: [GitHub](#github), [Bitbucket Server](#bitbuc
       - [Get a label](#get-a-label)
       - [List Pull Request Labels](#list-pull-request-labels)
       - [Unlabel Pull Request](#unlabel-pull-request)
+      - [Upload Code Scanning](#upload-code-scanning)
     - [Webhook Parser](#webhook-parser)
 
 ### VCS Clients
@@ -454,6 +455,26 @@ pullRequestID := 5
 err := client.UnlabelPullRequest(ctx, owner, repository, name, pullRequestID)
 ```
 
+#### Upload Code Scanning
+
+Notice - Code Scanning is currently supported on GitHub only.
+
+```go
+// Go context
+ctx := context.Background()
+// The account owner of the git repository
+owner := "user"
+// The name of the repository
+repo := "my_repo"
+// The branch name for which the code scanning is relevant
+branch := "my_branch"
+// A string representing the code scanning results
+scanResults := "results"
+
+// Uploads the scanning analysis file to the relevant git provider
+sarifID, err := client.UploadCodeScanning(ctx, owner, repo, branch, scanResults)
+```
+
 ### Webhook Parser
 
 ```go
@@ -469,3 +490,4 @@ provider := vcsutils.GitHub
 
 webhookInfo, err := webhookparser.ParseIncomingWebhook(provider, token, request)
 ```
+

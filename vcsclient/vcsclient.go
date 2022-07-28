@@ -171,6 +171,13 @@ type VcsClient interface {
 	// name          - Label name
 	// pullRequestID - Pull request ID
 	UnlabelPullRequest(ctx context.Context, owner, repository, name string, pullRequestID int) error
+
+	// UploadCodeScanning Upload Scanning Analysis uploads a scanning analysis file to the relevant git provider
+	// owner         - User or organization
+	// repository    - VCS repository name
+	// branch        - The name of the branch
+	// scan  		 - Code scanning analysis
+	UploadCodeScanning(ctx context.Context, owner, repository, branch, scanResults string) (string, error)
 }
 
 // CommitInfo contains the details of a commit

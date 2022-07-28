@@ -603,3 +603,7 @@ func (client *BitbucketServerClient) mapBitbucketServerCommitToCommitInfo(commit
 		ParentHashes:  parents,
 	}
 }
+
+func (client *BitbucketServerClient) UploadCodeScanning(ctx context.Context, owner string, repository string, branch string, scanResults string) (string, error) {
+	return "", errBitbucketCodeScanningNotSupported
+}
