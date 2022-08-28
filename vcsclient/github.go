@@ -13,6 +13,8 @@ import (
 	"strings"
 )
 
+const branchPrefix = "refs/heads/"
+
 // GitHubClient API version 3
 type GitHubClient struct {
 	vcsInfo VcsInfo
@@ -453,14 +455,16 @@ func (client *GitHubClient) UploadCodeScanning(ctx context.Context, owner, repos
 		return "", err
 	}
 	commitSHA := commit.Hash
-	ref := "refs/heads/" + branch
+	if !strings.HasPrefix(branch, branchPrefix) {
+		branch = branchPrefix + branch
+	}
 	ghClient, err := client.buildGithubClient(ctx)
 	if err != nil {
 		return "", err
 	}
 	sarifID, resp, err := ghClient.CodeScanning.UploadSarif(ctx, owner, repository, &github.SarifAnalysis{
 		CommitSHA:   &commitSHA,
-		Ref:         &ref,
+		Ref:         &branch,
 		Sarif:       &packagedScan,
 		CheckoutURI: nil,
 	})
