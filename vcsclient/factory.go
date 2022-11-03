@@ -42,6 +42,12 @@ func (builder *ClientBuilder) Logger(logger *log.Logger) *ClientBuilder {
 	return builder
 }
 
+// Project sets the project
+func (builder *ClientBuilder) Project(project string) *ClientBuilder {
+	builder.vcsInfo.Project = project
+	return builder
+}
+
 // Build builds the VcsClient
 func (builder *ClientBuilder) Build() (VcsClient, error) {
 	switch builder.vcsProvider {
@@ -53,6 +59,8 @@ func (builder *ClientBuilder) Build() (VcsClient, error) {
 		return NewBitbucketServerClient(builder.vcsInfo)
 	case vcsutils.BitbucketCloud:
 		return NewBitbucketCloudClient(builder.vcsInfo)
+	case vcsutils.AzureRepos:
+		return NewAzureReposClient(builder.vcsInfo)
 	}
 	return nil, nil
 }
