@@ -84,7 +84,12 @@ func (client *AzureReposClient) DownloadRepository(ctx context.Context, _, repos
 	if zipRepo, err = os.Create(fmt.Sprintf("%s_azure_repo.zip", repository)); err != nil {
 		return
 	}
-	defer zipRepo.Close()
+	defer func() {
+		e := zipRepo.Close()
+		if err == nil {
+			err = e
+		}
+	}()
 	res, err := client.sendDownloadRepoRequest(ctx, repository, branch)
 	defer func() {
 		e := res.Body.Close()
