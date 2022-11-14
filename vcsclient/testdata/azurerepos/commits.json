@@ -1,0 +1,69 @@
+{
+  "count":3,
+  "value":[
+    {
+      "commitId":"86d6919952702f9ab03bc95b45687f145a663de0",
+      "author":{
+        "name":"Test User",
+        "email":"testuser@jfrog.com",
+        "date":"2022-11-07T09:16:41Z"
+      },
+      "committer":{
+        "name":"Test User",
+        "email":"testuser@jfrog.com",
+        "date":"2022-11-07T09:16:41Z"
+      },
+      "comment":"Updated package.json",
+      "changeCounts":{
+        "Add":0,
+        "Edit":1,
+        "Delete":0
+      },
+      "url":"https://dev.azure.com/testuser/0b8072c4-ad86-4edb-a8f2-06dbc07e3e2d/_apis/git/repositories/94c1dba8-d9d9-4600-94b4-1a51acb43220/commits/86d6919952702f9ab03bc95b45687f145a663de0",
+      "remoteUrl":"https://dev.azure.com/testuser/test/_git/test/commit/86d6919952702f9ab03bc95b45687f145a663de0"
+    },
+    {
+      "commitId":"4aa8367809020c4e97af29e2b57f7528d5d27702",
+      "author":{
+        "name":"Test User",
+        "email":"testuser@jfrog.com",
+        "date":"2022-10-31T07:29:03Z"
+      },
+      "committer":{
+        "name":"Test User",
+        "email":"testuser@jfrog.com",
+        "date":"2022-10-31T07:29:03Z"
+      },
+      "comment":"Set up CI with Azure Pipelines",
+      "commentTruncated":true,
+      "changeCounts":{
+        "Add":1,
+        "Edit":0,
+        "Delete":0
+      },
+      "url":"https://dev.azure.com/testuser/0b8072c4-ad86-4edb-a8f2-06dbc07e3e2d/_apis/git/repositories/94c1dba8-d9d9-4600-94b4-1a51acb43220/commits/4aa8367809020c4e97af29e2b57f7528d5d27702",
+      "remoteUrl":"https://dev.azure.com/testuser/test/_git/test/commit/4aa8367809020c4e97af29e2b57f7528d5d27702"
+    },
+    {
+      "commitId":"3779104c35804e15b6fdf4fee303e717cd6c1352",
+      "author":{
+        "name":"Test User",
+        "email":"testuser@jfrog.com",
+        "date":"2022-10-31T07:26:40Z"
+      },
+      "committer":{
+        "name":"Test User",
+        "email":"testuser@jfrog.com",
+        "date":"2022-10-31T07:26:40Z"
+      },
+      "comment":"first commit",
+      "changeCounts":{
+        "Add":2180,
+        "Edit":0,
+        "Delete":0
+      },
+      "url":"https://dev.azure.com/testuser/0b8072c4-ad86-4edb-a8f2-06dbc07e3e2d/_apis/git/repositories/94c1dba8-d9d9-4600-94b4-1a51acb43220/commits/3779104c35804e15b6fdf4fee303e717cd6c1352",
+      "remoteUrl":"https://dev.azure.com/testuser/test/_git/test/commit/3779104c35804e15b6fdf4fee303e717cd6c1352"
+    }
+  ]
+}
