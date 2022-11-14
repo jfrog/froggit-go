@@ -31,16 +31,6 @@
       "releasedVersion": "0.0"
     },
     {
-      "id": "9946fd70-0d40-406e-b686-b4744cbbcc37",
-      "area": "Location",
-      "resourceName": "ResourceAreas",
-      "routeTemplate": "_apis/{resource}/{areaId}/createPullRequest",
-      "resourceVersion": 1,
-      "minVersion": "3.2",
-      "maxVersion": "7.1",
-      "releasedVersion": "0.0"
-    },
-    {
       "id": "ab6e2e5d-a0b7-4153-b64a-a4efe0d49449",
       "area": "Location",
       "resourceName": "ResourceAreas",
@@ -54,7 +44,7 @@
       "id": "9946fd70-0d40-406e-b686-b4744cbbcc37",
       "area": "Location",
       "resourceName": "ResourceAreas",
-      "routeTemplate": "_apis/{resource}/{areaId}/listOpenPullRequests",
+      "routeTemplate": "_apis/{resource}/{areaId}/getPullRequests",
       "resourceVersion": 1,
       "minVersion": "3.2",
       "maxVersion": "7.1",
