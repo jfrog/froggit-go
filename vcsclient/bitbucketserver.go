@@ -282,11 +282,11 @@ func (client *BitbucketServerClient) CreatePullRequest(ctx context.Context, owne
 		Title:       title,
 		Description: description,
 		FromRef: bitbucketv1.PullRequestRef{
-			ID:         "refs/heads/" + sourceBranch,
+			ID:         vcsutils.AddBranchPrefix(sourceBranch),
 			Repository: *bitbucketRepo,
 		},
 		ToRef: bitbucketv1.PullRequestRef{
-			ID:         "refs/heads/" + targetBranch,
+			ID:         vcsutils.AddBranchPrefix(targetBranch),
 			Repository: *bitbucketRepo,
 		},
 	}
