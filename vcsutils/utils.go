@@ -4,6 +4,7 @@ import (
 	"archive/tar"
 	"archive/zip"
 	"compress/gzip"
+	"errors"
 	"fmt"
 	"github.com/google/uuid"
 	"io"
@@ -195,7 +196,8 @@ func Unzip(source, destination string) (err error) {
 func unzipFile(f *zip.File, destination string) error {
 	// Check if file paths are not vulnerable to Zip Slip
 	filePath := filepath.Join(destination, f.Name)
-	if !strings.HasPrefix(filePath, filepath.Clean(destination)+string(os.PathSeparator)) {
+	filePath = filepath.Clean(destination)
+	if !strings.HasPrefix(filePath, filePath+string(os.PathSeparator)) {
 		return fmt.Errorf("invalid file path: %s", filePath)
 	}
 
@@ -216,17 +218,30 @@ func unzipFile(f *zip.File, destination string) error {
 	if err != nil {
 		return err
 	}
-	defer destinationFile.Close()
+	defer func() {
+		if err := destinationFile.Close(); err != nil {
+			return
+		}
+	}()
 
 	// Unzip the content of a file and copy it to the destination file
 	zippedFile, err := f.Open()
 	if err != nil {
 		return err
 	}
-	defer zippedFile.Close()
+	defer func() {
+		if err := zippedFile.Close(); err != nil {
+			return
+		}
+	}()
 
-	if _, err := io.Copy(destinationFile, zippedFile); err != nil {
-		return err
+	for {
+		if _, err := io.CopyN(destinationFile, zippedFile, 1024); err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
 	}
 	return nil
 }
