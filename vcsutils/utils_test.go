@@ -105,3 +105,32 @@ func openTarball(t *testing.T) (string, *os.File) {
 	assert.NoError(t, err)
 	return dir, tarball
 }
+
+func TestDefaultIfNotNil(t *testing.T) {
+	str := "Hello world"
+	assert.Equal(t, "Hello world", DefaultIfNotNil(&str))
+	assert.Equal(t, "", DefaultIfNotNil(new(string)))
+	num := 3
+	assert.Equal(t, 3, DefaultIfNotNil(&num))
+	assert.Equal(t, 0, DefaultIfNotNil(new(int)))
+	boolVal := true
+	assert.Equal(t, true, DefaultIfNotNil(&boolVal))
+	assert.Equal(t, false, DefaultIfNotNil(new(bool)))
+	arr := []int{3, 4}
+	assert.Equal(t, []int{3, 4}, DefaultIfNotNil(&arr))
+	assert.Equal(t, []int(nil), DefaultIfNotNil(new([]int)))
+}
+
+func TestUnzip(t *testing.T) {
+	destDir, err := ioutil.TempDir("", "")
+	assert.NoError(t, err)
+	defer os.RemoveAll(destDir)
+
+	err = Unzip(filepath.Join("testdata", "hello_world.zip"), destDir)
+	assert.NoError(t, err)
+
+	fileinfo, err := ioutil.ReadDir(destDir)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, fileinfo)
+	assert.Equal(t, "README.md", fileinfo[0].Name())
+}

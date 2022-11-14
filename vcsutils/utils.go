@@ -2,6 +2,7 @@ package vcsutils
 
 import (
 	"archive/tar"
+	"archive/zip"
 	"compress/gzip"
 	"fmt"
 	"github.com/google/uuid"
@@ -133,6 +134,98 @@ func safeCopy(targetFile *os.File, reader *tar.Reader) error {
 func DiscardResponseBody(resp *http.Response) error {
 	if resp != nil {
 		_, err := io.Copy(ioutil.Discard, resp.Body)
+		return err
+	}
+	return nil
+}
+
+// GetZeroValue returns the zero value of type T
+func GetZeroValue[T any]() T {
+	return *new(T)
+}
+
+// DefaultIfNotNil checks:
+// 1. If the pointer is nil, return the zero value of the type
+// 2. If the pointer isn't nil, return the value of the pointer.
+func DefaultIfNotNil[T any](val *T) T {
+	if val == nil {
+		return GetZeroValue[T]()
+	}
+	return *val
+}
+
+func AddBranchPrefix(branch string) string {
+	if !strings.HasPrefix(branch, branchPrefix) {
+		branch = fmt.Sprintf("%s%s", branchPrefix, branch)
+	}
+	return branch
+}
+
+// Unzip a file in src to dest path
+func Unzip(source, destination string) (err error) {
+	// Open the zip file
+	reader, err := zip.OpenReader(source)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		e := reader.Close()
+		if err == nil {
+			err = e
+		}
+	}()
+
+	// Get the absolute destination path
+	destination, err = filepath.Abs(destination)
+	if err != nil {
+		return err
+	}
+
+	// Iterate over zip files inside the archive and unzip each of them
+	for _, f := range reader.File {
+		err := unzipFile(f, destination)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func unzipFile(f *zip.File, destination string) error {
+	// Check if file paths are not vulnerable to Zip Slip
+	filePath := filepath.Join(destination, f.Name)
+	if !strings.HasPrefix(filePath, filepath.Clean(destination)+string(os.PathSeparator)) {
+		return fmt.Errorf("invalid file path: %s", filePath)
+	}
+
+	// Create directory tree
+	if f.FileInfo().IsDir() {
+		if err := os.MkdirAll(filePath, os.ModePerm); err != nil {
+			return err
+		}
+		return nil
+	}
+
+	if err := os.MkdirAll(filepath.Dir(filePath), os.ModePerm); err != nil {
+		return err
+	}
+
+	// Create a destination file for unzipped content
+	destinationFile, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
+	if err != nil {
+		return err
+	}
+	defer destinationFile.Close()
+
+	// Unzip the content of a file and copy it to the destination file
+	zippedFile, err := f.Open()
+	if err != nil {
+		return err
+	}
+	defer zippedFile.Close()
+
+	if _, err := io.Copy(destinationFile, zippedFile); err != nil {
 		return err
 	}
 	return nil

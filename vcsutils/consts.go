@@ -1,5 +1,7 @@
 package vcsutils
 
+const branchPrefix = "refs/heads/"
+
 // VcsProvider is an enum represents the VCS provider type
 type VcsProvider int
 
