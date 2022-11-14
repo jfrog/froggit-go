@@ -196,7 +196,7 @@ func Unzip(source, destination string) (err error) {
 func unzipFile(f *zip.File, destination string) error {
 	// Check if file paths are not vulnerable to Zip Slip
 	filePath := filepath.Join(destination, f.Name)
-	filePath = filepath.Clean(destination)
+	filePath = filepath.Clean(filePath)
 	if !strings.HasPrefix(filePath, filePath+string(os.PathSeparator)) {
 		return fmt.Errorf("invalid file path: %s", filePath)
 	}
