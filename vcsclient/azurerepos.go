@@ -251,45 +251,45 @@ func (client *AzureReposClient) AddSshKeyToRepository(ctx context.Context, owner
 }
 
 func (client *AzureReposClient) GetRepositoryInfo(ctx context.Context, owner, repository string) (RepositoryInfo, error) {
-	return RepositoryInfo{}, getRepositoryInfoNotSupported
+	return RepositoryInfo{}, errGetRepositoryInfoNotSupported
 }
 
 func (client *AzureReposClient) GetCommitBySha(ctx context.Context, owner, repository, sha string) (CommitInfo, error) {
-	return CommitInfo{}, getCommitByShaNotSupported
+	return CommitInfo{}, errGetCommitByShaNotSupported
 }
 
 func (client *AzureReposClient) CreateLabel(ctx context.Context, owner, repository string, labelInfo LabelInfo) error {
-	return createLabelNotSupported
+	return errCreateLabelNotSupported
 }
 
 func (client *AzureReposClient) GetLabel(ctx context.Context, owner, repository, name string) (*LabelInfo, error) {
-	return nil, getLabelNotSupported
+	return nil, errGetLabelNotSupported
 }
 
 func (client *AzureReposClient) ListPullRequestLabels(ctx context.Context, owner, repository string, pullRequestID int) ([]string, error) {
-	return nil, listPullRequestLabelsNotSupported
+	return nil, errListPullRequestLabelsNotSupported
 }
 
 func (client *AzureReposClient) UnlabelPullRequest(ctx context.Context, owner, repository, name string, pullRequestID int) error {
-	return unlabelPullRequestNotSupported
+	return errUnlabelPullRequestNotSupported
 }
 
 func (client *AzureReposClient) UploadCodeScanning(ctx context.Context, owner, repository, branch, scanResults string) (string, error) {
-	return "", uploadCodeScanningNotSupported
+	return "", errUploadCodeScanningNotSupported
 }
 
 func (client *AzureReposClient) CreateWebhook(ctx context.Context, owner, repository, branch, payloadURL string, webhookEvents ...vcsutils.WebhookEvent) (string, string, error) {
-	return "", "", createWebhookNotSupported
+	return "", "", errCreateWebhookNotSupported
 }
 
 func (client *AzureReposClient) UpdateWebhook(ctx context.Context, owner, repository, branch, payloadURL, token, webhookID string, webhookEvents ...vcsutils.WebhookEvent) error {
-	return updateWebhookNotSupported
+	return errUpdateWebhookNotSupported
 }
 
 func (client *AzureReposClient) DeleteWebhook(ctx context.Context, owner, repository, webhookID string) error {
-	return deleteWebhookNotSupported
+	return errDeleteWebhookNotSupported
 }
 
 func (client *AzureReposClient) SetCommitStatus(ctx context.Context, commitStatus CommitStatus, owner, repository, ref, title, description, detailsURL string) error {
-	return setCommitStatusNotSupported
+	return errSetCommitStatusNotSupported
 }
