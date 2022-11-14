@@ -2,7 +2,6 @@ package vcsclient
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"github.com/jfrog/froggit-go/vcsutils"
 	"github.com/microsoft/azure-devops-go-api/azuredevops"
@@ -87,7 +86,12 @@ func (client *AzureReposClient) DownloadRepository(ctx context.Context, _, repos
 	}
 	defer zipRepo.Close()
 	res, err := client.sendDownloadRepoRequest(ctx, repository, branch)
-	defer res.Body.Close()
+	defer func() {
+		e := res.Body.Close()
+		if err == nil {
+			err = e
+		}
+	}()
 	if err != nil {
 		return
 	}
@@ -122,7 +126,7 @@ func (client *AzureReposClient) sendDownloadRepoRequest(ctx context.Context, rep
 		return
 	}
 	if statusOk := res.StatusCode >= 200 && res.StatusCode < 300; !statusOk {
-		err = errors.New(fmt.Sprintf("bad HTTP status: %d", res.StatusCode))
+		fmt.Errorf("bad HTTP status: %d", res.StatusCode)
 	}
 	return
 }

@@ -212,7 +212,6 @@ func createAzureReposHandler(t *testing.T, expectedURI string, response []byte, 
 			return
 		}
 		w.WriteHeader(404)
-		return
 	}
 }
 
