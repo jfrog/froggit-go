@@ -21,6 +21,8 @@ jobs:
         run: go vet ./...
       - name: Staticcheck
         uses: dominikh/staticcheck-action@v1
+        with:
+          install-go: false
 
       # Run tests
       - name: Tests
