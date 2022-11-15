@@ -9,7 +9,6 @@ import (
 	"github.com/microsoft/azure-devops-go-api/azuredevops/git"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -70,7 +69,7 @@ func TestAzureRepos_TestListBranches(t *testing.T) {
 
 func TestAzureRepos_TestDownloadRepository(t *testing.T) {
 	ctx := context.Background()
-	dir, err := ioutil.TempDir("", "")
+	dir, err := os.MkdirTemp("", "")
 	assert.NoError(t, err)
 	defer func() { _ = os.RemoveAll(dir) }()
 

@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -161,7 +161,7 @@ func (client *BitbucketServerClient) AddSshKeyToRepository(ctx context.Context, 
 	defer func() { _ = response.Body.Close() }()
 
 	if response.StatusCode >= 300 {
-		bodyBytes, err := ioutil.ReadAll(response.Body)
+		bodyBytes, err := io.ReadAll(response.Body)
 		if err != nil {
 			return err
 		}

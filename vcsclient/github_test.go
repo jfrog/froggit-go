@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"math"
 	"math/rand"
 	"net/http"
@@ -189,7 +188,7 @@ func TestGitHubClient_getGitHubCommitState(t *testing.T) {
 
 func TestGitHubClient_DownloadRepository(t *testing.T) {
 	ctx := context.Background()
-	dir, err := ioutil.TempDir("", "")
+	dir, err := os.MkdirTemp("", "")
 	assert.NoError(t, err)
 	defer func() { _ = os.RemoveAll(dir) }()
 
@@ -201,7 +200,7 @@ func TestGitHubClient_DownloadRepository(t *testing.T) {
 
 	err = client.DownloadRepository(ctx, owner, "Hello-World", "test", dir)
 	require.NoError(t, err)
-	fileinfo, err := ioutil.ReadDir(dir)
+	fileinfo, err := os.ReadDir(dir)
 	require.NoError(t, err)
 	assert.Len(t, fileinfo, 1)
 	assert.Equal(t, "README", fileinfo[0].Name())
@@ -659,7 +658,7 @@ func createGitHubSarifUploadHandler(t *testing.T, _ string, _ []byte, _ int) htt
 			_, err = w.Write(jsonRepositoryCommits)
 			require.NoError(t, err)
 		} else if r.RequestURI == "/repos/jfrog/repo-1/code-scanning/sarifs" {
-			body, err := ioutil.ReadAll(r.Body)
+			body, err := io.ReadAll(r.Body)
 			require.NoError(t, err)
 			bodyAsString := string(body)
 			if !strings.Contains(bodyAsString, resultSHA) {

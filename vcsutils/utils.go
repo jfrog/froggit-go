@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -134,7 +133,7 @@ func safeCopy(targetFile *os.File, reader *tar.Reader) error {
 // DiscardResponseBody prepare http response body for closing
 func DiscardResponseBody(resp *http.Response) error {
 	if resp != nil {
-		_, err := io.Copy(ioutil.Discard, resp.Body)
+		_, err := io.Copy(io.Discard, resp.Body)
 		return err
 	}
 	return nil

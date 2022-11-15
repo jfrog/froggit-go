@@ -2,7 +2,6 @@ package vcsutils
 
 import (
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -18,7 +17,7 @@ func TestUntar(t *testing.T) {
 	err := Untar(destDir, tarball, false)
 	assert.NoError(t, err)
 
-	fileinfo, err := ioutil.ReadDir(destDir)
+	fileinfo, err := os.ReadDir(destDir)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, fileinfo)
 	assert.Equal(t, "a", fileinfo[0].Name())
@@ -31,7 +30,7 @@ func TestUntarRemoveBaseDir(t *testing.T) {
 	err := Untar(destDir, tarball, true)
 	assert.NoError(t, err)
 
-	fileinfo, err := ioutil.ReadDir(destDir)
+	fileinfo, err := os.ReadDir(destDir)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, fileinfo)
 	assert.Equal(t, "b", fileinfo[0].Name())
@@ -97,7 +96,7 @@ func TestDiscardResponseBody(t *testing.T) {
 }
 
 func openTarball(t *testing.T) (string, *os.File) {
-	dir, err := ioutil.TempDir("", "")
+	dir, err := os.MkdirTemp("", "")
 	assert.NoError(t, err)
 	defer os.RemoveAll(dir)
 
@@ -122,14 +121,14 @@ func TestDefaultIfNotNil(t *testing.T) {
 }
 
 func TestUnzip(t *testing.T) {
-	destDir, err := ioutil.TempDir("", "")
+	destDir, err := os.MkdirTemp("", "")
 	assert.NoError(t, err)
 	defer os.RemoveAll(destDir)
 
 	err = Unzip(filepath.Join("testdata", "hello_world.zip"), destDir)
 	assert.NoError(t, err)
 
-	fileinfo, err := ioutil.ReadDir(destDir)
+	fileinfo, err := os.ReadDir(destDir)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, fileinfo)
 	assert.Equal(t, "README.md", fileinfo[0].Name())

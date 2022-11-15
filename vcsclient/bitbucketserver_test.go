@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"math/rand"
 	"net/http"
 	"os"
@@ -153,7 +152,7 @@ func TestBitbucketServer_SetCommitStatus(t *testing.T) {
 
 func TestBitbucketServer_DownloadRepository(t *testing.T) {
 	ctx := context.Background()
-	dir, err := ioutil.TempDir("", "")
+	dir, err := os.MkdirTemp("", "")
 	assert.NoError(t, err)
 	defer func() { _ = os.RemoveAll(dir) }()
 

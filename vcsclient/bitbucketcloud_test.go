@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -133,7 +132,7 @@ func TestBitbucketCloud_SetCommitStatus(t *testing.T) {
 
 func TestBitbucketCloud_DownloadRepository(t *testing.T) {
 	ctx := context.Background()
-	dir, err := ioutil.TempDir("", "")
+	dir, err := os.MkdirTemp("", "")
 	assert.NoError(t, err)
 	defer func() { _ = os.RemoveAll(dir) }()
 
@@ -142,7 +141,7 @@ func TestBitbucketCloud_DownloadRepository(t *testing.T) {
 
 	err = client.DownloadRepository(ctx, owner, "jfrog-setup-cli", "master", dir)
 	assert.NoError(t, err)
-	rootFiles, err := ioutil.ReadDir(dir)
+	rootFiles, err := os.ReadDir(dir)
 	assert.NotEmpty(t, rootFiles)
 	assert.NoError(t, err)
 	readmeFound := false
