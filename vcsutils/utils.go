@@ -194,26 +194,26 @@ func Unzip(source, destination string) (err error) {
 }
 
 func unzipFile(f *zip.File, destination string) error {
+	fullFilePath := filepath.Join(destination, filepath.Clean(f.Name))
 	// Check if file paths are not vulnerable to Zip Slip
-	filePath := filepath.Clean(filepath.Join(destination, f.Name))
-	if !strings.HasPrefix(filePath, filepath.Clean(destination)+string(os.PathSeparator)) {
-		return fmt.Errorf("invalid file path: %s", filePath)
+	if !strings.HasPrefix(fullFilePath, filepath.Clean(destination)+string(os.PathSeparator)) {
+		return fmt.Errorf("invalid file path: %s", fullFilePath)
 	}
 
 	// Create directory tree
 	if f.FileInfo().IsDir() {
-		if err := os.MkdirAll(filePath, os.ModePerm); err != nil {
+		if err := os.MkdirAll(fullFilePath, os.ModePerm); err != nil {
 			return err
 		}
 		return nil
 	}
 
-	if err := os.MkdirAll(filepath.Dir(filePath), os.ModePerm); err != nil {
+	if err := os.MkdirAll(filepath.Dir(fullFilePath), os.ModePerm); err != nil {
 		return err
 	}
 
 	// Create a destination file for unzipped content
-	destinationFile, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
+	destinationFile, err := os.OpenFile(filepath.Clean(fullFilePath), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
 	if err != nil {
 		return err
 	}
