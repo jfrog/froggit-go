@@ -59,6 +59,16 @@
       "minVersion": "3.2",
       "maxVersion": "7.1",
       "releasedVersion": "0.0"
+    },
+    {
+      "id": "ab6e2e5d-a0b7-4153-b64a-a4efe0d49449",
+      "area": "Location",
+      "resourceName": "ResourceAreas",
+      "routeTemplate": "_apis/{resource}/{areaId}/listPullRequestComments",
+      "resourceVersion": 1,
+      "minVersion": "3.2",
+      "maxVersion": "7.1",
+      "releasedVersion": "0.0"
     }
   ],
   "count": 2

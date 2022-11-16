@@ -6,7 +6,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/jfrog/froggit-go/vcsutils"
+	"github.com/microsoft/azure-devops-go-api/azuredevops"
 	"github.com/microsoft/azure-devops-go-api/azuredevops/git"
+	"github.com/microsoft/azure-devops-go-api/azuredevops/webapi"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"net/http"
@@ -15,6 +17,7 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestAzureRepos_Connection(t *testing.T) {
@@ -166,6 +169,46 @@ func TestAzureRepos_TestListOpenPullRequests(t *testing.T) {
 	pullRequestsInfo, err := client.ListOpenPullRequests(ctx, "", repo1)
 	assert.NoError(t, err)
 	assert.True(t, reflect.DeepEqual(pullRequestsInfo, []PullRequestInfo{{ID: 1, Source: BranchInfo{Name: branch1, Repository: repo1}, Target: BranchInfo{Name: branch2, Repository: repo1}}}))
+}
+
+func TestListPullRequestComments(t *testing.T) {
+	type ListPullRequestCommentsResponse struct {
+		Value []git.GitPullRequestCommentThread
+		Count int
+	}
+	id1 := 1
+	id2 := 2
+	firstCommentContent := "first comment"
+	secondCommentContent := "second comment"
+	author := "test author"
+	res := ListPullRequestCommentsResponse{
+		Value: []git.GitPullRequestCommentThread{{
+			Id:            &id1,
+			PublishedDate: &azuredevops.Time{Time: time.Now()},
+			Comments: &[]git.Comment{
+				{
+					Id:      &id1,
+					Content: &firstCommentContent,
+					Author:  &webapi.IdentityRef{DisplayName: &author},
+				},
+				{
+					Id:      &id2,
+					Content: &secondCommentContent,
+					Author:  &webapi.IdentityRef{DisplayName: &author},
+				},
+			},
+		}},
+		Count: 1,
+	}
+	jsonRes, err := json.Marshal(res)
+	assert.NoError(t, err)
+	ctx := context.Background()
+	client, cleanUp := createServerAndClient(t, vcsutils.AzureRepos, true, jsonRes, "listPullRequestComments", createAzureReposHandler)
+	defer cleanUp()
+	commentInfo, err := client.ListPullRequestComments(ctx, "", repo1, id1)
+	expected := "Author: test author, Id: 1, Content:first comment\nAuthor: test author, Id: 2, Content:second comment\n"
+	assert.Equal(t, expected, commentInfo[0].Content)
+	assert.NoError(t, err)
 }
 
 func TestAzureRepos_TestGetLatestCommit(t *testing.T) {
