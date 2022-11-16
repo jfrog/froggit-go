@@ -138,7 +138,7 @@ func TestAzureRepos_TestAddPullRequestComment(t *testing.T) {
 	jsonRes, err := json.Marshal(res)
 	assert.NoError(t, err)
 	ctx := context.Background()
-	client, cleanUp := createServerAndClient(t, vcsutils.AzureRepos, true, jsonRes, "addPullRequestComment", createAzureReposHandler)
+	client, cleanUp := createServerAndClient(t, vcsutils.AzureRepos, true, jsonRes, "pullRequestComments", createAzureReposHandler)
 	defer cleanUp()
 	err = client.AddPullRequestComment(ctx, "", repo1, "test", 2)
 	assert.NoError(t, err)
@@ -203,7 +203,7 @@ func TestListPullRequestComments(t *testing.T) {
 	jsonRes, err := json.Marshal(res)
 	assert.NoError(t, err)
 	ctx := context.Background()
-	client, cleanUp := createServerAndClient(t, vcsutils.AzureRepos, true, jsonRes, "listPullRequestComments", createAzureReposHandler)
+	client, cleanUp := createServerAndClient(t, vcsutils.AzureRepos, true, jsonRes, "pullRequestComments", createAzureReposHandler)
 	defer cleanUp()
 	commentInfo, err := client.ListPullRequestComments(ctx, "", repo1, id1)
 	expected := "Author: test author, Id: 1, Content:first comment\nAuthor: test author, Id: 2, Content:second comment\n"
