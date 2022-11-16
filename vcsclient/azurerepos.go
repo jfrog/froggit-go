@@ -27,7 +27,7 @@ func NewAzureReposClient(vcsInfo VcsInfo) (*AzureReposClient, error) {
 }
 
 func (client *AzureReposClient) buildAzureReposClient(ctx context.Context) error {
-	baseUrl := strings.TrimSuffix(client.vcsInfo.APIEndpoint, "/") + "/" + client.vcsInfo.Username
+	baseUrl := strings.TrimSuffix(client.vcsInfo.APIEndpoint, string(os.PathSeparator))
 	client.connectionDetails = azuredevops.NewPatConnection(baseUrl, client.vcsInfo.Token)
 	azureGitClient, err := git.NewClient(ctx, client.connectionDetails)
 	client.azureReposGitClient = &azureGitClient
