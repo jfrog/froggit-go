@@ -235,12 +235,12 @@ func createAzureReposHandler(t *testing.T, expectedURI string, response []byte, 
 	return func(w http.ResponseWriter, r *http.Request) {
 		base64Token := base64.StdEncoding.EncodeToString([]byte(":" + token))
 		assert.Equal(t, "Basic "+base64Token, r.Header.Get("Authorization"))
-		if r.RequestURI == "/frogger/_apis" {
+		if r.RequestURI == "/_apis" {
 			jsonVal, err := os.ReadFile(filepath.Join("./", "testdata", "azurerepos", "resourcesResponse.json"))
 			assert.NoError(t, err)
 			w.Write(jsonVal)
 			return
-		} else if r.RequestURI == "/frogger/_apis/ResourceAreas" {
+		} else if r.RequestURI == "/_apis/ResourceAreas" {
 			jsonVal := `{"value": [],"count": 0}`
 			w.Write([]byte(jsonVal))
 			return
