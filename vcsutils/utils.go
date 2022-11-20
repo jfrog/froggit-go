@@ -192,7 +192,7 @@ func Unzip(source, destination string) (err error) {
 	return nil
 }
 
-func unzipFile(f *zip.File, destination string) error {
+func unzipFile(f *zip.File, destination string) (err error) {
 	fullFilePath := filepath.Join(destination, filepath.Clean(f.Name))
 	// Check if file paths are not vulnerable to Zip Slip
 	if !strings.HasPrefix(fullFilePath, filepath.Clean(destination)+string(os.PathSeparator)) {
@@ -201,13 +201,13 @@ func unzipFile(f *zip.File, destination string) error {
 
 	// Create directory tree
 	if f.FileInfo().IsDir() {
-		if err := os.MkdirAll(fullFilePath, os.ModePerm); err != nil {
-			return err
+		if e := os.MkdirAll(fullFilePath, os.ModePerm); err == nil {
+			return e
 		}
 		return nil
 	}
 
-	if err := os.MkdirAll(filepath.Dir(fullFilePath), os.ModePerm); err != nil {
+	if err = os.MkdirAll(filepath.Dir(fullFilePath), os.ModePerm); err != nil {
 		return err
 	}
 
@@ -217,7 +217,8 @@ func unzipFile(f *zip.File, destination string) error {
 		return err
 	}
 	defer func() {
-		if err := destinationFile.Close(); err != nil {
+		if e := destinationFile.Close(); err == nil {
+			err = e
 			return
 		}
 	}()
@@ -228,13 +229,14 @@ func unzipFile(f *zip.File, destination string) error {
 		return err
 	}
 	defer func() {
-		if err := zippedFile.Close(); err != nil {
+		if e := zippedFile.Close(); err == nil {
+			err = e
 			return
 		}
 	}()
 
 	for {
-		if _, err := io.CopyN(destinationFile, zippedFile, 1024); err != nil {
+		if _, err = io.CopyN(destinationFile, zippedFile, 1024); err != nil {
 			if errors.Is(err, io.EOF) {
 				break
 			}
