@@ -123,7 +123,7 @@ func TestDefaultIfNotNil(t *testing.T) {
 func TestUnzip(t *testing.T) {
 	destDir, err := os.MkdirTemp("", "")
 	assert.NoError(t, err)
-	defer os.RemoveAll(destDir)
+	defer assert.NoError(t, os.RemoveAll(destDir))
 
 	err = Unzip(filepath.Join("testdata", "hello_world.zip"), destDir)
 	assert.NoError(t, err)

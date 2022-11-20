@@ -18,6 +18,7 @@ Currently supported providers are: [GitHub](#github), [Bitbucket Server](#bitbuc
         - [GitLab](#gitlab)
         - [Bitbucket Server](#bitbucket-server)
         - [Bitbucket Cloud](#bitbucket-cloud)
+        - [Azure Repos](#azure-repos)
       - [Test Connection](#test-connection)
       - [List Repositories](#list-repositories)
       - [List Branches](#list-branches)
@@ -113,6 +114,25 @@ token := "secret-bitbucket-token"
 logger := log.Default()
 
 client, err := vcsclient.NewClientBuilder(vcsProvider).ApiEndpoint(apiEndpoint).Username(username).Token(token).Build()
+```
+
+##### Azure Repos
+
+Azure DevOps api version v6 is used.
+
+```go
+// The VCS provider. Cannot be changed.
+vcsProvider := vcsutils.AzureRepos
+// API endpoint to Azure Repos. Set the organization.
+apiEndpoint := "https://dev.azure.com/<organization>"
+// Personal Access Token to Azure DevOps
+token := "secret-azure-devops-token"
+// Logger
+logger := log.Default()
+// Project name
+project := "name-of-the-relevant-project"
+
+client, err := vcsclient.NewClientBuilder(vcsProvider).ApiEndpoint(apiEndpoint).Token(token).Project(project).Build()
 ```
 
 #### Test Connection
