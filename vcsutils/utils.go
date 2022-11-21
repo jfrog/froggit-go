@@ -164,6 +164,9 @@ func AddBranchPrefix(branch string) string {
 // Unzip a file to dest path
 func Unzip(zipFileContent []byte, destinationToUnzip string) (err error) {
 	zf, err := zip.NewReader(bytes.NewReader(zipFileContent), int64(len(zipFileContent)))
+	if err != nil {
+		return err
+	}
 	// Get the absolute destination path
 	destinationToUnzip, err = filepath.Abs(destinationToUnzip)
 	if err != nil {
@@ -172,7 +175,7 @@ func Unzip(zipFileContent []byte, destinationToUnzip string) (err error) {
 
 	// Iterate over zip files inside the archive and unzip each of them
 	for _, f := range zf.File {
-		err := unzipFile(f, destinationToUnzip)
+		err = unzipFile(f, destinationToUnzip)
 		if err != nil {
 			return err
 		}
@@ -189,11 +192,11 @@ func unzipFile(f *zip.File, destination string) (err error) {
 	}
 	// Create directory tree
 	if f.FileInfo().IsDir() {
-		if e := os.MkdirAll(fullFilePath, 700); err == nil {
+		if e := os.MkdirAll(fullFilePath, 0700); err == nil {
 			return e
 		}
 		return nil
-	} else if err = os.MkdirAll(filepath.Dir(fullFilePath), 700); err != nil {
+	} else if err = os.MkdirAll(filepath.Dir(fullFilePath), 0700); err != nil {
 		return err
 	}
 
