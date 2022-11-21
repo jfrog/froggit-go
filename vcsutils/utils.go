@@ -118,9 +118,9 @@ func sanitizeExtractionPath(filePath string, destination string) (string, error)
 	return target, nil
 }
 
-func safeCopy(targetFile *os.File, v io.Reader) error {
+func safeCopy(targetFile *os.File, reader io.Reader) error {
 	for {
-		_, err := io.CopyN(targetFile, v, 1024)
+		_, err := io.CopyN(targetFile, reader, 1024)
 		if err != nil {
 			if err == io.EOF {
 				return nil
