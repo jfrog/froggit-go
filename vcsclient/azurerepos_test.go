@@ -261,6 +261,98 @@ func TestAzureRepos_TestGetLatestCommit(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestAzureReposClient_AddSshKeyToRepository(t *testing.T) {
+	ctx := context.Background()
+	client, cleanUp := createServerAndClient(t, vcsutils.AzureRepos, true, "", "getLatestCommit", createAzureReposHandler)
+	defer cleanUp()
+	assert.Error(t, client.AddSshKeyToRepository(ctx, owner, repo1, "", "", 0777))
+}
+
+func TestAzureReposClient_CreateLabel(t *testing.T) {
+	ctx := context.Background()
+	client, cleanUp := createServerAndClient(t, vcsutils.AzureRepos, true, "", "unsupportedTest", createAzureReposHandler)
+	defer cleanUp()
+	assert.Error(t, client.CreateLabel(ctx, owner, repo1, LabelInfo{}))
+}
+
+func TestAzureReposClient_GetRepositoryInfo(t *testing.T) {
+	ctx := context.Background()
+	client, cleanUp := createServerAndClient(t, vcsutils.AzureRepos, true, "", "unsupportedTest", createAzureReposHandler)
+	defer cleanUp()
+	_, err := client.GetRepositoryInfo(ctx, owner, repo1)
+	assert.Error(t, err)
+}
+
+func TestAzureReposClient_GetCommitBySha(t *testing.T) {
+	ctx := context.Background()
+	client, cleanUp := createServerAndClient(t, vcsutils.AzureRepos, true, "", "unsupportedTest", createAzureReposHandler)
+	defer cleanUp()
+	_, err := client.GetCommitBySha(ctx, owner, repo1, "")
+	assert.Error(t, err)
+}
+
+func TestAzureReposClient_ListPullRequestLabels(t *testing.T) {
+	ctx := context.Background()
+	client, cleanUp := createServerAndClient(t, vcsutils.AzureRepos, true, "", "unsupportedTest", createAzureReposHandler)
+	defer cleanUp()
+	_, err := client.ListPullRequestLabels(ctx, owner, repo1, 1)
+	assert.Error(t, err)
+}
+
+func TestAzureReposClient_UnlabelPullRequest(t *testing.T) {
+	ctx := context.Background()
+	client, cleanUp := createServerAndClient(t, vcsutils.AzureRepos, true, "", "unsupportedTest", createAzureReposHandler)
+	defer cleanUp()
+	err := client.UnlabelPullRequest(ctx, owner, repo1, "", 1)
+	assert.Error(t, err)
+}
+
+func TestAzureReposClient_UploadCodeScanning(t *testing.T) {
+	ctx := context.Background()
+	client, cleanUp := createServerAndClient(t, vcsutils.AzureRepos, true, "", "unsupportedTest", createAzureReposHandler)
+	defer cleanUp()
+	_, err := client.UploadCodeScanning(ctx, owner, repo1, "", "1")
+	assert.Error(t, err)
+}
+
+func TestAzureReposClient_CreateWebhook(t *testing.T) {
+	ctx := context.Background()
+	client, cleanUp := createServerAndClient(t, vcsutils.AzureRepos, true, "", "unsupportedTest", createAzureReposHandler)
+	defer cleanUp()
+	_, _, err := client.CreateWebhook(ctx, owner, repo1, "", "1", vcsutils.PrRejected)
+	assert.Error(t, err)
+}
+
+func TestAzureReposClient_UpdateWebhook(t *testing.T) {
+	ctx := context.Background()
+	client, cleanUp := createServerAndClient(t, vcsutils.AzureRepos, true, "", "unsupportedTest", createAzureReposHandler)
+	defer cleanUp()
+	err := client.UpdateWebhook(ctx, owner, repo1, "", "1", "", "", vcsutils.PrRejected)
+	assert.Error(t, err)
+}
+
+func TestAzureReposClient_DeleteWebhook(t *testing.T) {
+	ctx := context.Background()
+	client, cleanUp := createServerAndClient(t, vcsutils.AzureRepos, true, "", "unsupportedTest", createAzureReposHandler)
+	defer cleanUp()
+	err := client.DeleteWebhook(ctx, owner, repo1, "")
+	assert.Error(t, err)
+}
+
+func TestAzureReposClient_SetCommitStatus(t *testing.T) {
+	ctx := context.Background()
+	client, cleanUp := createServerAndClient(t, vcsutils.AzureRepos, true, "", "unsupportedTest", createAzureReposHandler)
+	defer cleanUp()
+	err := client.SetCommitStatus(ctx, 1, owner, repo1, "", "", "", "")
+	assert.Error(t, err)
+}
+
+func TestGetUnsupportedInAzureError(t *testing.T) {
+	functionName := "foo"
+	assert.Error(t, getUnsupportedInAzureError(functionName))
+	assert.Equal(t, "foo is currently not supported for Azure Repos", getUnsupportedInAzureError(functionName).Error())
+}
+
 func createAzureReposHandler(t *testing.T, expectedURI string, response []byte, expectedStatusCode int) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		base64Token := base64.StdEncoding.EncodeToString([]byte(":" + token))
