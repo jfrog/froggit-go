@@ -142,3 +142,9 @@ func TestAddBranchPrefix(t *testing.T) {
 	branchWithPrefix = AddBranchPrefix(branchWithPrefix)
 	assert.Equal(t, branchWithPrefix, "refs/heads/sampleBranch")
 }
+
+func TestGetZeroValue(t *testing.T) {
+	assert.Equal(t, 0, GetZeroValue[int]())
+	assert.Equal(t, "", GetZeroValue[string]())
+	assert.Equal(t, 0.0, GetZeroValue[float64]())
+}

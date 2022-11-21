@@ -15,6 +15,7 @@ const (
 	owner           = "jfrog"
 	token           = "abc123"
 	basicAuthHeader = "Basic ZnJvZ2dlcjphYmMxMjM="
+	project         = "jfrog-project"
 )
 
 var (
