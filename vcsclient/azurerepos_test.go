@@ -347,6 +347,14 @@ func TestAzureReposClient_SetCommitStatus(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestAzureReposClient_GetLabel(t *testing.T) {
+	ctx := context.Background()
+	client, cleanUp := createServerAndClient(t, vcsutils.AzureRepos, true, "", "unsupportedTest", createAzureReposHandler)
+	defer cleanUp()
+	_, err := client.GetLabel(ctx, owner, repo1, "")
+	assert.Error(t, err)
+}
+
 func TestGetUnsupportedInAzureError(t *testing.T) {
 	functionName := "foo"
 	assert.Error(t, getUnsupportedInAzureError(functionName))
