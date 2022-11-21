@@ -48,6 +48,11 @@ func TestAzureRepos_ListRepositories(t *testing.T) {
 	for _, repos := range reposMap {
 		assert.ElementsMatch(t, repos, testRepos)
 	}
+
+	badClient, badClientCleanup := createBadAzureReposClient(t, []byte{})
+	defer badClientCleanup()
+	_, err = badClient.ListRepositories(ctx)
+	assert.Error(t, err)
 }
 
 func TestAzureRepos_TestListBranches(t *testing.T) {
@@ -68,6 +73,11 @@ func TestAzureRepos_TestListBranches(t *testing.T) {
 	resp, err := client.ListBranches(ctx, "", repo1)
 	assert.NoError(t, err)
 	assert.ElementsMatch(t, testBranches, resp)
+
+	badClient, badClientCleanup := createBadAzureReposClient(t, []byte{})
+	defer badClientCleanup()
+	_, err = badClient.ListBranches(ctx, "", repo1)
+	assert.Error(t, err)
 }
 
 func TestAzureRepos_TestDownloadRepository(t *testing.T) {
@@ -79,16 +89,12 @@ func TestAzureRepos_TestDownloadRepository(t *testing.T) {
 	repoFile, err := os.ReadFile(filepath.Join("testdata", "azurerepos", "hello_world.zip"))
 	require.NoError(t, err)
 
-	client, cleanUp := createServerAndClient(
-		t,
-		vcsutils.AzureRepos,
-		true,
-		repoFile,
-		fmt.Sprintf("/%s/_apis/git/repositories/%s/items/items?path=/&[…]ptor[version]=%s&$format=zip",
-			"",
-			repo1,
-			branch1),
-		createAzureReposHandler)
+	downloadURL := fmt.Sprintf("/%s/_apis/git/repositories/%s/items/items?path=/&[…]ptor[version]=%s&$format=zip",
+		"",
+		repo1,
+		branch1)
+	client, cleanUp := createServerAndClient(t, vcsutils.AzureRepos, true,
+		repoFile, downloadURL, createAzureReposHandler)
 	defer cleanUp()
 	err = client.DownloadRepository(ctx, "", repo1, branch1, dir)
 	require.NoError(t, err)
@@ -122,6 +128,11 @@ func TestAzureRepos_TestCreatePullRequest(t *testing.T) {
 	defer cleanUp()
 	err = client.CreatePullRequest(ctx, "", repo1, branch1, branch2, "Hello World", "Hello World")
 	assert.NoError(t, err)
+
+	badClient, cleanUp := createBadAzureReposClient(t, []byte{})
+	defer cleanUp()
+	err = badClient.CreatePullRequest(ctx, "", repo1, branch1, branch2, "Hello World", "Hello World")
+	assert.Error(t, err)
 }
 
 func TestAzureRepos_TestAddPullRequestComment(t *testing.T) {
@@ -141,6 +152,11 @@ func TestAzureRepos_TestAddPullRequestComment(t *testing.T) {
 	defer cleanUp()
 	err = client.AddPullRequestComment(ctx, "", repo1, "test", 2)
 	assert.NoError(t, err)
+
+	badClient, cleanUp := createBadAzureReposClient(t, []byte{})
+	defer cleanUp()
+	err = badClient.AddPullRequestComment(ctx, "", repo1, "test", 2)
+	assert.Error(t, err)
 }
 
 func TestAzureRepos_TestListOpenPullRequests(t *testing.T) {
@@ -168,6 +184,11 @@ func TestAzureRepos_TestListOpenPullRequests(t *testing.T) {
 	pullRequestsInfo, err := client.ListOpenPullRequests(ctx, "", repo1)
 	assert.NoError(t, err)
 	assert.True(t, reflect.DeepEqual(pullRequestsInfo, []PullRequestInfo{{ID: 1, Source: BranchInfo{Name: branch1, Repository: repo1}, Target: BranchInfo{Name: branch2, Repository: repo1}}}))
+
+	badClient, cleanUp := createBadAzureReposClient(t, []byte{})
+	defer cleanUp()
+	_, err = badClient.ListOpenPullRequests(ctx, "", repo1)
+	assert.Error(t, err)
 }
 
 func TestListPullRequestComments(t *testing.T) {
@@ -208,6 +229,11 @@ func TestListPullRequestComments(t *testing.T) {
 	expected := "Author: test author, Id: 1, Content:first comment\nAuthor: test author, Id: 2, Content:second comment\n"
 	assert.Equal(t, expected, commentInfo[0].Content)
 	assert.NoError(t, err)
+
+	badClient, cleanUp := createBadAzureReposClient(t, []byte{})
+	defer cleanUp()
+	_, err = badClient.ListPullRequestComments(ctx, "", repo1, id1)
+	assert.Error(t, err)
 }
 
 func TestAzureRepos_TestGetLatestCommit(t *testing.T) {
@@ -228,6 +254,11 @@ func TestAzureRepos_TestGetLatestCommit(t *testing.T) {
 		Message:       "Updated package.json",
 	})
 	assert.NoError(t, err)
+
+	badClient, cleanUp := createBadAzureReposClient(t, []byte{})
+	defer cleanUp()
+	_, err = badClient.GetLatestCommit(ctx, "", repo1, branch1)
+	assert.Error(t, err)
 }
 
 func createAzureReposHandler(t *testing.T, expectedURI string, response []byte, expectedStatusCode int) http.HandlerFunc {
@@ -256,12 +287,12 @@ func createAzureReposHandler(t *testing.T, expectedURI string, response []byte, 
 	}
 }
 
-func createBadAzureReposClient(t *testing.T, repoFile []byte) (VcsClient, func()) {
+func createBadAzureReposClient(t *testing.T, response []byte) (VcsClient, func()) {
 	client, cleanUp := createServerAndClient(
 		t,
 		vcsutils.AzureRepos,
 		true,
-		repoFile,
+		response,
 		fmt.Sprintf("bad^endpoint/%s/_apis/git/repositories/%s/items/items?path=/&[…]ptor[version]=%s&$format=zip",
 			"",
 			repo1,

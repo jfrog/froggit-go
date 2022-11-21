@@ -3,8 +3,8 @@ package vcsutils
 import (
 	"archive/tar"
 	"archive/zip"
+	"bytes"
 	"compress/gzip"
-	"errors"
 	"fmt"
 	"github.com/google/uuid"
 	"io"
@@ -111,16 +111,16 @@ func removeBaseDir(relativePath string) string {
 }
 
 func sanitizeExtractionPath(filePath string, destination string) (string, error) {
-	target := filepath.Join(destination, filePath)
+	target := filepath.Join(destination, filepath.Clean(filePath))
 	if !strings.HasPrefix(target, filepath.Clean(destination)+string(os.PathSeparator)) {
 		return "", fmt.Errorf("%s: illegal file path", filePath)
 	}
 	return target, nil
 }
 
-func safeCopy(targetFile *os.File, reader *tar.Reader) error {
+func safeCopy(targetFile *os.File, v io.Reader) error {
 	for {
-		_, err := io.CopyN(targetFile, reader, 1024)
+		_, err := io.CopyN(targetFile, v, 1024)
 		if err != nil {
 			if err == io.EOF {
 				return nil
@@ -161,29 +161,18 @@ func AddBranchPrefix(branch string) string {
 	return branch
 }
 
-// Unzip a file in src to dest path
-func Unzip(source, destination string) (err error) {
-	// Open the zip file
-	reader, err := zip.OpenReader(source)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		e := reader.Close()
-		if err == nil {
-			err = e
-		}
-	}()
-
+// Unzip a file to dest path
+func Unzip(zipFileContent []byte, destinationToUnzip string) (err error) {
+	zf, err := zip.NewReader(bytes.NewReader(zipFileContent), int64(len(zipFileContent)))
 	// Get the absolute destination path
-	destination, err = filepath.Abs(destination)
+	destinationToUnzip, err = filepath.Abs(destinationToUnzip)
 	if err != nil {
 		return err
 	}
 
 	// Iterate over zip files inside the archive and unzip each of them
-	for _, f := range reader.File {
-		err := unzipFile(f, destination)
+	for _, f := range zf.File {
+		err := unzipFile(f, destinationToUnzip)
 		if err != nil {
 			return err
 		}
@@ -193,21 +182,18 @@ func Unzip(source, destination string) (err error) {
 }
 
 func unzipFile(f *zip.File, destination string) (err error) {
-	fullFilePath := filepath.Join(destination, filepath.Clean(f.Name))
 	// Check if file paths are not vulnerable to Zip Slip
-	if !strings.HasPrefix(fullFilePath, filepath.Clean(destination)+string(os.PathSeparator)) {
-		return fmt.Errorf("invalid file path: %s", fullFilePath)
+	fullFilePath, err := sanitizeExtractionPath(f.Name, destination)
+	if err != nil {
+		return err
 	}
-
 	// Create directory tree
 	if f.FileInfo().IsDir() {
-		if e := os.MkdirAll(fullFilePath, os.ModePerm); err == nil {
+		if e := os.MkdirAll(fullFilePath, 700); err == nil {
 			return e
 		}
 		return nil
-	}
-
-	if err = os.MkdirAll(filepath.Dir(fullFilePath), os.ModePerm); err != nil {
+	} else if err = os.MkdirAll(filepath.Dir(fullFilePath), 700); err != nil {
 		return err
 	}
 
@@ -222,7 +208,6 @@ func unzipFile(f *zip.File, destination string) (err error) {
 			return
 		}
 	}()
-
 	// Unzip the content of a file and copy it to the destination file
 	zippedFile, err := f.Open()
 	if err != nil {
@@ -234,14 +219,5 @@ func unzipFile(f *zip.File, destination string) (err error) {
 			return
 		}
 	}()
-
-	for {
-		if _, err = io.CopyN(destinationFile, zippedFile, 1024); err != nil {
-			if errors.Is(err, io.EOF) {
-				break
-			}
-			return err
-		}
-	}
-	return nil
+	return safeCopy(destinationFile, zippedFile)
 }

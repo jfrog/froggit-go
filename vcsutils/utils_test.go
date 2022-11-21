@@ -124,12 +124,21 @@ func TestUnzip(t *testing.T) {
 	destDir, err := os.MkdirTemp("", "")
 	assert.NoError(t, err)
 	defer assert.NoError(t, os.RemoveAll(destDir))
-
-	err = Unzip(filepath.Join("testdata", "hello_world.zip"), destDir)
+	zipFileContent, err := os.ReadFile(filepath.Join("testdata", "hello_world.zip"))
+	assert.NoError(t, err)
+	err = Unzip(zipFileContent, destDir)
 	assert.NoError(t, err)
 
 	fileinfo, err := os.ReadDir(destDir)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, fileinfo)
 	assert.Equal(t, "README.md", fileinfo[0].Name())
+}
+
+func TestAddBranchPrefix(t *testing.T) {
+	branch := "sampleBranch"
+	branchWithPrefix := AddBranchPrefix(branch)
+	assert.Equal(t, branchWithPrefix, "refs/heads/sampleBranch")
+	branchWithPrefix = AddBranchPrefix(branchWithPrefix)
+	assert.Equal(t, branchWithPrefix, "refs/heads/sampleBranch")
 }
