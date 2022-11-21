@@ -11,5 +11,6 @@ func TestVcsProviderString(t *testing.T) {
 	assert.Equal(t, "GitLab", GitLab.String())
 	assert.Equal(t, "Bitbucket Server", BitbucketServer.String())
 	assert.Equal(t, "Bitbucket Cloud", BitbucketCloud.String())
+	assert.Equal(t, "Azure Repos", AzureRepos.String())
 	assert.Equal(t, "", (VcsProvider(5)).String())
 }

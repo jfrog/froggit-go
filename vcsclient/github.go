@@ -13,8 +13,6 @@ import (
 	"strings"
 )
 
-const branchPrefix = "refs/heads/"
-
 // GitHubClient API version 3
 type GitHubClient struct {
 	vcsInfo VcsInfo
@@ -455,9 +453,7 @@ func (client *GitHubClient) UploadCodeScanning(ctx context.Context, owner, repos
 		return "", err
 	}
 	commitSHA := commit.Hash
-	if !strings.HasPrefix(branch, branchPrefix) {
-		branch = branchPrefix + branch
-	}
+	branch = vcsutils.AddBranchPrefix(branch)
 	ghClient, err := client.buildGithubClient(ctx)
 	if err != nil {
 		return "", err

@@ -2,11 +2,12 @@ package vcsutils
 
 import (
 	"archive/tar"
+	"archive/zip"
+	"bytes"
 	"compress/gzip"
 	"fmt"
 	"github.com/google/uuid"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -110,14 +111,14 @@ func removeBaseDir(relativePath string) string {
 }
 
 func sanitizeExtractionPath(filePath string, destination string) (string, error) {
-	target := filepath.Join(destination, filePath)
+	target := filepath.Join(destination, filepath.Clean(filePath))
 	if !strings.HasPrefix(target, filepath.Clean(destination)+string(os.PathSeparator)) {
 		return "", fmt.Errorf("%s: illegal file path", filePath)
 	}
 	return target, nil
 }
 
-func safeCopy(targetFile *os.File, reader *tar.Reader) error {
+func safeCopy(targetFile *os.File, reader io.Reader) error {
 	for {
 		_, err := io.CopyN(targetFile, reader, 1024)
 		if err != nil {
@@ -132,8 +133,94 @@ func safeCopy(targetFile *os.File, reader *tar.Reader) error {
 // DiscardResponseBody prepare http response body for closing
 func DiscardResponseBody(resp *http.Response) error {
 	if resp != nil {
-		_, err := io.Copy(ioutil.Discard, resp.Body)
+		_, err := io.Copy(io.Discard, resp.Body)
 		return err
 	}
 	return nil
+}
+
+// GetZeroValue returns the zero value of type T
+func GetZeroValue[T any]() T {
+	return *new(T)
+}
+
+// DefaultIfNotNil checks:
+// 1. If the pointer is nil, return the zero value of the type
+// 2. If the pointer isn't nil, return the value of the pointer.
+func DefaultIfNotNil[T any](val *T) T {
+	if val == nil {
+		return GetZeroValue[T]()
+	}
+	return *val
+}
+
+func AddBranchPrefix(branch string) string {
+	if !strings.HasPrefix(branch, branchPrefix) {
+		branch = fmt.Sprintf("%s%s", branchPrefix, branch)
+	}
+	return branch
+}
+
+// Unzip a file to dest path
+func Unzip(zipFileContent []byte, destinationToUnzip string) (err error) {
+	zf, err := zip.NewReader(bytes.NewReader(zipFileContent), int64(len(zipFileContent)))
+	if err != nil {
+		return err
+	}
+	// Get the absolute destination path
+	destinationToUnzip, err = filepath.Abs(destinationToUnzip)
+	if err != nil {
+		return err
+	}
+
+	// Iterate over zip files inside the archive and unzip each of them
+	for _, f := range zf.File {
+		err = unzipFile(f, destinationToUnzip)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func unzipFile(f *zip.File, destination string) (err error) {
+	// Check if file paths are not vulnerable to Zip Slip
+	fullFilePath, err := sanitizeExtractionPath(f.Name, destination)
+	if err != nil {
+		return err
+	}
+	// Create directory tree
+	if f.FileInfo().IsDir() {
+		if e := os.MkdirAll(fullFilePath, 0700); err == nil {
+			return e
+		}
+		return nil
+	} else if err = os.MkdirAll(filepath.Dir(fullFilePath), 0700); err != nil {
+		return err
+	}
+
+	// Create a destination file for unzipped content
+	destinationFile, err := os.OpenFile(filepath.Clean(fullFilePath), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if e := destinationFile.Close(); err == nil {
+			err = e
+			return
+		}
+	}()
+	// Unzip the content of a file and copy it to the destination file
+	zippedFile, err := f.Open()
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if e := zippedFile.Close(); err == nil {
+			err = e
+			return
+		}
+	}()
+	return safeCopy(destinationFile, zippedFile)
 }

@@ -38,6 +38,8 @@ type VcsInfo struct {
 	APIEndpoint string
 	Username    string
 	Token       string
+	// Project name is relevant for Azure Repos
+	Project string
 }
 
 // VcsClient is a base class of all Vcs clients - GitHub, GitLab, Bitbucket server and cloud clients

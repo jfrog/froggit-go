@@ -1,5 +1,7 @@
 package vcsutils
 
+const branchPrefix = "refs/heads/"
+
 // VcsProvider is an enum represents the VCS provider type
 type VcsProvider int
 
@@ -12,6 +14,8 @@ const (
 	BitbucketServer
 	// BitbucketCloud VCS provider
 	BitbucketCloud
+	// AzureRepos VCS provider
+	AzureRepos
 )
 
 // String representation of the VcsProvider
@@ -25,6 +29,8 @@ func (v VcsProvider) String() string {
 		return "Bitbucket Server"
 	case BitbucketCloud:
 		return "Bitbucket Cloud"
+	case AzureRepos:
+		return "Azure Repos"
 	default:
 		return ""
 	}

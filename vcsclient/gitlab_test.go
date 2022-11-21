@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"math"
 	"math/rand"
 	"net/http"
@@ -131,7 +130,7 @@ func TestGitLabClient_CreateCommitStatus(t *testing.T) {
 
 func TestGitLabClient_DownloadRepository(t *testing.T) {
 	ctx := context.Background()
-	dir, err := ioutil.TempDir("", "")
+	dir, err := os.MkdirTemp("", "")
 	assert.NoError(t, err)
 	defer func() { _ = os.RemoveAll(dir) }()
 
@@ -144,7 +143,7 @@ func TestGitLabClient_DownloadRepository(t *testing.T) {
 
 	err = client.DownloadRepository(ctx, owner, repo1, ref, dir)
 	require.NoError(t, err)
-	fileinfo, err := ioutil.ReadDir(dir)
+	fileinfo, err := os.ReadDir(dir)
 	require.NoError(t, err)
 	assert.Len(t, fileinfo, 1)
 	assert.Equal(t, "README.md", fileinfo[0].Name())

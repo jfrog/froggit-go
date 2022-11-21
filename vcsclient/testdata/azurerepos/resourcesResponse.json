@@ -1,0 +1,75 @@
+{
+  "value": [
+    {
+      "id": "e81700f7-3be2-46de-8624-2eb35882fcaa",
+      "area": "Location",
+      "resourceName": "ResourceAreas",
+      "routeTemplate": "_apis/{resource}/{areaId}",
+      "resourceVersion": 1,
+      "minVersion": "3.2",
+      "maxVersion": "7.1",
+      "releasedVersion": "0.0"
+    },
+    {
+      "id": "225f7195-f9c7-4d14-ab28-a83f7ff77e1f",
+      "area": "Location",
+      "resourceName": "ResourceAreas",
+      "routeTemplate": "_apis/{resource}/{areaId}/listRepositories",
+      "resourceVersion": 1,
+      "minVersion": "3.2",
+      "maxVersion": "7.1",
+      "releasedVersion": "0.0"
+    },
+    {
+      "id": "d5b216de-d8d5-4d32-ae76-51df755b16d3",
+      "area": "Location",
+      "resourceName": "ResourceAreas",
+      "routeTemplate": "_apis/{resource}/{areaId}/listBranches",
+      "resourceVersion": 1,
+      "minVersion": "3.2",
+      "maxVersion": "7.1",
+      "releasedVersion": "0.0"
+    },
+    {
+      "id": "ab6e2e5d-a0b7-4153-b64a-a4efe0d49449",
+      "area": "Location",
+      "resourceName": "ResourceAreas",
+      "routeTemplate": "_apis/{resource}/{areaId}/pullRequestComments",
+      "resourceVersion": 1,
+      "minVersion": "3.2",
+      "maxVersion": "7.1",
+      "releasedVersion": "0.0"
+    },
+    {
+      "id": "9946fd70-0d40-406e-b686-b4744cbbcc37",
+      "area": "Location",
+      "resourceName": "ResourceAreas",
+      "routeTemplate": "_apis/{resource}/{areaId}/getPullRequests",
+      "resourceVersion": 1,
+      "minVersion": "3.2",
+      "maxVersion": "7.1",
+      "releasedVersion": "0.0"
+    },
+    {
+      "id": "c2570c3b-5b3f-41b8-98bf-5407bfde8d58",
+      "area": "Location",
+      "resourceName": "ResourceAreas",
+      "routeTemplate": "_apis/{resource}/{areaId}/getLatestCommit",
+      "resourceVersion": 1,
+      "minVersion": "3.2",
+      "maxVersion": "7.1",
+      "releasedVersion": "0.0"
+    },
+    {
+      "id": "c257043b-5b3f-41b8-98bf-5407bfde8d58",
+      "area": "Location",
+      "resourceName": "ResourceAreas",
+      "routeTemplate": "_apis/{resource}/{areaId}/unsupportedTest",
+      "resourceVersion": 1,
+      "minVersion": "3.2",
+      "maxVersion": "7.1",
+      "releasedVersion": "0.0"
+    }
+  ],
+  "count": 2
+}

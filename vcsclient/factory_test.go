@@ -13,15 +13,16 @@ const (
 )
 
 func TestClientBuilder(t *testing.T) {
-	for _, vcsProvider := range []vcsutils.VcsProvider{vcsutils.GitHub, vcsutils.GitLab, vcsutils.BitbucketCloud, vcsutils.BitbucketServer} {
+	for _, vcsProvider := range []vcsutils.VcsProvider{vcsutils.GitHub, vcsutils.GitLab, vcsutils.BitbucketCloud, vcsutils.BitbucketServer, vcsutils.AzureRepos} {
 		t.Run(vcsProvider.String(), func(t *testing.T) {
-			clientBuilder := NewClientBuilder(vcsProvider).Logger(log.Default()).ApiEndpoint(apiEndpoint).Username(username).Token(token)
+			clientBuilder := NewClientBuilder(vcsProvider).Logger(log.Default()).ApiEndpoint(apiEndpoint).Username(username).Token(token).Project(project)
 			assert.NotNil(t, clientBuilder)
 			assert.Equal(t, vcsProvider, clientBuilder.vcsProvider)
 			assert.Equal(t, log.Default(), clientBuilder.logger)
 			assert.Equal(t, apiEndpoint, clientBuilder.vcsInfo.APIEndpoint)
 			assert.Equal(t, username, clientBuilder.vcsInfo.Username)
 			assert.Equal(t, token, clientBuilder.vcsInfo.Token)
+			assert.Equal(t, project, clientBuilder.vcsInfo.Project)
 		})
 	}
 }
