@@ -501,6 +501,14 @@ func TestBitbucketServer_GetCommitByShaNotFound(t *testing.T) {
 	assert.Empty(t, result)
 }
 
+func TestBitbucketServer_UploadCodeScanning(t *testing.T) {
+	ctx := context.Background()
+	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, true, "", "unsupportedTest", createBitbucketServerHandler)
+	defer cleanUp()
+	_, err := client.UploadCodeScanning(ctx, owner, repo1, "", "1")
+	assert.Error(t, err)
+}
+
 func createBitbucketServerHandler(t *testing.T, expectedURI string, response []byte, expectedStatusCode int) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(expectedStatusCode)

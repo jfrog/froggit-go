@@ -434,6 +434,14 @@ func TestGitlabClient_UnlabelPullRequest(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestGitlabClient_UploadCodeScanning(t *testing.T) {
+	ctx := context.Background()
+	client, cleanUp := createServerAndClient(t, vcsutils.GitLab, true, "", "unsupportedTest", createGitLabHandler)
+	defer cleanUp()
+	_, err := client.UploadCodeScanning(ctx, owner, repo1, "", "1")
+	assert.Error(t, err)
+}
+
 func createGitLabHandler(t *testing.T, expectedURI string, response []byte, expectedStatusCode int) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.RequestURI == "/api/v4/" {

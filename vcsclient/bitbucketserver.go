@@ -275,10 +275,13 @@ func (client *BitbucketServerClient) DownloadRepository(ctx context.Context, own
 	if err != nil {
 		return err
 	}
-	repo.CreateRemote(&config.RemoteConfig{
+	_, err = repo.CreateRemote(&config.RemoteConfig{
 		Name: "origin",
 		URLs: []string{fmt.Sprintf("%s/scm/%s/%s.git", strings.TrimSuffix(client.vcsInfo.APIEndpoint, "/rest"), owner, repository)},
 	})
+	if err != nil {
+		return err
+	}
 	return vcsutils.Untar(localPath, bytes.NewReader(response.Payload), false)
 }
 
