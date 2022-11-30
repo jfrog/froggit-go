@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/config"
 	"io"
 	"net/http"
 	"strconv"
@@ -32,6 +34,11 @@ func NewBitbucketServerClient(vcsInfo VcsInfo) (*BitbucketServerClient, error) {
 }
 
 func (client *BitbucketServerClient) buildBitbucketClient(ctx context.Context) (*bitbucketv1.DefaultApiService, error) {
+	// Bitbucket API Endpoint ends with '/rest'
+	if !strings.HasSuffix(client.vcsInfo.APIEndpoint, "/rest") {
+		client.vcsInfo.APIEndpoint += "/rest"
+	}
+
 	bbClient := bitbucketv1.NewAPIClient(ctx, &bitbucketv1.Configuration{
 		HTTPClient: client.buildHTTPClient(ctx),
 		BasePath:   client.vcsInfo.APIEndpoint,
@@ -259,6 +266,19 @@ func (client *BitbucketServerClient) DownloadRepository(ctx context.Context, own
 		params["at"] = branch
 	}
 	response, err := bitbucketClient.GetArchive(owner, repository, params)
+	if err != nil {
+		return err
+	}
+
+	// Bitbucket server repository downloads without a .git folder. Adding it manually
+	repo, err := git.PlainInit(localPath, false)
+	if err != nil {
+		return err
+	}
+	_, err = repo.CreateRemote(&config.RemoteConfig{
+		Name: "origin",
+		URLs: []string{fmt.Sprintf("%s/scm/%s/%s.git", strings.TrimSuffix(client.vcsInfo.APIEndpoint, "/rest"), owner, repository)},
+	})
 	if err != nil {
 		return err
 	}

@@ -26,7 +26,7 @@ func TestBitbucketServer_Connection(t *testing.T) {
 	ctx := context.Background()
 	mockResponse := make(map[string][]bitbucketv1.User)
 	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, true, mockResponse,
-		"/api/1.0/admin/users?limit=1", createBitbucketServerHandler)
+		"/rest/api/1.0/admin/users?limit=1", createBitbucketServerHandler)
 	defer cleanUp()
 
 	err := client.TestConnection(ctx)
@@ -76,7 +76,7 @@ func TestBitbucketServer_ListBranches(t *testing.T) {
 	mockResponse := map[string][]bitbucketv1.Branch{
 		"values": {{ID: branch1}, {ID: branch2}},
 	}
-	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, false, mockResponse, "/api/1.0/projects/jfrog/repos/repo-1/branches?start=0", createBitbucketServerHandler)
+	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, false, mockResponse, "/rest/api/1.0/projects/jfrog/repos/repo-1/branches?start=0", createBitbucketServerHandler)
 	defer cleanUp()
 
 	actualRepositories, err := client.ListBranches(ctx, owner, repo1)
@@ -91,7 +91,7 @@ func TestBitbucketServer_CreateWebhook(t *testing.T) {
 	ctx := context.Background()
 	id := rand.Int31()
 	mockResponse := bitbucketv1.Webhook{ID: int(id)}
-	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, false, mockResponse, "/api/1.0/projects/jfrog/repos/repo-1/webhooks", createBitbucketServerHandler)
+	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, false, mockResponse, "/rest/api/1.0/projects/jfrog/repos/repo-1/webhooks", createBitbucketServerHandler)
 	defer cleanUp()
 
 	actualID, token, err := client.CreateWebhook(ctx, owner, repo1, branch1, "https://httpbin.org/anything",
@@ -109,7 +109,7 @@ func TestBitbucketServer_UpdateWebhook(t *testing.T) {
 	id := rand.Int31()
 	stringID := strconv.Itoa(int(id))
 
-	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, false, nil, fmt.Sprintf("/api/1.0/projects/jfrog/repos/repo-1/webhooks/%s", stringID), createBitbucketServerHandler)
+	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, false, nil, fmt.Sprintf("/rest/api/1.0/projects/jfrog/repos/repo-1/webhooks/%s", stringID), createBitbucketServerHandler)
 	defer cleanUp()
 
 	err := client.UpdateWebhook(ctx, owner, repo1, branch1, "https://httpbin.org/anything", token, stringID,
@@ -125,7 +125,7 @@ func TestBitbucketServer_DeleteWebhook(t *testing.T) {
 	id := rand.Int31()
 	stringID := strconv.Itoa(int(id))
 
-	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, false, nil, fmt.Sprintf("/api/1.0/projects/jfrog/repos/repo-1/webhooks/%s", stringID), createBitbucketServerHandler)
+	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, false, nil, fmt.Sprintf("/rest/api/1.0/projects/jfrog/repos/repo-1/webhooks/%s", stringID), createBitbucketServerHandler)
 	defer cleanUp()
 
 	err := client.DeleteWebhook(ctx, owner, repo1, stringID)
@@ -138,7 +138,7 @@ func TestBitbucketServer_DeleteWebhook(t *testing.T) {
 func TestBitbucketServer_SetCommitStatus(t *testing.T) {
 	ctx := context.Background()
 	ref := "9caf1c431fb783b669f0f909bd018b40f2ea3808"
-	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, false, nil, fmt.Sprintf("/build-status/1.0/commits/%s", ref), createBitbucketServerHandler)
+	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, false, nil, fmt.Sprintf("/rest/build-status/1.0/commits/%s", ref), createBitbucketServerHandler)
 	defer cleanUp()
 
 	err := client.SetCommitStatus(ctx, Fail, owner, repo1, ref, "Commit status title", "Commit status description",
@@ -160,7 +160,7 @@ func TestBitbucketServer_DownloadRepository(t *testing.T) {
 	require.NoError(t, err)
 
 	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, false, repoFile,
-		fmt.Sprintf("/api/1.0/projects/%s/repos/%s/archive?format=tgz", owner, repo1), createBitbucketServerHandler)
+		fmt.Sprintf("/rest/api/1.0/projects/%s/repos/%s/archive?format=tgz", owner, repo1), createBitbucketServerHandler)
 	defer cleanUp()
 
 	err = client.DownloadRepository(ctx, owner, repo1, "", dir)
@@ -175,7 +175,7 @@ func TestBitbucketServer_DownloadRepository(t *testing.T) {
 
 func TestBitbucketServer_CreatePullRequest(t *testing.T) {
 	ctx := context.Background()
-	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, true, nil, "/api/1.0/projects/jfrog/repos/repo-1/pull-requests", createBitbucketServerHandler)
+	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, true, nil, "/rest/api/1.0/projects/jfrog/repos/repo-1/pull-requests", createBitbucketServerHandler)
 	defer cleanUp()
 
 	err := client.CreatePullRequest(ctx, owner, repo1, branch1, branch2, "PR title", "PR body")
@@ -187,7 +187,7 @@ func TestBitbucketServer_CreatePullRequest(t *testing.T) {
 
 func TestBitbucketServer_AddPullRequestComment(t *testing.T) {
 	ctx := context.Background()
-	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, true, nil, "/api/1.0/projects/jfrog/repos/repo-1/pull-requests/1/comments", createBitbucketServerHandler)
+	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, true, nil, "/rest/api/1.0/projects/jfrog/repos/repo-1/pull-requests/1/comments", createBitbucketServerHandler)
 	defer cleanUp()
 
 	err := client.AddPullRequestComment(ctx, owner, repo1, "Comment content", 1)
@@ -202,7 +202,7 @@ func TestBitbucketServer_ListOpenPullRequests(t *testing.T) {
 	response, err := os.ReadFile(filepath.Join("testdata", "bitbucketserver", "pull_requests_list_response.json"))
 	assert.NoError(t, err)
 	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, true, response,
-		fmt.Sprintf("/api/1.0/projects/%s/repos/%s/pull-requests?start=0", owner, repo1), createBitbucketServerHandler)
+		fmt.Sprintf("/rest/api/1.0/projects/%s/repos/%s/pull-requests?start=0", owner, repo1), createBitbucketServerHandler)
 	defer cleanUp()
 
 	result, err := client.ListOpenPullRequests(ctx, owner, repo1)
@@ -221,7 +221,7 @@ func TestBitbucketServer_ListPullRequestComments(t *testing.T) {
 	response, err := os.ReadFile(filepath.Join("testdata", "bitbucketserver", "pull_request_comments_list_response.json"))
 	assert.NoError(t, err)
 	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, true, response,
-		fmt.Sprintf("/api/1.0/projects/%s/repos/%s/pull-requests/1/activities?start=0", owner, repo1), createBitbucketServerHandler)
+		fmt.Sprintf("/rest/api/1.0/projects/%s/repos/%s/pull-requests/1/activities?start=0", owner, repo1), createBitbucketServerHandler)
 	defer cleanUp()
 
 	result, err := client.ListPullRequestComments(ctx, owner, repo1, 1)
@@ -243,14 +243,14 @@ func TestBitbucketServer_GetLatestCommit(t *testing.T) {
 	// limit=1 appears twice because it is added twice by: github.com/gfleury/go-bitbucket-v1@v0.0.0-20210826163055-dff2223adeac/default_api.go:3848
 	client, serverUrl, cleanUp := createServerWithUrlAndClientReturningStatus(t, vcsutils.BitbucketServer, false,
 		response,
-		fmt.Sprintf("/api/1.0/projects/%s/repos/%s/commits?limit=1&limit=1&until=master", owner, repo1),
+		fmt.Sprintf("/rest/api/1.0/projects/%s/repos/%s/commits?limit=1&limit=1&until=master", owner, repo1),
 		http.StatusOK, createBitbucketServerHandler)
 	defer cleanUp()
 
 	result, err := client.GetLatestCommit(ctx, owner, repo1, "master")
 
 	require.NoError(t, err)
-	expectedUrl := fmt.Sprintf("%s/api/1.0/projects/jfrog/repos/repo-1"+
+	expectedUrl := fmt.Sprintf("%s/rest/api/1.0/projects/jfrog/repos/repo-1"+
 		"/commits/def0123abcdef4567abcdef8987abcdef6543abc", serverUrl)
 	assert.Equal(t, CommitInfo{
 		Hash:          "def0123abcdef4567abcdef8987abcdef6543abc",
@@ -278,7 +278,7 @@ func TestBitbucketServer_GetLatestCommitNotFound(t *testing.T) {
     	]
 	}`)
 	client, cleanUp := createServerAndClientReturningStatus(t, vcsutils.BitbucketServer, false, response,
-		fmt.Sprintf("/api/1.0/projects/%s/repos/%s/commits?limit=1&limit=1&until=master", owner, repo1),
+		fmt.Sprintf("/rest/api/1.0/projects/%s/repos/%s/commits?limit=1&limit=1&until=master", owner, repo1),
 		http.StatusNotFound, createBitbucketServerHandler)
 	defer cleanUp()
 
@@ -301,7 +301,7 @@ func TestBitbucketServer_GetLatestCommitUnknownBranch(t *testing.T) {
 		]
 	}`)
 	client, cleanUp := createServerAndClientReturningStatus(t, vcsutils.BitbucketServer, false, response,
-		fmt.Sprintf("/api/1.0/projects/%s/repos/%s/commits?limit=1&limit=1&until=unknown", owner, repo1),
+		fmt.Sprintf("/rest/api/1.0/projects/%s/repos/%s/commits?limit=1&limit=1&until=unknown", owner, repo1),
 		http.StatusNotFound, createBitbucketServerHandler)
 	defer cleanUp()
 
@@ -387,7 +387,7 @@ func TestBitbucketServer_GetRepositoryInfo(t *testing.T) {
 		vcsutils.BitbucketServer,
 		false,
 		response,
-		fmt.Sprintf("/api/1.0/projects/%s/repos/%s", owner, repo1),
+		fmt.Sprintf("/rest/api/1.0/projects/%s/repos/%s", owner, repo1),
 		http.StatusOK,
 		createBitbucketServerHandler,
 	)
@@ -454,14 +454,14 @@ func TestBitbucketServer_GetCommitBySha(t *testing.T) {
 	assert.NoError(t, err)
 
 	client, serverUrl, cleanUp := createServerWithUrlAndClientReturningStatus(t, vcsutils.BitbucketServer, false,
-		response, fmt.Sprintf("/api/1.0/projects/%s/repos/%s/commits/%s", owner, repo1, sha),
+		response, fmt.Sprintf("/rest/api/1.0/projects/%s/repos/%s/commits/%s", owner, repo1, sha),
 		http.StatusOK, createBitbucketServerHandler)
 	defer cleanUp()
 
 	result, err := client.GetCommitBySha(ctx, owner, repo1, sha)
 
 	require.NoError(t, err)
-	expectedUrl := fmt.Sprintf("%s/api/1.0/projects/jfrog/repos/repo-1"+
+	expectedUrl := fmt.Sprintf("%s/rest/api/1.0/projects/jfrog/repos/repo-1"+
 		"/commits/abcdef0123abcdef4567abcdef8987abcdef6543", serverUrl)
 	assert.Equal(t, CommitInfo{
 		Hash:          sha,
@@ -490,7 +490,7 @@ func TestBitbucketServer_GetCommitByShaNotFound(t *testing.T) {
     	]
 	}`)
 	client, cleanUp := createServerAndClientReturningStatus(t, vcsutils.BitbucketServer, false, response,
-		fmt.Sprintf("/api/1.0/projects/%s/repos/%s/commits/%s", owner, repo1, sha),
+		fmt.Sprintf("/rest/api/1.0/projects/%s/repos/%s/commits/%s", owner, repo1, sha),
 		http.StatusNotFound, createBitbucketServerHandler)
 	defer cleanUp()
 
@@ -499,6 +499,14 @@ func TestBitbucketServer_GetCommitByShaNotFound(t *testing.T) {
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "Status: 404 Not Found")
 	assert.Empty(t, result)
+}
+
+func TestBitbucketServer_UploadCodeScanning(t *testing.T) {
+	ctx := context.Background()
+	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, true, "", "unsupportedTest", createBitbucketServerHandler)
+	defer cleanUp()
+	_, err := client.UploadCodeScanning(ctx, owner, repo1, "", "1")
+	assert.Error(t, err)
 }
 
 func createBitbucketServerHandler(t *testing.T, expectedURI string, response []byte, expectedStatusCode int) http.HandlerFunc {
@@ -514,13 +522,13 @@ func createBitbucketServerHandler(t *testing.T, expectedURI string, response []b
 func createBitbucketServerListRepositoriesHandler(t *testing.T, _ string, _ []byte, expectedStatusCode int) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var responseObj interface{}
-		if r.RequestURI == "/api/1.0/projects?start=0" {
+		if r.RequestURI == "/rest/api/1.0/projects?start=0" {
 			responseObj = map[string][]bitbucketv1.Project{"values": {{Key: username}}}
 			w.Header().Add("X-Ausername", username)
 
-		} else if r.RequestURI == "/api/1.0/projects/~FROGGER/repos?start=0" {
+		} else if r.RequestURI == "/rest/api/1.0/projects/~FROGGER/repos?start=0" {
 			responseObj = map[string][]bitbucketv1.Repository{"values": {{Slug: repo1}}}
-		} else if r.RequestURI == "/api/1.0/projects/frogger/repos?start=0" {
+		} else if r.RequestURI == "/rest/api/1.0/projects/frogger/repos?start=0" {
 			responseObj = map[string][]bitbucketv1.Repository{"values": {{Slug: repo2}}}
 		} else {
 			assert.Fail(t, "Unexpected request Uri "+r.RequestURI)
