@@ -1,5 +1,7 @@
 # Froggit-Go
 
+[![Frogbot](images/header.png)](#readme)
+
 Froggit-Go is a Go library, allowing to perform actions on VCS providers.
 Currently supported providers are: [GitHub](#github), [Bitbucket Server](#bitbucket-server)
 , [Bitbucket Cloud](#bitbucket-cloud), [Azure Repos](#azure-repos) and [GitLab](#gitlab).
