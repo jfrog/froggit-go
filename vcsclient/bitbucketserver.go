@@ -274,6 +274,7 @@ func (client *BitbucketServerClient) DownloadRepository(ctx context.Context, own
 	if err != nil {
 		return err
 	}
+
 	return vcsutils.Untar(localPath, bytes.NewReader(response.Payload), false)
 }
 
