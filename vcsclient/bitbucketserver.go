@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/config"
 	"io"
 	"net/http"
 	"strconv"
@@ -268,12 +270,13 @@ func (client *BitbucketServerClient) DownloadRepository(ctx context.Context, own
 		return err
 	}
 
-	// Generate .git folder with remote details
+// Generate .git folder with remote details
 	err = vcsutils.CreateDotGitFolderWithRemote(localPath, "origin",
 		fmt.Sprintf("%s/scm/%s/%s.git", strings.TrimSuffix(client.vcsInfo.APIEndpoint, "/rest"), owner, repository))
 	if err != nil {
 		return err
 	}
+  
 	return vcsutils.Untar(localPath, bytes.NewReader(response.Payload), false)
 }
 
