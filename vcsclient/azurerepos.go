@@ -109,15 +109,16 @@ func (client *AzureReposClient) DownloadRepository(ctx context.Context, _, repos
 }
 
 func (client *AzureReposClient) sendDownloadRepoRequest(ctx context.Context, repository string, branch string) (res *http.Response, err error) {
-	downloadRepoUrl := fmt.Sprintf("%s/%s/_apis/git/repositories/%s/items/items?path=/&[…]ptor[version]=%s&$format=zip",
+	downloadRepoUrl := fmt.Sprintf("%s/%s/_apis/git/repositories/%s/items/items?path=/&versionDescriptor[version]=%s&$format=zip",
 		client.connectionDetails.BaseUrl,
 		client.vcsInfo.Project,
 		repository,
 		branch)
 	headers := map[string]string{
-		"Authorization": client.connectionDetails.AuthorizationString,
-		"download":      "true",
-		"resolveLfs":    "true",
+		"Authorization":  client.connectionDetails.AuthorizationString,
+		"download":       "true",
+		"resolveLfs":     "true",
+		"includeContent": "true",
 	}
 	httpClient := &http.Client{}
 	var req *http.Request
@@ -228,14 +229,17 @@ func (client *AzureReposClient) ListOpenPullRequests(ctx context.Context, _, rep
 	}
 	var pullRequestsInfo []PullRequestInfo
 	for _, pullRequest := range *pullRequests {
+		// Trim the branches prefix and get the actual branches name
+		shortSourceName := (*pullRequest.SourceRefName)[strings.LastIndex(*pullRequest.SourceRefName, "/")+1:]
+		shortTargetName := (*pullRequest.TargetRefName)[strings.LastIndex(*pullRequest.TargetRefName, "/")+1:]
 		pullRequestsInfo = append(pullRequestsInfo, PullRequestInfo{
 			ID: int64(*pullRequest.PullRequestId),
 			Source: BranchInfo{
-				Name:       vcsutils.DefaultIfNotNil(pullRequest.SourceRefName),
+				Name:       shortSourceName,
 				Repository: repository,
 			},
 			Target: BranchInfo{
-				Name:       vcsutils.DefaultIfNotNil(pullRequest.TargetRefName),
+				Name:       shortTargetName,
 				Repository: repository,
 			},
 		})

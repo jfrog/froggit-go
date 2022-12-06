@@ -6,6 +6,8 @@ import (
 	"bytes"
 	"compress/gzip"
 	"fmt"
+	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/config"
 	"github.com/google/uuid"
 	"io"
 	"net/http"
@@ -23,12 +25,17 @@ func CreateToken() string {
 // destDir             - Destination folder
 // reader              - Reader for the tar.gz file
 // shouldRemoveBaseDir - True if should remove the base directory
-func Untar(destDir string, reader io.Reader, shouldRemoveBaseDir bool) error {
+func Untar(destDir string, reader io.Reader, shouldRemoveBaseDir bool) (err error) {
 	gzr, err := gzip.NewReader(reader)
 	if err != nil {
 		return err
 	}
-	defer gzr.Close()
+	defer func() {
+		e := gzr.Close()
+		if err == nil {
+			err = e
+		}
+	}()
 
 	if err := makeDirIfMissing(destDir); err != nil {
 		return err
@@ -223,4 +230,16 @@ func unzipFile(f *zip.File, destination string) (err error) {
 		}
 	}()
 	return safeCopy(destinationFile, zippedFile)
+}
+
+func CreateDotGitFolderWithRemote(path, remoteName, remoteUrl string) error {
+	repo, err := git.PlainInit(path, false)
+	if err != nil {
+		return err
+	}
+	_, err = repo.CreateRemote(&config.RemoteConfig{
+		Name: remoteName,
+		URLs: []string{remoteUrl},
+	})
+	return err
 }
