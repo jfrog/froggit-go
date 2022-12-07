@@ -151,19 +151,19 @@ func TestGetZeroValue(t *testing.T) {
 }
 
 func TestCreateDotGitFolderWithRemote(t *testing.T) {
-	dir, err := fileutils.CreateTempDir()
+	dir1, err := os.MkdirTemp("", "tmp")
 	assert.NoError(t, err)
-	defer os.RemoveAll(dir)
-	err = CreateDotGitFolderWithRemote(dir, "origin", "fakeurl")
+	defer os.RemoveAll(dir1)
+	err = CreateDotGitFolderWithRemote(dir1, "origin", "fakeurl")
 	assert.NoError(t, err)
-	dotGitExist, err := fileutils.IsDirExists(filepath.Join(dir, ".git"), false)
+	dotGitExist, err := fileutils.IsDirExists(filepath.Join(dir1, ".git"), false)
 	assert.NoError(t, err)
 	assert.True(t, dotGitExist)
 	// Return error if .git already exist
-	assert.Error(t, CreateDotGitFolderWithRemote(dir, "origin", "fakeurl"))
+	assert.Error(t, CreateDotGitFolderWithRemote(dir1, "origin", "fakeurl"))
 	// Return error if remote name is empty
-	dir1, err := fileutils.CreateTempDir()
+	dir2, err := os.MkdirTemp("", "tmp")
 	assert.NoError(t, err)
-	defer os.RemoveAll(dir1)
-	assert.Error(t, CreateDotGitFolderWithRemote(dir1, "", "fakeurl"))
+	defer os.RemoveAll(dir2)
+	assert.Error(t, CreateDotGitFolderWithRemote(dir2, "", "fakeurl"))
 }
