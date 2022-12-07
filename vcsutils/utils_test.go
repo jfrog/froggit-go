@@ -1,7 +1,6 @@
 package vcsutils
 
 import (
-	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"io"
 	"net/http"
 	"os"
@@ -156,9 +155,9 @@ func TestCreateDotGitFolderWithRemote(t *testing.T) {
 	defer os.RemoveAll(dir1)
 	err = CreateDotGitFolderWithRemote(dir1, "origin", "fakeurl")
 	assert.NoError(t, err)
-	dotGitExist, err := fileutils.IsDirExists(filepath.Join(dir1, ".git"), false)
+	dotGitExist, err := os.Stat(filepath.Join(dir1, ".git"))
 	assert.NoError(t, err)
-	assert.True(t, dotGitExist)
+	assert.Equal(t, dotGitExist.Name(), ".git")
 	// Return error if .git already exist
 	assert.Error(t, CreateDotGitFolderWithRemote(dir1, "origin", "fakeurl"))
 	// Return error if remote name is empty
