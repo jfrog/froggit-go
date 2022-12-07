@@ -159,6 +159,7 @@ func TestCreateDotGitFolderWithRemote(t *testing.T) {
 	repo, err := git.PlainOpen(filepath.Join(dir1, ".git"))
 	assert.NoError(t, err)
 	remote, err := repo.Remote("origin")
+	assert.NoError(t, err)
 	assert.NotNil(t, remote)
 	assert.Contains(t, remote.Config().URLs, "fakeurl")
 	// Return error if .git already exist
