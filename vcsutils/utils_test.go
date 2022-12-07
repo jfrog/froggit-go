@@ -1,6 +1,7 @@
 package vcsutils
 
 import (
+	"github.com/go-git/go-git/v5"
 	"io"
 	"net/http"
 	"os"
@@ -155,11 +156,16 @@ func TestCreateDotGitFolderWithRemote(t *testing.T) {
 	defer os.RemoveAll(dir1)
 	err = CreateDotGitFolderWithRemote(dir1, "origin", "fakeurl")
 	assert.NoError(t, err)
-	dotGitExist, err := os.Stat(filepath.Join(dir1, ".git"))
+	repo, err := git.PlainOpen(filepath.Join(dir1, ".git"))
 	assert.NoError(t, err)
-	assert.Equal(t, dotGitExist.Name(), ".git")
+	remote, err := repo.Remote("origin")
+	assert.NotNil(t, remote)
+	assert.Contains(t, remote.Config().URLs, "fakeurl")
 	// Return error if .git already exist
 	assert.Error(t, CreateDotGitFolderWithRemote(dir1, "origin", "fakeurl"))
+}
+
+func TestCreateDotGitFolderWithoutRemote(t *testing.T) {
 	// Return error if remote name is empty
 	dir2, err := os.MkdirTemp("", "tmp")
 	assert.NoError(t, err)

@@ -161,6 +161,7 @@ func DefaultIfNotNil[T any](val *T) T {
 	return *val
 }
 
+// AddBranchPrefix adds a branchPrefix to a branch name if it is not already present.
 func AddBranchPrefix(branch string) string {
 	if !strings.HasPrefix(branch, branchPrefix) {
 		branch = fmt.Sprintf("%s%s", branchPrefix, branch)
@@ -232,6 +233,7 @@ func unzipFile(f *zip.File, destination string) (err error) {
 	return safeCopy(destinationFile, zippedFile)
 }
 
+// CreateDotGitFolderWithRemote creates a .git folder inside path with remote details of remoteName and remoteUrl
 func CreateDotGitFolderWithRemote(path, remoteName, remoteUrl string) error {
 	repo, err := git.PlainInit(path, false)
 	if err != nil {
