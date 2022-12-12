@@ -240,6 +240,13 @@ func (client *BitbucketCloudClient) DownloadRepository(ctx context.Context, owne
 	if err != nil {
 		return err
 	}
+
+	// Generate .git folder with remote details
+	err = vcsutils.CreateDotGitFolderWithRemote(localPath, "origin",
+		fmt.Sprintf("https://bitbucket.org/%s/%s.git", owner, repository))
+	if err != nil {
+		return err
+	}
 	return vcsutils.Untar(localPath, response.Body, true)
 }
 

@@ -145,12 +145,20 @@ func TestBitbucketCloud_DownloadRepository(t *testing.T) {
 	assert.NotEmpty(t, rootFiles)
 	assert.NoError(t, err)
 	readmeFound := false
+	dotGitFound := false
 	for _, file := range rootFiles {
+		if readmeFound && dotGitFound {
+			break
+		}
 		if file.Name() == "README.md" {
 			readmeFound = true
 		}
+		if file.Name() == ".git" {
+			dotGitFound = true
+		}
 	}
 	assert.True(t, readmeFound)
+	assert.True(t, dotGitFound)
 }
 
 func TestBitbucketCloud_CreatePullRequest(t *testing.T) {
