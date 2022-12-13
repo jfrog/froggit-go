@@ -76,7 +76,7 @@ func (client *AzureReposClient) ListBranches(ctx context.Context, _, repository 
 }
 
 // DownloadRepository on Azure Repos
-func (client *AzureReposClient) DownloadRepository(ctx context.Context, _, repository, branch, localPath string) (err error) {
+func (client *AzureReposClient) DownloadRepository(ctx context.Context, owner, repository, branch, localPath string) (err error) {
 	wd, err := os.Getwd()
 	if err != nil {
 		return
@@ -104,6 +104,13 @@ func (client *AzureReposClient) DownloadRepository(ctx context.Context, _, repos
 	zipFileContent, err := io.ReadAll(res.Body)
 	if err != nil {
 		return
+	}
+
+	// Generate .git folder with remote details
+	err = vcsutils.CreateDotGitFolderWithRemote(localPath, "origin",
+		fmt.Sprintf("https://%s@dev.azure.com/%s/%s/_git/%s", owner, owner, client.vcsInfo.Project, repository))
+	if err != nil {
+		return err
 	}
 	return vcsutils.Unzip(zipFileContent, localPath)
 }
