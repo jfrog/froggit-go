@@ -16,6 +16,8 @@ import (
 	"strings"
 )
 
+var ErrStatusCode = "invalid status code. expected %d and received %d"
+
 // CreateToken create a random UUID
 func CreateToken() string {
 	return uuid.New().String()
