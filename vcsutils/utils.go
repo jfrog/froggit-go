@@ -14,7 +14,7 @@ import (
 	"strings"
 )
 
-var ErrStatusCode = fmt.Sprintf("invalid status code. received %d while %d status code is expected")
+var ErrStatusCode = "invalid status code. received %d while %d status code is expected"
 
 // CreateToken create a random UUID
 func CreateToken() string {
