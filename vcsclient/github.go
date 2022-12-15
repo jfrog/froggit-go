@@ -3,6 +3,7 @@ package vcsclient
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/google/go-github/v45/github"
 	"github.com/grokify/mogo/encoding/base64"
 	"github.com/jfrog/froggit-go/vcsutils"
@@ -206,6 +207,9 @@ func (client *GitHubClient) DownloadRepository(ctx context.Context, owner, repos
 		return err
 	}
 	defer func() { _ = resp.Body.Close() }()
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf(vcsutils.ErrStatusCode, resp.StatusCode, http.StatusOK)
+	}
 	return vcsutils.Untar(localPath, resp.Body, true)
 }
 

@@ -131,7 +131,7 @@ func (client *AzureReposClient) sendDownloadRepoRequest(ctx context.Context, rep
 		return
 	}
 	if res.StatusCode < 200 || res.StatusCode >= 300 {
-		err = fmt.Errorf("bad HTTP status: %d", res.StatusCode)
+		err = fmt.Errorf(vcsutils.ErrStatusCode, res.StatusCode, http.StatusOK)
 	}
 	return
 }
