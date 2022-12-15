@@ -20,12 +20,14 @@ import (
 type BitbucketCloudClient struct {
 	vcsInfo VcsInfo
 	url     *url.URL
+	logger  Log
 }
 
 // NewBitbucketCloudClient create a new BitbucketCloudClient
-func NewBitbucketCloudClient(vcsInfo VcsInfo) (*BitbucketCloudClient, error) {
+func NewBitbucketCloudClient(vcsInfo VcsInfo, logger Log) (*BitbucketCloudClient, error) {
 	bitbucketClient := &BitbucketCloudClient{
 		vcsInfo: vcsInfo,
+		logger:  logger,
 	}
 	if vcsInfo.APIEndpoint != "" {
 		url, err := url.Parse(vcsInfo.APIEndpoint)
@@ -215,6 +217,7 @@ func (client *BitbucketCloudClient) SetCommitStatus(ctx context.Context, commitS
 func (client *BitbucketCloudClient) DownloadRepository(ctx context.Context, owner, repository, branch,
 	localPath string) error {
 	bitbucketClient := client.buildBitbucketCloudClient(ctx)
+	client.logger.Debug("getting Bitbucket Cloud archive link to download")
 	repo, err := bitbucketClient.Repositories.Repository.Get(&bitbucket.RepositoryOptions{
 		Owner:    owner,
 		RepoSlug: repository,
@@ -227,7 +230,7 @@ func (client *BitbucketCloudClient) DownloadRepository(ctx context.Context, owne
 	if err != nil {
 		return err
 	}
-
+	client.logger.Debug("received archive url:", downloadLink)
 	getRequest, err := http.NewRequestWithContext(ctx, "GET", downloadLink, nil)
 	if err != nil {
 		return err
@@ -240,13 +243,20 @@ func (client *BitbucketCloudClient) DownloadRepository(ctx context.Context, owne
 	if err != nil {
 		return err
 	}
-	return vcsutils.Untar(localPath, response.Body, true)
+	client.logger.Info(repository, "downloaded successfully, starting with repository extraction")
+	err = vcsutils.Untar(localPath, response.Body, true)
+	if err != nil {
+		return err
+	}
+	client.logger.Info("extracted repository successfully")
+	return nil
 }
 
 // CreatePullRequest on Bitbucket cloud
 func (client *BitbucketCloudClient) CreatePullRequest(ctx context.Context, owner, repository, sourceBranch,
 	targetBranch, title, description string) error {
 	bitbucketClient := client.buildBitbucketCloudClient(ctx)
+	client.logger.Debug("creating new pull request:", title)
 	options := &bitbucket.PullRequestsOptions{
 		Owner:             owner,
 		SourceRepository:  owner + "/" + repository,
@@ -267,6 +277,7 @@ func (client *BitbucketCloudClient) ListOpenPullRequests(ctx context.Context, ow
 		return nil, err
 	}
 	bitbucketClient := client.buildBitbucketCloudClient(ctx)
+	client.logger.Debug("fetching open pull requests in", repository)
 	options := &bitbucket.PullRequestsOptions{
 		Owner:    owner,
 		RepoSlug: repository,

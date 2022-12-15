@@ -23,12 +23,14 @@ import (
 // BitbucketServerClient API version 1.0
 type BitbucketServerClient struct {
 	vcsInfo VcsInfo
+	logger  Log
 }
 
 // NewBitbucketServerClient create a new BitbucketServerClient
-func NewBitbucketServerClient(vcsInfo VcsInfo) (*BitbucketServerClient, error) {
+func NewBitbucketServerClient(vcsInfo VcsInfo, logger Log) (*BitbucketServerClient, error) {
 	bitbucketServerClient := &BitbucketServerClient{
 		vcsInfo: vcsInfo,
+		logger:  logger,
 	}
 	return bitbucketServerClient, nil
 }
@@ -269,6 +271,7 @@ func (client *BitbucketServerClient) DownloadRepository(ctx context.Context, own
 	if err != nil {
 		return err
 	}
+	client.logger.Info(repository, "downloaded successfully, starting with repository extraction")
 
 	// Bitbucket server repository downloads without a .git folder. Adding it manually
 	repo, err := git.PlainInit(localPath, false)
@@ -282,7 +285,12 @@ func (client *BitbucketServerClient) DownloadRepository(ctx context.Context, own
 	if err != nil {
 		return err
 	}
-	return vcsutils.Untar(localPath, bytes.NewReader(response.Payload), false)
+	err = vcsutils.Untar(localPath, bytes.NewReader(response.Payload), false)
+	if err != nil {
+		return err
+	}
+	client.logger.Info("extracted repository successfully")
+	return nil
 }
 
 // CreatePullRequest on Bitbucket server

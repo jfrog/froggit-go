@@ -1,8 +1,6 @@
 package vcsclient
 
 import (
-	"log"
-
 	"github.com/jfrog/froggit-go/vcsutils"
 )
 
@@ -10,7 +8,7 @@ import (
 type ClientBuilder struct {
 	vcsProvider vcsutils.VcsProvider
 	vcsInfo     VcsInfo
-	logger      *log.Logger
+	logger      Log
 }
 
 // NewClientBuilder creates new ClientBuilder
@@ -37,8 +35,13 @@ func (builder *ClientBuilder) Token(token string) *ClientBuilder {
 }
 
 // Logger sets the logger
-func (builder *ClientBuilder) Logger(logger *log.Logger) *ClientBuilder {
-	builder.logger = logger
+func (builder *ClientBuilder) Logger(logger Log) *ClientBuilder {
+	if logger != nil {
+		builder.logger = logger
+		return builder
+	}
+
+	builder.logger = EmptyLogger{}
 	return builder
 }
 
@@ -52,15 +55,15 @@ func (builder *ClientBuilder) Project(project string) *ClientBuilder {
 func (builder *ClientBuilder) Build() (VcsClient, error) {
 	switch builder.vcsProvider {
 	case vcsutils.GitHub:
-		return NewGitHubClient(builder.vcsInfo)
+		return NewGitHubClient(builder.vcsInfo, builder.logger)
 	case vcsutils.GitLab:
-		return NewGitLabClient(builder.vcsInfo)
+		return NewGitLabClient(builder.vcsInfo, builder.logger)
 	case vcsutils.BitbucketServer:
-		return NewBitbucketServerClient(builder.vcsInfo)
+		return NewBitbucketServerClient(builder.vcsInfo, builder.logger)
 	case vcsutils.BitbucketCloud:
-		return NewBitbucketCloudClient(builder.vcsInfo)
+		return NewBitbucketCloudClient(builder.vcsInfo, builder.logger)
 	case vcsutils.AzureRepos:
-		return NewAzureReposClient(builder.vcsInfo)
+		return NewAzureReposClient(builder.vcsInfo, builder.logger)
 	}
 	return nil, nil
 }
