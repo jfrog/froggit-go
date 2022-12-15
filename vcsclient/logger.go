@@ -11,21 +11,16 @@ type Log interface {
 type EmptyLogger struct{}
 
 func (el EmptyLogger) Debug(_ ...interface{}) {
-	return
 }
 
 func (el EmptyLogger) Info(_ ...interface{}) {
-	return
 }
 
-func (el EmptyLogger) Warn(a ...interface{}) {
-	return
+func (el EmptyLogger) Warn(_ ...interface{}) {
 }
 
 func (el EmptyLogger) Error(_ ...interface{}) {
-	return
 }
 
 func (el EmptyLogger) Output(_ ...interface{}) {
-	return
 }
