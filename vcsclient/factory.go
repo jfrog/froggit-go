@@ -13,7 +13,7 @@ type ClientBuilder struct {
 
 // NewClientBuilder creates new ClientBuilder
 func NewClientBuilder(vcsProvider vcsutils.VcsProvider) *ClientBuilder {
-	return &ClientBuilder{vcsProvider: vcsProvider}
+	return &ClientBuilder{vcsProvider: vcsProvider, logger: EmptyLogger{}}
 }
 
 // ApiEndpoint sets the API endpoint
