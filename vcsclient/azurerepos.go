@@ -17,11 +17,12 @@ import (
 type AzureReposClient struct {
 	vcsInfo           VcsInfo
 	connectionDetails *azuredevops.Connection
+	logger            Log
 }
 
 // NewAzureReposClient create a new AzureReposClient
-func NewAzureReposClient(vcsInfo VcsInfo) (*AzureReposClient, error) {
-	client := &AzureReposClient{vcsInfo: vcsInfo}
+func NewAzureReposClient(vcsInfo VcsInfo, logger Log) (*AzureReposClient, error) {
+	client := &AzureReposClient{vcsInfo: vcsInfo, logger: logger}
 	baseUrl := strings.TrimSuffix(client.vcsInfo.APIEndpoint, string(os.PathSeparator))
 	client.connectionDetails = azuredevops.NewPatConnection(baseUrl, client.vcsInfo.Token)
 	return client, nil
@@ -105,14 +106,14 @@ func (client *AzureReposClient) DownloadRepository(ctx context.Context, owner, r
 	if err != nil {
 		return
 	}
-
-	// Generate .git folder with remote details
-	err = vcsutils.CreateDotGitFolderWithRemote(localPath, "origin",
-		fmt.Sprintf("https://%s@dev.azure.com/%s/%s/_git/%s", owner, owner, client.vcsInfo.Project, repository))
+	err = vcsutils.Unzip(zipFileContent, localPath)
 	if err != nil {
 		return err
 	}
-	return vcsutils.Unzip(zipFileContent, localPath)
+	client.logger.Info("extracted repository successfully")
+	// Generate .git folder with remote details
+	return vcsutils.CreateDotGitFolderWithRemote(localPath, "origin",
+		fmt.Sprintf("https://%s@dev.azure.com/%s/%s/_git/%s", owner, owner, client.vcsInfo.Project, repository))
 }
 
 func (client *AzureReposClient) sendDownloadRepoRequest(ctx context.Context, repository string, branch string) (res *http.Response, err error) {
@@ -121,6 +122,7 @@ func (client *AzureReposClient) sendDownloadRepoRequest(ctx context.Context, rep
 		client.vcsInfo.Project,
 		repository,
 		branch)
+	client.logger.Debug("download url:", downloadRepoUrl)
 	headers := map[string]string{
 		"Authorization":  client.connectionDetails.AuthorizationString,
 		"download":       "true",
@@ -141,6 +143,7 @@ func (client *AzureReposClient) sendDownloadRepoRequest(ctx context.Context, rep
 	if res.StatusCode < 200 || res.StatusCode >= 300 {
 		err = fmt.Errorf("bad HTTP status: %d", res.StatusCode)
 	}
+	client.logger.Info(repository, "downloaded successfully, starting with repository extraction")
 	return
 }
 
@@ -152,6 +155,7 @@ func (client *AzureReposClient) CreatePullRequest(ctx context.Context, _, reposi
 	}
 	sourceBranch = vcsutils.AddBranchPrefix(sourceBranch)
 	targetBranch = vcsutils.AddBranchPrefix(targetBranch)
+	client.logger.Debug("creating new pull request:", title)
 	_, err = azureReposGitClient.CreatePullRequest(ctx, git.CreatePullRequestArgs{
 		GitPullRequestToCreate: &git.GitPullRequest{
 			Description:   &description,
@@ -226,6 +230,7 @@ func (client *AzureReposClient) ListOpenPullRequests(ctx context.Context, _, rep
 	if err != nil {
 		return nil, err
 	}
+	client.logger.Debug("fetching open pull requests in", repository)
 	pullRequests, err := azureReposGitClient.GetPullRequests(ctx, git.GetPullRequestsArgs{
 		RepositoryId:   &repository,
 		Project:        &client.vcsInfo.Project,

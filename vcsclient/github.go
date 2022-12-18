@@ -17,11 +17,12 @@ import (
 // GitHubClient API version 3
 type GitHubClient struct {
 	vcsInfo VcsInfo
+	logger  Log
 }
 
 // NewGitHubClient create a new GitHubClient
-func NewGitHubClient(vcsInfo VcsInfo) (*GitHubClient, error) {
-	return &GitHubClient{vcsInfo: vcsInfo}, nil
+func NewGitHubClient(vcsInfo VcsInfo, logger Log) (*GitHubClient, error) {
+	return &GitHubClient{vcsInfo: vcsInfo, logger: logger}, nil
 }
 
 // TestConnection on GitHub
@@ -190,12 +191,14 @@ func (client *GitHubClient) DownloadRepository(ctx context.Context, owner, repos
 	if err != nil {
 		return err
 	}
+	client.logger.Debug("getting GitHub archive link to download")
 	baseURL, _, err := ghClient.Repositories.GetArchiveLink(ctx, owner, repository, github.Tarball,
 		&github.RepositoryContentGetOptions{Ref: branch}, true)
 	if err != nil {
 		return err
 	}
 
+	client.logger.Debug("received archive url:", baseURL.String())
 	httpClient := &http.Client{}
 	req, err := http.NewRequest("GET", baseURL.String(), nil)
 	if err != nil {
@@ -207,13 +210,14 @@ func (client *GitHubClient) DownloadRepository(ctx context.Context, owner, repos
 		return err
 	}
 	defer func() { _ = resp.Body.Close() }()
-	// Generate .git folder with remote details
-	err = vcsutils.CreateDotGitFolderWithRemote(localPath, "origin",
-		fmt.Sprintf("https://github.com/%s/%s.git", owner, repository))
+	client.logger.Info(repository, "downloaded successfully, starting with repository extraction")
+	err = vcsutils.Untar(localPath, resp.Body, true)
 	if err != nil {
 		return err
 	}
-	return vcsutils.Untar(localPath, resp.Body, true)
+	client.logger.Info("extracted repository successfully")
+	return vcsutils.CreateDotGitFolderWithRemote(localPath, "origin",
+		fmt.Sprintf("https://github.com/%s/%s.git", owner, repository))
 }
 
 // CreatePullRequest on GitHub
@@ -224,6 +228,7 @@ func (client *GitHubClient) CreatePullRequest(ctx context.Context, owner, reposi
 		return err
 	}
 	head := owner + ":" + sourceBranch
+	client.logger.Debug("creating new pull request:", title)
 	_, _, err = ghClient.PullRequests.Create(ctx, owner, repository, &github.NewPullRequest{
 		Title: &title,
 		Body:  &description,
@@ -239,6 +244,7 @@ func (client *GitHubClient) ListOpenPullRequests(ctx context.Context, owner, rep
 	if err != nil {
 		return nil, err
 	}
+	client.logger.Debug("fetching open pull requests in", repository)
 	pullRequests, _, err := ghClient.PullRequests.List(ctx, owner, repository, &github.PullRequestListOptions{
 		State: "open",
 	})
@@ -461,6 +467,7 @@ func (client *GitHubClient) UploadCodeScanning(ctx context.Context, owner, repos
 	}
 	commitSHA := commit.Hash
 	branch = vcsutils.AddBranchPrefix(branch)
+	client.logger.Debug("uploading code scanning for", repository, "/", branch)
 	ghClient, err := client.buildGithubClient(ctx)
 	if err != nil {
 		return "", err

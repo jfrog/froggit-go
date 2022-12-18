@@ -21,12 +21,14 @@ import (
 // BitbucketServerClient API version 1.0
 type BitbucketServerClient struct {
 	vcsInfo VcsInfo
+	logger  Log
 }
 
 // NewBitbucketServerClient create a new BitbucketServerClient
-func NewBitbucketServerClient(vcsInfo VcsInfo) (*BitbucketServerClient, error) {
+func NewBitbucketServerClient(vcsInfo VcsInfo, logger Log) (*BitbucketServerClient, error) {
 	bitbucketServerClient := &BitbucketServerClient{
 		vcsInfo: vcsInfo,
+		logger:  logger,
 	}
 	return bitbucketServerClient, nil
 }
@@ -267,15 +269,15 @@ func (client *BitbucketServerClient) DownloadRepository(ctx context.Context, own
 	if err != nil {
 		return err
 	}
-
-	// Generate .git folder with remote details
-	err = vcsutils.CreateDotGitFolderWithRemote(localPath, "origin",
-		fmt.Sprintf("%s/scm/%s/%s.git", strings.TrimSuffix(client.vcsInfo.APIEndpoint, "/rest"), owner, repository))
+	client.logger.Info(repository, "downloaded successfully, starting with repository extraction")
+	err = vcsutils.Untar(localPath, bytes.NewReader(response.Payload), false)
 	if err != nil {
 		return err
 	}
-
-	return vcsutils.Untar(localPath, bytes.NewReader(response.Payload), false)
+	client.logger.Info("extracted repository successfully")
+	// Generate .git folder with remote details
+	return vcsutils.CreateDotGitFolderWithRemote(localPath, "origin",
+		fmt.Sprintf("%s/scm/%s/%s.git", strings.TrimSuffix(client.vcsInfo.APIEndpoint, "/rest"), owner, repository))
 }
 
 // CreatePullRequest on Bitbucket server
