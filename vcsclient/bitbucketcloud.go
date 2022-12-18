@@ -241,9 +241,10 @@ func (client *BitbucketCloudClient) DownloadRepository(ctx context.Context, owne
 		return err
 	}
 
-	if response.StatusCode != http.StatusOK {
-		return fmt.Errorf(vcsutils.ErrStatusCode, response.StatusCode, http.StatusOK)
+	if err = vcsutils.CheckResponseStatusWithBody(response, http.StatusOK); err != nil {
+		return err
 	}
+
 	return vcsutils.Untar(localPath, response.Body, true)
 }
 
