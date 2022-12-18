@@ -150,7 +150,6 @@ func TestGetZeroValue(t *testing.T) {
 	assert.Equal(t, 0.0, GetZeroValue[float64]())
 }
 
-<<<<<<< HEAD
 func TestGenerateResponseError(t *testing.T) {
 	status := "404"
 	emptyBodyErr := GenerateResponseError(status, "")
@@ -168,7 +167,8 @@ func TestCheckResponseStatusWithBody(t *testing.T) {
 		StatusCode: 200,
 	}
 	assert.NoError(t, CheckResponseStatusWithBody(resp, expectedStatusCode))
-=======
+}
+
 func TestCreateDotGitFolderWithRemote(t *testing.T) {
 	dir1, err := os.MkdirTemp("", "tmp")
 	assert.NoError(t, err)
@@ -191,5 +191,4 @@ func TestCreateDotGitFolderWithoutRemote(t *testing.T) {
 	assert.NoError(t, err)
 	defer os.RemoveAll(dir2)
 	assert.Error(t, CreateDotGitFolderWithRemote(dir2, "", "fakeurl"))
->>>>>>> upstream/master
 }
