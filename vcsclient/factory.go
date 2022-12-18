@@ -36,12 +36,7 @@ func (builder *ClientBuilder) Token(token string) *ClientBuilder {
 
 // Logger sets the logger
 func (builder *ClientBuilder) Logger(logger Log) *ClientBuilder {
-	if logger != nil {
-		builder.logger = logger
-		return builder
-	}
-
-	builder.logger = EmptyLogger{}
+	builder.logger = logger
 	return builder
 }
 

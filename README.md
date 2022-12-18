@@ -64,6 +64,9 @@ apiEndpoint := "https://github.example.com"
 // Access token to GitHub
 token := "secret-github-token"
 // Logger
+// [Optional]
+// Supported logger is a logger the implements the Log interface. 
+// More information - https://github.com/jfrog/froggit-go/blob/master/vcsclient/logger.go
 logger := log.Default()
 
 client, err := vcsclient.NewClientBuilder(vcsProvider).ApiEndpoint(apiEndpoint).Token(token).Build()
@@ -81,7 +84,10 @@ apiEndpoint := "https://gitlab.example.com"
 // Access token to GitLab
 token := "secret-gitlab-token"
 // Logger
-logger := log.Default()
+// [Optional]
+// Supported logger is a logger the implements the Log interface. 
+// More information - https://github.com/jfrog/froggit-go/blob/master/vcsclient/logger.go
+logger := logger
 
 client, err := vcsclient.NewClientBuilder(vcsProvider).ApiEndpoint(apiEndpoint).Token(token).Build()
 ```
@@ -98,6 +104,9 @@ apiEndpoint := "https://git.acme.com/rest"
 // Access token to Bitbucket
 token := "secret-bitbucket-token"
 // Logger
+// [Optional]
+// Supported logger is a logger the implements the Log interface. 
+// More information - https://github.com/jfrog/froggit-go/blob/master/vcsclient/logger.go
 logger := log.Default()
 
 client, err := vcsclient.NewClientBuilder(vcsProvider).ApiEndpoint(apiEndpoint).Token(token).Build()
@@ -117,6 +126,9 @@ username := "bitbucket-user"
 // Password or Bitbucket "App Password'
 token := "secret-bitbucket-token"
 // Logger
+// [Optional]
+// Supported logger is a logger the implements the Log interface. 
+// More information - https://github.com/jfrog/froggit-go/blob/master/vcsclient/logger.go
 logger := log.Default()
 
 client, err := vcsclient.NewClientBuilder(vcsProvider).ApiEndpoint(apiEndpoint).Username(username).Token(token).Build()
@@ -134,6 +146,9 @@ apiEndpoint := "https://dev.azure.com/<organization>"
 // Personal Access Token to Azure DevOps
 token := "secret-azure-devops-token"
 // Logger
+// [Optional]
+// Supported logger is a logger the implements the Log interface. 
+// More information - https://github.com/jfrog/froggit-go/blob/master/vcsclient/logger.go
 logger := log.Default()
 // Project name
 project := "name-of-the-relevant-project"
