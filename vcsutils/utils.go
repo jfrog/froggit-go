@@ -251,8 +251,11 @@ func GenerateResponseError(status, body string) error {
 
 func generateErrorString(bodyArray []byte) string {
 	var content bytes.Buffer
-	if err := json.Indent(&content, bodyArray, "", "  "); err != nil {
-		return string(bodyArray)
+	if len(bodyArray) > 0 {
+		if err := json.Indent(&content, bodyArray, "", "  "); err != nil {
+			return string(bodyArray)
+		}
+		return content.String()
 	}
-	return content.String()
+	return ""
 }

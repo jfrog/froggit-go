@@ -93,9 +93,11 @@ func (client *AzureReposClient) DownloadRepository(ctx context.Context, _, repos
 	}()
 	res, err := client.sendDownloadRepoRequest(ctx, repository, branch)
 	defer func() {
-		e := res.Body.Close()
-		if err == nil {
-			err = e
+		if res.Body != nil {
+			e := res.Body.Close()
+			if err == nil {
+				err = e
+			}
 		}
 	}()
 	if err != nil {
@@ -131,7 +133,7 @@ func (client *AzureReposClient) sendDownloadRepoRequest(ctx context.Context, rep
 		return
 	}
 	if err = vcsutils.CheckResponseStatusWithBody(res, http.StatusOK); err != nil {
-		return nil, err
+		return &http.Response{}, err
 	}
 	return
 }
