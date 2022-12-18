@@ -6,8 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/go-git/go-git/v5"
-	"github.com/go-git/go-git/v5/config"
 	"io"
 	"net/http"
 	"strconv"
@@ -23,12 +21,14 @@ import (
 // BitbucketServerClient API version 1.0
 type BitbucketServerClient struct {
 	vcsInfo VcsInfo
+	logger  Log
 }
 
 // NewBitbucketServerClient create a new BitbucketServerClient
-func NewBitbucketServerClient(vcsInfo VcsInfo) (*BitbucketServerClient, error) {
+func NewBitbucketServerClient(vcsInfo VcsInfo, logger Log) (*BitbucketServerClient, error) {
 	bitbucketServerClient := &BitbucketServerClient{
 		vcsInfo: vcsInfo,
+		logger:  logger,
 	}
 	return bitbucketServerClient, nil
 }
@@ -269,20 +269,15 @@ func (client *BitbucketServerClient) DownloadRepository(ctx context.Context, own
 	if err != nil {
 		return err
 	}
-
-	// Bitbucket server repository downloads without a .git folder. Adding it manually
-	repo, err := git.PlainInit(localPath, false)
+	client.logger.Info(repository, "downloaded successfully, starting with repository extraction")
+	err = vcsutils.Untar(localPath, bytes.NewReader(response.Payload), false)
 	if err != nil {
 		return err
 	}
-	_, err = repo.CreateRemote(&config.RemoteConfig{
-		Name: "origin",
-		URLs: []string{fmt.Sprintf("%s/scm/%s/%s.git", strings.TrimSuffix(client.vcsInfo.APIEndpoint, "/rest"), owner, repository)},
-	})
-	if err != nil {
-		return err
-	}
-	return vcsutils.Untar(localPath, bytes.NewReader(response.Payload), false)
+	client.logger.Info("extracted repository successfully")
+	// Generate .git folder with remote details
+	return vcsutils.CreateDotGitFolderWithRemote(localPath, "origin",
+		fmt.Sprintf("%s/scm/%s/%s.git", strings.TrimSuffix(client.vcsInfo.APIEndpoint, "/rest"), owner, repository))
 }
 
 // CreatePullRequest on Bitbucket server

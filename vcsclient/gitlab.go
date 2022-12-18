@@ -15,10 +15,11 @@ import (
 // GitLabClient API version 4
 type GitLabClient struct {
 	glClient *gitlab.Client
+	logger   Log
 }
 
 // NewGitLabClient create a new GitLabClient
-func NewGitLabClient(vcsInfo VcsInfo) (*GitLabClient, error) {
+func NewGitLabClient(vcsInfo VcsInfo, logger Log) (*GitLabClient, error) {
 	var client *gitlab.Client
 	var err error
 	if vcsInfo.APIEndpoint != "" {
@@ -32,6 +33,7 @@ func NewGitLabClient(vcsInfo VcsInfo) (*GitLabClient, error) {
 
 	return &GitLabClient{
 		glClient: client,
+		logger:   logger,
 	}, nil
 }
 
@@ -181,7 +183,13 @@ func (client *GitLabClient) DownloadRepository(ctx context.Context, owner, repos
 	if err != nil {
 		return err
 	}
-	return vcsutils.Untar(localPath, bytes.NewReader(response), true)
+	client.logger.Info(repository, "downloaded successfully, starting with repository extraction")
+	err = vcsutils.Untar(localPath, bytes.NewReader(response), true)
+	if err != nil {
+		return err
+	}
+	client.logger.Info("extracted repository successfully")
+	return nil
 }
 
 // CreatePullRequest on GitLab
@@ -193,6 +201,7 @@ func (client *GitLabClient) CreatePullRequest(ctx context.Context, owner, reposi
 		SourceBranch: &sourceBranch,
 		TargetBranch: &targetBranch,
 	}
+	client.logger.Debug("creating new merge request:", title)
 	_, _, err := client.glClient.MergeRequests.CreateMergeRequest(getProjectID(owner, repository), options,
 		gitlab.WithContext(ctx))
 	return err
@@ -206,6 +215,7 @@ func (client *GitLabClient) ListOpenPullRequests(ctx context.Context, owner, rep
 		State: &openState,
 		Scope: &allScope,
 	}
+	client.logger.Debug("fetching open pull requests in", repository)
 	mergeRequests, _, err := client.glClient.MergeRequests.ListMergeRequests(options,
 		gitlab.WithContext(ctx))
 	if err != nil {

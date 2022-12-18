@@ -202,8 +202,9 @@ func TestGitHubClient_DownloadRepository(t *testing.T) {
 	require.NoError(t, err)
 	fileinfo, err := os.ReadDir(dir)
 	require.NoError(t, err)
-	assert.Len(t, fileinfo, 1)
-	assert.Equal(t, "README", fileinfo[0].Name())
+	assert.Len(t, fileinfo, 2)
+	assert.Equal(t, ".git", fileinfo[0].Name())
+	assert.Equal(t, "README", fileinfo[1].Name())
 
 	err = createBadGitHubClient(t).DownloadRepository(ctx, owner, "Hello-World", "test", dir)
 	assert.Error(t, err)

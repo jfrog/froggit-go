@@ -17,11 +17,12 @@ import (
 type AzureReposClient struct {
 	vcsInfo           VcsInfo
 	connectionDetails *azuredevops.Connection
+	logger            Log
 }
 
 // NewAzureReposClient create a new AzureReposClient
-func NewAzureReposClient(vcsInfo VcsInfo) (*AzureReposClient, error) {
-	client := &AzureReposClient{vcsInfo: vcsInfo}
+func NewAzureReposClient(vcsInfo VcsInfo, logger Log) (*AzureReposClient, error) {
+	client := &AzureReposClient{vcsInfo: vcsInfo, logger: logger}
 	baseUrl := strings.TrimSuffix(client.vcsInfo.APIEndpoint, string(os.PathSeparator))
 	client.connectionDetails = azuredevops.NewPatConnection(baseUrl, client.vcsInfo.Token)
 	return client, nil
@@ -76,7 +77,7 @@ func (client *AzureReposClient) ListBranches(ctx context.Context, _, repository 
 }
 
 // DownloadRepository on Azure Repos
-func (client *AzureReposClient) DownloadRepository(ctx context.Context, _, repository, branch, localPath string) (err error) {
+func (client *AzureReposClient) DownloadRepository(ctx context.Context, owner, repository, branch, localPath string) (err error) {
 	wd, err := os.Getwd()
 	if err != nil {
 		return
@@ -107,19 +108,28 @@ func (client *AzureReposClient) DownloadRepository(ctx context.Context, _, repos
 	if err != nil {
 		return
 	}
-	return vcsutils.Unzip(zipFileContent, localPath)
+	err = vcsutils.Unzip(zipFileContent, localPath)
+	if err != nil {
+		return err
+	}
+	client.logger.Info("extracted repository successfully")
+	// Generate .git folder with remote details
+	return vcsutils.CreateDotGitFolderWithRemote(localPath, "origin",
+		fmt.Sprintf("https://%s@dev.azure.com/%s/%s/_git/%s", owner, owner, client.vcsInfo.Project, repository))
 }
 
 func (client *AzureReposClient) sendDownloadRepoRequest(ctx context.Context, repository string, branch string) (res *http.Response, err error) {
-	downloadRepoUrl := fmt.Sprintf("%s/%s/_apis/git/repositories/%s/items/items?path=/&[…]ptor[version]=%s&$format=zip",
+	downloadRepoUrl := fmt.Sprintf("%s/%s/_apis/git/repositories/%s/items/items?path=/&versionDescriptor[version]=%s&$format=zip",
 		client.connectionDetails.BaseUrl,
 		client.vcsInfo.Project,
 		repository,
 		branch)
+	client.logger.Debug("download url:", downloadRepoUrl)
 	headers := map[string]string{
-		"Authorization": client.connectionDetails.AuthorizationString,
-		"download":      "true",
-		"resolveLfs":    "true",
+		"Authorization":  client.connectionDetails.AuthorizationString,
+		"download":       "true",
+		"resolveLfs":     "true",
+		"includeContent": "true",
 	}
 	httpClient := &http.Client{}
 	var req *http.Request
@@ -135,6 +145,7 @@ func (client *AzureReposClient) sendDownloadRepoRequest(ctx context.Context, rep
 	if err = vcsutils.CheckResponseStatusWithBody(res, http.StatusOK); err != nil {
 		return &http.Response{}, err
 	}
+	client.logger.Info(repository, "downloaded successfully, starting with repository extraction")
 	return
 }
 
@@ -146,6 +157,7 @@ func (client *AzureReposClient) CreatePullRequest(ctx context.Context, _, reposi
 	}
 	sourceBranch = vcsutils.AddBranchPrefix(sourceBranch)
 	targetBranch = vcsutils.AddBranchPrefix(targetBranch)
+	client.logger.Debug("creating new pull request:", title)
 	_, err = azureReposGitClient.CreatePullRequest(ctx, git.CreatePullRequestArgs{
 		GitPullRequestToCreate: &git.GitPullRequest{
 			Description:   &description,
@@ -220,6 +232,7 @@ func (client *AzureReposClient) ListOpenPullRequests(ctx context.Context, _, rep
 	if err != nil {
 		return nil, err
 	}
+	client.logger.Debug("fetching open pull requests in", repository)
 	pullRequests, err := azureReposGitClient.GetPullRequests(ctx, git.GetPullRequestsArgs{
 		RepositoryId:   &repository,
 		Project:        &client.vcsInfo.Project,
@@ -230,14 +243,17 @@ func (client *AzureReposClient) ListOpenPullRequests(ctx context.Context, _, rep
 	}
 	var pullRequestsInfo []PullRequestInfo
 	for _, pullRequest := range *pullRequests {
+		// Trim the branches prefix and get the actual branches name
+		shortSourceName := (*pullRequest.SourceRefName)[strings.LastIndex(*pullRequest.SourceRefName, "/")+1:]
+		shortTargetName := (*pullRequest.TargetRefName)[strings.LastIndex(*pullRequest.TargetRefName, "/")+1:]
 		pullRequestsInfo = append(pullRequestsInfo, PullRequestInfo{
 			ID: int64(*pullRequest.PullRequestId),
 			Source: BranchInfo{
-				Name:       vcsutils.DefaultIfNotNil(pullRequest.SourceRefName),
+				Name:       shortSourceName,
 				Repository: repository,
 			},
 			Target: BranchInfo{
-				Name:       vcsutils.DefaultIfNotNil(pullRequest.TargetRefName),
+				Name:       shortTargetName,
 				Repository: repository,
 			},
 		})

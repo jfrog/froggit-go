@@ -89,7 +89,7 @@ func TestAzureRepos_TestDownloadRepository(t *testing.T) {
 	repoFile, err := os.ReadFile(filepath.Join("testdata", "azurerepos", "hello_world.zip"))
 	require.NoError(t, err)
 
-	downloadURL := fmt.Sprintf("/%s/_apis/git/repositories/%s/items/items?path=/&[…]ptor[version]=%s&$format=zip",
+	downloadURL := fmt.Sprintf("/%s/_apis/git/repositories/%s/items/items?path=/&versionDescriptor[version]=%s&$format=zip",
 		"",
 		repo1,
 		branch1)
@@ -98,6 +98,8 @@ func TestAzureRepos_TestDownloadRepository(t *testing.T) {
 	defer cleanUp()
 	err = client.DownloadRepository(ctx, "", repo1, branch1, dir)
 	require.NoError(t, err)
+	assert.FileExists(t, filepath.Join(dir, "README.md"))
+	assert.DirExists(t, filepath.Join(dir, ".git"))
 
 	badClient, cleanUp := createBadAzureReposClient(t, repoFile)
 	defer cleanUp()
@@ -368,11 +370,13 @@ func createAzureReposHandler(t *testing.T, expectedURI string, response []byte, 
 		if r.RequestURI == "/_apis" {
 			jsonVal, err := os.ReadFile(filepath.Join("./", "testdata", "azurerepos", "resourcesResponse.json"))
 			assert.NoError(t, err)
-			w.Write(jsonVal)
+			_, err = w.Write(jsonVal)
+			assert.NoError(t, err)
 			return
 		} else if r.RequestURI == "/_apis/ResourceAreas" {
 			jsonVal := `{"value": [],"count": 0}`
-			w.Write([]byte(jsonVal))
+			_, err := w.Write([]byte(jsonVal))
+			assert.NoError(t, err)
 			return
 		}
 
@@ -393,7 +397,7 @@ func createBadAzureReposClient(t *testing.T, response []byte) (VcsClient, func()
 		vcsutils.AzureRepos,
 		true,
 		response,
-		fmt.Sprintf("bad^endpoint/%s/_apis/git/repositories/%s/items/items?path=/&[…]ptor[version]=%s&$format=zip",
+		fmt.Sprintf("bad^endpoint/%s/_apis/git/repositories/%s/items/items?path=/&versionDescriptor[version]=%s&$format=zip",
 			"",
 			repo1,
 			branch1),
