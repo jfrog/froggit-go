@@ -94,9 +94,11 @@ func (client *AzureReposClient) DownloadRepository(ctx context.Context, owner, r
 	}()
 	res, err := client.sendDownloadRepoRequest(ctx, repository, branch)
 	defer func() {
-		e := res.Body.Close()
-		if err == nil {
-			err = e
+		if res.Body != nil {
+			e := res.Body.Close()
+			if err == nil {
+				err = e
+			}
 		}
 	}()
 	if err != nil {
@@ -140,8 +142,8 @@ func (client *AzureReposClient) sendDownloadRepoRequest(ctx context.Context, rep
 	if res, err = httpClient.Do(req); err != nil {
 		return
 	}
-	if res.StatusCode < 200 || res.StatusCode >= 300 {
-		err = fmt.Errorf("bad HTTP status: %d", res.StatusCode)
+	if err = vcsutils.CheckResponseStatusWithBody(res, http.StatusOK); err != nil {
+		return &http.Response{}, err
 	}
 	client.logger.Info(repository, "downloaded successfully, starting with repository extraction")
 	return

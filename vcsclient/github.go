@@ -210,6 +210,9 @@ func (client *GitHubClient) DownloadRepository(ctx context.Context, owner, repos
 		return err
 	}
 	defer func() { _ = resp.Body.Close() }()
+	if err = vcsutils.CheckResponseStatusWithBody(resp, http.StatusOK); err != nil {
+		return err
+	}
 	client.logger.Info(repository, "downloaded successfully, starting with repository extraction")
 	err = vcsutils.Untar(localPath, resp.Body, true)
 	if err != nil {

@@ -243,6 +243,9 @@ func (client *BitbucketCloudClient) DownloadRepository(ctx context.Context, owne
 	if err != nil {
 		return err
 	}
+	if err = vcsutils.CheckResponseStatusWithBody(response, http.StatusOK); err != nil {
+		return err
+	}
 	client.logger.Info(repository, "downloaded successfully, starting with repository extraction")
 	err = vcsutils.Untar(localPath, response.Body, true)
 	if err != nil {
