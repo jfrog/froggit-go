@@ -148,3 +148,22 @@ func TestGetZeroValue(t *testing.T) {
 	assert.Equal(t, "", GetZeroValue[string]())
 	assert.Equal(t, 0.0, GetZeroValue[float64]())
 }
+
+func TestGenerateResponseError(t *testing.T) {
+	status := "404"
+	emptyBodyErr := GenerateResponseError(status, "")
+	assert.Error(t, emptyBodyErr)
+	assert.Equal(t, "server response: 404", emptyBodyErr.Error())
+	err := GenerateResponseError(status, "error")
+	assert.Error(t, err)
+	assert.Equal(t, "server response: 404\nerror", err.Error())
+}
+
+func TestCheckResponseStatusWithBody(t *testing.T) {
+	expectedStatusCode := 200
+	resp := &http.Response{
+		Status:     "200",
+		StatusCode: 200,
+	}
+	assert.NoError(t, CheckResponseStatusWithBody(resp, expectedStatusCode))
+}

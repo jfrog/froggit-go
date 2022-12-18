@@ -5,6 +5,7 @@ import (
 	"archive/zip"
 	"bytes"
 	"compress/gzip"
+	"encoding/json"
 	"fmt"
 	"github.com/google/uuid"
 	"io"
@@ -13,8 +14,6 @@ import (
 	"path/filepath"
 	"strings"
 )
-
-var ErrStatusCode = "invalid status code. received %d while %d status code is expected"
 
 // CreateToken create a random UUID
 func CreateToken() string {
@@ -225,4 +224,35 @@ func unzipFile(f *zip.File, destination string) (err error) {
 		}
 	}()
 	return safeCopy(destinationFile, zippedFile)
+}
+
+func CheckResponseStatusWithBody(resp *http.Response, expectedStatusCodes ...int) error {
+	for _, statusCode := range expectedStatusCodes {
+		if statusCode == resp.StatusCode {
+			return nil
+		}
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+
+	return GenerateResponseError(resp.Status, generateErrorString(body))
+}
+
+func GenerateResponseError(status, body string) error {
+	responseErrString := "server response: " + status
+	if body != "" {
+		responseErrString = responseErrString + "\n" + body
+	}
+	return fmt.Errorf(responseErrString)
+}
+
+func generateErrorString(bodyArray []byte) string {
+	var content bytes.Buffer
+	if err := json.Indent(&content, bodyArray, "", "  "); err != nil {
+		return string(bodyArray)
+	}
+	return content.String()
 }
