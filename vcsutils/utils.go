@@ -6,6 +6,8 @@ import (
 	"bytes"
 	"compress/gzip"
 	"fmt"
+	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/config"
 	"github.com/google/uuid"
 	"io"
 	"net/http"
@@ -13,6 +15,8 @@ import (
 	"path/filepath"
 	"strings"
 )
+
+var ErrStatusCode = "invalid status code. expected %d and received %d"
 
 // CreateToken create a random UUID
 func CreateToken() string {
@@ -23,12 +27,17 @@ func CreateToken() string {
 // destDir             - Destination folder
 // reader              - Reader for the tar.gz file
 // shouldRemoveBaseDir - True if should remove the base directory
-func Untar(destDir string, reader io.Reader, shouldRemoveBaseDir bool) error {
+func Untar(destDir string, reader io.Reader, shouldRemoveBaseDir bool) (err error) {
 	gzr, err := gzip.NewReader(reader)
 	if err != nil {
 		return err
 	}
-	defer gzr.Close()
+	defer func() {
+		e := gzr.Close()
+		if err == nil {
+			err = e
+		}
+	}()
 
 	if err := makeDirIfMissing(destDir); err != nil {
 		return err
@@ -154,6 +163,7 @@ func DefaultIfNotNil[T any](val *T) T {
 	return *val
 }
 
+// AddBranchPrefix adds a branchPrefix to a branch name if it is not already present.
 func AddBranchPrefix(branch string) string {
 	if !strings.HasPrefix(branch, branchPrefix) {
 		branch = fmt.Sprintf("%s%s", branchPrefix, branch)
@@ -223,4 +233,17 @@ func unzipFile(f *zip.File, destination string) (err error) {
 		}
 	}()
 	return safeCopy(destinationFile, zippedFile)
+}
+
+// CreateDotGitFolderWithRemote creates a .git folder inside path with remote details of remoteName and remoteUrl
+func CreateDotGitFolderWithRemote(path, remoteName, remoteUrl string) error {
+	repo, err := git.PlainInit(path, false)
+	if err != nil {
+		return err
+	}
+	_, err = repo.CreateRemote(&config.RemoteConfig{
+		Name: remoteName,
+		URLs: []string{remoteUrl},
+	})
+	return err
 }

@@ -249,7 +249,9 @@ func (client *BitbucketCloudClient) DownloadRepository(ctx context.Context, owne
 		return err
 	}
 	client.logger.Info("extracted repository successfully")
-	return nil
+	// Generate .git folder with remote details
+	return vcsutils.CreateDotGitFolderWithRemote(localPath, "origin",
+		fmt.Sprintf("https://bitbucket.org/%s/%s.git", owner, repository))
 }
 
 // CreatePullRequest on Bitbucket cloud

@@ -3,6 +3,7 @@ package vcsclient
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/google/go-github/v45/github"
 	"github.com/grokify/mogo/encoding/base64"
 	"github.com/jfrog/froggit-go/vcsutils"
@@ -215,7 +216,8 @@ func (client *GitHubClient) DownloadRepository(ctx context.Context, owner, repos
 		return err
 	}
 	client.logger.Info("extracted repository successfully")
-	return nil
+	return vcsutils.CreateDotGitFolderWithRemote(localPath, "origin",
+		fmt.Sprintf("https://github.com/%s/%s.git", owner, repository))
 }
 
 // CreatePullRequest on GitHub

@@ -141,16 +141,8 @@ func TestBitbucketCloud_DownloadRepository(t *testing.T) {
 
 	err = client.DownloadRepository(ctx, owner, "jfrog-setup-cli", "master", dir)
 	assert.NoError(t, err)
-	rootFiles, err := os.ReadDir(dir)
-	assert.NotEmpty(t, rootFiles)
-	assert.NoError(t, err)
-	readmeFound := false
-	for _, file := range rootFiles {
-		if file.Name() == "README.md" {
-			readmeFound = true
-		}
-	}
-	assert.True(t, readmeFound)
+	assert.FileExists(t, filepath.Join(dir, "README.md"))
+	assert.DirExists(t, filepath.Join(dir, ".git"))
 }
 
 func TestBitbucketCloud_CreatePullRequest(t *testing.T) {
