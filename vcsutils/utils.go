@@ -271,6 +271,10 @@ func generateErrorString(bodyArray []byte) string {
 // CreateDotGitFolderWithRemote creates a .git folder inside path with remote details of remoteName and remoteUrl
 func CreateDotGitFolderWithRemote(path, remoteName, remoteUrl string) error {
 	repo, err := git.PlainInit(path, false)
+	if err == git.ErrRepositoryAlreadyExists {
+		// If the .git folder already exists, we can skip this function
+		return nil
+	}
 	if err != nil {
 		return err
 	}

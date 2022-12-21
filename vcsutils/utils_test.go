@@ -181,8 +181,8 @@ func TestCreateDotGitFolderWithRemote(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, remote)
 	assert.Contains(t, remote.Config().URLs, "fakeurl")
-	// Return error if .git already exist
-	assert.Error(t, CreateDotGitFolderWithRemote(dir1, "origin", "fakeurl"))
+	// Return no err if .git already exist
+	assert.NoError(t, CreateDotGitFolderWithRemote(dir1, "origin", "fakeurl"))
 }
 
 func TestCreateDotGitFolderWithoutRemote(t *testing.T) {
