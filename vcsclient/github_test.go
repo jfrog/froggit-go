@@ -224,6 +224,9 @@ func TestGitHubClient_DownloadFileFromRepository(t *testing.T) {
 	_, _, err = client.DownloadFileFromRepo(ctx, owner, repo1, branch1, "hello-bald")
 	assert.Error(t, err)
 
+	_, _, err = client.DownloadFileFromRepo(ctx, owner, repo1, branch1, "hello-bald")
+	assert.Error(t, err)
+
 	_, _, err = createBadGitHubClient(t).DownloadFileFromRepo(ctx, owner, repo1, branch1, "hello")
 	assert.Error(t, err)
 }
