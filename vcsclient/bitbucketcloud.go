@@ -460,6 +460,10 @@ func (client *BitbucketCloudClient) UploadCodeScanning(ctx context.Context, owne
 	return "", errBitbucketCodeScanningNotSupported
 }
 
+func (client *BitbucketCloudClient) DownloadFileFromRepo(ctx context.Context, owner, repository, branch, path string) ([]byte, int, error) {
+	return nil, 0, errBitbucketDownloadFileFromRepoNotSupported
+}
+
 func extractCommitFromResponse(commits interface{}) (*commitResponse, error) {
 	var res commitResponse
 	err := extractStructFromResponse(commits, &res)

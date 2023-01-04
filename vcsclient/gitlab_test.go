@@ -149,6 +149,18 @@ func TestGitLabClient_DownloadRepository(t *testing.T) {
 	assert.Equal(t, "README.md", fileinfo[0].Name())
 }
 
+func TestGitLabClient_DownloadFileFromRepo(t *testing.T) {
+	ctx := context.Background()
+	client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, gitlab.File{Content: "SGVsbG8gV29ybGQh"}, fmt.Sprintf("/api/v4/projects/%s/repository/files/hello-world?ref=branch-1", url.PathEscape(owner+"/"+repo1)), createGitLabHandler)
+	defer cleanUp()
+
+	content, statusCode, err := client.DownloadFileFromRepo(ctx, owner, repo1, branch1, "hello-world")
+	assert.NoError(t, err)
+	assert.Equal(t, statusCode, http.StatusOK)
+	expected := "Hello World!"
+	assert.Equal(t, expected, string(content))
+}
+
 func TestGitLabClient_CreatePullRequest(t *testing.T) {
 	ctx := context.Background()
 	client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, &gitlab.MergeRequest{}, fmt.Sprintf("/api/v4/projects/%s/merge_requests", url.PathEscape(owner+"/"+repo1)), createGitLabHandler)

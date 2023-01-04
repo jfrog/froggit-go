@@ -180,6 +180,13 @@ type VcsClient interface {
 	// branch        - The name of the branch
 	// scan  		 - Code scanning analysis
 	UploadCodeScanning(ctx context.Context, owner, repository, branch, scanResults string) (string, error)
+
+	// DownloadFileFromRepo Downloads a file from path in a repository
+	// owner         - User or organization
+	// repository    - VCS repository name
+	// branch        - The name of the branch
+	// path  		 - The path to the requested file
+	DownloadFileFromRepo(ctx context.Context, owner, repository, branch, path string) ([]byte, int, error)
 }
 
 // CommitInfo contains the details of a commit

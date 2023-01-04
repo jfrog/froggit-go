@@ -509,6 +509,14 @@ func TestBitbucketServer_UploadCodeScanning(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestBitbucketServer_DownloadFileFromRepo(t *testing.T) {
+	ctx := context.Background()
+	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, true, "", "unsupportedTest", createBitbucketServerHandler)
+	defer cleanUp()
+	_, _, err := client.DownloadFileFromRepo(ctx, owner, repo1, "", "")
+	assert.Error(t, err)
+}
+
 func createBitbucketServerHandler(t *testing.T, expectedURI string, response []byte, expectedStatusCode int) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(expectedStatusCode)

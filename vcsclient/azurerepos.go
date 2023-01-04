@@ -355,3 +355,7 @@ func (client *AzureReposClient) DeleteWebhook(ctx context.Context, owner, reposi
 func (client *AzureReposClient) SetCommitStatus(ctx context.Context, commitStatus CommitStatus, owner, repository, ref, title, description, detailsURL string) error {
 	return getUnsupportedInAzureError("set commit status")
 }
+
+func (client *AzureReposClient) DownloadFileFromRepo(ctx context.Context, owner, repository, branch, path string) ([]byte, int, error) {
+	return nil, 0, getUnsupportedInAzureError("download file from repo")
+}
