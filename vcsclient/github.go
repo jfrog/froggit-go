@@ -504,12 +504,20 @@ func (client *GitHubClient) UploadCodeScanning(ctx context.Context, owner, repos
 }
 
 // DownloadFileFromRepo on GitHub
-func (client *GitHubClient) DownloadFileFromRepo(ctx context.Context, owner, repository, branch, path string) ([]byte, int, error) {
+func (client *GitHubClient) DownloadFileFromRepo(ctx context.Context, owner, repository, branch, path string) (content []byte, statusCode int, err error) {
 	ghClient, err := client.buildGithubClient(ctx)
 	if err != nil {
 		return nil, 0, err
 	}
 	body, response, err := ghClient.Repositories.DownloadContents(ctx, owner, repository, path, &github.RepositoryContentGetOptions{Ref: branch})
+	defer func() {
+		if body != nil {
+			e := body.Close()
+			if err == nil {
+				err = e
+			}
+		}
+	}()
 	if err != nil {
 		return nil, response.StatusCode, err
 	}
@@ -517,11 +525,11 @@ func (client *GitHubClient) DownloadFileFromRepo(ctx context.Context, owner, rep
 		return nil, response.StatusCode, fmt.Errorf("expected %d status code while received %d status code", http.StatusOK, response.StatusCode)
 	}
 
-	bodyContent, err := io.ReadAll(body)
+	content, err = io.ReadAll(body)
 	if err != nil {
 		return nil, response.StatusCode, err
 	}
-	return bodyContent, response.StatusCode, nil
+	return content, response.StatusCode, nil
 }
 
 func createGitHubHook(token, payloadURL string, webhookEvents ...vcsutils.WebhookEvent) *github.Hook {

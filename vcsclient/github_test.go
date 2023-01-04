@@ -216,9 +216,13 @@ func TestGitHubClient_DownloadFileFromRepository(t *testing.T) {
 	name := "hello-world"
 	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, &[]github.RepositoryContent{{DownloadURL: &downloadURL, Name: &name}}, "/repos/jfrog/repo-1/contents/?ref=branch-1", createGitHubHandler)
 	defer cleanUp()
-	_, statusCode, err := client.DownloadFileFromRepo(ctx, owner, repo1, branch1, "hello-world")
+	content, statusCode, err := client.DownloadFileFromRepo(ctx, owner, repo1, branch1, "hello-world")
 	assert.NoError(t, err)
 	assert.Equal(t, http.StatusOK, statusCode)
+	assert.NotEmpty(t, content)
+
+	_, _, err = client.DownloadFileFromRepo(ctx, owner, repo1, branch1, "hello-bald")
+	assert.Error(t, err)
 
 	_, _, err = createBadGitHubClient(t).DownloadFileFromRepo(ctx, owner, repo1, branch1, "hello")
 	assert.Error(t, err)
