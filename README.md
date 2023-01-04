@@ -533,7 +533,7 @@ branch := "my_branch"
 // A string representing the file path in the repository
 path := "path"
 
-// Uploads the scanning analysis file to the relevant git provider
+// Downloads a file from a repository
 content, statusCode, err := client.DownloadFileFromRepo(ctx, owner, repo, branch, path)
 ```
 
