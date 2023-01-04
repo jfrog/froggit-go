@@ -3,8 +3,10 @@ package vcsclient
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"errors"
 	"fmt"
+	"net/http"
 	"strconv"
 	"strings"
 
@@ -386,6 +388,24 @@ func (client *GitLabClient) UnlabelPullRequest(ctx context.Context, owner, repos
 
 func (client *GitLabClient) UploadCodeScanning(ctx context.Context, owner string, repository string, branch string, scanResults string) (string, error) {
 	return "", errGitLabCodeScanningNotSupported
+}
+
+// DownloadFileFromRepo on GitLab
+func (client *GitLabClient) DownloadFileFromRepo(_ context.Context, owner, repository, branch, path string) ([]byte, int, error) {
+	file, response, err := client.glClient.RepositoryFiles.GetFile(getProjectID(owner, repository), path, &gitlab.GetFileOptions{Ref: &branch})
+	if err != nil {
+		return nil, 0, err
+	}
+	if response.StatusCode != http.StatusOK {
+		return nil, response.StatusCode, fmt.Errorf("expected %d status code while received %d status code", http.StatusOK, response.StatusCode)
+	}
+
+	content, err := base64.StdEncoding.DecodeString(file.Content)
+	if err != nil {
+		return nil, response.StatusCode, err
+	}
+
+	return content, response.StatusCode, err
 }
 
 func getProjectID(owner, project string) string {

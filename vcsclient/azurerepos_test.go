@@ -317,6 +317,14 @@ func TestAzureReposClient_UploadCodeScanning(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestAzureReposClient_DownloadFileFromRepo(t *testing.T) {
+	ctx := context.Background()
+	client, cleanUp := createServerAndClient(t, vcsutils.AzureRepos, true, "", "unsupportedTest", createAzureReposHandler)
+	defer cleanUp()
+	_, _, err := client.DownloadFileFromRepo(ctx, owner, repo1, "", "")
+	assert.Error(t, err)
+}
+
 func TestAzureReposClient_CreateWebhook(t *testing.T) {
 	ctx := context.Background()
 	client, cleanUp := createServerAndClient(t, vcsutils.AzureRepos, true, "", "unsupportedTest", createAzureReposHandler)

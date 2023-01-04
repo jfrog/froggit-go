@@ -8,6 +8,7 @@ import (
 	"github.com/grokify/mogo/encoding/base64"
 	"github.com/jfrog/froggit-go/vcsutils"
 	"golang.org/x/oauth2"
+	"io"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -204,7 +205,6 @@ func (client *GitHubClient) DownloadRepository(ctx context.Context, owner, repos
 	if err != nil {
 		return err
 	}
-	req.Header.Add("Accept", "application/vnd.github.v3+json")
 	resp, err := httpClient.Do(req)
 	if err != nil {
 		return err
@@ -501,6 +501,35 @@ func (client *GitHubClient) UploadCodeScanning(ctx context.Context, owner, repos
 	}
 
 	return "", nil
+}
+
+// DownloadFileFromRepo on GitHub
+func (client *GitHubClient) DownloadFileFromRepo(ctx context.Context, owner, repository, branch, path string) (content []byte, statusCode int, err error) {
+	ghClient, err := client.buildGithubClient(ctx)
+	if err != nil {
+		return nil, 0, err
+	}
+	body, response, err := ghClient.Repositories.DownloadContents(ctx, owner, repository, path, &github.RepositoryContentGetOptions{Ref: branch})
+	defer func() {
+		if body != nil {
+			e := body.Close()
+			if err == nil {
+				err = e
+			}
+		}
+	}()
+	if err != nil {
+		return nil, response.StatusCode, err
+	}
+	if response.StatusCode != http.StatusOK {
+		return nil, response.StatusCode, fmt.Errorf("expected %d status code while received %d status code", http.StatusOK, response.StatusCode)
+	}
+
+	content, err = io.ReadAll(body)
+	if err != nil {
+		return nil, response.StatusCode, err
+	}
+	return content, response.StatusCode, nil
 }
 
 func createGitHubHook(token, payloadURL string, webhookEvents ...vcsutils.WebhookEvent) *github.Hook {

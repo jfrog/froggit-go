@@ -393,6 +393,15 @@ func TestBitbucketCloud_CreateLabel(t *testing.T) {
 	assert.ErrorIs(t, err, errLabelsNotSupported)
 }
 
+func TestBitbucketCloudClient_DownloadFileFromRepo(t *testing.T) {
+	ctx := context.Background()
+	client, err := NewClientBuilder(vcsutils.BitbucketCloud).Build()
+	assert.NoError(t, err)
+
+	_, _, err = client.DownloadFileFromRepo(ctx, owner, repo1, branch1, "")
+	assert.ErrorIs(t, err, errBitbucketDownloadFileFromRepoNotSupported)
+}
+
 func TestBitbucketCloud_GetLabel(t *testing.T) {
 	ctx := context.Background()
 	client, err := NewClientBuilder(vcsutils.BitbucketCloud).Build()

@@ -46,6 +46,7 @@ Currently supported providers are: [GitHub](#github), [Bitbucket Server](#bitbuc
       - [List Pull Request Labels](#list-pull-request-labels)
       - [Unlabel Pull Request](#unlabel-pull-request)
       - [Upload Code Scanning](#upload-code-scanning)
+      - [Download a File From a Repository](#download-a-file-from-a-repository)
     - [Webhook Parser](#webhook-parser)
 
 ### VCS Clients
@@ -514,6 +515,26 @@ scanResults := "results"
 
 // Uploads the scanning analysis file to the relevant git provider
 sarifID, err := client.UploadCodeScanning(ctx, owner, repo, branch, scanResults)
+```
+
+#### Download a File From a Repository
+
+Notice - Currently supported on GitHub and GitLab.
+
+```go
+// Go context
+ctx := context.Background()
+// The account owner of the git repository
+owner := "user"
+// The name of the repository
+repo := "my_repo"
+// The branch name for which the code scanning is relevant
+branch := "my_branch"
+// A string representing the file path in the repository
+path := "path"
+
+// Downloads a file from a repository
+content, statusCode, err := client.DownloadFileFromRepo(ctx, owner, repo, branch, path)
 ```
 
 ### Webhook Parser

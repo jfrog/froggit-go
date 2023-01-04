@@ -551,6 +551,11 @@ func (client *BitbucketServerClient) listProjects(bitbucketClient *bitbucketv1.D
 	return projects, nil
 }
 
+// DownloadFileFromRepo on Bitbucket server
+func (client *BitbucketServerClient) DownloadFileFromRepo(ctx context.Context, owner, repository, branch, path string) ([]byte, int, error) {
+	return nil, 0, errBitbucketDownloadFileFromRepoNotSupported
+}
+
 func createPaginationOptions(nextPageStart int) map[string]interface{} {
 	return map[string]interface{}{"start": nextPageStart}
 }
