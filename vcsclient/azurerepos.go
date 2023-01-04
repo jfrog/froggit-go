@@ -356,6 +356,7 @@ func (client *AzureReposClient) SetCommitStatus(ctx context.Context, commitStatu
 	return getUnsupportedInAzureError("set commit status")
 }
 
+// DownloadFileFromRepo on Azure Repos
 func (client *AzureReposClient) DownloadFileFromRepo(ctx context.Context, owner, repository, branch, path string) ([]byte, int, error) {
 	return nil, 0, getUnsupportedInAzureError("download file from repo")
 }

@@ -456,10 +456,12 @@ func (client *BitbucketCloudClient) UnlabelPullRequest(ctx context.Context, owne
 	return errLabelsNotSupported
 }
 
+// UploadCodeScanning on Bitbucket cloud
 func (client *BitbucketCloudClient) UploadCodeScanning(ctx context.Context, owner string, repository string, branch string, scanResults string) (string, error) {
 	return "", errBitbucketCodeScanningNotSupported
 }
 
+// DownloadFileFromRepo on Bitbucket cloud
 func (client *BitbucketCloudClient) DownloadFileFromRepo(ctx context.Context, owner, repository, branch, path string) ([]byte, int, error) {
 	return nil, 0, errBitbucketDownloadFileFromRepoNotSupported
 }
