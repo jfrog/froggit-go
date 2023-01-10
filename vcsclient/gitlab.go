@@ -393,11 +393,11 @@ func (client *GitLabClient) UploadCodeScanning(ctx context.Context, owner string
 // DownloadFileFromRepo on GitLab
 func (client *GitLabClient) DownloadFileFromRepo(_ context.Context, owner, repository, branch, path string) ([]byte, int, error) {
 	file, response, err := client.glClient.RepositoryFiles.GetFile(getProjectID(owner, repository), path, &gitlab.GetFileOptions{Ref: &branch})
+	if response != nil && response.StatusCode != http.StatusOK {
+		return nil, response.StatusCode, fmt.Errorf("expected %d status code while received %d status code", http.StatusOK, response.StatusCode)
+	}
 	if err != nil {
 		return nil, 0, err
-	}
-	if response.StatusCode != http.StatusOK {
-		return nil, response.StatusCode, fmt.Errorf("expected %d status code while received %d status code", http.StatusOK, response.StatusCode)
 	}
 
 	content, err := base64.StdEncoding.DecodeString(file.Content)
