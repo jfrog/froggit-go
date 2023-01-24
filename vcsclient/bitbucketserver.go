@@ -553,7 +553,15 @@ func (client *BitbucketServerClient) listProjects(bitbucketClient *bitbucketv1.D
 
 // DownloadFileFromRepo on Bitbucket server
 func (client *BitbucketServerClient) DownloadFileFromRepo(ctx context.Context, owner, repository, branch, path string) ([]byte, int, error) {
-	return nil, 0, errBitbucketDownloadFileFromRepoNotSupported
+	bitbucketClient, err := client.buildBitbucketClient(ctx)
+	if err != nil {
+		return nil, 0, err
+	}
+	resp, err := bitbucketClient.GetContent_11(owner, repository, path, map[string]interface{}{"at": branch})
+	if err != nil {
+		return nil, 0, err
+	}
+	return resp.Payload, resp.StatusCode, err
 }
 
 func createPaginationOptions(nextPageStart int) map[string]interface{} {
