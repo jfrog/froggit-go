@@ -210,7 +210,7 @@ func (client *GitLabClient) CreatePullRequest(ctx context.Context, owner, reposi
 }
 
 // ListOpenPullRequests on GitLab
-func (client *GitLabClient) ListOpenPullRequests(ctx context.Context, owner, repository string) ([]PullRequestInfo, error) {
+func (client *GitLabClient) ListOpenPullRequests(ctx context.Context, _, repository string) ([]PullRequestInfo, error) {
 	openState := "open"
 	allScope := "all"
 	options := &gitlab.ListMergeRequestsOptions{
@@ -386,7 +386,7 @@ func (client *GitLabClient) UnlabelPullRequest(ctx context.Context, owner, repos
 	return err
 }
 
-func (client *GitLabClient) UploadCodeScanning(ctx context.Context, owner string, repository string, branch string, scanResults string) (string, error) {
+func (client *GitLabClient) UploadCodeScanning(_ context.Context, _ string, _ string, _ string, _ string) (string, error) {
 	return "", errGitLabCodeScanningNotSupported
 }
 
@@ -394,7 +394,7 @@ func (client *GitLabClient) UploadCodeScanning(ctx context.Context, owner string
 func (client *GitLabClient) DownloadFileFromRepo(_ context.Context, owner, repository, branch, path string) ([]byte, int, error) {
 	file, response, err := client.glClient.RepositoryFiles.GetFile(getProjectID(owner, repository), path, &gitlab.GetFileOptions{Ref: &branch})
 	if response != nil && response.StatusCode != http.StatusOK {
-		return nil, response.StatusCode, fmt.Errorf("expected %d status code while received %d status code", http.StatusOK, response.StatusCode)
+		return nil, response.StatusCode, fmt.Errorf("expected %d status code while received %d status code with error:\n%s", http.StatusOK, response.StatusCode, err)
 	}
 	if err != nil {
 		return nil, 0, err

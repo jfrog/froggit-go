@@ -511,9 +511,23 @@ func TestBitbucketServer_UploadCodeScanning(t *testing.T) {
 
 func TestBitbucketServer_DownloadFileFromRepo(t *testing.T) {
 	ctx := context.Background()
-	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, true, "", "unsupportedTest", createBitbucketServerHandler)
+	expectedPayload := []byte("hello world")
+	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, true, expectedPayload, "/rest/api/1.0/projects/jfrog/repos/repo-1/raw/hello-world?at=branch-1", createBitbucketServerDownloadFileFromRepositoryHandler)
 	defer cleanUp()
-	_, _, err := client.DownloadFileFromRepo(ctx, owner, repo1, "", "")
+
+	expectedStatusCode := 200
+	payload, statusCode, err := client.DownloadFileFromRepo(ctx, owner, repo1, branch1, "hello-world")
+	assert.Equal(t, expectedPayload, payload)
+	assert.Equal(t, expectedStatusCode, statusCode)
+	assert.NoError(t, err)
+
+	client = createBadBitbucketServerClient(t)
+	_, _, err = client.DownloadFileFromRepo(ctx, owner, repo1, branch1, "hello-world")
+	assert.Error(t, err)
+
+	client, cleanUp = createServerAndClient(t, vcsutils.BitbucketServer, true, expectedPayload, "/rest/api/1.0/projects/jfrog/repos/repo-1/raw/bad-test?at=branch-1", createBitbucketServerDownloadFileFromRepositoryHandler)
+	defer cleanUp()
+	_, _, err = client.DownloadFileFromRepo(ctx, owner, repo1, branch1, "bad-test")
 	assert.Error(t, err)
 }
 
@@ -547,6 +561,20 @@ func createBitbucketServerListRepositoriesHandler(t *testing.T, _ string, _ []by
 		_, err = w.Write(response)
 		require.NoError(t, err)
 		assert.Equal(t, "Bearer "+token, r.Header.Get("Authorization"))
+	}
+}
+
+func createBitbucketServerDownloadFileFromRepositoryHandler(t *testing.T, _ string, expectedResponse []byte, _ int) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.RequestURI == "/rest/api/1.0/projects/jfrog/repos/repo-1/raw/hello-world?at=branch-1" {
+			_, err := w.Write(expectedResponse)
+			require.NoError(t, err)
+			return
+		}
+		if r.RequestURI == "/rest/api/1.0/projects/jfrog/repos/repo-1/raw/bad-test?at=branch-1" {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
 	}
 }
 
