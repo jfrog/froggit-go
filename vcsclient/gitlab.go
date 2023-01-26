@@ -386,8 +386,14 @@ func (client *GitLabClient) UnlabelPullRequest(ctx context.Context, owner, repos
 	return err
 }
 
+// UploadCodeScanning on GitLab
 func (client *GitLabClient) UploadCodeScanning(_ context.Context, _ string, _ string, _ string, _ string) (string, error) {
 	return "", errGitLabCodeScanningNotSupported
+}
+
+// GetRepositoryEnvironmentInfo on GitLab
+func (client *GitLabClient) GetRepositoryEnvironmentInfo(ctx context.Context, owner, repository, name string) (RepositoryEnvironmentInfo, error) {
+	return RepositoryEnvironmentInfo{}, errGitLabGetRepoEnvironmentInfoNotSupported
 }
 
 // DownloadFileFromRepo on GitLab

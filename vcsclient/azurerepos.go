@@ -360,3 +360,8 @@ func (client *AzureReposClient) SetCommitStatus(ctx context.Context, commitStatu
 func (client *AzureReposClient) DownloadFileFromRepo(ctx context.Context, owner, repository, branch, path string) ([]byte, int, error) {
 	return nil, 0, getUnsupportedInAzureError("download file from repo")
 }
+
+// GetRepositoryEnvironmentInfo on GitLab
+func (client *AzureReposClient) GetRepositoryEnvironmentInfo(ctx context.Context, owner, repository, name string) (RepositoryEnvironmentInfo, error) {
+	return RepositoryEnvironmentInfo{}, getUnsupportedInAzureError("get repository environment info")
+}

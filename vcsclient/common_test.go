@@ -19,12 +19,13 @@ const (
 )
 
 var (
-	repo1      = "repo-1"
-	repo2      = "repo-2"
-	username   = "frogger"
-	branch1    = "branch-1"
-	branch2    = "branch-2"
-	labelName  = "🚀 label-name"
+	repo1     = "repo-1"
+	repo2     = "repo-2"
+	username  = "frogger"
+	branch1   = "branch-1"
+	branch2   = "branch-2"
+	labelName = "🚀 label-name"
+	envName   = "frogbot"
 )
 
 type createHandlerFunc func(t *testing.T, expectedUri string, response []byte, expectedStatusCode int) http.HandlerFunc

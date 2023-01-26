@@ -583,6 +583,40 @@ func TestGitHubClient_UploadScanningAnalysis(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestGitHubClient_GetRepositoryEnvironmentInfo(t *testing.T) {
+	ctx := context.Background()
+
+	response, err := os.ReadFile(filepath.Join("testdata", "github", "repository_environment_response.json"))
+	assert.NoError(t, err)
+	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, response, fmt.Sprintf("/repos/jfrog/repo-1/environments/%s", envName), createGitHubHandler)
+	defer cleanUp()
+
+	repositoryEnvironmentInfo, err := client.GetRepositoryEnvironmentInfo(ctx, owner, repo1, envName)
+	assert.NoError(t, err)
+	assert.Equal(t, envName, repositoryEnvironmentInfo.Name)
+	assert.Equal(t, "https://api.github.com/repos/superfrog/test-repo/environments/frogbot", repositoryEnvironmentInfo.Url)
+	assert.Equal(t, []string{"superfrog"}, repositoryEnvironmentInfo.Reviewers)
+
+	err = createBadGitHubClient(t).UnlabelPullRequest(ctx, owner, repo1, labelName, 1)
+	assert.Error(t, err)
+}
+
+func TestGitHubClient_ExtractGitHubEnvironmentReviewers(t *testing.T) {
+	reviewer1, reviewer2 := "reviewer-1", "reviewer-2"
+	environment := &github.Environment{
+		ProtectionRules: []*github.ProtectionRule{{
+			Reviewers: []*github.RequiredReviewer{
+				{Reviewer: &repositoryEnvironmentReviewer{Login: reviewer1}},
+				{Reviewer: &repositoryEnvironmentReviewer{Login: reviewer2}},
+			},
+		}},
+	}
+
+	actualReviewers, err := extractGitHubEnvironmentReviewers(environment)
+	assert.NoError(t, err)
+	assert.Equal(t, []string{reviewer1, reviewer2}, actualReviewers)
+}
+
 func createBadGitHubClient(t *testing.T) VcsClient {
 	client, err := NewClientBuilder(vcsutils.GitHub).ApiEndpoint("https://bad^endpoint").Build()
 	require.NoError(t, err)

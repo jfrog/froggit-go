@@ -54,6 +54,13 @@ type VcsInfo struct {
 	Project string
 }
 
+// RepositoryEnvironmentInfo is the environment details configured for a repository
+type RepositoryEnvironmentInfo struct {
+	Name      string
+	Url       string
+	Reviewers []string
+}
+
 // VcsClient is a base class of all Vcs clients - GitHub, GitLab, Bitbucket server and cloud clients
 type VcsClient interface {
 	// TestConnection Returns nil if connection and authorization established successfully
@@ -199,6 +206,9 @@ type VcsClient interface {
 	// branch        - The name of the branch
 	// path  		 - The path to the requested file
 	DownloadFileFromRepo(ctx context.Context, owner, repository, branch, path string) ([]byte, int, error)
+
+	// GetRepositoryEnvironmentInfo Gets the environment info configured for a repository
+	GetRepositoryEnvironmentInfo(ctx context.Context, owner, repository, name string) (RepositoryEnvironmentInfo, error)
 }
 
 // CommitInfo contains the details of a commit

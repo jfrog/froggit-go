@@ -13,6 +13,7 @@ import (
 	"github.com/google/go-github/v45/github"
 	"github.com/grokify/mogo/encoding/base64"
 	"github.com/jfrog/froggit-go/vcsutils"
+	"github.com/mitchellh/mapstructure"
 	"golang.org/x/oauth2"
 )
 
@@ -533,6 +534,53 @@ func (client *GitHubClient) DownloadFileFromRepo(ctx context.Context, owner, rep
 	return content, response.StatusCode, nil
 }
 
+// GetRepositoryEnvironmentInfo on GitHub
+func (client *GitHubClient) GetRepositoryEnvironmentInfo(ctx context.Context, owner, repository, name string) (RepositoryEnvironmentInfo, error) {
+	err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository, "name": name})
+	if err != nil {
+		return RepositoryEnvironmentInfo{}, err
+	}
+	ghClient, err := client.buildGithubClient(ctx)
+	if err != nil {
+		return RepositoryEnvironmentInfo{}, err
+	}
+
+	environment, _, err := ghClient.Repositories.GetEnvironment(ctx, owner, repository, name)
+	if err != nil {
+		return RepositoryEnvironmentInfo{}, err
+	}
+
+	reviewers, err := extractGitHubEnvironmentReviewers(environment)
+	if err != nil {
+		return RepositoryEnvironmentInfo{}, err
+	}
+
+	return RepositoryEnvironmentInfo{
+		Name:      *environment.Name,
+		Url:       *environment.URL,
+		Reviewers: reviewers,
+	}, err
+}
+
+// Extract code reviewers from environment
+func extractGitHubEnvironmentReviewers(environment *github.Environment) ([]string, error) {
+	var reviewers []string
+	protectionRules := environment.ProtectionRules
+	if protectionRules == nil {
+		return reviewers, nil
+	}
+	reviewerStruct := repositoryEnvironmentReviewer{}
+	for _, rule := range protectionRules {
+		for _, reviewer := range rule.Reviewers {
+			if err := mapstructure.Decode(reviewer.Reviewer, &reviewerStruct); err != nil {
+				return []string{}, err
+			}
+			reviewers = append(reviewers, reviewerStruct.Login)
+		}
+	}
+	return reviewers, nil
+}
+
 func createGitHubHook(token, payloadURL string, webhookEvents ...vcsutils.WebhookEvent) *github.Hook {
 	return &github.Hook{
 		Events: getGitHubWebhookEvents(webhookEvents...),
@@ -635,4 +683,8 @@ func packScanningResult(data string) (string, error) {
 	}
 
 	return compressedScan, err
+}
+
+type repositoryEnvironmentReviewer struct {
+	Login string `mapstructure:"login"`
 }
