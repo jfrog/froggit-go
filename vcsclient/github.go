@@ -545,8 +545,11 @@ func (client *GitHubClient) GetRepositoryEnvironmentInfo(ctx context.Context, ow
 		return RepositoryEnvironmentInfo{}, err
 	}
 
-	environment, _, err := ghClient.Repositories.GetEnvironment(ctx, owner, repository, name)
+	environment, resp, err := ghClient.Repositories.GetEnvironment(ctx, owner, repository, name)
 	if err != nil {
+		return RepositoryEnvironmentInfo{}, err
+	}
+	if err = vcsutils.CheckResponseStatusWithBody(resp.Response, http.StatusOK); err != nil {
 		return RepositoryEnvironmentInfo{}, err
 	}
 
