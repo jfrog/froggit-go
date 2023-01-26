@@ -386,6 +386,12 @@ func TestGitLabClient_GetCommitByShaNotFound(t *testing.T) {
 	assert.Empty(t, result)
 }
 
+func TestGitLabClient_getGitLabProjectVisibility(t *testing.T) {
+	assert.Equal(t, Public, getGitLabProjectVisibility(&gitlab.Project{Visibility: gitlab.PublicVisibility}))
+	assert.Equal(t, Internal, getGitLabProjectVisibility(&gitlab.Project{Visibility: gitlab.InternalVisibility}))
+	assert.Equal(t, Private, getGitLabProjectVisibility(&gitlab.Project{Visibility: gitlab.PrivateVisibility}))
+}
+
 func TestGitlabClient_getGitlabCommitState(t *testing.T) {
 	assert.Equal(t, "success", getGitLabCommitState(Pass))
 	assert.Equal(t, "failed", getGitLabCommitState(Fail))
