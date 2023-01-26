@@ -597,7 +597,7 @@ func TestGitHubClient_GetRepositoryEnvironmentInfo(t *testing.T) {
 	assert.Equal(t, "https://api.github.com/repos/superfrog/test-repo/environments/frogbot", repositoryEnvironmentInfo.Url)
 	assert.Equal(t, []string{"superfrog"}, repositoryEnvironmentInfo.Reviewers)
 
-	err = createBadGitHubClient(t).UnlabelPullRequest(ctx, owner, repo1, labelName, 1)
+	_, err = createBadGitHubClient(t).GetRepositoryEnvironmentInfo(ctx, owner, repo1, envName)
 	assert.Error(t, err)
 }
 
