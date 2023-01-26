@@ -115,7 +115,7 @@ func (client *AzureReposClient) DownloadRepository(ctx context.Context, owner, r
 	client.logger.Info("extracted repository successfully")
 	// Generate .git folder with remote details
 	return vcsutils.CreateDotGitFolderWithRemote(localPath, "origin",
-		fmt.Sprintf("https://%s@dev.azure.com/%s/%s/_git/%s", owner, owner, client.vcsInfo.Project, repository))
+		fmt.Sprintf("https://%s@%s/%s/_git/%s", owner, strings.TrimPrefix(client.connectionDetails.BaseUrl, "https://"), client.vcsInfo.Project, repository))
 }
 
 func (client *AzureReposClient) sendDownloadRepoRequest(ctx context.Context, repository string, branch string) (res *http.Response, err error) {
