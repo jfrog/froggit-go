@@ -332,9 +332,11 @@ func TestGitLabClient_GetRepositoryInfo(t *testing.T) {
 	result, err := client.GetRepositoryInfo(ctx, "diaspora", "diaspora-project-site")
 	require.NoError(t, err)
 	require.Equal(t,
-		RepositoryInfo{CloneInfo: CloneInfo{
-			HTTP: "http://example.com/diaspora/diaspora-project-site.git",
-			SSH:  "git@example.com:diaspora/diaspora-project-site.git"},
+		RepositoryInfo{
+			RepositoryVisibility: Private,
+			CloneInfo: CloneInfo{
+				HTTP: "http://example.com/diaspora/diaspora-project-site.git",
+				SSH:  "git@example.com:diaspora/diaspora-project-site.git"},
 		},
 		result,
 	)
