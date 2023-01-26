@@ -3,6 +3,7 @@
 # Froggit-Go
 
 [![Frogbot](images/header.png)](#readme)
+
 </div>
 
 Froggit-Go is a Go library, allowing to perform actions on VCS providers.
@@ -41,6 +42,7 @@ Currently supported providers are: [GitHub](#github), [Bitbucket Server](#bitbuc
       - [Get Commit By SHA](#get-commit-by-sha)
       - [Add Public SSH Key](#add-public-ssh-key)
       - [Get Repository Info](#get-repository-info)
+      - [Get Repository Environment Info](#get-repository-environment-info)
       - [Create a label](#create-a-label)
       - [Get a label](#get-a-label)
       - [List Pull Request Labels](#list-pull-request-labels)
@@ -66,7 +68,7 @@ apiEndpoint := "https://github.example.com"
 token := "secret-github-token"
 // Logger
 // [Optional]
-// Supported logger is a logger that implements the Log interface. 
+// Supported logger is a logger that implements the Log interface.
 // More information - https://github.com/jfrog/froggit-go/blob/master/vcsclient/logger.go
 logger := log.Default()
 
@@ -86,7 +88,7 @@ apiEndpoint := "https://gitlab.example.com"
 token := "secret-gitlab-token"
 // Logger
 // [Optional]
-// Supported logger is a logger that implements the Log interface. 
+// Supported logger is a logger that implements the Log interface.
 // More information - https://github.com/jfrog/froggit-go/blob/master/vcsclient/logger.go
 logger := logger
 
@@ -106,7 +108,7 @@ apiEndpoint := "https://git.acme.com/rest"
 token := "secret-bitbucket-token"
 // Logger
 // [Optional]
-// Supported logger is a logger that implements the Log interface. 
+// Supported logger is a logger that implements the Log interface.
 // More information - https://github.com/jfrog/froggit-go/blob/master/vcsclient/logger.go
 logger := log.Default()
 
@@ -128,7 +130,7 @@ username := "bitbucket-user"
 token := "secret-bitbucket-token"
 // Logger
 // [Optional]
-// Supported logger is a logger that implements the Log interface. 
+// Supported logger is a logger that implements the Log interface.
 // More information - https://github.com/jfrog/froggit-go/blob/master/vcsclient/logger.go
 logger := log.Default()
 
@@ -148,7 +150,7 @@ apiEndpoint := "https://dev.azure.com/<organization>"
 token := "secret-azure-devops-token"
 // Logger
 // [Optional]
-// Supported logger is a logger that implements the Log interface. 
+// Supported logger is a logger that implements the Log interface.
 // More information - https://github.com/jfrog/froggit-go/blob/master/vcsclient/logger.go
 logger := log.Default()
 // Project name
@@ -420,6 +422,24 @@ repository := "jfrog-cli"
 repoInfo, err := client.GetRepositoryInfo(ctx, owner, repository)
 ```
 
+#### Get Repository Environment Info
+
+Notice - Get Repository Environment Info is currently supported on GitHub only.
+
+```go
+// Go context
+ctx := context.Background()
+// Organization or username
+owner := "jfrog"
+// VCS repository
+repository := "jfrog-cli"
+// Environment name
+name := "frogbot"
+
+// Get information about repository environment
+repoEnvInfo, err := client.GetRepositoryEnvironmentInfo(ctx, owner, repository, name)
+```
+
 #### Create a label
 
 Notice - Labels are not supported in Bitbucket
@@ -552,4 +572,3 @@ provider := vcsutils.GitHub
 
 webhookInfo, err := webhookparser.ParseIncomingWebhook(provider, token, request)
 ```
-

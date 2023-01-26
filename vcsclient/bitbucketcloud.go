@@ -466,6 +466,11 @@ func (client *BitbucketCloudClient) DownloadFileFromRepo(ctx context.Context, ow
 	return nil, 0, errBitbucketDownloadFileFromRepoNotSupported
 }
 
+// GetRepositoryEnvironmentInfo on Bitbucket cloud
+func (client *BitbucketCloudClient) GetRepositoryEnvironmentInfo(ctx context.Context, owner, repository, name string) (RepositoryEnvironmentInfo, error) {
+	return RepositoryEnvironmentInfo{}, errBitbucketGetRepoEnvironmentInfoNotSupported
+}
+
 func extractCommitFromResponse(commits interface{}) (*commitResponse, error) {
 	var res commitResponse
 	err := extractStructFromResponse(commits, &res)

@@ -365,6 +365,14 @@ func TestAzureReposClient_GetLabel(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestAzureReposClient_GetRepositoryEnvironmentInfo(t *testing.T) {
+	ctx := context.Background()
+	client, cleanUp := createServerAndClient(t, vcsutils.AzureRepos, true, "", "unsupportedTest", createAzureReposHandler)
+	defer cleanUp()
+	_, err := client.GetRepositoryEnvironmentInfo(ctx, owner, repo1, envName)
+	assert.Error(t, err)
+}
+
 func TestGetUnsupportedInAzureError(t *testing.T) {
 	functionName := "foo"
 	assert.Error(t, getUnsupportedInAzureError(functionName))

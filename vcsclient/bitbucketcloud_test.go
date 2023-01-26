@@ -430,6 +430,15 @@ func TestBitbucketCloud_UnlabelPullRequest(t *testing.T) {
 	assert.ErrorIs(t, err, errLabelsNotSupported)
 }
 
+func TestBitbucketCloud_GetRepositoryEnvironmentInfo(t *testing.T) {
+	ctx := context.Background()
+	client, err := NewClientBuilder(vcsutils.BitbucketCloud).Build()
+	assert.NoError(t, err)
+
+	_, err = client.GetRepositoryEnvironmentInfo(ctx, owner, repo1, envName)
+	assert.ErrorIs(t, err, errBitbucketGetRepoEnvironmentInfoNotSupported)
+}
+
 func TestBitbucketCloud_getRepositoryVisibility(t *testing.T) {
 	assert.Equal(t, Private, getBitbucketCloudRepositoryVisibility(&bitbucket.Repository{Is_private: true}))
 	assert.Equal(t, Public, getBitbucketCloudRepositoryVisibility(&bitbucket.Repository{Is_private: false}))

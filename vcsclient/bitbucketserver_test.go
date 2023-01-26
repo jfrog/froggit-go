@@ -448,6 +448,15 @@ func TestBitbucketServer_UnlabelPullRequest(t *testing.T) {
 	assert.ErrorIs(t, err, errLabelsNotSupported)
 }
 
+func TestBitbucketServer_GetRepositoryEnvironmentInfo(t *testing.T) {
+	ctx := context.Background()
+	client, err := NewClientBuilder(vcsutils.BitbucketServer).Build()
+	assert.NoError(t, err)
+
+	_, err = client.GetRepositoryEnvironmentInfo(ctx, owner, repo1, envName)
+	assert.ErrorIs(t, err, errBitbucketGetRepoEnvironmentInfoNotSupported)
+}
+
 func TestBitbucketServer_GetCommitBySha(t *testing.T) {
 	ctx := context.Background()
 	sha := "abcdef0123abcdef4567abcdef8987abcdef6543"

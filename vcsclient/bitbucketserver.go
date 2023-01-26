@@ -523,6 +523,11 @@ func (client *BitbucketServerClient) UnlabelPullRequest(ctx context.Context, own
 	return errLabelsNotSupported
 }
 
+// GetRepositoryEnvironmentInfo on Bitbucket server
+func (client *BitbucketServerClient) GetRepositoryEnvironmentInfo(ctx context.Context, owner, repository, name string) (RepositoryEnvironmentInfo, error) {
+	return RepositoryEnvironmentInfo{}, errBitbucketGetRepoEnvironmentInfoNotSupported
+}
+
 // Get all projects for which the authenticated user has the PROJECT_VIEW permission
 func (client *BitbucketServerClient) listProjects(bitbucketClient *bitbucketv1.DefaultApiService) ([]string, error) {
 	var apiResponse *bitbucketv1.APIResponse

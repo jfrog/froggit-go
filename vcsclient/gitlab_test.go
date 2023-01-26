@@ -462,6 +462,15 @@ func TestGitlabClient_UploadCodeScanning(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestGitlabClient_GetRepositoryEnvironmentInfo(t *testing.T) {
+	ctx := context.Background()
+	client, cleanUp := createServerAndClient(t, vcsutils.GitLab, true, "", "unsupportedTest", createGitLabHandler)
+	defer cleanUp()
+
+	_, err := client.GetRepositoryEnvironmentInfo(ctx, owner, repo1, envName)
+	assert.ErrorIs(t, err, errGitLabGetRepoEnvironmentInfoNotSupported)
+}
+
 func createGitLabHandler(t *testing.T, expectedURI string, response []byte, expectedStatusCode int) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.RequestURI == "/api/v4/" {
