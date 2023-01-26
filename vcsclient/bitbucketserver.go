@@ -455,6 +455,7 @@ func (client *BitbucketServerClient) GetRepositoryInfo(ctx context.Context, owne
 				HRef string `mapstructure:"href"`
 			} `mapstructure:"clone"`
 		} `mapstructure:"links"`
+		Public bool `mapstructure:"public"`
 	}{}
 
 	if err := mapstructure.Decode(repo.Values, &holder); err != nil {
@@ -471,7 +472,7 @@ func (client *BitbucketServerClient) GetRepositoryInfo(ctx context.Context, owne
 		}
 	}
 
-	return RepositoryInfo{CloneInfo: info}, nil
+	return RepositoryInfo{RepositoryVisibility: getBitbucketServerRepositoryVisibility(holder.Public), CloneInfo: info}, nil
 }
 
 // GetCommitBySha on Bitbucket server
@@ -634,4 +635,11 @@ func (client *BitbucketServerClient) mapBitbucketServerCommitToCommitInfo(commit
 
 func (client *BitbucketServerClient) UploadCodeScanning(ctx context.Context, owner string, repository string, branch string, scanResults string) (string, error) {
 	return "", errBitbucketCodeScanningNotSupported
+}
+
+func getBitbucketServerRepositoryVisibility(public bool) RepositoryVisibility {
+	if public {
+		return Public
+	}
+	return Private
 }

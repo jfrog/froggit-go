@@ -332,9 +332,11 @@ func TestGitLabClient_GetRepositoryInfo(t *testing.T) {
 	result, err := client.GetRepositoryInfo(ctx, "diaspora", "diaspora-project-site")
 	require.NoError(t, err)
 	require.Equal(t,
-		RepositoryInfo{CloneInfo: CloneInfo{
-			HTTP: "http://example.com/diaspora/diaspora-project-site.git",
-			SSH:  "git@example.com:diaspora/diaspora-project-site.git"},
+		RepositoryInfo{
+			RepositoryVisibility: Private,
+			CloneInfo: CloneInfo{
+				HTTP: "http://example.com/diaspora/diaspora-project-site.git",
+				SSH:  "git@example.com:diaspora/diaspora-project-site.git"},
 		},
 		result,
 	)
@@ -382,6 +384,12 @@ func TestGitLabClient_GetCommitByShaNotFound(t *testing.T) {
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "404 Commit Not Found")
 	assert.Empty(t, result)
+}
+
+func TestGitLabClient_getGitLabProjectVisibility(t *testing.T) {
+	assert.Equal(t, Public, getGitLabProjectVisibility(&gitlab.Project{Visibility: gitlab.PublicVisibility}))
+	assert.Equal(t, Internal, getGitLabProjectVisibility(&gitlab.Project{Visibility: gitlab.InternalVisibility}))
+	assert.Equal(t, Private, getGitLabProjectVisibility(&gitlab.Project{Visibility: gitlab.PrivateVisibility}))
 }
 
 func TestGitlabClient_getGitlabCommitState(t *testing.T) {

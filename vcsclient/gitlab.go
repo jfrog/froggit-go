@@ -297,7 +297,7 @@ func (client *GitLabClient) GetRepositoryInfo(ctx context.Context, owner, reposi
 		return RepositoryInfo{}, err
 	}
 
-	return RepositoryInfo{CloneInfo: CloneInfo{HTTP: project.HTTPURLToRepo, SSH: project.SSHURLToRepo}}, nil
+	return RepositoryInfo{RepositoryVisibility: getGitLabProjectVisibility(project), CloneInfo: CloneInfo{HTTP: project.HTTPURLToRepo, SSH: project.SSHURLToRepo}}, nil
 }
 
 // GetCommitBySha on GitLab
@@ -424,6 +424,17 @@ func createProjectHook(branch string, payloadURL string, webhookEvents ...vcsuti
 		}
 	}
 	return options
+}
+
+func getGitLabProjectVisibility(project *gitlab.Project) RepositoryVisibility {
+	switch project.Visibility {
+	case gitlab.PublicVisibility:
+		return Public
+	case gitlab.InternalVisibility:
+		return Internal
+	default:
+		return Private
+	}
 }
 
 func getGitLabCommitState(commitState CommitStatus) string {

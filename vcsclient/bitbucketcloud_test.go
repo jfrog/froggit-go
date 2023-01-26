@@ -375,6 +375,7 @@ func TestBitbucketCloud_GetRepositoryInfo(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t,
 		RepositoryInfo{
+			RepositoryVisibility: Public,
 			CloneInfo: CloneInfo{
 				HTTP: "https://bitbucket.org/jfrog/jfrog-setup-cli.git",
 				SSH:  "git@bitbucket.org:jfrog/jfrog-setup-cli.git",
@@ -427,6 +428,11 @@ func TestBitbucketCloud_UnlabelPullRequest(t *testing.T) {
 
 	err = client.UnlabelPullRequest(ctx, owner, repo1, labelName, 1)
 	assert.ErrorIs(t, err, errLabelsNotSupported)
+}
+
+func TestBitbucketCloud_getRepositoryVisibility(t *testing.T) {
+	assert.Equal(t, Private, getBitbucketCloudRepositoryVisibility(&bitbucket.Repository{Is_private: true}))
+	assert.Equal(t, Public, getBitbucketCloudRepositoryVisibility(&bitbucket.Repository{Is_private: false}))
 }
 
 func createBitbucketCloudHandler(t *testing.T, expectedURI string, response []byte, expectedStatusCode int) http.HandlerFunc {

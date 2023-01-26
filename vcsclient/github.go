@@ -4,15 +4,16 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/google/go-github/v45/github"
-	"github.com/grokify/mogo/encoding/base64"
-	"github.com/jfrog/froggit-go/vcsutils"
-	"golang.org/x/oauth2"
 	"io"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
+
+	"github.com/google/go-github/v45/github"
+	"github.com/grokify/mogo/encoding/base64"
+	"github.com/jfrog/froggit-go/vcsutils"
+	"golang.org/x/oauth2"
 )
 
 // GitHubClient API version 3
@@ -340,7 +341,7 @@ func (client *GitHubClient) GetRepositoryInfo(ctx context.Context, owner, reposi
 	if err != nil {
 		return RepositoryInfo{}, err
 	}
-	return RepositoryInfo{CloneInfo: CloneInfo{HTTP: repo.GetCloneURL(), SSH: repo.GetSSHURL()}}, nil
+	return RepositoryInfo{RepositoryVisibility: getGitHubRepositoryVisibility(repo), CloneInfo: CloneInfo{HTTP: repo.GetCloneURL(), SSH: repo.GetSSHURL()}}, nil
 }
 
 // GetCommitBySha on GitHub
@@ -555,6 +556,17 @@ func getGitHubWebhookEvents(webhookEvents ...vcsutils.WebhookEvent) []string {
 		}
 	}
 	return events
+}
+
+func getGitHubRepositoryVisibility(repo *github.Repository) RepositoryVisibility {
+	switch *repo.Visibility {
+	case "public":
+		return Public
+	case "internal":
+		return Internal
+	default:
+		return Private
+	}
 }
 
 func getGitHubCommitState(commitState CommitStatus) string {

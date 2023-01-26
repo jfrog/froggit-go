@@ -178,6 +178,15 @@ func TestGitHubClient_CreateCommitStatus(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestGitHubClient_getRepositoryVisibility(t *testing.T) {
+	visibility := "public"
+	assert.Equal(t, Public, getGitHubRepositoryVisibility(&github.Repository{Visibility: &visibility}))
+	visibility = "internal"
+	assert.Equal(t, Internal, getGitHubRepositoryVisibility(&github.Repository{Visibility: &visibility}))
+	visibility = "private"
+	assert.Equal(t, Private, getGitHubRepositoryVisibility(&github.Repository{Visibility: &visibility}))
+}
+
 func TestGitHubClient_getGitHubCommitState(t *testing.T) {
 	assert.Equal(t, "success", getGitHubCommitState(Pass))
 	assert.Equal(t, "failure", getGitHubCommitState(Fail))
@@ -426,7 +435,8 @@ func TestGitHubClient_GetRepositoryInfo(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t,
 		RepositoryInfo{
-			CloneInfo: CloneInfo{HTTP: "https://github.com/octocat/Hello-World.git", SSH: "git@github.com:octocat/Hello-World.git"},
+			RepositoryVisibility: Public,
+			CloneInfo:            CloneInfo{HTTP: "https://github.com/octocat/Hello-World.git", SSH: "git@github.com:octocat/Hello-World.git"},
 		},
 		info,
 	)

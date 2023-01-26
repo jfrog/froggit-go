@@ -33,6 +33,18 @@ const (
 	ReadWrite
 )
 
+// RepositoryVisibility the visibility level of the repository
+type RepositoryVisibility int
+
+const (
+	// Open to public
+	Public RepositoryVisibility = iota
+	// Open to organization
+	Internal
+	// Open to user
+	Private
+)
+
 // VcsInfo is the connection details of the VcsClient to communicate with the server
 type VcsInfo struct {
 	APIEndpoint string
@@ -226,7 +238,8 @@ type BranchInfo struct {
 
 // RepositoryInfo contains general information about repository.
 type RepositoryInfo struct {
-	CloneInfo CloneInfo
+	CloneInfo            CloneInfo
+	RepositoryVisibility RepositoryVisibility
 }
 
 // CloneInfo contains URLs that can be used to clone the repository.

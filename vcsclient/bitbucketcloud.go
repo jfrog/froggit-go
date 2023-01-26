@@ -405,7 +405,7 @@ func (client *BitbucketCloudClient) GetRepositoryInfo(ctx context.Context, owner
 			info.SSH = link.HRef
 		}
 	}
-	return RepositoryInfo{CloneInfo: info}, nil
+	return RepositoryInfo{RepositoryVisibility: getBitbucketCloudRepositoryVisibility(repo), CloneInfo: info}, nil
 }
 
 // GetCommitBySha on Bitbucket cloud
@@ -658,4 +658,11 @@ func mapBitbucketCloudPullRequestToPullRequestInfo(parsedPullRequests *pullReque
 		}
 	}
 	return pullRequests
+}
+
+func getBitbucketCloudRepositoryVisibility(repo *bitbucket.Repository) RepositoryVisibility {
+	if repo.Is_private {
+		return Private
+	}
+	return Public
 }

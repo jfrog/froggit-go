@@ -398,6 +398,7 @@ func TestBitbucketServer_GetRepositoryInfo(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t,
 			RepositoryInfo{
+				RepositoryVisibility: Public,
 				CloneInfo: CloneInfo{
 					HTTP: "https://bitbucket.org/jfrog/repo-1.git",
 					SSH:  "ssh://git@bitbucket.org:jfrog/repo-1.git",
@@ -529,6 +530,11 @@ func TestBitbucketServer_DownloadFileFromRepo(t *testing.T) {
 	defer cleanUp()
 	_, _, err = client.DownloadFileFromRepo(ctx, owner, repo1, branch1, "bad-test")
 	assert.Error(t, err)
+}
+
+func TestBitbucketServer_getRepositoryVisibility(t *testing.T) {
+	assert.Equal(t, Public, getBitbucketServerRepositoryVisibility(true))
+	assert.Equal(t, Private, getBitbucketServerRepositoryVisibility(false))
 }
 
 func createBitbucketServerHandler(t *testing.T, expectedURI string, response []byte, expectedStatusCode int) http.HandlerFunc {
