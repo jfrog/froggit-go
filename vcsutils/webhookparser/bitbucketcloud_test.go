@@ -10,8 +10,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/jfrog/froggit-go/vcsutils"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/jfrog/froggit-go/vcsutils"
 )
 
 const (
@@ -42,6 +43,18 @@ func TestBitbucketCloudParseIncomingPushWebhook(t *testing.T) {
 	assert.Equal(t, expectedBranch, actual.TargetBranch)
 	assert.Equal(t, bitbucketCloudPushExpectedTime, actual.Timestamp)
 	assert.Equal(t, vcsutils.Push, actual.Event)
+	assert.Equal(t, WebHookInfoUser{Login: "yahavi", Email: "yahavitz@gmail.com"}, actual.Author)
+	assert.Equal(t, WebHookInfoUser{Login: "yahavi"}, actual.Committer)
+	assert.Equal(t, WebHookInfoUser{Login: "yahavi"}, actual.TriggeredBy)
+	assert.Equal(t, WebHookInfoCommit{
+		Hash:    "fa8c303777d0006fa99b843b830ad1ed18a6928e",
+		Message: "README.md edited online with Bitbucket",
+	}, actual.Commit)
+	assert.Equal(t, WebHookInfoCommit{
+		Hash: "a2b4032ae25e08844b894e413d80ee75b4c1995b",
+	}, actual.BeforeCommit)
+	assert.Equal(t, WebhookinfobranchstatusUpdated, actual.BranchStatus)
+	assert.Equal(t, "https://bitbucket.org/yahavi/hello-world/branches/compare/fa8c303777d0006fa99b843b830ad1ed18a6928e..a2b4032ae25e08844b894e413d80ee75b4c1995b#diff", actual.CompareUrl)
 }
 
 func TestBitbucketCloudParseIncomingPrWebhook(t *testing.T) {

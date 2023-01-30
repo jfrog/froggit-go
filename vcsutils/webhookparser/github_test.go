@@ -10,8 +10,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/jfrog/froggit-go/vcsutils"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/jfrog/froggit-go/vcsutils"
 )
 
 const (
@@ -61,6 +62,19 @@ func TestGitHubParseIncomingPushWebhook(t *testing.T) {
 	assert.Equal(t, expectedBranch, actual.TargetBranch)
 	assert.Equal(t, githubPushExpectedTime, actual.Timestamp)
 	assert.Equal(t, vcsutils.Push, actual.Event)
+	assert.Equal(t, WebHookInfoUser{Login: "yahavi", DisplayName: "Yahav Itzhak", Email: "yahavi@users.noreply.github.com"}, actual.Author)
+	assert.Equal(t, WebHookInfoUser{Login: "web-flow", DisplayName: "GitHub", Email: "noreply@github.com"}, actual.Committer)
+	assert.Equal(t, WebHookInfoUser{DisplayName: "yahavi", Email: "yahavi@users.noreply.github.com"}, actual.TriggeredBy)
+	assert.Equal(t, WebHookInfoCommit{
+		Hash:    "9d497bd67a395a8063774f200338769ccbcee916",
+		Message: "Update README.md",
+		Url:     "https://github.com/yahavi/hello-world/commit/9d497bd67a395a8063774f200338769ccbcee916",
+	}, actual.Commit)
+	assert.Equal(t, WebHookInfoCommit{
+		Hash: "a82aa1b065b4fa17db4b7a055109044be377ddf7",
+	}, actual.BeforeCommit)
+	assert.Equal(t, WebhookinfobranchstatusUpdated, actual.BranchStatus)
+	assert.Equal(t, "https://github.com/yahavi/hello-world/compare/a82aa1b065b4fa17db4b7a055109044be377ddf7...9d497bd67a395a8063774f200338769ccbcee916", actual.CompareUrl)
 }
 
 func TestGithubParseIncomingPrWebhook(t *testing.T) {

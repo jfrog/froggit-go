@@ -2,10 +2,12 @@ package webhookparser
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 
 	"github.com/google/go-github/v45/github"
+
 	"github.com/jfrog/froggit-go/vcsutils"
 )
 
@@ -19,6 +21,10 @@ func NewGitHubWebhook(request *http.Request) *GitHubWebhook {
 	return &GitHubWebhook{
 		request: request,
 	}
+}
+
+func (webhook *GitHubWebhook) Parse(token []byte) (*WebhookInfo, error) {
+	return validateAndParseHttpRequest(webhook, token, webhook.request)
 }
 
 func (webhook *GitHubWebhook) validatePayload(token []byte) ([]byte, error) {
@@ -49,14 +55,62 @@ func (webhook *GitHubWebhook) parseIncomingWebhook(payload []byte) (*WebhookInfo
 }
 
 func (webhook *GitHubWebhook) parsePushEvent(event *github.PushEvent) *WebhookInfo {
+	repoDetails := WebHookInfoRepoDetails{
+		Name:  optional(optional(event.GetRepo()).Name),
+		Owner: optional(optional(optional(event.GetRepo()).Owner).Login),
+	}
 	return &WebhookInfo{
-		TargetRepositoryDetails: WebHookInfoRepoDetails{
-			Name:  *event.GetRepo().Name,
-			Owner: *event.GetRepo().Owner.Login,
+		TargetRepositoryDetails: repoDetails,
+		TargetBranch:            webhook.trimRefPrefix(event.GetRef()),
+		PullRequestId:           0,                        // unused for push event
+		SourceRepositoryDetails: WebHookInfoRepoDetails{}, // unused for push event
+		SourceBranch:            "",                       // unused for push event
+		Timestamp:               event.GetHeadCommit().GetTimestamp().UTC().Unix(),
+		Event:                   vcsutils.Push,
+		Commit: WebHookInfoCommit{
+			Hash:    event.GetAfter(),
+			Message: optional(optional(event.HeadCommit).Message),
+			Url:     optional(optional(event.HeadCommit).URL),
 		},
-		TargetBranch: strings.TrimPrefix(event.GetRef(), "refs/heads/"),
-		Timestamp:    event.GetHeadCommit().GetTimestamp().UTC().Unix(),
-		Event:        vcsutils.Push,
+		BeforeCommit: WebHookInfoCommit{
+			Hash:    event.GetBefore(),
+			Message: "",
+			Url:     "",
+		},
+		BranchStatus: webhook.branchStatus(event),
+		TriggeredBy:  webhook.user(event.Pusher),
+		Committer:    webhook.commitAuthor(optional(event.HeadCommit).Committer),
+		Author:       webhook.commitAuthor(optional(event.HeadCommit).Author),
+		CompareUrl: fmt.Sprintf("https://github.com/%s/%s/compare/%s...%s", repoDetails.Owner, repoDetails.Name,
+			event.GetBefore(), event.GetAfter()),
+	}
+}
+
+func (webhook *GitHubWebhook) trimRefPrefix(ref string) string {
+	return strings.TrimPrefix(ref, "refs/heads/")
+}
+
+func (webhook *GitHubWebhook) user(u *github.User) WebHookInfoUser {
+	if u == nil {
+		return WebHookInfoUser{}
+	}
+	return WebHookInfoUser{
+		Login:       optional(u.Login),
+		DisplayName: optional(u.Name),
+		Email:       optional(u.Email),
+		AvatarUrl:   "",
+	}
+}
+
+func (webhook *GitHubWebhook) commitAuthor(u *github.CommitAuthor) WebHookInfoUser {
+	if u == nil {
+		return WebHookInfoUser{}
+	}
+	return WebHookInfoUser{
+		Login:       optional(u.Login),
+		DisplayName: optional(u.Name),
+		Email:       optional(u.Email),
+		AvatarUrl:   "",
 	}
 }
 
@@ -95,4 +149,10 @@ func (webhook *GitHubWebhook) resolveClosedEventType(event *github.PullRequestEv
 		return vcsutils.PrMerged
 	}
 	return vcsutils.PrRejected
+}
+
+func (webhook *GitHubWebhook) branchStatus(event *github.PushEvent) WebHookInfoBranchStatus {
+	existsAfter := event.GetAfter() != gitNilHash
+	existedBefore := event.GetBefore() != gitNilHash
+	return branchStatus(existedBefore, existsAfter)
 }

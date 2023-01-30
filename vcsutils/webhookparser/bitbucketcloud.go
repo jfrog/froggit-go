@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
+	"net/mail"
 	"strings"
 	"time"
 
@@ -21,6 +23,10 @@ func NewBitbucketCloudWebhookWebhook(request *http.Request) *BitbucketCloudWebho
 	return &BitbucketCloudWebhook{
 		request: request,
 	}
+}
+
+func (webhook *BitbucketCloudWebhook) Parse(token []byte) (*WebhookInfo, error) {
+	return validateAndParseHttpRequest(webhook, token, webhook.request)
 }
 
 func (webhook *BitbucketCloudWebhook) validatePayload(token []byte) ([]byte, error) {
@@ -61,12 +67,74 @@ func (webhook *BitbucketCloudWebhook) parseIncomingWebhook(payload []byte) (*Web
 }
 
 func (webhook *BitbucketCloudWebhook) parsePushEvent(bitbucketCloudWebHook *bitbucketCloudWebHook) *WebhookInfo {
+	firstChange := bitbucketCloudWebHook.Push.Changes[0]
+	lastCommit := firstChange.New.Target
+	beforeCommitHash := webhook.parentOfLastCommit(lastCommit)
 	return &WebhookInfo{
 		TargetRepositoryDetails: webhook.parseRepoFullName(bitbucketCloudWebHook.Repository.FullName),
-		TargetBranch:            bitbucketCloudWebHook.Push.Changes[0].New.Name,
-		Timestamp:               bitbucketCloudWebHook.Push.Changes[0].New.Target.Date.UTC().Unix(),
+		TargetBranch:            webhook.getBranchName(firstChange),
+		PullRequestId:           0,                        // unused for push event
+		SourceRepositoryDetails: WebHookInfoRepoDetails{}, // unused for push event
+		SourceBranch:            "",                       // unused for push event
+		Timestamp:               lastCommit.Date.UTC().Unix(),
 		Event:                   vcsutils.Push,
+		Commit: WebHookInfoCommit{
+			Hash:    lastCommit.Hash,
+			Message: lastCommit.Message,
+			Url:     lastCommit.Links.Html.Ref,
+		},
+		BeforeCommit: WebHookInfoCommit{
+			Hash:    beforeCommitHash,
+			Message: "",
+			Url:     "",
+		},
+		BranchStatus: webhook.branchStatus(firstChange),
+		TriggeredBy: WebHookInfoUser{
+			Login:       bitbucketCloudWebHook.Actor.Nickname,
+			DisplayName: "",
+			Email:       "",
+			AvatarUrl:   "",
+		},
+		Committer: WebHookInfoUser{
+			Login:       webhook.login(bitbucketCloudWebHook, lastCommit),
+			DisplayName: "",
+			Email:       "",
+			AvatarUrl:   "",
+		},
+		Author: WebHookInfoUser{
+			Login:       webhook.login(bitbucketCloudWebHook, lastCommit),
+			DisplayName: "",
+			Email:       webhook.email(lastCommit),
+			AvatarUrl:   "",
+		},
+		CompareUrl: webhook.compareURL(bitbucketCloudWebHook, lastCommit, beforeCommitHash),
 	}
+}
+
+func (webhook *BitbucketCloudWebhook) compareURL(bitbucketCloudWebHook *bitbucketCloudWebHook,
+	lastCommit bitbucketCommit, beforeCommitHash string) string {
+	if lastCommit.Hash == "" || beforeCommitHash == "" {
+		return ""
+	}
+	return fmt.Sprintf("https://bitbucket.org/%s/branches/compare/%s..%s#diff",
+		bitbucketCloudWebHook.Repository.FullName, lastCommit.Hash, beforeCommitHash)
+}
+
+func (webhook *BitbucketCloudWebhook) getBranchName(firstChange bitbucketChange) string {
+	branchName := firstChange.New.Name
+	if branchName == "" {
+		branchName = firstChange.Old.Name
+	}
+	return branchName
+}
+
+func (webhook *BitbucketCloudWebhook) email(lastCommit bitbucketCommit) string {
+	email := lastCommit.Author.Raw
+	parsedEmail, err := mail.ParseAddress(lastCommit.Author.Raw)
+	if err == nil && parsedEmail != nil {
+		email = parsedEmail.Address
+	}
+	return email
 }
 
 func (webhook *BitbucketCloudWebhook) parsePrEvents(bitbucketCloudWebHook *bitbucketCloudWebHook, event vcsutils.WebhookEvent) *WebhookInfo {
@@ -91,24 +159,73 @@ func (webhook *BitbucketCloudWebhook) parseRepoFullName(fullName string) WebHook
 	}
 }
 
+func (webhook *BitbucketCloudWebhook) parentOfLastCommit(lastCommit bitbucketCommit) string {
+	if len(lastCommit.Parents) == 0 {
+		return ""
+	}
+	return lastCommit.Parents[0].Hash
+}
+
+func (webhook *BitbucketCloudWebhook) login(hook *bitbucketCloudWebHook, lastCommit bitbucketCommit) string {
+	if lastCommit.Author.User.Nickname != "" {
+		return lastCommit.Author.User.Nickname
+	}
+	return hook.Actor.Nickname
+}
+
+func (webhook *BitbucketCloudWebhook) branchStatus(change bitbucketChange) WebHookInfoBranchStatus {
+	existsAfter := change.New.Name != ""
+	existedBefore := change.Old.Name != ""
+	return branchStatus(existedBefore, existsAfter)
+}
+
 type bitbucketCloudWebHook struct {
-	Push struct {
-		Changes []struct {
-			New struct {
-				Name   string `json:"name,omitempty"` // Branch name
-				Target struct {
-					Date time.Time `json:"date,omitempty"` // Timestamp
-				} `json:"target,omitempty"`
-			} `json:"new,omitempty"`
-		} `json:"changes,omitempty"`
-	} `json:"push,omitempty"`
-	PullRequest struct {
-		ID          int                                  `json:"id,omitempty"`
-		Source      struct{ bitbucketCloudPrRepository } `json:"source,omitempty"`
-		Destination struct{ bitbucketCloudPrRepository } `json:"destination,omitempty"`
-		UpdatedOn   time.Time                            `json:"updated_on,omitempty"` // Timestamp
-	} `json:"pullrequest,omitempty"`
-	Repository bitbucketCloudRepository `json:"repository,omitempty"`
+	Push        bitbucketPush            `json:"push,omitempty"`
+	PullRequest bitbucketPullRequest     `json:"pullrequest,omitempty"`
+	Repository  bitbucketCloudRepository `json:"repository,omitempty"`
+	Actor       struct {
+		Nickname string `json:"nickname,omitempty"`
+	} `json:"actor,omitempty"`
+}
+
+type bitbucketPullRequest struct {
+	ID          int                        `json:"id,omitempty"`
+	Source      bitbucketCloudPrRepository `json:"source,omitempty"`
+	Destination bitbucketCloudPrRepository `json:"destination,omitempty"`
+	UpdatedOn   time.Time                  `json:"updated_on,omitempty"`
+}
+
+type bitbucketPush struct {
+	Changes []bitbucketChange `json:"changes,omitempty"`
+}
+type bitbucketChange struct {
+	New struct {
+		Name   string          `json:"name,omitempty"` // Branch name
+		Target bitbucketCommit `json:"target,omitempty"`
+	} `json:"new,omitempty"`
+	Old struct {
+		Name string `json:"name,omitempty"` // Branch name
+	} `json:"old,omitempty"`
+}
+
+type bitbucketCommit struct {
+	Date    time.Time `json:"date,omitempty"`    // Timestamp
+	Hash    string    `json:"hash,omitempty"`    // Commit Hash
+	Message string    `json:"message,omitempty"` // Commit message
+	Author  struct {
+		Raw  string `json:"raw,omitempty"` // Commit author
+		User struct {
+			Nickname string `json:"nickname,omitempty"`
+		} `json:"user,omitempty"`
+	} `json:"author,omitempty"`
+	Links struct {
+		Html struct {
+			Ref string `json:"ref,omitempty"` // Commit URL
+		} `json:"html,omitempty"`
+	} `json:"links,omitempty"`
+	Parents []struct {
+		Hash string `json:"hash,omitempty"` // Commit Hash
+	} `json:"parents,omitempty"`
 }
 
 type bitbucketCloudRepository struct {
