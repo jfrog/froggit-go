@@ -41,7 +41,7 @@ type WebhookInfo struct {
 	Committer WebHookInfoUser `json:"committer,omitempty"`
 	// Commit author (Push event only)
 	Author WebHookInfoUser `json:"author,omitempty"`
-	// URL to see git comparison (Push event only)
+	// CompareUrl is HTML URL to see git comparison between commits (Push event only)
 	CompareUrl string `json:"compare_url,omitempty"`
 }
 
@@ -98,7 +98,7 @@ type WebhookParser interface {
 	Parse(token []byte) (*WebhookInfo, error)
 }
 
-// ParseIncomingWebhook parses incoming webhook payload request into a structurized WebhookInfo object.
+// ParseIncomingWebhook parses incoming webhook HTTP request into WebhookInfo struct.
 // See ParserBuilder to get more options.
 // provider - The VCS provider
 // token    - Token to authenticate incoming webhooks. If empty, signature will not be verified.
