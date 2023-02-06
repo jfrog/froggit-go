@@ -125,8 +125,5 @@ func validateAndParseHttpRequest(parser WebhookParser, token []byte, request *ht
 	}
 
 	webhookInfo, err = parser.parseIncomingWebhook(payload)
-	if err != nil {
-		return
-	}
 	return
 }
