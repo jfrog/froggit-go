@@ -67,15 +67,13 @@ func (webhook *BitbucketCloudWebhook) parseIncomingWebhook(payload []byte) (*Web
 }
 
 func (webhook *BitbucketCloudWebhook) parsePushEvent(bitbucketCloudWebHook *bitbucketCloudWebHook) *WebhookInfo {
+	// In Push events, the hook provides a list of changes. Only the first one is relevant in our point of view.
 	firstChange := bitbucketCloudWebHook.Push.Changes[0]
 	lastCommit := firstChange.New.Target
 	beforeCommitHash := webhook.parentOfLastCommit(lastCommit)
 	return &WebhookInfo{
 		TargetRepositoryDetails: webhook.parseRepoFullName(bitbucketCloudWebHook.Repository.FullName),
-		TargetBranch:            webhook.getBranchName(firstChange),
-		PullRequestId:           0,                        // unused for push event
-		SourceRepositoryDetails: WebHookInfoRepoDetails{}, // unused for push event
-		SourceBranch:            "",                       // unused for push event
+		TargetBranch:            webhook.branchName(firstChange),
 		Timestamp:               lastCommit.Date.UTC().Unix(),
 		Event:                   vcsutils.Push,
 		Commit: WebHookInfoCommit{
@@ -84,33 +82,24 @@ func (webhook *BitbucketCloudWebhook) parsePushEvent(bitbucketCloudWebHook *bitb
 			Url:     lastCommit.Links.Html.Ref,
 		},
 		BeforeCommit: WebHookInfoCommit{
-			Hash:    beforeCommitHash,
-			Message: "",
-			Url:     "",
+			Hash: beforeCommitHash,
 		},
 		BranchStatus: webhook.branchStatus(firstChange),
 		TriggeredBy: WebHookInfoUser{
-			Login:       bitbucketCloudWebHook.Actor.Nickname,
-			DisplayName: "",
-			Email:       "",
-			AvatarUrl:   "",
+			Login: bitbucketCloudWebHook.Actor.Nickname,
 		},
 		Committer: WebHookInfoUser{
-			Login:       webhook.login(bitbucketCloudWebHook, lastCommit),
-			DisplayName: "",
-			Email:       "",
-			AvatarUrl:   "",
+			Login: webhook.login(bitbucketCloudWebHook, lastCommit),
 		},
 		Author: WebHookInfoUser{
-			Login:       webhook.login(bitbucketCloudWebHook, lastCommit),
-			DisplayName: "",
-			Email:       webhook.email(lastCommit),
-			AvatarUrl:   "",
+			Login: webhook.login(bitbucketCloudWebHook, lastCommit),
+			Email: webhook.email(lastCommit),
 		},
 		CompareUrl: webhook.compareURL(bitbucketCloudWebHook, lastCommit, beforeCommitHash),
 	}
 }
 
+// compareURL generates the HTML URL for the comparison between commits before and after push
 func (webhook *BitbucketCloudWebhook) compareURL(bitbucketCloudWebHook *bitbucketCloudWebHook,
 	lastCommit bitbucketCommit, beforeCommitHash string) string {
 	if lastCommit.Hash == "" || beforeCommitHash == "" {
@@ -120,14 +109,17 @@ func (webhook *BitbucketCloudWebhook) compareURL(bitbucketCloudWebHook *bitbucke
 		bitbucketCloudWebHook.Repository.FullName, lastCommit.Hash, beforeCommitHash)
 }
 
-func (webhook *BitbucketCloudWebhook) getBranchName(firstChange bitbucketChange) string {
-	branchName := firstChange.New.Name
+// branchName gives the branch name a commit event refers to. It can be a branch that was created, updated or deleted.
+func (webhook *BitbucketCloudWebhook) branchName(change bitbucketChange) string {
+	branchName := change.New.Name
 	if branchName == "" {
-		branchName = firstChange.Old.Name
+		branchName = change.Old.Name
 	}
 	return branchName
 }
 
+// email gives the email of a commit author. The email is actually contained in a raw string using RFC 5322 format
+// e.g. "Barry Gibbs <bg@example.com>".
 func (webhook *BitbucketCloudWebhook) email(lastCommit bitbucketCommit) string {
 	email := lastCommit.Author.Raw
 	parsedEmail, err := mail.ParseAddress(lastCommit.Author.Raw)
@@ -166,6 +158,7 @@ func (webhook *BitbucketCloudWebhook) parentOfLastCommit(lastCommit bitbucketCom
 	return lastCommit.Parents[0].Hash
 }
 
+// login gets the username of a commit author.
 func (webhook *BitbucketCloudWebhook) login(hook *bitbucketCloudWebHook, lastCommit bitbucketCommit) string {
 	if lastCommit.Author.User.Nickname != "" {
 		return lastCommit.Author.User.Nickname
@@ -198,13 +191,16 @@ type bitbucketPullRequest struct {
 type bitbucketPush struct {
 	Changes []bitbucketChange `json:"changes,omitempty"`
 }
+
 type bitbucketChange struct {
 	New struct {
-		Name   string          `json:"name,omitempty"` // Branch name
+		// Name is the new branch name
+		Name   string          `json:"name,omitempty"`
 		Target bitbucketCommit `json:"target,omitempty"`
 	} `json:"new,omitempty"`
 	Old struct {
-		Name string `json:"name,omitempty"` // Branch name
+		// Name is the old branch name
+		Name string `json:"name,omitempty"`
 	} `json:"old,omitempty"`
 }
 

@@ -62,9 +62,6 @@ func (webhook *GitHubWebhook) parsePushEvent(event *github.PushEvent) *WebhookIn
 	return &WebhookInfo{
 		TargetRepositoryDetails: repoDetails,
 		TargetBranch:            webhook.trimRefPrefix(event.GetRef()),
-		PullRequestId:           0,                        // unused for push event
-		SourceRepositoryDetails: WebHookInfoRepoDetails{}, // unused for push event
-		SourceBranch:            "",                       // unused for push event
 		Timestamp:               event.GetHeadCommit().GetTimestamp().UTC().Unix(),
 		Event:                   vcsutils.Push,
 		Commit: WebHookInfoCommit{
@@ -73,9 +70,7 @@ func (webhook *GitHubWebhook) parsePushEvent(event *github.PushEvent) *WebhookIn
 			Url:     optional(optional(event.HeadCommit).URL),
 		},
 		BeforeCommit: WebHookInfoCommit{
-			Hash:    event.GetBefore(),
-			Message: "",
-			Url:     "",
+			Hash: event.GetBefore(),
 		},
 		BranchStatus: webhook.branchStatus(event),
 		TriggeredBy:  webhook.user(event.Pusher),

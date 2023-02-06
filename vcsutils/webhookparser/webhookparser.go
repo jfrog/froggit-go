@@ -9,7 +9,8 @@ import (
 const (
 	// EventHeaderKey represents the event type of incoming webhook from Bitbucket
 	EventHeaderKey = "X-Event-Key"
-	gitNilHash     = "0000000000000000000000000000000000000000"
+	// gitNilHash is the hash value used by Git to indicate a non-existent commit.
+	gitNilHash = "0000000000000000000000000000000000000000"
 )
 
 // WebhookInfo used for parsing an incoming webhook request from the VCS provider.
@@ -102,26 +103,30 @@ type WebhookParser interface {
 // provider - The VCS provider
 // token    - Token to authenticate incoming webhooks. If empty, signature will not be verified.
 // request  - The HTTP request of the incoming webhook
+// This is a shortcut for using ParserBuilder.
 func ParseIncomingWebhook(provider vcsutils.VcsProvider, token []byte, request *http.Request) (*WebhookInfo, error) {
 	parser := NewParserBuilder(provider, request).Build()
 	return parser.Parse(token)
 }
 
-func validateAndParseHttpRequest(parser WebhookParser, token []byte, request *http.Request) (*WebhookInfo, error) {
+func validateAndParseHttpRequest(parser WebhookParser, token []byte, request *http.Request) (webhookInfo *WebhookInfo, err error) {
 	if request.Body != nil {
 		defer func() {
-			_ = request.Body.Close()
+			e := request.Body.Close()
+			if e != nil {
+				err = e
+			}
 		}()
 	}
 
 	payload, err := parser.validatePayload(token)
 	if err != nil {
-		return nil, err
+		return
 	}
 
-	webhookInfo, err := parser.parseIncomingWebhook(payload)
+	webhookInfo, err = parser.parseIncomingWebhook(payload)
 	if err != nil {
-		return nil, err
+		return
 	}
-	return webhookInfo, nil
+	return
 }

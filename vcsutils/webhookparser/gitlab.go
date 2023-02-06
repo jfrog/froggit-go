@@ -67,9 +67,6 @@ func (webhook *GitLabWebhook) parsePushEvent(event *gitlab.PushEvent) *WebhookIn
 	return &WebhookInfo{
 		TargetRepositoryDetails: webhook.parseRepoDetails(event.Project.PathWithNamespace),
 		TargetBranch:            strings.TrimPrefix(event.Ref, "refs/heads/"),
-		PullRequestId:           0,                        // unused for push event
-		SourceRepositoryDetails: WebHookInfoRepoDetails{}, // unused for push event
-		SourceBranch:            "",                       // unused for push event
 		Timestamp:               localTimestamp,
 		Event:                   vcsutils.Push,
 		Commit: WebHookInfoCommit{
@@ -78,9 +75,7 @@ func (webhook *GitLabWebhook) parsePushEvent(event *gitlab.PushEvent) *WebhookIn
 			Url:     lastCommit.URL,
 		},
 		BeforeCommit: WebHookInfoCommit{
-			Hash:    event.Before,
-			Message: "",
-			Url:     "",
+			Hash: event.Before,
 		},
 		BranchStatus: webhook.branchStatus(event),
 		TriggeredBy: WebHookInfoUser{
@@ -90,18 +85,13 @@ func (webhook *GitLabWebhook) parsePushEvent(event *gitlab.PushEvent) *WebhookIn
 			AvatarUrl:   event.UserAvatar,
 		},
 		Committer: WebHookInfoUser{
-			Login:       "",
 			DisplayName: lastCommit.Author.Name,
 			Email:       lastCommit.Author.Email,
-			AvatarUrl:   "",
 		},
 		Author: WebHookInfoUser{
-			Login:       "",
 			DisplayName: lastCommit.Author.Name,
 			Email:       lastCommit.Author.Email,
-			AvatarUrl:   "",
 		},
-		CompareUrl: "",
 	}
 }
 

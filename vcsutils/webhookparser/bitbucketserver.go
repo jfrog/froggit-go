@@ -109,14 +109,10 @@ func (webhook *BitbucketServerWebhook) parsePushEvent(bitbucketCloudWebHook *bit
 	return &WebhookInfo{
 		TargetRepositoryDetails: repositoryDetails,
 		TargetBranch:            strings.TrimPrefix(bitbucketCloudWebHook.Changes[0].RefID, "refs/heads/"),
-		PullRequestId:           0,                        // unused for push event
-		SourceRepositoryDetails: WebHookInfoRepoDetails{}, // unused for push event
-		SourceBranch:            "",                       // unused for push event
 		Timestamp:               eventTime.UTC().Unix(),
 		Event:                   vcsutils.Push,
 		Commit: WebHookInfoCommit{
-			Hash:    bitbucketCloudWebHook.Changes[0].ToHash,
-			Message: "",
+			Hash: bitbucketCloudWebHook.Changes[0].ToHash,
 			Url: fmt.Sprintf("%s/projects/%s/repos/%s/commits/%s", webhook.endpoint,
 				repositoryDetails.Owner, repositoryDetails.Name, bitbucketCloudWebHook.Changes[0].ToHash),
 		},
@@ -136,7 +132,6 @@ func (webhook *BitbucketServerWebhook) parsePushEvent(bitbucketCloudWebHook *bit
 			Email:       bitbucketCloudWebHook.Actor.EmailAddress,
 			DisplayName: bitbucketCloudWebHook.Actor.DisplayName,
 		},
-		CompareUrl: "",
 	}, nil
 }
 
