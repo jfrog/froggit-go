@@ -41,8 +41,7 @@ func WithBitbucketServerEndpoint(endpoint string) BitbucketServerWebhookOption {
 // NewBitbucketServerWebhookWebhook create a new BitbucketServerWebhook instance
 func NewBitbucketServerWebhookWebhook(request *http.Request, options ...BitbucketServerWebhookOption) *BitbucketServerWebhook {
 	w := &BitbucketServerWebhook{
-		request:  request,
-		endpoint: "undefined",
+		request: request,
 	}
 	for i := range options {
 		options[i](w)
@@ -106,6 +105,11 @@ func (webhook *BitbucketServerWebhook) parsePushEvent(bitbucketCloudWebHook *bit
 	}
 	repository := bitbucketCloudWebHook.Repository
 	repositoryDetails := webhook.getRepositoryDetails(repository)
+	commitURL := ""
+	if webhook.endpoint != "" {
+		commitURL = fmt.Sprintf("%s/projects/%s/repos/%s/commits/%s", webhook.endpoint,
+			repositoryDetails.Owner, repositoryDetails.Name, bitbucketCloudWebHook.Changes[0].ToHash)
+	}
 	return &WebhookInfo{
 		TargetRepositoryDetails: repositoryDetails,
 		TargetBranch:            strings.TrimPrefix(bitbucketCloudWebHook.Changes[0].RefID, "refs/heads/"),
@@ -113,8 +117,7 @@ func (webhook *BitbucketServerWebhook) parsePushEvent(bitbucketCloudWebHook *bit
 		Event:                   vcsutils.Push,
 		Commit: WebHookInfoCommit{
 			Hash: bitbucketCloudWebHook.Changes[0].ToHash,
-			Url: fmt.Sprintf("%s/projects/%s/repos/%s/commits/%s", webhook.endpoint,
-				repositoryDetails.Owner, repositoryDetails.Name, bitbucketCloudWebHook.Changes[0].ToHash),
+			Url:  commitURL,
 		},
 		BeforeCommit: WebHookInfoCommit{
 			Hash: bitbucketCloudWebHook.Changes[0].FromHash,
