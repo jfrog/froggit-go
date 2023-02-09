@@ -561,17 +561,21 @@ content, statusCode, err := client.DownloadFileFromRepo(ctx, owner, repo, branch
 
 ```go
 // Go context
+ctx := context.Background()
+// Logger
+logger := vcsclient.EmptyLogger{}
+// Webhook contextual information
 origin := webhookparser.WebhookOrigin{
-    // Token to authenticate incoming webhooks. If empty, signature will not be verified.
-    // The token is a random key generated in the CreateWebhook command.
-	Token: "abc123",
-    // The VCS provider
-	VcsProvider: vcsutils.GitHub,
-	// The URL of the VCS provider (used for building some URLs)
-	OriginURL: "https://git.test"
+  // The VCS provider (required)
+  VcsProvider: vcsutils.GitHub,
+  // Optional URL of the VCS provider (used for building some URLs)
+  OriginURL: "https://git.test",
+  // Token to authenticate incoming webhooks. If empty, signature will not be verified.
+  // The token is a random key generated in the CreateWebhook command.
+  Token: []byte("abc123"),
 }
 // The HTTP request of the incoming webhook
 request := http.Request{}
 
-webhookInfo, err := webhookparser.ParseIncomingWebhook(origin, request)
+webhookInfo, err := webhookparser.ParseIncomingWebhook(ctx, logger, origin, request)
 ```
