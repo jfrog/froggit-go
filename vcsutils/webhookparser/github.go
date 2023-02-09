@@ -23,11 +23,17 @@ type GitHubWebhook struct {
 // NewGitHubWebhook create a new GitHubWebhook instance
 func NewGitHubWebhook(logger vcsclient.Log, endpoint string) *GitHubWebhook {
 	if endpoint == "" {
+		// Default to GitHub "Cloud"
 		endpoint = "https://github.com"
+	} else {
+		// For GitHub the API endpoint is https://api.github.com but the Web Interface URL is https://github.com
+		// So we remove the "api." prefix to the hostname
+		// Applied to Cloud and On-Prem versions of GitHub
+		endpoint = strings.Replace(endpoint, "://api.", "://", 1)
 	}
 	w := &GitHubWebhook{
 		logger:   logger,
-		endpoint: strings.TrimSuffix(endpoint, "/"),
+		endpoint: endpoint,
 	}
 	return w
 }

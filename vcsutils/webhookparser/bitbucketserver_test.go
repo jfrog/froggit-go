@@ -52,7 +52,7 @@ func TestBitbucketServerParseIncomingPushWebhook(t *testing.T) {
 	request.Header.Add(sha256Signature, "sha256="+bitbucketServerPushSha256)
 
 	// Parse webhook
-	parser := NewBitbucketServerWebhookWebhook(vcsclient.EmptyLogger{}, "https://bitbucket.test/rest/")
+	parser := NewBitbucketServerWebhookWebhook(vcsclient.EmptyLogger{}, "https://bitbucket.test/rest")
 	actual, err := parser.Parse(context.Background(), request, token)
 	require.NoError(t, err)
 

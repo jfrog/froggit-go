@@ -32,7 +32,7 @@ type BitbucketServerWebhook struct {
 func NewBitbucketServerWebhookWebhook(logger vcsclient.Log, endpoint string) *BitbucketServerWebhook {
 	return &BitbucketServerWebhook{
 		logger:   logger,
-		endpoint: strings.TrimSuffix(endpoint, "/"),
+		endpoint: endpoint,
 	}
 }
 
