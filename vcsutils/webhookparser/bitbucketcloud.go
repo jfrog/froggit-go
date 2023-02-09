@@ -2,6 +2,7 @@ package webhookparser
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -10,47 +11,48 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jfrog/froggit-go/vcsclient"
 	"github.com/jfrog/froggit-go/vcsutils"
 )
 
 // BitbucketCloudWebhook represents an incoming webhook on Bitbucket cloud
 type BitbucketCloudWebhook struct {
-	request *http.Request
+	logger vcsclient.Log
 }
 
 // NewBitbucketCloudWebhookWebhook create a new BitbucketCloudWebhook instance
-func NewBitbucketCloudWebhookWebhook(request *http.Request) *BitbucketCloudWebhook {
+func NewBitbucketCloudWebhookWebhook(logger vcsclient.Log) *BitbucketCloudWebhook {
 	return &BitbucketCloudWebhook{
-		request: request,
+		logger: logger,
 	}
 }
 
-func (webhook *BitbucketCloudWebhook) Parse(token []byte) (*WebhookInfo, error) {
-	return validateAndParseHttpRequest(webhook, token, webhook.request)
+func (webhook *BitbucketCloudWebhook) Parse(ctx context.Context, request *http.Request, token []byte) (*WebhookInfo, error) {
+	return validateAndParseHttpRequest(ctx, webhook, token, request)
 }
 
-func (webhook *BitbucketCloudWebhook) validatePayload(token []byte) ([]byte, error) {
-	keys, tokenParamsExist := webhook.request.URL.Query()["token"]
+func (webhook *BitbucketCloudWebhook) validatePayload(_ context.Context, request *http.Request, token []byte) ([]byte, error) {
+	keys, tokenParamsExist := request.URL.Query()["token"]
 	if len(token) > 0 || tokenParamsExist {
 		if keys[0] != string(token) {
 			return nil, errors.New("token mismatch")
 		}
 	}
 	payload := new(bytes.Buffer)
-	if _, err := payload.ReadFrom(webhook.request.Body); err != nil {
+	if _, err := payload.ReadFrom(request.Body); err != nil {
 		return nil, err
 	}
 	return payload.Bytes(), nil
 }
 
-func (webhook *BitbucketCloudWebhook) parseIncomingWebhook(payload []byte) (*WebhookInfo, error) {
+func (webhook *BitbucketCloudWebhook) parseIncomingWebhook(_ context.Context, request *http.Request, payload []byte) (*WebhookInfo, error) {
 	bitbucketCloudWebHook := &bitbucketCloudWebHook{}
 	err := json.Unmarshal(payload, bitbucketCloudWebHook)
 	if err != nil {
 		return nil, err
 	}
 
-	event := webhook.request.Header.Get(EventHeaderKey)
+	event := request.Header.Get(EventHeaderKey)
 	switch event {
 	case "repo:push":
 		return webhook.parsePushEvent(bitbucketCloudWebHook), nil

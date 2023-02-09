@@ -1,6 +1,7 @@
 package webhookparser
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -8,40 +9,48 @@ import (
 
 	"github.com/google/go-github/v45/github"
 
+	"github.com/jfrog/froggit-go/vcsclient"
 	"github.com/jfrog/froggit-go/vcsutils"
 )
 
 // GitHubWebhook represents an incoming webhook on GitHub
 type GitHubWebhook struct {
-	request *http.Request
+	logger vcsclient.Log
+	// used for GitHub On-prem
+	endpoint string
 }
 
 // NewGitHubWebhook create a new GitHubWebhook instance
-func NewGitHubWebhook(request *http.Request) *GitHubWebhook {
-	return &GitHubWebhook{
-		request: request,
+func NewGitHubWebhook(logger vcsclient.Log, endpoint string) *GitHubWebhook {
+	if endpoint == "" {
+		endpoint = "https://github.com"
 	}
+	w := &GitHubWebhook{
+		logger:   logger,
+		endpoint: strings.TrimSuffix(endpoint, "/"),
+	}
+	return w
 }
 
-func (webhook *GitHubWebhook) Parse(token []byte) (*WebhookInfo, error) {
-	return validateAndParseHttpRequest(webhook, token, webhook.request)
+func (webhook *GitHubWebhook) Parse(ctx context.Context, request *http.Request, token []byte) (*WebhookInfo, error) {
+	return validateAndParseHttpRequest(ctx, webhook, token, request)
 }
 
-func (webhook *GitHubWebhook) validatePayload(token []byte) ([]byte, error) {
+func (webhook *GitHubWebhook) validatePayload(_ context.Context, request *http.Request, token []byte) ([]byte, error) {
 	// Make sure X-Hub-Signature-256 header exist
-	if len(token) > 0 && len(webhook.request.Header.Get(github.SHA256SignatureHeader)) == 0 {
+	if len(token) > 0 && len(request.Header.Get(github.SHA256SignatureHeader)) == 0 {
 		return nil, errors.New(github.SHA256SignatureHeader + " header is missing")
 	}
 
-	payload, err := github.ValidatePayload(webhook.request, token)
+	payload, err := github.ValidatePayload(request, token)
 	if err != nil {
 		return nil, err
 	}
 	return payload, nil
 }
 
-func (webhook *GitHubWebhook) parseIncomingWebhook(payload []byte) (*WebhookInfo, error) {
-	event, err := github.ParseWebHook(github.WebHookType(webhook.request), payload)
+func (webhook *GitHubWebhook) parseIncomingWebhook(_ context.Context, request *http.Request, payload []byte) (*WebhookInfo, error) {
+	event, err := github.ParseWebHook(github.WebHookType(request), payload)
 	if err != nil {
 		return nil, err
 	}
@@ -58,6 +67,11 @@ func (webhook *GitHubWebhook) parsePushEvent(event *github.PushEvent) *WebhookIn
 	repoDetails := WebHookInfoRepoDetails{
 		Name:  optional(optional(event.GetRepo()).Name),
 		Owner: optional(optional(optional(event.GetRepo()).Owner).Login),
+	}
+	compareURL := ""
+	if webhook.endpoint != "" {
+		compareURL = fmt.Sprintf("%s/%s/%s/compare/%s...%s", webhook.endpoint, repoDetails.Owner, repoDetails.Name,
+			event.GetBefore(), event.GetAfter())
 	}
 	return &WebhookInfo{
 		TargetRepositoryDetails: repoDetails,
@@ -76,8 +90,7 @@ func (webhook *GitHubWebhook) parsePushEvent(event *github.PushEvent) *WebhookIn
 		TriggeredBy:  webhook.user(event.Pusher),
 		Committer:    webhook.commitAuthor(optional(event.HeadCommit).Committer),
 		Author:       webhook.commitAuthor(optional(event.HeadCommit).Author),
-		CompareUrl: fmt.Sprintf("https://github.com/%s/%s/compare/%s...%s", repoDetails.Owner, repoDetails.Name,
-			event.GetBefore(), event.GetAfter()),
+		CompareUrl:   compareURL,
 	}
 }
 

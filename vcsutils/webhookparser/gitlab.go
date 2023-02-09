@@ -2,6 +2,7 @@ package webhookparser
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"net/http"
 	"strings"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/xanzy/go-gitlab"
 
+	"github.com/jfrog/froggit-go/vcsclient"
 	"github.com/jfrog/froggit-go/vcsutils"
 )
 
@@ -16,18 +18,18 @@ const gitLabKeyHeader = "X-GitLab-Token"
 
 // GitLabWebhook represents an incoming webhook on GitLab
 type GitLabWebhook struct {
-	request *http.Request
+	logger vcsclient.Log
 }
 
 // NewGitLabWebhook create a new GitLabWebhook instance
-func NewGitLabWebhook(request *http.Request) *GitLabWebhook {
+func NewGitLabWebhook(logger vcsclient.Log) *GitLabWebhook {
 	return &GitLabWebhook{
-		request: request,
+		logger: logger,
 	}
 }
 
-func (webhook *GitLabWebhook) validatePayload(token []byte) ([]byte, error) {
-	actualToken := webhook.request.Header.Get(gitLabKeyHeader)
+func (webhook *GitLabWebhook) validatePayload(_ context.Context, request *http.Request, token []byte) ([]byte, error) {
+	actualToken := request.Header.Get(gitLabKeyHeader)
 	if len(token) != 0 || len(actualToken) > 0 {
 		if actualToken != string(token) {
 			return nil, errors.New("token mismatch")
@@ -35,13 +37,13 @@ func (webhook *GitLabWebhook) validatePayload(token []byte) ([]byte, error) {
 	}
 
 	payload := new(bytes.Buffer)
-	if _, err := payload.ReadFrom(webhook.request.Body); err != nil {
+	if _, err := payload.ReadFrom(request.Body); err != nil {
 		return nil, err
 	}
 	return payload.Bytes(), nil
 }
-func (webhook *GitLabWebhook) parseIncomingWebhook(payload []byte) (*WebhookInfo, error) {
-	event, err := gitlab.ParseWebhook(gitlab.WebhookEventType(webhook.request), payload)
+func (webhook *GitLabWebhook) parseIncomingWebhook(_ context.Context, request *http.Request, payload []byte) (*WebhookInfo, error) {
+	event, err := gitlab.ParseWebhook(gitlab.WebhookEventType(request), payload)
 	if err != nil {
 		return nil, err
 	}
@@ -54,8 +56,8 @@ func (webhook *GitLabWebhook) parseIncomingWebhook(payload []byte) (*WebhookInfo
 	return nil, nil
 }
 
-func (webhook *GitLabWebhook) Parse(token []byte) (*WebhookInfo, error) {
-	return validateAndParseHttpRequest(webhook, token, webhook.request)
+func (webhook *GitLabWebhook) Parse(ctx context.Context, request *http.Request, token []byte) (*WebhookInfo, error) {
+	return validateAndParseHttpRequest(ctx, webhook, token, request)
 }
 
 func (webhook *GitLabWebhook) parsePushEvent(event *gitlab.PushEvent) *WebhookInfo {

@@ -1,6 +1,7 @@
 package webhookparser
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -8,10 +9,10 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/stretchr/testify/assert"
-
+	"github.com/jfrog/froggit-go/vcsclient"
 	"github.com/jfrog/froggit-go/vcsutils"
 )
 
@@ -34,7 +35,13 @@ func TestBitbucketCloudParseIncomingPushWebhook(t *testing.T) {
 	request.Header.Add(EventHeaderKey, "repo:push")
 
 	// Parse webhook
-	actual, err := ParseIncomingWebhook(vcsutils.BitbucketCloud, token, request)
+	actual, err := ParseIncomingWebhook(context.Background(),
+		vcsclient.EmptyLogger{},
+		WebhookOrigin{
+			VcsProvider: vcsutils.BitbucketCloud,
+			Token:       token,
+		},
+		request)
 	require.NoError(t, err)
 
 	// Check values
@@ -105,7 +112,13 @@ func TestBitbucketCloudParseIncomingPrWebhook(t *testing.T) {
 			request.Header.Add(EventHeaderKey, tt.eventHeader)
 
 			// Parse webhook
-			actual, err := ParseIncomingWebhook(vcsutils.BitbucketCloud, token, request)
+			actual, err := ParseIncomingWebhook(context.Background(),
+				vcsclient.EmptyLogger{},
+				WebhookOrigin{
+					VcsProvider: vcsutils.BitbucketCloud,
+					Token:       token,
+				},
+				request)
 			require.NoError(t, err)
 
 			// Check values
@@ -123,11 +136,18 @@ func TestBitbucketCloudParseIncomingPrWebhook(t *testing.T) {
 }
 
 func TestBitbucketCloudParseIncomingWebhookError(t *testing.T) {
-	_, err := ParseIncomingWebhook(vcsutils.BitbucketCloud, token, &http.Request{URL: &url.URL{RawQuery: "token=a"}})
+	request := &http.Request{URL: &url.URL{RawQuery: "token=a"}}
+	_, err := ParseIncomingWebhook(context.Background(),
+		vcsclient.EmptyLogger{},
+		WebhookOrigin{
+			VcsProvider: vcsutils.BitbucketCloud,
+			Token:       token,
+		},
+		request)
 	assert.Error(t, err)
 
 	webhook := BitbucketCloudWebhook{}
-	_, err = webhook.parseIncomingWebhook([]byte{})
+	_, err = webhook.parseIncomingWebhook(context.Background(), request, []byte{})
 	assert.Error(t, err)
 }
 
@@ -141,6 +161,12 @@ func TestBitbucketCloudPayloadMismatchToken(t *testing.T) {
 	request.Header.Add(EventHeaderKey, "repo:push")
 
 	// Parse webhook
-	_, err = ParseIncomingWebhook(vcsutils.BitbucketCloud, token, request)
+	_, err = ParseIncomingWebhook(context.Background(),
+		vcsclient.EmptyLogger{},
+		WebhookOrigin{
+			VcsProvider: vcsutils.BitbucketCloud,
+			Token:       token,
+		},
+		request)
 	assert.EqualError(t, err, "token mismatch")
 }

@@ -1,6 +1,7 @@
 package webhookparser
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -12,6 +13,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/jfrog/froggit-go/vcsclient"
 	"github.com/jfrog/froggit-go/vcsutils"
 )
 
@@ -53,7 +55,12 @@ func TestGitHubParseIncomingPushWebhook(t *testing.T) {
 	request.Header.Add(githubEventHeader, "push")
 
 	// Parse webhook
-	actual, err := ParseIncomingWebhook(vcsutils.GitHub, token, request)
+	actual, err := ParseIncomingWebhook(context.Background(),
+		vcsclient.EmptyLogger{},
+		WebhookOrigin{
+			VcsProvider: vcsutils.GitHub,
+			Token:       token,
+		}, request)
 	require.NoError(t, err)
 
 	// Check values
@@ -141,7 +148,12 @@ func TestGithubParseIncomingPrWebhook(t *testing.T) {
 			request.Header.Add(githubEventHeader, "pull_request")
 
 			// Parse webhook
-			actual, err := ParseIncomingWebhook(vcsutils.GitHub, token, request)
+			actual, err := ParseIncomingWebhook(context.Background(),
+				vcsclient.EmptyLogger{},
+				WebhookOrigin{
+					VcsProvider: vcsutils.GitHub,
+					Token:       token,
+				}, request)
 			require.NoError(t, err)
 
 			// Check values
@@ -159,11 +171,18 @@ func TestGithubParseIncomingPrWebhook(t *testing.T) {
 }
 
 func TestGitHubParseIncomingWebhookError(t *testing.T) {
-	_, err := ParseIncomingWebhook(vcsutils.GitHub, token, &http.Request{})
+	request := &http.Request{}
+	_, err := ParseIncomingWebhook(context.Background(),
+		vcsclient.EmptyLogger{},
+		WebhookOrigin{
+			VcsProvider: vcsutils.GitHub,
+			Token:       token,
+		}, request)
+
 	require.Error(t, err)
 
-	webhook := GitHubWebhook{request: &http.Request{}}
-	_, err = webhook.parseIncomingWebhook([]byte{})
+	webhook := GitHubWebhook{logger: vcsclient.EmptyLogger{}}
+	_, err = webhook.parseIncomingWebhook(context.Background(), request, []byte{})
 	assert.Error(t, err)
 }
 
@@ -184,6 +203,11 @@ func TestGitHubPayloadMismatchSignature(t *testing.T) {
 	request.Header.Add(githubEventHeader, "push")
 
 	// Parse webhook
-	_, err = ParseIncomingWebhook(vcsutils.GitHub, token, request)
+	_, err = ParseIncomingWebhook(context.Background(),
+		vcsclient.EmptyLogger{},
+		WebhookOrigin{
+			VcsProvider: vcsutils.GitHub,
+			Token:       token,
+		}, request)
 	assert.True(t, strings.HasPrefix(err.Error(), "error decoding signature"), "error was: "+err.Error())
 }

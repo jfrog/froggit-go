@@ -2,6 +2,7 @@ package webhookparser
 
 import (
 	"bytes"
+	"context"
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
@@ -14,6 +15,7 @@ import (
 
 	bitbucketv1 "github.com/gfleury/go-bitbucket-v1"
 
+	"github.com/jfrog/froggit-go/vcsclient"
 	"github.com/jfrog/froggit-go/vcsutils"
 )
 
@@ -22,44 +24,29 @@ const bitbucketServerEventHeader = "X-Event-Key"
 
 // BitbucketServerWebhook represents an incoming webhook on Bitbucket server
 type BitbucketServerWebhook struct {
-	request  *http.Request
+	logger   vcsclient.Log
 	endpoint string
 }
 
-type BitbucketServerWebhookOption func(*BitbucketServerWebhook)
-
-func WithBitbucketServerEndpoint(endpoint string) BitbucketServerWebhookOption {
-	return func(w *BitbucketServerWebhook) {
-		if endpoint != "" && strings.HasSuffix(endpoint, "/") {
-			w.endpoint = endpoint[:len(endpoint)-1]
-		} else {
-			w.endpoint = endpoint
-		}
-	}
-}
-
 // NewBitbucketServerWebhookWebhook create a new BitbucketServerWebhook instance
-func NewBitbucketServerWebhookWebhook(request *http.Request, options ...BitbucketServerWebhookOption) *BitbucketServerWebhook {
-	w := &BitbucketServerWebhook{
-		request: request,
+func NewBitbucketServerWebhookWebhook(logger vcsclient.Log, endpoint string) *BitbucketServerWebhook {
+	return &BitbucketServerWebhook{
+		logger:   logger,
+		endpoint: strings.TrimSuffix(endpoint, "/"),
 	}
-	for i := range options {
-		options[i](w)
-	}
-	return w
 }
 
-func (webhook *BitbucketServerWebhook) Parse(token []byte) (*WebhookInfo, error) {
-	return validateAndParseHttpRequest(webhook, token, webhook.request)
+func (webhook *BitbucketServerWebhook) Parse(ctx context.Context, request *http.Request, token []byte) (*WebhookInfo, error) {
+	return validateAndParseHttpRequest(ctx, webhook, token, request)
 }
 
-func (webhook *BitbucketServerWebhook) validatePayload(token []byte) ([]byte, error) {
+func (webhook *BitbucketServerWebhook) validatePayload(_ context.Context, request *http.Request, token []byte) ([]byte, error) {
 	payload := new(bytes.Buffer)
-	if _, err := payload.ReadFrom(webhook.request.Body); err != nil {
+	if _, err := payload.ReadFrom(request.Body); err != nil {
 		return nil, err
 	}
 
-	expectedSignature := webhook.request.Header.Get(sha256Signature)
+	expectedSignature := request.Header.Get(sha256Signature)
 	if len(token) > 0 || len(expectedSignature) > 0 {
 		actualSignature := calculatePayloadSignature(payload.Bytes(), token)
 		if expectedSignature != "sha256="+actualSignature {
@@ -69,14 +56,14 @@ func (webhook *BitbucketServerWebhook) validatePayload(token []byte) ([]byte, er
 	return payload.Bytes(), nil
 }
 
-func (webhook *BitbucketServerWebhook) parseIncomingWebhook(payload []byte) (*WebhookInfo, error) {
+func (webhook *BitbucketServerWebhook) parseIncomingWebhook(_ context.Context, request *http.Request, payload []byte) (*WebhookInfo, error) {
 	bitbucketServerWebHook := &bitbucketServerWebHook{}
 	err := json.Unmarshal(payload, bitbucketServerWebHook)
 	if err != nil {
 		return nil, err
 	}
 
-	event := webhook.request.Header.Get(bitbucketServerEventHeader)
+	event := request.Header.Get(bitbucketServerEventHeader)
 	switch event {
 	case "repo:refs_changed":
 		return webhook.parsePushEvent(bitbucketServerWebHook)

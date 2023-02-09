@@ -1,45 +1,20 @@
 package webhookparser
 
 import (
-	"net/http"
-
+	"github.com/jfrog/froggit-go/vcsclient"
 	"github.com/jfrog/froggit-go/vcsutils"
 )
 
-// ParserBuilder builds VcsClient
-type ParserBuilder struct {
-	vcsProvider vcsutils.VcsProvider
-	request     *http.Request
-	endpoint    string
-}
-
-// NewParserBuilder creates new ParserBuilder
-func NewParserBuilder(vcsProvider vcsutils.VcsProvider, request *http.Request) *ParserBuilder {
-	return &ParserBuilder{
-		request:     request,
-		endpoint:    "undefined",
-		vcsProvider: vcsProvider,
-	}
-}
-
-// ApiEndpoint sets the API endpoint
-func (builder *ParserBuilder) ApiEndpoint(apiEndpoint string) *ParserBuilder {
-	builder.endpoint = apiEndpoint
-	return builder
-}
-
-// Build builds the VcsClient
-func (builder *ParserBuilder) Build() WebhookParser {
-	switch builder.vcsProvider {
+func createWebhookParser(logger vcsclient.Log, origin WebhookOrigin) WebhookParser {
+	switch origin.VcsProvider {
 	case vcsutils.GitHub:
-		return NewGitHubWebhook(builder.request)
+		return NewGitHubWebhook(logger, origin.OriginURL)
 	case vcsutils.GitLab:
-		return NewGitLabWebhook(builder.request)
+		return NewGitLabWebhook(logger)
 	case vcsutils.BitbucketServer:
-		return NewBitbucketServerWebhookWebhook(builder.request,
-			WithBitbucketServerEndpoint(builder.endpoint))
+		return NewBitbucketServerWebhookWebhook(logger, origin.OriginURL)
 	case vcsutils.BitbucketCloud:
-		return NewBitbucketCloudWebhookWebhook(builder.request)
+		return NewBitbucketCloudWebhookWebhook(logger)
 	}
 	return nil
 }

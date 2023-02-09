@@ -1,8 +1,10 @@
 package webhookparser
 
 import (
+	"context"
 	"net/http"
 
+	"github.com/jfrog/froggit-go/vcsclient"
 	"github.com/jfrog/froggit-go/vcsutils"
 )
 
@@ -91,25 +93,35 @@ type WebHookInfoFile struct {
 // WebhookParser is a webhook parser of an incoming webhook from a VCS server
 type WebhookParser interface {
 	// Validate the webhook payload with the expected token and return the payload
-	validatePayload(token []byte) ([]byte, error)
+	validatePayload(ctx context.Context, request *http.Request, token []byte) ([]byte, error)
 	// Parse the webhook payload and return WebhookInfo
-	parseIncomingWebhook(payload []byte) (*WebhookInfo, error)
+	parseIncomingWebhook(ctx context.Context, request *http.Request, payload []byte) (*WebhookInfo, error)
 	// Parse validates and parses the webhook payload.
-	Parse(token []byte) (*WebhookInfo, error)
+	Parse(ctx context.Context, request *http.Request, token []byte) (*WebhookInfo, error)
 }
 
 // ParseIncomingWebhook parses incoming webhook HTTP request into WebhookInfo struct.
-// See ParserBuilder to get more options.
-// provider - The VCS provider
-// token    - Token to authenticate incoming webhooks. If empty, signature will not be verified.
-// request  - The HTTP request of the incoming webhook
-// This is a shortcut for using ParserBuilder.
-func ParseIncomingWebhook(provider vcsutils.VcsProvider, token []byte, request *http.Request) (*WebhookInfo, error) {
-	parser := NewParserBuilder(provider, request).Build()
-	return parser.Parse(token)
+// ctx - Go context
+// logger - Used to log any trace about the parsing
+// origin - Information about the hook origin
+// request - Received HTTP request
+func ParseIncomingWebhook(ctx context.Context, logger vcsclient.Log, origin WebhookOrigin, request *http.Request) (*WebhookInfo, error) {
+	parser := createWebhookParser(logger, origin)
+	return parser.Parse(ctx, request, origin.Token)
 }
 
-func validateAndParseHttpRequest(parser WebhookParser, token []byte, request *http.Request) (webhookInfo *WebhookInfo, err error) {
+// WebhookOrigin provides information about the hook to parse.
+type WebhookOrigin struct {
+	// Git provider
+	VcsProvider vcsutils.VcsProvider
+	// URL of the Git service
+	OriginURL string
+	// Token is used to authenticate incoming webhooks. If empty, signature will not be verified.
+	// The token is a random key generated in the CreateWebhook command.
+	Token []byte
+}
+
+func validateAndParseHttpRequest(ctx context.Context, parser WebhookParser, token []byte, request *http.Request) (webhookInfo *WebhookInfo, err error) {
 	if request.Body != nil {
 		defer func() {
 			e := request.Body.Close()
@@ -119,11 +131,11 @@ func validateAndParseHttpRequest(parser WebhookParser, token []byte, request *ht
 		}()
 	}
 
-	payload, err := parser.validatePayload(token)
+	payload, err := parser.validatePayload(ctx, request, token)
 	if err != nil {
 		return
 	}
 
-	webhookInfo, err = parser.parseIncomingWebhook(payload)
+	webhookInfo, err = parser.parseIncomingWebhook(ctx, request, payload)
 	return
 }
