@@ -4,9 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/jfrog/gofrog/datastructures"
 	"io"
 	"net/http"
 	"net/url"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -563,6 +565,45 @@ func (client *GitHubClient) GetRepositoryEnvironmentInfo(ctx context.Context, ow
 		Url:       *environment.URL,
 		Reviewers: reviewers,
 	}, err
+}
+
+func (client *GitHubClient) GetModifiedFiles(ctx context.Context, owner, repository, refBefore, refAfter string) ([]string, error) {
+	if err := validateParametersNotBlank(map[string]string{
+		"owner":      owner,
+		"repository": repository,
+		"refBefore":  refBefore,
+		"refAfter":   refAfter,
+	}); err != nil {
+		return nil, err
+	}
+
+	ghClient, err := client.buildGithubClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// According to the https://docs.github.com/en/rest/commits/commits?apiVersion=2022-11-28#compare-two-commits
+	// the list of changed files is always returned with the first page fully,
+	// so we don't need to iterate over other pages to get additional info about the files.
+	// And we also do not need info about the change that is why we can limit only to a single entity.
+	listOptions := &github.ListOptions{PerPage: 1}
+	comparison, resp, err := ghClient.Repositories.CompareCommits(ctx, owner, repository, refBefore, refAfter, listOptions)
+	if err != nil {
+		return nil, err
+	}
+	if err = vcsutils.CheckResponseStatusWithBody(resp.Response, http.StatusOK); err != nil {
+		return nil, err
+	}
+
+	fileNamesSet := datastructures.MakeSet[string]()
+	for _, file := range comparison.Files {
+		fileNamesSet.Add(vcsutils.DefaultIfNotNil(file.Filename))
+		fileNamesSet.Add(vcsutils.DefaultIfNotNil(file.PreviousFilename))
+	}
+	_ = fileNamesSet.Remove("") // Make sure there are no blank filepath.
+	fileNamesList := fileNamesSet.ToSlice()
+	sort.Strings(fileNamesList)
+	return fileNamesList, nil
 }
 
 // Extract code reviewers from environment

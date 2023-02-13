@@ -1,0 +1,694 @@
+{
+  "url": "https://api.github.com/repos/jfrog/froggit-go/compare/ce1965514d711e17045b849e11105d9c095ee935...d41c3fcff4ea7d18e753977f5d63d5003becaa2f",
+  "html_url": "https://github.com/jfrog/froggit-go/compare/ce1965514d711e17045b849e11105d9c095ee935...d41c3fcff4ea7d18e753977f5d63d5003becaa2f",
+  "permalink_url": "https://github.com/jfrog/froggit-go/compare/jfrog:ce19655...jfrog:d41c3fc",
+  "diff_url": "https://github.com/jfrog/froggit-go/compare/ce1965514d711e17045b849e11105d9c095ee935...d41c3fcff4ea7d18e753977f5d63d5003becaa2f.diff",
+  "patch_url": "https://github.com/jfrog/froggit-go/compare/ce1965514d711e17045b849e11105d9c095ee935...d41c3fcff4ea7d18e753977f5d63d5003becaa2f.patch",
+  "base_commit": {
+    "sha": "ce1965514d711e17045b849e11105d9c095ee935",
+    "node_id": "C_kwDOF_Bo3doAKGNlMTk2NTUxNGQ3MTFlMTcwNDViODQ5ZTExMTA1ZDljMDk1ZWU5MzU",
+    "commit": {
+      "author": {
+        "name": "Omer Zidkoni",
+        "email": "50792403+omerzi@users.noreply.github.com",
+        "date": "2023-01-10T11:25:46Z"
+      },
+      "committer": {
+        "name": "GitHub",
+        "email": "noreply@github.com",
+        "date": "2023-01-10T11:25:46Z"
+      },
+      "message": "Need to check 404 status code before error (#60)",
+      "tree": {
+        "sha": "13b0df20c75390cc2537caab7c26c1bb004c3f72",
+        "url": "https://api.github.com/repos/jfrog/froggit-go/git/trees/13b0df20c75390cc2537caab7c26c1bb004c3f72"
+      },
+      "url": "https://api.github.com/repos/jfrog/froggit-go/git/commits/ce1965514d711e17045b849e11105d9c095ee935",
+      "comment_count": 0,
+      "verification": {
+        "verified": true,
+        "reason": "valid",
+        "signature": "-----BEGIN PGP SIGNATURE-----\n\nwsBcBAABCAAQBQJjvUs6CRBK7hj4Ov3rIwAAiwwIABFHcsTPoVa5ghSZ/bq89Zqu\nnqvE6xZfLAKxyYX/sZ6d4FUHoit8J6+pPOX4jY2Mux8JUUjuROv+a/jKCPiI5JBB\nSkqS7ra6+b1+Fb17aqO/HUpj2GKx9vjFqpcQ+hl1A5xvmZhBJLwR3Q5vrgNGvtfT\n3aYq60HccTgVJqWdc6du2MOm2xehNgAPozta+jQ/YZ6grL1IdR5KDLnUSY0f10W+\nNI4vlyj5Z6ZVHpxeUOxlYFVgB9cEoC09fgr79ROyGsHR92SedyFXUMYy2lS7jG8A\nU6TxW0ReqyHY8XPJUNVO2+McZMt4U85JNocn4uk3BL+RMcEOTCsb+PTmzqvTfUY=\n=ZqXv\n-----END PGP SIGNATURE-----\n",
+        "payload": "tree 13b0df20c75390cc2537caab7c26c1bb004c3f72\nparent c3649965053dc53c26814487e381a1eb4f8832b8\nauthor Omer Zidkoni <50792403+omerzi@users.noreply.github.com> 1673349946 +0200\ncommitter GitHub <noreply@github.com> 1673349946 +0200\n\nNeed to check 404 status code before error (#60)\n\n"
+      }
+    },
+    "url": "https://api.github.com/repos/jfrog/froggit-go/commits/ce1965514d711e17045b849e11105d9c095ee935",
+    "html_url": "https://github.com/jfrog/froggit-go/commit/ce1965514d711e17045b849e11105d9c095ee935",
+    "comments_url": "https://api.github.com/repos/jfrog/froggit-go/commits/ce1965514d711e17045b849e11105d9c095ee935/comments",
+    "author": {
+      "login": "omerzi",
+      "id": 50792403,
+      "node_id": "MDQ6VXNlcjUwNzkyNDAz",
+      "avatar_url": "https://avatars.githubusercontent.com/u/50792403?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/omerzi",
+      "html_url": "https://github.com/omerzi",
+      "followers_url": "https://api.github.com/users/omerzi/followers",
+      "following_url": "https://api.github.com/users/omerzi/following{/other_user}",
+      "gists_url": "https://api.github.com/users/omerzi/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/omerzi/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/omerzi/subscriptions",
+      "organizations_url": "https://api.github.com/users/omerzi/orgs",
+      "repos_url": "https://api.github.com/users/omerzi/repos",
+      "events_url": "https://api.github.com/users/omerzi/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/omerzi/received_events",
+      "type": "User",
+      "site_admin": false
+    },
+    "committer": {
+      "login": "web-flow",
+      "id": 19864447,
+      "node_id": "MDQ6VXNlcjE5ODY0NDQ3",
+      "avatar_url": "https://avatars.githubusercontent.com/u/19864447?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/web-flow",
+      "html_url": "https://github.com/web-flow",
+      "followers_url": "https://api.github.com/users/web-flow/followers",
+      "following_url": "https://api.github.com/users/web-flow/following{/other_user}",
+      "gists_url": "https://api.github.com/users/web-flow/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/web-flow/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/web-flow/subscriptions",
+      "organizations_url": "https://api.github.com/users/web-flow/orgs",
+      "repos_url": "https://api.github.com/users/web-flow/repos",
+      "events_url": "https://api.github.com/users/web-flow/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/web-flow/received_events",
+      "type": "User",
+      "site_admin": false
+    },
+    "parents": [
+      {
+        "sha": "c3649965053dc53c26814487e381a1eb4f8832b8",
+        "url": "https://api.github.com/repos/jfrog/froggit-go/commits/c3649965053dc53c26814487e381a1eb4f8832b8",
+        "html_url": "https://github.com/jfrog/froggit-go/commit/c3649965053dc53c26814487e381a1eb4f8832b8"
+      }
+    ]
+  },
+  "merge_base_commit": {
+    "sha": "ce1965514d711e17045b849e11105d9c095ee935",
+    "node_id": "C_kwDOF_Bo3doAKGNlMTk2NTUxNGQ3MTFlMTcwNDViODQ5ZTExMTA1ZDljMDk1ZWU5MzU",
+    "commit": {
+      "author": {
+        "name": "Omer Zidkoni",
+        "email": "50792403+omerzi@users.noreply.github.com",
+        "date": "2023-01-10T11:25:46Z"
+      },
+      "committer": {
+        "name": "GitHub",
+        "email": "noreply@github.com",
+        "date": "2023-01-10T11:25:46Z"
+      },
+      "message": "Need to check 404 status code before error (#60)",
+      "tree": {
+        "sha": "13b0df20c75390cc2537caab7c26c1bb004c3f72",
+        "url": "https://api.github.com/repos/jfrog/froggit-go/git/trees/13b0df20c75390cc2537caab7c26c1bb004c3f72"
+      },
+      "url": "https://api.github.com/repos/jfrog/froggit-go/git/commits/ce1965514d711e17045b849e11105d9c095ee935",
+      "comment_count": 0,
+      "verification": {
+        "verified": true,
+        "reason": "valid",
+        "signature": "-----BEGIN PGP SIGNATURE-----\n\nwsBcBAABCAAQBQJjvUs6CRBK7hj4Ov3rIwAAiwwIABFHcsTPoVa5ghSZ/bq89Zqu\nnqvE6xZfLAKxyYX/sZ6d4FUHoit8J6+pPOX4jY2Mux8JUUjuROv+a/jKCPiI5JBB\nSkqS7ra6+b1+Fb17aqO/HUpj2GKx9vjFqpcQ+hl1A5xvmZhBJLwR3Q5vrgNGvtfT\n3aYq60HccTgVJqWdc6du2MOm2xehNgAPozta+jQ/YZ6grL1IdR5KDLnUSY0f10W+\nNI4vlyj5Z6ZVHpxeUOxlYFVgB9cEoC09fgr79ROyGsHR92SedyFXUMYy2lS7jG8A\nU6TxW0ReqyHY8XPJUNVO2+McZMt4U85JNocn4uk3BL+RMcEOTCsb+PTmzqvTfUY=\n=ZqXv\n-----END PGP SIGNATURE-----\n",
+        "payload": "tree 13b0df20c75390cc2537caab7c26c1bb004c3f72\nparent c3649965053dc53c26814487e381a1eb4f8832b8\nauthor Omer Zidkoni <50792403+omerzi@users.noreply.github.com> 1673349946 +0200\ncommitter GitHub <noreply@github.com> 1673349946 +0200\n\nNeed to check 404 status code before error (#60)\n\n"
+      }
+    },
+    "url": "https://api.github.com/repos/jfrog/froggit-go/commits/ce1965514d711e17045b849e11105d9c095ee935",
+    "html_url": "https://github.com/jfrog/froggit-go/commit/ce1965514d711e17045b849e11105d9c095ee935",
+    "comments_url": "https://api.github.com/repos/jfrog/froggit-go/commits/ce1965514d711e17045b849e11105d9c095ee935/comments",
+    "author": {
+      "login": "omerzi",
+      "id": 50792403,
+      "node_id": "MDQ6VXNlcjUwNzkyNDAz",
+      "avatar_url": "https://avatars.githubusercontent.com/u/50792403?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/omerzi",
+      "html_url": "https://github.com/omerzi",
+      "followers_url": "https://api.github.com/users/omerzi/followers",
+      "following_url": "https://api.github.com/users/omerzi/following{/other_user}",
+      "gists_url": "https://api.github.com/users/omerzi/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/omerzi/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/omerzi/subscriptions",
+      "organizations_url": "https://api.github.com/users/omerzi/orgs",
+      "repos_url": "https://api.github.com/users/omerzi/repos",
+      "events_url": "https://api.github.com/users/omerzi/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/omerzi/received_events",
+      "type": "User",
+      "site_admin": false
+    },
+    "committer": {
+      "login": "web-flow",
+      "id": 19864447,
+      "node_id": "MDQ6VXNlcjE5ODY0NDQ3",
+      "avatar_url": "https://avatars.githubusercontent.com/u/19864447?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/web-flow",
+      "html_url": "https://github.com/web-flow",
+      "followers_url": "https://api.github.com/users/web-flow/followers",
+      "following_url": "https://api.github.com/users/web-flow/following{/other_user}",
+      "gists_url": "https://api.github.com/users/web-flow/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/web-flow/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/web-flow/subscriptions",
+      "organizations_url": "https://api.github.com/users/web-flow/orgs",
+      "repos_url": "https://api.github.com/users/web-flow/repos",
+      "events_url": "https://api.github.com/users/web-flow/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/web-flow/received_events",
+      "type": "User",
+      "site_admin": false
+    },
+    "parents": [
+      {
+        "sha": "c3649965053dc53c26814487e381a1eb4f8832b8",
+        "url": "https://api.github.com/repos/jfrog/froggit-go/commits/c3649965053dc53c26814487e381a1eb4f8832b8",
+        "html_url": "https://github.com/jfrog/froggit-go/commit/c3649965053dc53c26814487e381a1eb4f8832b8"
+      }
+    ]
+  },
+  "status": "ahead",
+  "ahead_by": 4,
+  "behind_by": 0,
+  "total_commits": 4,
+  "commits": [
+    {
+      "sha": "d91178a2c1e88d25807cd9cefbaa856fc2562081",
+      "node_id": "C_kwDOF_Bo3doAKGQ5MTE3OGEyYzFlODhkMjU4MDdjZDljZWZiYWE4NTZmYzI1NjIwODE",
+      "commit": {
+        "author": {
+          "name": "Omer Zidkoni",
+          "email": "50792403+omerzi@users.noreply.github.com",
+          "date": "2023-01-24T13:27:58Z"
+        },
+        "committer": {
+          "name": "GitHub",
+          "email": "noreply@github.com",
+          "date": "2023-01-24T13:27:58Z"
+        },
+        "message": "Added DownloadFileFromRepository to Bitbucket Server (#61)",
+        "tree": {
+          "sha": "2d7d8f7556c6a4b2da212a1b6a856edd823b46d4",
+          "url": "https://api.github.com/repos/jfrog/froggit-go/git/trees/2d7d8f7556c6a4b2da212a1b6a856edd823b46d4"
+        },
+        "url": "https://api.github.com/repos/jfrog/froggit-go/git/commits/d91178a2c1e88d25807cd9cefbaa856fc2562081",
+        "comment_count": 0,
+        "verification": {
+          "verified": true,
+          "reason": "valid",
+          "signature": "-----BEGIN PGP SIGNATURE-----\n\nwsBcBAABCAAQBQJjz9zeCRBK7hj4Ov3rIwAAPeEIABRT8/uWCVBZb5Xnf79RGklU\nr5SNgHFywVZQPgMbKNBMJpry3nMHCv8R/WbonYK/cO/znixEr1ZzZhGP9U3lNdRV\nmDuPEh6hRkLpAApfl5s1d1HbN7BhFbQClkDM0v8uRDU8gm3ZjQVUh9mFpsmDJqA2\nfbq9Ogp8DBaplukWoVzlcHMhlHUucMc+7Vy9Eh3ooJEQO3jJckRy8iphJQh4Ir/L\ni2U3u4hS3G9DzcWrVKgvybQSTaqtbIfC+G8iF4eoACioa3Fvgdv+fikCV9BRLKwR\nG4uDD6NEpb+9t+S/zyYBvQmMioei+t1UxRrGH5tE3dCtK0LM0s96Ymn1VbXNOKA=\n=Kuie\n-----END PGP SIGNATURE-----\n",
+          "payload": "tree 2d7d8f7556c6a4b2da212a1b6a856edd823b46d4\nparent ce1965514d711e17045b849e11105d9c095ee935\nauthor Omer Zidkoni <50792403+omerzi@users.noreply.github.com> 1674566878 +0200\ncommitter GitHub <noreply@github.com> 1674566878 +0200\n\nAdded DownloadFileFromRepository to Bitbucket Server (#61)\n\n"
+        }
+      },
+      "url": "https://api.github.com/repos/jfrog/froggit-go/commits/d91178a2c1e88d25807cd9cefbaa856fc2562081",
+      "html_url": "https://github.com/jfrog/froggit-go/commit/d91178a2c1e88d25807cd9cefbaa856fc2562081",
+      "comments_url": "https://api.github.com/repos/jfrog/froggit-go/commits/d91178a2c1e88d25807cd9cefbaa856fc2562081/comments",
+      "author": {
+        "login": "omerzi",
+        "id": 50792403,
+        "node_id": "MDQ6VXNlcjUwNzkyNDAz",
+        "avatar_url": "https://avatars.githubusercontent.com/u/50792403?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/omerzi",
+        "html_url": "https://github.com/omerzi",
+        "followers_url": "https://api.github.com/users/omerzi/followers",
+        "following_url": "https://api.github.com/users/omerzi/following{/other_user}",
+        "gists_url": "https://api.github.com/users/omerzi/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/omerzi/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/omerzi/subscriptions",
+        "organizations_url": "https://api.github.com/users/omerzi/orgs",
+        "repos_url": "https://api.github.com/users/omerzi/repos",
+        "events_url": "https://api.github.com/users/omerzi/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/omerzi/received_events",
+        "type": "User",
+        "site_admin": false
+      },
+      "committer": {
+        "login": "web-flow",
+        "id": 19864447,
+        "node_id": "MDQ6VXNlcjE5ODY0NDQ3",
+        "avatar_url": "https://avatars.githubusercontent.com/u/19864447?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/web-flow",
+        "html_url": "https://github.com/web-flow",
+        "followers_url": "https://api.github.com/users/web-flow/followers",
+        "following_url": "https://api.github.com/users/web-flow/following{/other_user}",
+        "gists_url": "https://api.github.com/users/web-flow/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/web-flow/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/web-flow/subscriptions",
+        "organizations_url": "https://api.github.com/users/web-flow/orgs",
+        "repos_url": "https://api.github.com/users/web-flow/repos",
+        "events_url": "https://api.github.com/users/web-flow/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/web-flow/received_events",
+        "type": "User",
+        "site_admin": false
+      },
+      "parents": [
+        {
+          "sha": "ce1965514d711e17045b849e11105d9c095ee935",
+          "url": "https://api.github.com/repos/jfrog/froggit-go/commits/ce1965514d711e17045b849e11105d9c095ee935",
+          "html_url": "https://github.com/jfrog/froggit-go/commit/ce1965514d711e17045b849e11105d9c095ee935"
+        }
+      ]
+    },
+    {
+      "sha": "fde40c049ee36634a0f68976be011e6d1bd8d970",
+      "node_id": "C_kwDOF_Bo3doAKGZkZTQwYzA0OWVlMzY2MzRhMGY2ODk3NmJlMDExZTZkMWJkOGQ5NzA",
+      "commit": {
+        "author": {
+          "name": "Yahav Itzhak",
+          "email": "yahavi@users.noreply.github.com",
+          "date": "2023-01-26T12:16:19Z"
+        },
+        "committer": {
+          "name": "GitHub",
+          "email": "noreply@github.com",
+          "date": "2023-01-26T12:16:19Z"
+        },
+        "message": "Add repository visibility to the repository info (#63)",
+        "tree": {
+          "sha": "1117761f49d90778e1d0207aad86560a744a4044",
+          "url": "https://api.github.com/repos/jfrog/froggit-go/git/trees/1117761f49d90778e1d0207aad86560a744a4044"
+        },
+        "url": "https://api.github.com/repos/jfrog/froggit-go/git/commits/fde40c049ee36634a0f68976be011e6d1bd8d970",
+        "comment_count": 0,
+        "verification": {
+          "verified": true,
+          "reason": "valid",
+          "signature": "-----BEGIN PGP SIGNATURE-----\n\nwsBcBAABCAAQBQJj0m8TCRBK7hj4Ov3rIwAAWGMIAJuSqp2gJCM0WY1qmdsVS8VS\nyjZmWbJzLIGQkrjurIXRVDNXTRwU1Zsw+eEQSKRvF0YNSOw0kp/Uq/NGyqBBtcim\n0qXrNo48KLD4M7RUeRDKOfbq5k792yqGb06JJNmR+RcrHzEidgRhJPSCOF1CsMDI\ngc/jQF1Kxsv75IKeQz+K4FztVpO5QpnWNRBb8LmkdIjADm/ahr+IShIZc+qtI4PO\n+Lz0UsBwedRR21JrPQuU1CyLam6cydgmzm3Udu5W5O7YH39JrNeHlFrxrQrdjhTk\n4PoQEW5hpffA2cy2QYSI8d+c1v+m9QB9KJDaede+CjJSuMEBEogxKSsYtYejRNs=\n=MOKX\n-----END PGP SIGNATURE-----\n",
+          "payload": "tree 1117761f49d90778e1d0207aad86560a744a4044\nparent d91178a2c1e88d25807cd9cefbaa856fc2562081\nauthor Yahav Itzhak <yahavi@users.noreply.github.com> 1674735379 +0200\ncommitter GitHub <noreply@github.com> 1674735379 +0200\n\nAdd repository visibility to the repository info (#63)\n\n"
+        }
+      },
+      "url": "https://api.github.com/repos/jfrog/froggit-go/commits/fde40c049ee36634a0f68976be011e6d1bd8d970",
+      "html_url": "https://github.com/jfrog/froggit-go/commit/fde40c049ee36634a0f68976be011e6d1bd8d970",
+      "comments_url": "https://api.github.com/repos/jfrog/froggit-go/commits/fde40c049ee36634a0f68976be011e6d1bd8d970/comments",
+      "author": {
+        "login": "yahavi",
+        "id": 11367982,
+        "node_id": "MDQ6VXNlcjExMzY3OTgy",
+        "avatar_url": "https://avatars.githubusercontent.com/u/11367982?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/yahavi",
+        "html_url": "https://github.com/yahavi",
+        "followers_url": "https://api.github.com/users/yahavi/followers",
+        "following_url": "https://api.github.com/users/yahavi/following{/other_user}",
+        "gists_url": "https://api.github.com/users/yahavi/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/yahavi/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/yahavi/subscriptions",
+        "organizations_url": "https://api.github.com/users/yahavi/orgs",
+        "repos_url": "https://api.github.com/users/yahavi/repos",
+        "events_url": "https://api.github.com/users/yahavi/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/yahavi/received_events",
+        "type": "User",
+        "site_admin": false
+      },
+      "committer": {
+        "login": "web-flow",
+        "id": 19864447,
+        "node_id": "MDQ6VXNlcjE5ODY0NDQ3",
+        "avatar_url": "https://avatars.githubusercontent.com/u/19864447?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/web-flow",
+        "html_url": "https://github.com/web-flow",
+        "followers_url": "https://api.github.com/users/web-flow/followers",
+        "following_url": "https://api.github.com/users/web-flow/following{/other_user}",
+        "gists_url": "https://api.github.com/users/web-flow/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/web-flow/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/web-flow/subscriptions",
+        "organizations_url": "https://api.github.com/users/web-flow/orgs",
+        "repos_url": "https://api.github.com/users/web-flow/repos",
+        "events_url": "https://api.github.com/users/web-flow/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/web-flow/received_events",
+        "type": "User",
+        "site_admin": false
+      },
+      "parents": [
+        {
+          "sha": "d91178a2c1e88d25807cd9cefbaa856fc2562081",
+          "url": "https://api.github.com/repos/jfrog/froggit-go/commits/d91178a2c1e88d25807cd9cefbaa856fc2562081",
+          "html_url": "https://github.com/jfrog/froggit-go/commit/d91178a2c1e88d25807cd9cefbaa856fc2562081"
+        }
+      ]
+    },
+    {
+      "sha": "8e82000949b516896bf11754dc5637872eac8e75",
+      "node_id": "C_kwDOF_Bo3doAKDhlODIwMDA5NDliNTE2ODk2YmYxMTc1NGRjNTYzNzg3MmVhYzhlNzU",
+      "commit": {
+        "author": {
+          "name": "Omer Zidkoni",
+          "email": "50792403+omerzi@users.noreply.github.com",
+          "date": "2023-01-26T14:26:35Z"
+        },
+        "committer": {
+          "name": "GitHub",
+          "email": "noreply@github.com",
+          "date": "2023-01-26T14:26:35Z"
+        },
+        "message": "Fix Azure Devops Server remote details (#65)",
+        "tree": {
+          "sha": "3ada68f2e9cb8e61fbe45d12d674286d4e93bda2",
+          "url": "https://api.github.com/repos/jfrog/froggit-go/git/trees/3ada68f2e9cb8e61fbe45d12d674286d4e93bda2"
+        },
+        "url": "https://api.github.com/repos/jfrog/froggit-go/git/commits/8e82000949b516896bf11754dc5637872eac8e75",
+        "comment_count": 0,
+        "verification": {
+          "verified": true,
+          "reason": "valid",
+          "signature": "-----BEGIN PGP SIGNATURE-----\n\nwsBcBAABCAAQBQJj0o2bCRBK7hj4Ov3rIwAAE6oIADwgD64JZbWnsC0GnZmM5Gwy\n+BtKsHMgyMCUNBGVV9udAfbFG6QRv2hXu4xaAjOIoQqlLblJyz0XXLgAynxj/sVy\nA5zdI5l6FddZYUIBkVhQIIC6lbPT+cVVcY2HVTnvoOz8C09uAp1bsS4ka8i13bFD\nz+8IgQ+lRaneb3gt3zAwwybsz5ZQZT1QsEORLUO4x3o6pgNszjtLybTkyJYfaNG9\nhpmpqDzQ4DPfU6eo0HnLc1tKhhtMSagIDRkN3hYAk67Ju/vWpX0VMz593604BpU3\nnz7oznvGgfchnNMWma7/IwBbSK6kGmCxGuluCnRhdoxZaBJtUAa9s9Yytju85u8=\n=kv8p\n-----END PGP SIGNATURE-----\n",
+          "payload": "tree 3ada68f2e9cb8e61fbe45d12d674286d4e93bda2\nparent fde40c049ee36634a0f68976be011e6d1bd8d970\nauthor Omer Zidkoni <50792403+omerzi@users.noreply.github.com> 1674743195 +0200\ncommitter GitHub <noreply@github.com> 1674743195 +0200\n\nFix Azure Devops Server remote details (#65)\n\n"
+        }
+      },
+      "url": "https://api.github.com/repos/jfrog/froggit-go/commits/8e82000949b516896bf11754dc5637872eac8e75",
+      "html_url": "https://github.com/jfrog/froggit-go/commit/8e82000949b516896bf11754dc5637872eac8e75",
+      "comments_url": "https://api.github.com/repos/jfrog/froggit-go/commits/8e82000949b516896bf11754dc5637872eac8e75/comments",
+      "author": {
+        "login": "omerzi",
+        "id": 50792403,
+        "node_id": "MDQ6VXNlcjUwNzkyNDAz",
+        "avatar_url": "https://avatars.githubusercontent.com/u/50792403?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/omerzi",
+        "html_url": "https://github.com/omerzi",
+        "followers_url": "https://api.github.com/users/omerzi/followers",
+        "following_url": "https://api.github.com/users/omerzi/following{/other_user}",
+        "gists_url": "https://api.github.com/users/omerzi/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/omerzi/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/omerzi/subscriptions",
+        "organizations_url": "https://api.github.com/users/omerzi/orgs",
+        "repos_url": "https://api.github.com/users/omerzi/repos",
+        "events_url": "https://api.github.com/users/omerzi/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/omerzi/received_events",
+        "type": "User",
+        "site_admin": false
+      },
+      "committer": {
+        "login": "web-flow",
+        "id": 19864447,
+        "node_id": "MDQ6VXNlcjE5ODY0NDQ3",
+        "avatar_url": "https://avatars.githubusercontent.com/u/19864447?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/web-flow",
+        "html_url": "https://github.com/web-flow",
+        "followers_url": "https://api.github.com/users/web-flow/followers",
+        "following_url": "https://api.github.com/users/web-flow/following{/other_user}",
+        "gists_url": "https://api.github.com/users/web-flow/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/web-flow/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/web-flow/subscriptions",
+        "organizations_url": "https://api.github.com/users/web-flow/orgs",
+        "repos_url": "https://api.github.com/users/web-flow/repos",
+        "events_url": "https://api.github.com/users/web-flow/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/web-flow/received_events",
+        "type": "User",
+        "site_admin": false
+      },
+      "parents": [
+        {
+          "sha": "fde40c049ee36634a0f68976be011e6d1bd8d970",
+          "url": "https://api.github.com/repos/jfrog/froggit-go/commits/fde40c049ee36634a0f68976be011e6d1bd8d970",
+          "html_url": "https://github.com/jfrog/froggit-go/commit/fde40c049ee36634a0f68976be011e6d1bd8d970"
+        }
+      ]
+    },
+    {
+      "sha": "d41c3fcff4ea7d18e753977f5d63d5003becaa2f",
+      "node_id": "C_kwDOF_Bo3doAKGQ0MWMzZmNmZjRlYTdkMThlNzUzOTc3ZjVkNjNkNTAwM2JlY2FhMmY",
+      "commit": {
+        "author": {
+          "name": "Yahav Itzhak",
+          "email": "yahavi@users.noreply.github.com",
+          "date": "2023-01-26T14:35:31Z"
+        },
+        "committer": {
+          "name": "GitHub",
+          "email": "noreply@github.com",
+          "date": "2023-01-26T14:35:31Z"
+        },
+        "message": "New Get Repository Environment Info API (#64)",
+        "tree": {
+          "sha": "e6b4d9994d01d0f082851e9acaa253fbb7115d51",
+          "url": "https://api.github.com/repos/jfrog/froggit-go/git/trees/e6b4d9994d01d0f082851e9acaa253fbb7115d51"
+        },
+        "url": "https://api.github.com/repos/jfrog/froggit-go/git/commits/d41c3fcff4ea7d18e753977f5d63d5003becaa2f",
+        "comment_count": 0,
+        "verification": {
+          "verified": true,
+          "reason": "valid",
+          "signature": "-----BEGIN PGP SIGNATURE-----\n\nwsBcBAABCAAQBQJj0o+zCRBK7hj4Ov3rIwAAA4YIACFTuvoQBXEs1pzxsi2mz1Ut\nwIr8jsFFO3BU+vUGsGfS+2dCrz8WjLYfbzqnj0sr/VFIdkVTbn8FkzKmcW/grakr\nyCFdB8hThZaW0hLtg7mtmxkNqXiQKPWHVNuN8S7UEy0JmfvNhe92Ksw/+p6Sgijl\nluUEdTRy1GPhRXMfl1yU6/Gha0jNevncw3XpNze0o58Vsbbm17RpEk+sLVAkxgQF\nZ7hCUb3FQTh7C4kX1h7TV8dbuDebuR3Tb5ItPqZJ6rQlXcNIYugFfOMI1fR1rZhQ\nTU9Gi4R+CToA4jHMuV5zO1mT3A0/Cmk+lm4pEXqHuCVAeV/8bXakI0moGvYw7bE=\n=6QBu\n-----END PGP SIGNATURE-----\n",
+          "payload": "tree e6b4d9994d01d0f082851e9acaa253fbb7115d51\nparent 8e82000949b516896bf11754dc5637872eac8e75\nauthor Yahav Itzhak <yahavi@users.noreply.github.com> 1674743731 +0200\ncommitter GitHub <noreply@github.com> 1674743731 +0200\n\nNew Get Repository Environment Info API (#64)\n\n"
+        }
+      },
+      "url": "https://api.github.com/repos/jfrog/froggit-go/commits/d41c3fcff4ea7d18e753977f5d63d5003becaa2f",
+      "html_url": "https://github.com/jfrog/froggit-go/commit/d41c3fcff4ea7d18e753977f5d63d5003becaa2f",
+      "comments_url": "https://api.github.com/repos/jfrog/froggit-go/commits/d41c3fcff4ea7d18e753977f5d63d5003becaa2f/comments",
+      "author": {
+        "login": "yahavi",
+        "id": 11367982,
+        "node_id": "MDQ6VXNlcjExMzY3OTgy",
+        "avatar_url": "https://avatars.githubusercontent.com/u/11367982?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/yahavi",
+        "html_url": "https://github.com/yahavi",
+        "followers_url": "https://api.github.com/users/yahavi/followers",
+        "following_url": "https://api.github.com/users/yahavi/following{/other_user}",
+        "gists_url": "https://api.github.com/users/yahavi/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/yahavi/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/yahavi/subscriptions",
+        "organizations_url": "https://api.github.com/users/yahavi/orgs",
+        "repos_url": "https://api.github.com/users/yahavi/repos",
+        "events_url": "https://api.github.com/users/yahavi/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/yahavi/received_events",
+        "type": "User",
+        "site_admin": false
+      },
+      "committer": {
+        "login": "web-flow",
+        "id": 19864447,
+        "node_id": "MDQ6VXNlcjE5ODY0NDQ3",
+        "avatar_url": "https://avatars.githubusercontent.com/u/19864447?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/web-flow",
+        "html_url": "https://github.com/web-flow",
+        "followers_url": "https://api.github.com/users/web-flow/followers",
+        "following_url": "https://api.github.com/users/web-flow/following{/other_user}",
+        "gists_url": "https://api.github.com/users/web-flow/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/web-flow/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/web-flow/subscriptions",
+        "organizations_url": "https://api.github.com/users/web-flow/orgs",
+        "repos_url": "https://api.github.com/users/web-flow/repos",
+        "events_url": "https://api.github.com/users/web-flow/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/web-flow/received_events",
+        "type": "User",
+        "site_admin": false
+      },
+      "parents": [
+        {
+          "sha": "8e82000949b516896bf11754dc5637872eac8e75",
+          "url": "https://api.github.com/repos/jfrog/froggit-go/commits/8e82000949b516896bf11754dc5637872eac8e75",
+          "html_url": "https://github.com/jfrog/froggit-go/commit/8e82000949b516896bf11754dc5637872eac8e75"
+        }
+      ]
+    }
+  ],
+  "files": [
+    {
+      "sha": "7cc8f8b04af7b067a0dc5342ecc965389b30648a",
+      "filename": "README.md",
+      "status": "modified",
+      "additions": 25,
+      "deletions": 6,
+      "changes": 31,
+      "blob_url": "https://github.com/jfrog/froggit-go/blob/d41c3fcff4ea7d18e753977f5d63d5003becaa2f/README.md",
+      "raw_url": "https://github.com/jfrog/froggit-go/raw/d41c3fcff4ea7d18e753977f5d63d5003becaa2f/README.md",
+      "contents_url": "https://api.github.com/repos/jfrog/froggit-go/contents/README.md?ref=d41c3fcff4ea7d18e753977f5d63d5003becaa2f",
+      "patch": "@@ -3,6 +3,7 @@\n # Froggit-Go\n \n [![Frogbot](images/header.png)](#readme)\n+\n </div>\n \n Froggit-Go is a Go library, allowing to perform actions on VCS providers.\n@@ -41,6 +42,7 @@ Currently supported providers are: [GitHub](#github), [Bitbucket Server](#bitbuc\n       - [Get Commit By SHA](#get-commit-by-sha)\n       - [Add Public SSH Key](#add-public-ssh-key)\n       - [Get Repository Info](#get-repository-info)\n+      - [Get Repository Environment Info](#get-repository-environment-info)\n       - [Create a label](#create-a-label)\n       - [Get a label](#get-a-label)\n       - [List Pull Request Labels](#list-pull-request-labels)\n@@ -66,7 +68,7 @@ apiEndpoint := \"https://github.example.com\"\n token := \"secret-github-token\"\n // Logger\n // [Optional]\n-// Supported logger is a logger that implements the Log interface. \n+// Supported logger is a logger that implements the Log interface.\n // More information - https://github.com/jfrog/froggit-go/blob/master/vcsclient/logger.go\n logger := log.Default()\n \n@@ -86,7 +88,7 @@ apiEndpoint := \"https://gitlab.example.com\"\n token := \"secret-gitlab-token\"\n // Logger\n // [Optional]\n-// Supported logger is a logger that implements the Log interface. \n+// Supported logger is a logger that implements the Log interface.\n // More information - https://github.com/jfrog/froggit-go/blob/master/vcsclient/logger.go\n logger := logger\n \n@@ -106,7 +108,7 @@ apiEndpoint := \"https://git.acme.com/rest\"\n token := \"secret-bitbucket-token\"\n // Logger\n // [Optional]\n-// Supported logger is a logger that implements the Log interface. \n+// Supported logger is a logger that implements the Log interface.\n // More information - https://github.com/jfrog/froggit-go/blob/master/vcsclient/logger.go\n logger := log.Default()\n \n@@ -128,7 +130,7 @@ username := \"bitbucket-user\"\n token := \"secret-bitbucket-token\"\n // Logger\n // [Optional]\n-// Supported logger is a logger that implements the Log interface. \n+// Supported logger is a logger that implements the Log interface.\n // More information - https://github.com/jfrog/froggit-go/blob/master/vcsclient/logger.go\n logger := log.Default()\n \n@@ -148,7 +150,7 @@ apiEndpoint := \"https://dev.azure.com/<organization>\"\n token := \"secret-azure-devops-token\"\n // Logger\n // [Optional]\n-// Supported logger is a logger that implements the Log interface. \n+// Supported logger is a logger that implements the Log interface.\n // More information - https://github.com/jfrog/froggit-go/blob/master/vcsclient/logger.go\n logger := log.Default()\n // Project name\n@@ -420,6 +422,24 @@ repository := \"jfrog-cli\"\n repoInfo, err := client.GetRepositoryInfo(ctx, owner, repository)\n ```\n \n+#### Get Repository Environment Info\n+\n+Notice - Get Repository Environment Info is currently supported on GitHub only.\n+\n+```go\n+// Go context\n+ctx := context.Background()\n+// Organization or username\n+owner := \"jfrog\"\n+// VCS repository\n+repository := \"jfrog-cli\"\n+// Environment name\n+name := \"frogbot\"\n+\n+// Get information about repository environment\n+repoEnvInfo, err := client.GetRepositoryEnvironmentInfo(ctx, owner, repository, name)\n+```\n+\n #### Create a label\n \n Notice - Labels are not supported in Bitbucket\n@@ -552,4 +572,3 @@ provider := vcsutils.GitHub\n \n webhookInfo, err := webhookparser.ParseIncomingWebhook(provider, token, request)\n ```\n-"
+    },
+    {
+      "sha": "01595a2e4b453632deeb18c9b5c7fbf7c286c2f7",
+      "filename": "vcsclient/azurerepos.go",
+      "status": "modified",
+      "additions": 6,
+      "deletions": 1,
+      "changes": 7,
+      "blob_url": "https://github.com/jfrog/froggit-go/blob/d41c3fcff4ea7d18e753977f5d63d5003becaa2f/vcsclient%2Fazurerepos.go",
+      "raw_url": "https://github.com/jfrog/froggit-go/raw/d41c3fcff4ea7d18e753977f5d63d5003becaa2f/vcsclient%2Fazurerepos.go",
+      "contents_url": "https://api.github.com/repos/jfrog/froggit-go/contents/vcsclient%2Fazurerepos.go?ref=d41c3fcff4ea7d18e753977f5d63d5003becaa2f",
+      "patch": "@@ -115,7 +115,7 @@ func (client *AzureReposClient) DownloadRepository(ctx context.Context, owner, r\n \tclient.logger.Info(\"extracted repository successfully\")\n \t// Generate .git folder with remote details\n \treturn vcsutils.CreateDotGitFolderWithRemote(localPath, \"origin\",\n-\t\tfmt.Sprintf(\"https://%s@dev.azure.com/%s/%s/_git/%s\", owner, owner, client.vcsInfo.Project, repository))\n+\t\tfmt.Sprintf(\"https://%s@%s/%s/_git/%s\", owner, strings.TrimPrefix(client.connectionDetails.BaseUrl, \"https://\"), client.vcsInfo.Project, repository))\n }\n \n func (client *AzureReposClient) sendDownloadRepoRequest(ctx context.Context, repository string, branch string) (res *http.Response, err error) {\n@@ -360,3 +360,8 @@ func (client *AzureReposClient) SetCommitStatus(ctx context.Context, commitStatu\n func (client *AzureReposClient) DownloadFileFromRepo(ctx context.Context, owner, repository, branch, path string) ([]byte, int, error) {\n \treturn nil, 0, getUnsupportedInAzureError(\"download file from repo\")\n }\n+\n+// GetRepositoryEnvironmentInfo on GitLab\n+func (client *AzureReposClient) GetRepositoryEnvironmentInfo(ctx context.Context, owner, repository, name string) (RepositoryEnvironmentInfo, error) {\n+\treturn RepositoryEnvironmentInfo{}, getUnsupportedInAzureError(\"get repository environment info\")\n+}"
+    },
+    {
+      "sha": "423998e750c7fd95b69332db6f8a90a640beb128",
+      "filename": "vcsclient/azurerepos_test.go",
+      "status": "modified",
+      "additions": 8,
+      "deletions": 0,
+      "changes": 8,
+      "blob_url": "https://github.com/jfrog/froggit-go/blob/d41c3fcff4ea7d18e753977f5d63d5003becaa2f/vcsclient%2Fazurerepos_test.go",
+      "raw_url": "https://github.com/jfrog/froggit-go/raw/d41c3fcff4ea7d18e753977f5d63d5003becaa2f/vcsclient%2Fazurerepos_test.go",
+      "contents_url": "https://api.github.com/repos/jfrog/froggit-go/contents/vcsclient%2Fazurerepos_test.go?ref=d41c3fcff4ea7d18e753977f5d63d5003becaa2f",
+      "patch": "@@ -365,6 +365,14 @@ func TestAzureReposClient_GetLabel(t *testing.T) {\n \tassert.Error(t, err)\n }\n \n+func TestAzureReposClient_GetRepositoryEnvironmentInfo(t *testing.T) {\n+\tctx := context.Background()\n+\tclient, cleanUp := createServerAndClient(t, vcsutils.AzureRepos, true, \"\", \"unsupportedTest\", createAzureReposHandler)\n+\tdefer cleanUp()\n+\t_, err := client.GetRepositoryEnvironmentInfo(ctx, owner, repo1, envName)\n+\tassert.Error(t, err)\n+}\n+\n func TestGetUnsupportedInAzureError(t *testing.T) {\n \tfunctionName := \"foo\"\n \tassert.Error(t, getUnsupportedInAzureError(functionName))"
+    },
+    {
+      "sha": "f013cbf26044361ff618fd4dbe56e9a691c40fd2",
+      "filename": "vcsclient/bitbucketcloud.go",
+      "status": "modified",
+      "additions": 13,
+      "deletions": 1,
+      "changes": 14,
+      "blob_url": "https://github.com/jfrog/froggit-go/blob/d41c3fcff4ea7d18e753977f5d63d5003becaa2f/vcsclient%2Fbitbucketcloud.go",
+      "raw_url": "https://github.com/jfrog/froggit-go/raw/d41c3fcff4ea7d18e753977f5d63d5003becaa2f/vcsclient%2Fbitbucketcloud.go",
+      "contents_url": "https://api.github.com/repos/jfrog/froggit-go/contents/vcsclient%2Fbitbucketcloud.go?ref=d41c3fcff4ea7d18e753977f5d63d5003becaa2f",
+      "patch": "@@ -405,7 +405,7 @@ func (client *BitbucketCloudClient) GetRepositoryInfo(ctx context.Context, owner\n \t\t\tinfo.SSH = link.HRef\n \t\t}\n \t}\n-\treturn RepositoryInfo{CloneInfo: info}, nil\n+\treturn RepositoryInfo{RepositoryVisibility: getBitbucketCloudRepositoryVisibility(repo), CloneInfo: info}, nil\n }\n \n // GetCommitBySha on Bitbucket cloud\n@@ -466,6 +466,11 @@ func (client *BitbucketCloudClient) DownloadFileFromRepo(ctx context.Context, ow\n \treturn nil, 0, errBitbucketDownloadFileFromRepoNotSupported\n }\n \n+// GetRepositoryEnvironmentInfo on Bitbucket cloud\n+func (client *BitbucketCloudClient) GetRepositoryEnvironmentInfo(ctx context.Context, owner, repository, name string) (RepositoryEnvironmentInfo, error) {\n+\treturn RepositoryEnvironmentInfo{}, errBitbucketGetRepoEnvironmentInfoNotSupported\n+}\n+\n func extractCommitFromResponse(commits interface{}) (*commitResponse, error) {\n \tvar res commitResponse\n \terr := extractStructFromResponse(commits, &res)\n@@ -659,3 +664,10 @@ func mapBitbucketCloudPullRequestToPullRequestInfo(parsedPullRequests *pullReque\n \t}\n \treturn pullRequests\n }\n+\n+func getBitbucketCloudRepositoryVisibility(repo *bitbucket.Repository) RepositoryVisibility {\n+\tif repo.Is_private {\n+\t\treturn Private\n+\t}\n+\treturn Public\n+}"
+    },
+    {
+      "sha": "63e8828376cb0ccdacd473237ae12dc06c5c11be",
+      "filename": "vcsclient/bitbucketcloud_test.go",
+      "status": "modified",
+      "additions": 15,
+      "deletions": 0,
+      "changes": 15,
+      "blob_url": "https://github.com/jfrog/froggit-go/blob/d41c3fcff4ea7d18e753977f5d63d5003becaa2f/vcsclient%2Fbitbucketcloud_test.go",
+      "raw_url": "https://github.com/jfrog/froggit-go/raw/d41c3fcff4ea7d18e753977f5d63d5003becaa2f/vcsclient%2Fbitbucketcloud_test.go",
+      "contents_url": "https://api.github.com/repos/jfrog/froggit-go/contents/vcsclient%2Fbitbucketcloud_test.go?ref=d41c3fcff4ea7d18e753977f5d63d5003becaa2f",
+      "patch": "@@ -375,6 +375,7 @@ func TestBitbucketCloud_GetRepositoryInfo(t *testing.T) {\n \trequire.NoError(t, err)\n \trequire.Equal(t,\n \t\tRepositoryInfo{\n+\t\t\tRepositoryVisibility: Public,\n \t\t\tCloneInfo: CloneInfo{\n \t\t\t\tHTTP: \"https://bitbucket.org/jfrog/jfrog-setup-cli.git\",\n \t\t\t\tSSH:  \"git@bitbucket.org:jfrog/jfrog-setup-cli.git\",\n@@ -429,6 +430,20 @@ func TestBitbucketCloud_UnlabelPullRequest(t *testing.T) {\n \tassert.ErrorIs(t, err, errLabelsNotSupported)\n }\n \n+func TestBitbucketCloud_GetRepositoryEnvironmentInfo(t *testing.T) {\n+\tctx := context.Background()\n+\tclient, err := NewClientBuilder(vcsutils.BitbucketCloud).Build()\n+\tassert.NoError(t, err)\n+\n+\t_, err = client.GetRepositoryEnvironmentInfo(ctx, owner, repo1, envName)\n+\tassert.ErrorIs(t, err, errBitbucketGetRepoEnvironmentInfoNotSupported)\n+}\n+\n+func TestBitbucketCloud_getRepositoryVisibility(t *testing.T) {\n+\tassert.Equal(t, Private, getBitbucketCloudRepositoryVisibility(&bitbucket.Repository{Is_private: true}))\n+\tassert.Equal(t, Public, getBitbucketCloudRepositoryVisibility(&bitbucket.Repository{Is_private: false}))\n+}\n+\n func createBitbucketCloudHandler(t *testing.T, expectedURI string, response []byte, expectedStatusCode int) http.HandlerFunc {\n \treturn func(w http.ResponseWriter, r *http.Request) {\n \t\tw.WriteHeader(expectedStatusCode)"
+    },
+    {
+      "sha": "5ba8718a766b93405e57c8eff70d2c8efd5c727e",
+      "filename": "vcsclient/bitbucketcommon.go",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 0,
+      "changes": 1,
+      "blob_url": "https://github.com/jfrog/froggit-go/blob/d41c3fcff4ea7d18e753977f5d63d5003becaa2f/vcsclient%2Fbitbucketcommon.go",
+      "raw_url": "https://github.com/jfrog/froggit-go/raw/d41c3fcff4ea7d18e753977f5d63d5003becaa2f/vcsclient%2Fbitbucketcommon.go",
+      "contents_url": "https://api.github.com/repos/jfrog/froggit-go/contents/vcsclient%2Fbitbucketcommon.go?ref=d41c3fcff4ea7d18e753977f5d63d5003becaa2f",
+      "patch": "@@ -8,6 +8,7 @@ var errLabelsNotSupported = errors.New(\"labels are not supported on Bitbucket\")\n var errBitbucketCodeScanningNotSupported = errors.New(\"code scanning is not supported on Bitbucket\")\n \n var errBitbucketDownloadFileFromRepoNotSupported = errors.New(\"download file from repo is currently not supported on Bitbucket\")\n+var errBitbucketGetRepoEnvironmentInfoNotSupported = errors.New(\"get repository environment info is currently not supported on Bitbucket\")\n \n func getBitbucketCommitState(commitState CommitStatus) string {\n \tswitch commitState {"
+    },
+    {
+      "sha": "feeb83f23deb5286bf05857a4530064ebf3cb17c",
+      "filename": "vcsclient/bitbucketserver.go",
+      "status": "modified",
+      "additions": 23,
+      "deletions": 2,
+      "changes": 25,
+      "blob_url": "https://github.com/jfrog/froggit-go/blob/d41c3fcff4ea7d18e753977f5d63d5003becaa2f/vcsclient%2Fbitbucketserver.go",
+      "raw_url": "https://github.com/jfrog/froggit-go/raw/d41c3fcff4ea7d18e753977f5d63d5003becaa2f/vcsclient%2Fbitbucketserver.go",
+      "contents_url": "https://api.github.com/repos/jfrog/froggit-go/contents/vcsclient%2Fbitbucketserver.go?ref=d41c3fcff4ea7d18e753977f5d63d5003becaa2f",
+      "patch": "@@ -455,6 +455,7 @@ func (client *BitbucketServerClient) GetRepositoryInfo(ctx context.Context, owne\n \t\t\t\tHRef string `mapstructure:\"href\"`\n \t\t\t} `mapstructure:\"clone\"`\n \t\t} `mapstructure:\"links\"`\n+\t\tPublic bool `mapstructure:\"public\"`\n \t}{}\n \n \tif err := mapstructure.Decode(repo.Values, &holder); err != nil {\n@@ -471,7 +472,7 @@ func (client *BitbucketServerClient) GetRepositoryInfo(ctx context.Context, owne\n \t\t}\n \t}\n \n-\treturn RepositoryInfo{CloneInfo: info}, nil\n+\treturn RepositoryInfo{RepositoryVisibility: getBitbucketServerRepositoryVisibility(holder.Public), CloneInfo: info}, nil\n }\n \n // GetCommitBySha on Bitbucket server\n@@ -522,6 +523,11 @@ func (client *BitbucketServerClient) UnlabelPullRequest(ctx context.Context, own\n \treturn errLabelsNotSupported\n }\n \n+// GetRepositoryEnvironmentInfo on Bitbucket server\n+func (client *BitbucketServerClient) GetRepositoryEnvironmentInfo(ctx context.Context, owner, repository, name string) (RepositoryEnvironmentInfo, error) {\n+\treturn RepositoryEnvironmentInfo{}, errBitbucketGetRepoEnvironmentInfoNotSupported\n+}\n+\n // Get all projects for which the authenticated user has the PROJECT_VIEW permission\n func (client *BitbucketServerClient) listProjects(bitbucketClient *bitbucketv1.DefaultApiService) ([]string, error) {\n \tvar apiResponse *bitbucketv1.APIResponse\n@@ -553,7 +559,15 @@ func (client *BitbucketServerClient) listProjects(bitbucketClient *bitbucketv1.D\n \n // DownloadFileFromRepo on Bitbucket server\n func (client *BitbucketServerClient) DownloadFileFromRepo(ctx context.Context, owner, repository, branch, path string) ([]byte, int, error) {\n-\treturn nil, 0, errBitbucketDownloadFileFromRepoNotSupported\n+\tbitbucketClient, err := client.buildBitbucketClient(ctx)\n+\tif err != nil {\n+\t\treturn nil, 0, err\n+\t}\n+\tresp, err := bitbucketClient.GetContent_11(owner, repository, path, map[string]interface{}{\"at\": branch})\n+\tif err != nil {\n+\t\treturn nil, 0, err\n+\t}\n+\treturn resp.Payload, resp.StatusCode, err\n }\n \n func createPaginationOptions(nextPageStart int) map[string]interface{} {\n@@ -627,3 +641,10 @@ func (client *BitbucketServerClient) mapBitbucketServerCommitToCommitInfo(commit\n func (client *BitbucketServerClient) UploadCodeScanning(ctx context.Context, owner string, repository string, branch string, scanResults string) (string, error) {\n \treturn \"\", errBitbucketCodeScanningNotSupported\n }\n+\n+func getBitbucketServerRepositoryVisibility(public bool) RepositoryVisibility {\n+\tif public {\n+\t\treturn Public\n+\t}\n+\treturn Private\n+}"
+    },
+    {
+      "sha": "e64571dd75ff65483778410ea3f9e2eaa79c43f6",
+      "filename": "vcsclient/bitbucketserver_test.go",
+      "status": "modified",
+      "additions": 45,
+      "deletions": 2,
+      "changes": 47,
+      "blob_url": "https://github.com/jfrog/froggit-go/blob/d41c3fcff4ea7d18e753977f5d63d5003becaa2f/vcsclient%2Fbitbucketserver_test.go",
+      "raw_url": "https://github.com/jfrog/froggit-go/raw/d41c3fcff4ea7d18e753977f5d63d5003becaa2f/vcsclient%2Fbitbucketserver_test.go",
+      "contents_url": "https://api.github.com/repos/jfrog/froggit-go/contents/vcsclient%2Fbitbucketserver_test.go?ref=d41c3fcff4ea7d18e753977f5d63d5003becaa2f",
+      "patch": "@@ -398,6 +398,7 @@ func TestBitbucketServer_GetRepositoryInfo(t *testing.T) {\n \t\trequire.NoError(t, err)\n \t\trequire.Equal(t,\n \t\t\tRepositoryInfo{\n+\t\t\t\tRepositoryVisibility: Public,\n \t\t\t\tCloneInfo: CloneInfo{\n \t\t\t\t\tHTTP: \"https://bitbucket.org/jfrog/repo-1.git\",\n \t\t\t\t\tSSH:  \"ssh://git@bitbucket.org:jfrog/repo-1.git\",\n@@ -447,6 +448,15 @@ func TestBitbucketServer_UnlabelPullRequest(t *testing.T) {\n \tassert.ErrorIs(t, err, errLabelsNotSupported)\n }\n \n+func TestBitbucketServer_GetRepositoryEnvironmentInfo(t *testing.T) {\n+\tctx := context.Background()\n+\tclient, err := NewClientBuilder(vcsutils.BitbucketServer).Build()\n+\tassert.NoError(t, err)\n+\n+\t_, err = client.GetRepositoryEnvironmentInfo(ctx, owner, repo1, envName)\n+\tassert.ErrorIs(t, err, errBitbucketGetRepoEnvironmentInfoNotSupported)\n+}\n+\n func TestBitbucketServer_GetCommitBySha(t *testing.T) {\n \tctx := context.Background()\n \tsha := \"abcdef0123abcdef4567abcdef8987abcdef6543\"\n@@ -511,12 +521,31 @@ func TestBitbucketServer_UploadCodeScanning(t *testing.T) {\n \n func TestBitbucketServer_DownloadFileFromRepo(t *testing.T) {\n \tctx := context.Background()\n-\tclient, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, true, \"\", \"unsupportedTest\", createBitbucketServerHandler)\n+\texpectedPayload := []byte(\"hello world\")\n+\tclient, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, true, expectedPayload, \"/rest/api/1.0/projects/jfrog/repos/repo-1/raw/hello-world?at=branch-1\", createBitbucketServerDownloadFileFromRepositoryHandler)\n \tdefer cleanUp()\n-\t_, _, err := client.DownloadFileFromRepo(ctx, owner, repo1, \"\", \"\")\n+\n+\texpectedStatusCode := 200\n+\tpayload, statusCode, err := client.DownloadFileFromRepo(ctx, owner, repo1, branch1, \"hello-world\")\n+\tassert.Equal(t, expectedPayload, payload)\n+\tassert.Equal(t, expectedStatusCode, statusCode)\n+\tassert.NoError(t, err)\n+\n+\tclient = createBadBitbucketServerClient(t)\n+\t_, _, err = client.DownloadFileFromRepo(ctx, owner, repo1, branch1, \"hello-world\")\n+\tassert.Error(t, err)\n+\n+\tclient, cleanUp = createServerAndClient(t, vcsutils.BitbucketServer, true, expectedPayload, \"/rest/api/1.0/projects/jfrog/repos/repo-1/raw/bad-test?at=branch-1\", createBitbucketServerDownloadFileFromRepositoryHandler)\n+\tdefer cleanUp()\n+\t_, _, err = client.DownloadFileFromRepo(ctx, owner, repo1, branch1, \"bad-test\")\n \tassert.Error(t, err)\n }\n \n+func TestBitbucketServer_getRepositoryVisibility(t *testing.T) {\n+\tassert.Equal(t, Public, getBitbucketServerRepositoryVisibility(true))\n+\tassert.Equal(t, Private, getBitbucketServerRepositoryVisibility(false))\n+}\n+\n func createBitbucketServerHandler(t *testing.T, expectedURI string, response []byte, expectedStatusCode int) http.HandlerFunc {\n \treturn func(w http.ResponseWriter, r *http.Request) {\n \t\tw.WriteHeader(expectedStatusCode)\n@@ -550,6 +579,20 @@ func createBitbucketServerListRepositoriesHandler(t *testing.T, _ string, _ []by\n \t}\n }\n \n+func createBitbucketServerDownloadFileFromRepositoryHandler(t *testing.T, _ string, expectedResponse []byte, _ int) http.HandlerFunc {\n+\treturn func(w http.ResponseWriter, r *http.Request) {\n+\t\tif r.RequestURI == \"/rest/api/1.0/projects/jfrog/repos/repo-1/raw/hello-world?at=branch-1\" {\n+\t\t\t_, err := w.Write(expectedResponse)\n+\t\t\trequire.NoError(t, err)\n+\t\t\treturn\n+\t\t}\n+\t\tif r.RequestURI == \"/rest/api/1.0/projects/jfrog/repos/repo-1/raw/bad-test?at=branch-1\" {\n+\t\t\tw.WriteHeader(http.StatusNotFound)\n+\t\t\treturn\n+\t\t}\n+\t}\n+}\n+\n func createBitbucketServerWithBodyHandler(t *testing.T, expectedURI string, response []byte, expectedRequestBody []byte,\n \texpectedStatusCode int, expectedHTTPMethod string) http.HandlerFunc {\n \treturn func(writer http.ResponseWriter, request *http.Request) {"
+    },
+    {
+      "sha": "416ca7ac2a5e908d338105d87358f72d8a2a5bb3",
+      "filename": "vcsclient/common_test.go",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 0,
+      "changes": 1,
+      "blob_url": "https://github.com/jfrog/froggit-go/blob/d41c3fcff4ea7d18e753977f5d63d5003becaa2f/vcsclient%2Fcommon_test.go",
+      "raw_url": "https://github.com/jfrog/froggit-go/raw/d41c3fcff4ea7d18e753977f5d63d5003becaa2f/vcsclient%2Fcommon_test.go",
+      "contents_url": "https://api.github.com/repos/jfrog/froggit-go/contents/vcsclient%2Fcommon_test.go?ref=d41c3fcff4ea7d18e753977f5d63d5003becaa2f",
+      "patch": "@@ -25,6 +25,7 @@ var (\n \tbranch1   = \"branch-1\"\n \tbranch2   = \"branch-2\"\n \tlabelName = \"🚀 label-name\"\n+\tenvName   = \"frogbot\"\n )\n \n type createHandlerFunc func(t *testing.T, expectedUri string, response []byte, expectedStatusCode int) http.HandlerFunc"
+    },
+    {
+      "sha": "d4327397ac138eccfc12d7677f66b3e70393f16f",
+      "filename": "vcsclient/github.go",
+      "status": "modified",
+      "additions": 73,
+      "deletions": 6,
+      "changes": 79,
+      "blob_url": "https://github.com/jfrog/froggit-go/blob/d41c3fcff4ea7d18e753977f5d63d5003becaa2f/vcsclient%2Fgithub.go",
+      "raw_url": "https://github.com/jfrog/froggit-go/raw/d41c3fcff4ea7d18e753977f5d63d5003becaa2f/vcsclient%2Fgithub.go",
+      "contents_url": "https://api.github.com/repos/jfrog/froggit-go/contents/vcsclient%2Fgithub.go?ref=d41c3fcff4ea7d18e753977f5d63d5003becaa2f",
+      "patch": "@@ -4,15 +4,17 @@ import (\n \t\"context\"\n \t\"encoding/json\"\n \t\"fmt\"\n-\t\"github.com/google/go-github/v45/github\"\n-\t\"github.com/grokify/mogo/encoding/base64\"\n-\t\"github.com/jfrog/froggit-go/vcsutils\"\n-\t\"golang.org/x/oauth2\"\n \t\"io\"\n \t\"net/http\"\n \t\"net/url\"\n \t\"strconv\"\n \t\"strings\"\n+\n+\t\"github.com/google/go-github/v45/github\"\n+\t\"github.com/grokify/mogo/encoding/base64\"\n+\t\"github.com/jfrog/froggit-go/vcsutils\"\n+\t\"github.com/mitchellh/mapstructure\"\n+\t\"golang.org/x/oauth2\"\n )\n \n // GitHubClient API version 3\n@@ -340,7 +342,7 @@ func (client *GitHubClient) GetRepositoryInfo(ctx context.Context, owner, reposi\n \tif err != nil {\n \t\treturn RepositoryInfo{}, err\n \t}\n-\treturn RepositoryInfo{CloneInfo: CloneInfo{HTTP: repo.GetCloneURL(), SSH: repo.GetSSHURL()}}, nil\n+\treturn RepositoryInfo{RepositoryVisibility: getGitHubRepositoryVisibility(repo), CloneInfo: CloneInfo{HTTP: repo.GetCloneURL(), SSH: repo.GetSSHURL()}}, nil\n }\n \n // GetCommitBySha on GitHub\n@@ -519,7 +521,7 @@ func (client *GitHubClient) DownloadFileFromRepo(ctx context.Context, owner, rep\n \t\t}\n \t}()\n \tif response != nil && response.StatusCode != http.StatusOK {\n-\t\treturn nil, response.StatusCode, fmt.Errorf(\"expected %d status code while received %d status code\", http.StatusOK, response.StatusCode)\n+\t\treturn nil, response.StatusCode, fmt.Errorf(\"expected %d status code while received %d status code with error:\\n%s\", http.StatusOK, response.StatusCode, err)\n \t}\n \tif err != nil {\n \t\treturn nil, 0, err\n@@ -532,6 +534,56 @@ func (client *GitHubClient) DownloadFileFromRepo(ctx context.Context, owner, rep\n \treturn content, response.StatusCode, nil\n }\n \n+// GetRepositoryEnvironmentInfo on GitHub\n+func (client *GitHubClient) GetRepositoryEnvironmentInfo(ctx context.Context, owner, repository, name string) (RepositoryEnvironmentInfo, error) {\n+\terr := validateParametersNotBlank(map[string]string{\"owner\": owner, \"repository\": repository, \"name\": name})\n+\tif err != nil {\n+\t\treturn RepositoryEnvironmentInfo{}, err\n+\t}\n+\tghClient, err := client.buildGithubClient(ctx)\n+\tif err != nil {\n+\t\treturn RepositoryEnvironmentInfo{}, err\n+\t}\n+\n+\tenvironment, resp, err := ghClient.Repositories.GetEnvironment(ctx, owner, repository, name)\n+\tif err != nil {\n+\t\treturn RepositoryEnvironmentInfo{}, err\n+\t}\n+\tif err = vcsutils.CheckResponseStatusWithBody(resp.Response, http.StatusOK); err != nil {\n+\t\treturn RepositoryEnvironmentInfo{}, err\n+\t}\n+\n+\treviewers, err := extractGitHubEnvironmentReviewers(environment)\n+\tif err != nil {\n+\t\treturn RepositoryEnvironmentInfo{}, err\n+\t}\n+\n+\treturn RepositoryEnvironmentInfo{\n+\t\tName:      *environment.Name,\n+\t\tUrl:       *environment.URL,\n+\t\tReviewers: reviewers,\n+\t}, err\n+}\n+\n+// Extract code reviewers from environment\n+func extractGitHubEnvironmentReviewers(environment *github.Environment) ([]string, error) {\n+\tvar reviewers []string\n+\tprotectionRules := environment.ProtectionRules\n+\tif protectionRules == nil {\n+\t\treturn reviewers, nil\n+\t}\n+\treviewerStruct := repositoryEnvironmentReviewer{}\n+\tfor _, rule := range protectionRules {\n+\t\tfor _, reviewer := range rule.Reviewers {\n+\t\t\tif err := mapstructure.Decode(reviewer.Reviewer, &reviewerStruct); err != nil {\n+\t\t\t\treturn []string{}, err\n+\t\t\t}\n+\t\t\treviewers = append(reviewers, reviewerStruct.Login)\n+\t\t}\n+\t}\n+\treturn reviewers, nil\n+}\n+\n func createGitHubHook(token, payloadURL string, webhookEvents ...vcsutils.WebhookEvent) *github.Hook {\n \treturn &github.Hook{\n \t\tEvents: getGitHubWebhookEvents(webhookEvents...),\n@@ -557,6 +609,17 @@ func getGitHubWebhookEvents(webhookEvents ...vcsutils.WebhookEvent) []string {\n \treturn events\n }\n \n+func getGitHubRepositoryVisibility(repo *github.Repository) RepositoryVisibility {\n+\tswitch *repo.Visibility {\n+\tcase \"public\":\n+\t\treturn Public\n+\tcase \"internal\":\n+\t\treturn Internal\n+\tdefault:\n+\t\treturn Private\n+\t}\n+}\n+\n func getGitHubCommitState(commitState CommitStatus) string {\n \tswitch commitState {\n \tcase Pass:\n@@ -624,3 +687,7 @@ func packScanningResult(data string) (string, error) {\n \n \treturn compressedScan, err\n }\n+\n+type repositoryEnvironmentReviewer struct {\n+\tLogin string `mapstructure:\"login\"`\n+}"
+    },
+    {
+      "sha": "b849d27da87b10e097d04b87ef3225c6eb422321",
+      "filename": "vcsclient/github_test.go",
+      "status": "modified",
+      "additions": 45,
+      "deletions": 1,
+      "changes": 46,
+      "blob_url": "https://github.com/jfrog/froggit-go/blob/d41c3fcff4ea7d18e753977f5d63d5003becaa2f/vcsclient%2Fgithub_test.go",
+      "raw_url": "https://github.com/jfrog/froggit-go/raw/d41c3fcff4ea7d18e753977f5d63d5003becaa2f/vcsclient%2Fgithub_test.go",
+      "contents_url": "https://api.github.com/repos/jfrog/froggit-go/contents/vcsclient%2Fgithub_test.go?ref=d41c3fcff4ea7d18e753977f5d63d5003becaa2f",
+      "patch": "@@ -178,6 +178,15 @@ func TestGitHubClient_CreateCommitStatus(t *testing.T) {\n \tassert.Error(t, err)\n }\n \n+func TestGitHubClient_getRepositoryVisibility(t *testing.T) {\n+\tvisibility := \"public\"\n+\tassert.Equal(t, Public, getGitHubRepositoryVisibility(&github.Repository{Visibility: &visibility}))\n+\tvisibility = \"internal\"\n+\tassert.Equal(t, Internal, getGitHubRepositoryVisibility(&github.Repository{Visibility: &visibility}))\n+\tvisibility = \"private\"\n+\tassert.Equal(t, Private, getGitHubRepositoryVisibility(&github.Repository{Visibility: &visibility}))\n+}\n+\n func TestGitHubClient_getGitHubCommitState(t *testing.T) {\n \tassert.Equal(t, \"success\", getGitHubCommitState(Pass))\n \tassert.Equal(t, \"failure\", getGitHubCommitState(Fail))\n@@ -426,7 +435,8 @@ func TestGitHubClient_GetRepositoryInfo(t *testing.T) {\n \trequire.NoError(t, err)\n \trequire.Equal(t,\n \t\tRepositoryInfo{\n-\t\t\tCloneInfo: CloneInfo{HTTP: \"https://github.com/octocat/Hello-World.git\", SSH: \"git@github.com:octocat/Hello-World.git\"},\n+\t\t\tRepositoryVisibility: Public,\n+\t\t\tCloneInfo:            CloneInfo{HTTP: \"https://github.com/octocat/Hello-World.git\", SSH: \"git@github.com:octocat/Hello-World.git\"},\n \t\t},\n \t\tinfo,\n \t)\n@@ -573,6 +583,40 @@ func TestGitHubClient_UploadScanningAnalysis(t *testing.T) {\n \tassert.Error(t, err)\n }\n \n+func TestGitHubClient_GetRepositoryEnvironmentInfo(t *testing.T) {\n+\tctx := context.Background()\n+\n+\tresponse, err := os.ReadFile(filepath.Join(\"testdata\", \"github\", \"repository_environment_response.json\"))\n+\tassert.NoError(t, err)\n+\tclient, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, response, fmt.Sprintf(\"/repos/jfrog/repo-1/environments/%s\", envName), createGitHubHandler)\n+\tdefer cleanUp()\n+\n+\trepositoryEnvironmentInfo, err := client.GetRepositoryEnvironmentInfo(ctx, owner, repo1, envName)\n+\tassert.NoError(t, err)\n+\tassert.Equal(t, envName, repositoryEnvironmentInfo.Name)\n+\tassert.Equal(t, \"https://api.github.com/repos/superfrog/test-repo/environments/frogbot\", repositoryEnvironmentInfo.Url)\n+\tassert.Equal(t, []string{\"superfrog\"}, repositoryEnvironmentInfo.Reviewers)\n+\n+\t_, err = createBadGitHubClient(t).GetRepositoryEnvironmentInfo(ctx, owner, repo1, envName)\n+\tassert.Error(t, err)\n+}\n+\n+func TestGitHubClient_ExtractGitHubEnvironmentReviewers(t *testing.T) {\n+\treviewer1, reviewer2 := \"reviewer-1\", \"reviewer-2\"\n+\tenvironment := &github.Environment{\n+\t\tProtectionRules: []*github.ProtectionRule{{\n+\t\t\tReviewers: []*github.RequiredReviewer{\n+\t\t\t\t{Reviewer: &repositoryEnvironmentReviewer{Login: reviewer1}},\n+\t\t\t\t{Reviewer: &repositoryEnvironmentReviewer{Login: reviewer2}},\n+\t\t\t},\n+\t\t}},\n+\t}\n+\n+\tactualReviewers, err := extractGitHubEnvironmentReviewers(environment)\n+\tassert.NoError(t, err)\n+\tassert.Equal(t, []string{reviewer1, reviewer2}, actualReviewers)\n+}\n+\n func createBadGitHubClient(t *testing.T) VcsClient {\n \tclient, err := NewClientBuilder(vcsutils.GitHub).ApiEndpoint(\"https://bad^endpoint\").Build()\n \trequire.NoError(t, err)"
+    },
+    {
+      "sha": "b6b639b8b4efdb2c878bd78da45146b8ff80f72b",
+      "filename": "vcsclient/gitlab.go",
+      "status": "modified",
+      "additions": 21,
+      "deletions": 4,
+      "changes": 25,
+      "blob_url": "https://github.com/jfrog/froggit-go/blob/d41c3fcff4ea7d18e753977f5d63d5003becaa2f/vcsclient%2Fgitlab.go",
+      "raw_url": "https://github.com/jfrog/froggit-go/raw/d41c3fcff4ea7d18e753977f5d63d5003becaa2f/vcsclient%2Fgitlab.go",
+      "contents_url": "https://api.github.com/repos/jfrog/froggit-go/contents/vcsclient%2Fgitlab.go?ref=d41c3fcff4ea7d18e753977f5d63d5003becaa2f",
+      "patch": "@@ -210,7 +210,7 @@ func (client *GitLabClient) CreatePullRequest(ctx context.Context, owner, reposi\n }\n \n // ListOpenPullRequests on GitLab\n-func (client *GitLabClient) ListOpenPullRequests(ctx context.Context, owner, repository string) ([]PullRequestInfo, error) {\n+func (client *GitLabClient) ListOpenPullRequests(ctx context.Context, _, repository string) ([]PullRequestInfo, error) {\n \topenState := \"open\"\n \tallScope := \"all\"\n \toptions := &gitlab.ListMergeRequestsOptions{\n@@ -297,7 +297,7 @@ func (client *GitLabClient) GetRepositoryInfo(ctx context.Context, owner, reposi\n \t\treturn RepositoryInfo{}, err\n \t}\n \n-\treturn RepositoryInfo{CloneInfo: CloneInfo{HTTP: project.HTTPURLToRepo, SSH: project.SSHURLToRepo}}, nil\n+\treturn RepositoryInfo{RepositoryVisibility: getGitLabProjectVisibility(project), CloneInfo: CloneInfo{HTTP: project.HTTPURLToRepo, SSH: project.SSHURLToRepo}}, nil\n }\n \n // GetCommitBySha on GitLab\n@@ -386,15 +386,21 @@ func (client *GitLabClient) UnlabelPullRequest(ctx context.Context, owner, repos\n \treturn err\n }\n \n-func (client *GitLabClient) UploadCodeScanning(ctx context.Context, owner string, repository string, branch string, scanResults string) (string, error) {\n+// UploadCodeScanning on GitLab\n+func (client *GitLabClient) UploadCodeScanning(_ context.Context, _ string, _ string, _ string, _ string) (string, error) {\n \treturn \"\", errGitLabCodeScanningNotSupported\n }\n \n+// GetRepositoryEnvironmentInfo on GitLab\n+func (client *GitLabClient) GetRepositoryEnvironmentInfo(ctx context.Context, owner, repository, name string) (RepositoryEnvironmentInfo, error) {\n+\treturn RepositoryEnvironmentInfo{}, errGitLabGetRepoEnvironmentInfoNotSupported\n+}\n+\n // DownloadFileFromRepo on GitLab\n func (client *GitLabClient) DownloadFileFromRepo(_ context.Context, owner, repository, branch, path string) ([]byte, int, error) {\n \tfile, response, err := client.glClient.RepositoryFiles.GetFile(getProjectID(owner, repository), path, &gitlab.GetFileOptions{Ref: &branch})\n \tif response != nil && response.StatusCode != http.StatusOK {\n-\t\treturn nil, response.StatusCode, fmt.Errorf(\"expected %d status code while received %d status code\", http.StatusOK, response.StatusCode)\n+\t\treturn nil, response.StatusCode, fmt.Errorf(\"expected %d status code while received %d status code with error:\\n%s\", http.StatusOK, response.StatusCode, err)\n \t}\n \tif err != nil {\n \t\treturn nil, 0, err\n@@ -426,6 +432,17 @@ func createProjectHook(branch string, payloadURL string, webhookEvents ...vcsuti\n \treturn options\n }\n \n+func getGitLabProjectVisibility(project *gitlab.Project) RepositoryVisibility {\n+\tswitch project.Visibility {\n+\tcase gitlab.PublicVisibility:\n+\t\treturn Public\n+\tcase gitlab.InternalVisibility:\n+\t\treturn Internal\n+\tdefault:\n+\t\treturn Private\n+\t}\n+}\n+\n func getGitLabCommitState(commitState CommitStatus) string {\n \tswitch commitState {\n \tcase Pass:"
+    },
+    {
+      "sha": "d7226705f788a80e35cb95ffa542849f19bcf456",
+      "filename": "vcsclient/gitlab_test.go",
+      "status": "modified",
+      "additions": 20,
+      "deletions": 3,
+      "changes": 23,
+      "blob_url": "https://github.com/jfrog/froggit-go/blob/d41c3fcff4ea7d18e753977f5d63d5003becaa2f/vcsclient%2Fgitlab_test.go",
+      "raw_url": "https://github.com/jfrog/froggit-go/raw/d41c3fcff4ea7d18e753977f5d63d5003becaa2f/vcsclient%2Fgitlab_test.go",
+      "contents_url": "https://api.github.com/repos/jfrog/froggit-go/contents/vcsclient%2Fgitlab_test.go?ref=d41c3fcff4ea7d18e753977f5d63d5003becaa2f",
+      "patch": "@@ -332,9 +332,11 @@ func TestGitLabClient_GetRepositoryInfo(t *testing.T) {\n \tresult, err := client.GetRepositoryInfo(ctx, \"diaspora\", \"diaspora-project-site\")\n \trequire.NoError(t, err)\n \trequire.Equal(t,\n-\t\tRepositoryInfo{CloneInfo: CloneInfo{\n-\t\t\tHTTP: \"http://example.com/diaspora/diaspora-project-site.git\",\n-\t\t\tSSH:  \"git@example.com:diaspora/diaspora-project-site.git\"},\n+\t\tRepositoryInfo{\n+\t\t\tRepositoryVisibility: Private,\n+\t\t\tCloneInfo: CloneInfo{\n+\t\t\t\tHTTP: \"http://example.com/diaspora/diaspora-project-site.git\",\n+\t\t\t\tSSH:  \"git@example.com:diaspora/diaspora-project-site.git\"},\n \t\t},\n \t\tresult,\n \t)\n@@ -384,6 +386,12 @@ func TestGitLabClient_GetCommitByShaNotFound(t *testing.T) {\n \tassert.Empty(t, result)\n }\n \n+func TestGitLabClient_getGitLabProjectVisibility(t *testing.T) {\n+\tassert.Equal(t, Public, getGitLabProjectVisibility(&gitlab.Project{Visibility: gitlab.PublicVisibility}))\n+\tassert.Equal(t, Internal, getGitLabProjectVisibility(&gitlab.Project{Visibility: gitlab.InternalVisibility}))\n+\tassert.Equal(t, Private, getGitLabProjectVisibility(&gitlab.Project{Visibility: gitlab.PrivateVisibility}))\n+}\n+\n func TestGitlabClient_getGitlabCommitState(t *testing.T) {\n \tassert.Equal(t, \"success\", getGitLabCommitState(Pass))\n \tassert.Equal(t, \"failed\", getGitLabCommitState(Fail))\n@@ -454,6 +462,15 @@ func TestGitlabClient_UploadCodeScanning(t *testing.T) {\n \tassert.Error(t, err)\n }\n \n+func TestGitlabClient_GetRepositoryEnvironmentInfo(t *testing.T) {\n+\tctx := context.Background()\n+\tclient, cleanUp := createServerAndClient(t, vcsutils.GitLab, true, \"\", \"unsupportedTest\", createGitLabHandler)\n+\tdefer cleanUp()\n+\n+\t_, err := client.GetRepositoryEnvironmentInfo(ctx, owner, repo1, envName)\n+\tassert.ErrorIs(t, err, errGitLabGetRepoEnvironmentInfoNotSupported)\n+}\n+\n func createGitLabHandler(t *testing.T, expectedURI string, response []byte, expectedStatusCode int) http.HandlerFunc {\n \treturn func(w http.ResponseWriter, r *http.Request) {\n \t\tif r.RequestURI == \"/api/v4/\" {"
+    },
+    {
+      "sha": "47d06e236246b3a66af732eef905391c0c3c857f",
+      "filename": "vcsclient/gitlabcommon.go",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 0,
+      "changes": 1,
+      "blob_url": "https://github.com/jfrog/froggit-go/blob/d41c3fcff4ea7d18e753977f5d63d5003becaa2f/vcsclient%2Fgitlabcommon.go",
+      "raw_url": "https://github.com/jfrog/froggit-go/raw/d41c3fcff4ea7d18e753977f5d63d5003becaa2f/vcsclient%2Fgitlabcommon.go",
+      "contents_url": "https://api.github.com/repos/jfrog/froggit-go/contents/vcsclient%2Fgitlabcommon.go?ref=d41c3fcff4ea7d18e753977f5d63d5003becaa2f",
+      "patch": "@@ -5,3 +5,4 @@ import (\n )\n \n var errGitLabCodeScanningNotSupported = errors.New(\"code scanning is not supported on Gitlab\")\n+var errGitLabGetRepoEnvironmentInfoNotSupported = errors.New(\"get repository environment info is currently not supported on Bitbucket\")"
+    },
+    {
+      "sha": "c54200dcf1bc16c792a5c4ba99adf8ab67ca2655",
+      "filename": "vcsclient/testdata/github/repository_environment_response.json",
+      "status": "added",
+      "additions": 42,
+      "deletions": 0,
+      "changes": 42,
+      "blob_url": "https://github.com/jfrog/froggit-go/blob/d41c3fcff4ea7d18e753977f5d63d5003becaa2f/vcsclient%2Ftestdata%2Fgithub%2Frepository_environment_response.json",
+      "raw_url": "https://github.com/jfrog/froggit-go/raw/d41c3fcff4ea7d18e753977f5d63d5003becaa2f/vcsclient%2Ftestdata%2Fgithub%2Frepository_environment_response.json",
+      "contents_url": "https://api.github.com/repos/jfrog/froggit-go/contents/vcsclient%2Ftestdata%2Fgithub%2Frepository_environment_response.json?ref=d41c3fcff4ea7d18e753977f5d63d5003becaa2f",
+      "patch": "@@ -0,0 +1,42 @@\n+{\n+    \"id\": 458044593,\n+    \"node_id\": \"EN_kwDOFo0fF84bTTSx\",\n+    \"name\": \"frogbot\",\n+    \"url\": \"https://api.github.com/repos/superfrog/test-repo/environments/frogbot\",\n+    \"html_url\": \"https://github.com/superfrog/test-repo/deployments/activity_log?environments_filter=frogbot\",\n+    \"created_at\": \"2022-04-07T05:57:50Z\",\n+    \"updated_at\": \"2022-04-07T05:57:50Z\",\n+    \"protection_rules\": [\n+        {\n+            \"id\": 210348,\n+            \"node_id\": \"GA_kwDOFo0fF84AAzWs\",\n+            \"type\": \"required_reviewers\",\n+            \"reviewers\": [\n+                {\n+                    \"type\": \"User\",\n+                    \"reviewer\": {\n+                        \"login\": \"superfrog\",\n+                        \"id\": 11367982,\n+                        \"node_id\": \"MDQ6VXNlcjExMzY3OTgy\",\n+                        \"avatar_url\": \"https://avatars.githubusercontent.com/u/11367982?v=4\",\n+                        \"gravatar_id\": \"\",\n+                        \"url\": \"https://api.github.com/users/superfrog\",\n+                        \"html_url\": \"https://github.com/superfrog\",\n+                        \"followers_url\": \"https://api.github.com/users/superfrog/followers\",\n+                        \"following_url\": \"https://api.github.com/users/superfrog/following{/other_user}\",\n+                        \"gists_url\": \"https://api.github.com/users/superfrog/gists{/gist_id}\",\n+                        \"starred_url\": \"https://api.github.com/users/superfrog/starred{/owner}{/repo}\",\n+                        \"subscriptions_url\": \"https://api.github.com/users/superfrog/subscriptions\",\n+                        \"organizations_url\": \"https://api.github.com/users/superfrog/orgs\",\n+                        \"repos_url\": \"https://api.github.com/users/superfrog/repos\",\n+                        \"events_url\": \"https://api.github.com/users/superfrog/events{/privacy}\",\n+                        \"received_events_url\": \"https://api.github.com/users/superfrog/received_events\",\n+                        \"type\": \"User\",\n+                        \"site_admin\": false\n+                    }\n+                }\n+            ]\n+        }\n+    ],\n+    \"deployment_branch_policy\": null\n+}\n\\ No newline at end of file"
+    },
+    {
+      "sha": "3cae8d4de1898a5d528d42fae36fbe3a2acfef4b",
+      "filename": "vcsclient/vcsclient.go",
+      "status": "modified",
+      "additions": 24,
+      "deletions": 1,
+      "changes": 25,
+      "blob_url": "https://github.com/jfrog/froggit-go/blob/d41c3fcff4ea7d18e753977f5d63d5003becaa2f/vcsclient%2Fvcsclient.go",
+      "raw_url": "https://github.com/jfrog/froggit-go/raw/d41c3fcff4ea7d18e753977f5d63d5003becaa2f/vcsclient%2Fvcsclient.go",
+      "contents_url": "https://api.github.com/repos/jfrog/froggit-go/contents/vcsclient%2Fvcsclient.go?ref=d41c3fcff4ea7d18e753977f5d63d5003becaa2f",
+      "patch": "@@ -33,6 +33,18 @@ const (\n \tReadWrite\n )\n \n+// RepositoryVisibility the visibility level of the repository\n+type RepositoryVisibility int\n+\n+const (\n+\t// Open to public\n+\tPublic RepositoryVisibility = iota\n+\t// Open to organization\n+\tInternal\n+\t// Open to user\n+\tPrivate\n+)\n+\n // VcsInfo is the connection details of the VcsClient to communicate with the server\n type VcsInfo struct {\n \tAPIEndpoint string\n@@ -42,6 +54,13 @@ type VcsInfo struct {\n \tProject string\n }\n \n+// RepositoryEnvironmentInfo is the environment details configured for a repository\n+type RepositoryEnvironmentInfo struct {\n+\tName      string\n+\tUrl       string\n+\tReviewers []string\n+}\n+\n // VcsClient is a base class of all Vcs clients - GitHub, GitLab, Bitbucket server and cloud clients\n type VcsClient interface {\n \t// TestConnection Returns nil if connection and authorization established successfully\n@@ -187,6 +206,9 @@ type VcsClient interface {\n \t// branch        - The name of the branch\n \t// path  \t\t - The path to the requested file\n \tDownloadFileFromRepo(ctx context.Context, owner, repository, branch, path string) ([]byte, int, error)\n+\n+\t// GetRepositoryEnvironmentInfo Gets the environment info configured for a repository\n+\tGetRepositoryEnvironmentInfo(ctx context.Context, owner, repository, name string) (RepositoryEnvironmentInfo, error)\n }\n \n // CommitInfo contains the details of a commit\n@@ -226,7 +248,8 @@ type BranchInfo struct {\n \n // RepositoryInfo contains general information about repository.\n type RepositoryInfo struct {\n-\tCloneInfo CloneInfo\n+\tCloneInfo            CloneInfo\n+\tRepositoryVisibility RepositoryVisibility\n }\n \n // CloneInfo contains URLs that can be used to clone the repository."
+    },
+    {
+      "sha": "3cae8d4de1898a5d528d42fae36fbe3a2acfef4b",
+      "previous_filename": "vcsclient/vcsclient_old.go",
+      "filename": "vcsclient/vcsclient.go",
+      "status": "modified",
+      "additions": 24,
+      "deletions": 1,
+      "changes": 25,
+      "blob_url": "https://github.com/jfrog/froggit-go/blob/d41c3fcff4ea7d18e753977f5d63d5003becaa2f/vcsclient%2Fvcsclient.go",
+      "raw_url": "https://github.com/jfrog/froggit-go/raw/d41c3fcff4ea7d18e753977f5d63d5003becaa2f/vcsclient%2Fvcsclient.go",
+      "contents_url": "https://api.github.com/repos/jfrog/froggit-go/contents/vcsclient%2Fvcsclient.go?ref=d41c3fcff4ea7d18e753977f5d63d5003becaa2f",
+      "patch": "@@ -33,6 +33,18 @@ const (\n \tReadWrite\n )\n \n+// RepositoryVisibility the visibility level of the repository\n+type RepositoryVisibility int\n+\n+const (\n+\t// Open to public\n+\tPublic RepositoryVisibility = iota\n+\t// Open to organization\n+\tInternal\n+\t// Open to user\n+\tPrivate\n+)\n+\n // VcsInfo is the connection details of the VcsClient to communicate with the server\n type VcsInfo struct {\n \tAPIEndpoint string\n@@ -42,6 +54,13 @@ type VcsInfo struct {\n \tProject string\n }\n \n+// RepositoryEnvironmentInfo is the environment details configured for a repository\n+type RepositoryEnvironmentInfo struct {\n+\tName      string\n+\tUrl       string\n+\tReviewers []string\n+}\n+\n // VcsClient is a base class of all Vcs clients - GitHub, GitLab, Bitbucket server and cloud clients\n type VcsClient interface {\n \t// TestConnection Returns nil if connection and authorization established successfully\n@@ -187,6 +206,9 @@ type VcsClient interface {\n \t// branch        - The name of the branch\n \t// path  \t\t - The path to the requested file\n \tDownloadFileFromRepo(ctx context.Context, owner, repository, branch, path string) ([]byte, int, error)\n+\n+\t// GetRepositoryEnvironmentInfo Gets the environment info configured for a repository\n+\tGetRepositoryEnvironmentInfo(ctx context.Context, owner, repository, name string) (RepositoryEnvironmentInfo, error)\n }\n \n // CommitInfo contains the details of a commit\n@@ -226,7 +248,8 @@ type BranchInfo struct {\n \n // RepositoryInfo contains general information about repository.\n type RepositoryInfo struct {\n-\tCloneInfo CloneInfo\n+\tCloneInfo            CloneInfo\n+\tRepositoryVisibility RepositoryVisibility\n }\n \n // CloneInfo contains URLs that can be used to clone the repository."
+    }
+  ]
+}
