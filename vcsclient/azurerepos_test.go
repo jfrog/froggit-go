@@ -390,7 +390,7 @@ func TestAzureReposClient_GetModifiedFiles(t *testing.T) {
 		client, cleanUp := createServerAndClient(t, vcsutils.AzureRepos, true, response, expectedURI, createAzureReposHandler)
 		defer cleanUp()
 
-		actual, err := client.(*AzureReposClient).GetModifiedFiles(ctx, "", repo1, "sha-1", "sha-2")
+		actual, err := client.GetModifiedFiles(ctx, "", repo1, "sha-1", "sha-2")
 		require.NoError(t, err)
 		assert.Equal(t, []string{
 			"CustomerAddressModule/CustomerAddressModule.sln",
@@ -438,7 +438,7 @@ func TestAzureReposClient_GetModifiedFiles(t *testing.T) {
 		)
 		defer cleanUp()
 
-		_, err := client.(*AzureReposClient).GetModifiedFiles(ctx, "", repo1, "sha-1", "sha-2")
+		_, err := client.GetModifiedFiles(ctx, "", repo1, "sha-1", "sha-2")
 		require.EqualError(t, err, "null")
 	})
 }

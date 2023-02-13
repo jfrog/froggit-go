@@ -209,6 +209,12 @@ type VcsClient interface {
 
 	// GetRepositoryEnvironmentInfo Gets the environment info configured for a repository
 	GetRepositoryEnvironmentInfo(ctx context.Context, owner, repository, name string) (RepositoryEnvironmentInfo, error)
+	// GetModifiedFiles returns list of file names modified between two VCS references
+	// owner         - User or organization
+	// repository    - VCS repository name
+	// refBefore     - A VCS reference: commit SHA, branch name, tag name
+	// refAfter      - A VCS reference: commit SHA, branch name, tag name
+	GetModifiedFiles(ctx context.Context, owner, repository, refBefore, refAfter string) ([]string, error)
 }
 
 // CommitInfo contains the details of a commit
@@ -269,7 +275,7 @@ type LabelInfo struct {
 }
 
 func validateParametersNotBlank(paramNameValueMap map[string]string) error {
-	errorMessages := make([]string, 0)
+	var errorMessages []string
 	for k, v := range paramNameValueMap {
 		if strings.TrimSpace(v) == "" {
 			errorMessages = append(errorMessages, fmt.Sprintf("required parameter '%s' is missing", k))

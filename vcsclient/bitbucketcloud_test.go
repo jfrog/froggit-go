@@ -457,7 +457,7 @@ func TestBitbucketCloudClient_GetModifiedFiles(t *testing.T) {
 			createBitbucketCloudHandler)
 		defer cleanUp()
 
-		res, err := client.(*BitbucketCloudClient).GetModifiedFiles(ctx, owner, repo1, "sha-1", "sha-2")
+		res, err := client.GetModifiedFiles(ctx, owner, repo1, "sha-1", "sha-2")
 		require.NoError(t, err)
 		require.Equal(t, []string{"setup.py", "some/full.py"}, res)
 	})
@@ -485,7 +485,7 @@ func TestBitbucketCloudClient_GetModifiedFiles(t *testing.T) {
 			createBitbucketCloudHandler,
 		)
 		defer cleanUp()
-		_, err := client.(*BitbucketCloudClient).GetModifiedFiles(ctx, owner, repo1, "sha-1", "sha-2")
+		_, err := client.GetModifiedFiles(ctx, owner, repo1, "sha-1", "sha-2")
 		require.Equal(t, errors.New("500 Internal Server Error"), err)
 	})
 }

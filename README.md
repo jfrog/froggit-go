@@ -40,6 +40,7 @@ Currently supported providers are: [GitHub](#github), [Bitbucket Server](#bitbuc
         - [List Pull Request Comments](#list-pull-request-comments)
       - [Get Latest Commit](#get-latest-commit)
       - [Get Commit By SHA](#get-commit-by-sha)
+      - [Get List of Modified Files](#get-list-of-modified-files)
       - [Add Public SSH Key](#add-public-ssh-key)
       - [Get Repository Info](#get-repository-info)
       - [Get Repository Environment Info](#get-repository-environment-info)
@@ -386,6 +387,27 @@ sha := "abcdef0123abcdef4567abcdef8987abcdef6543"
 
 // Commit information of requested commit
 commitInfo, err := client.GetCommitBySha(ctx, owner, repository, sha)
+```
+
+#### Get List of Modified Files
+
+The `refBefore...refAfter` syntax is used.
+More about it can be found at [Commit Ranges](https://git-scm.com/book/en/v2/Git-Tools-Revision-Selection) Git
+documentation.
+
+```go
+// Go context
+ctx := context.Background()
+// Organization or username
+owner := "jfrog"
+// VCS repository
+repository := "jfrog-cli"
+// SHA-1 hash of the commit or tag or a branch name
+refBefore := "abcdef0123abcdef4567abcdef8987abcdef6543"
+// SHA-1 hash of the commit or tag or a branch name
+refAfter := "main"
+
+filePaths, err := client.GetModifiedFiles(ctx, owner, repository, refBefore, refAfter)
 ```
 
 #### Add Public SSH Key

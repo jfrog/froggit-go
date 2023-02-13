@@ -635,7 +635,7 @@ func TestGitHubClient_GetModifiedFiles(t *testing.T) {
 		)
 		defer cleanUp()
 
-		fileNames, err := client.(*GitHubClient).GetModifiedFiles(ctx, owner, repo1, "sha-1", "sha-2")
+		fileNames, err := client.GetModifiedFiles(ctx, owner, repo1, "sha-1", "sha-2")
 		assert.NoError(t, err)
 		assert.Equal(t, []string{
 			"README.md",
@@ -683,7 +683,7 @@ func TestGitHubClient_GetModifiedFiles(t *testing.T) {
 			createGitHubHandler,
 		)
 		defer cleanUp()
-		_, err := client.(*GitHubClient).GetModifiedFiles(ctx, owner, repo1, "sha-1", "sha-2")
+		_, err := client.GetModifiedFiles(ctx, owner, repo1, "sha-1", "sha-2")
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "repos/jfrog/repo-1/compare/sha-1...sha-2?per_page=1: 500  []")
 	})

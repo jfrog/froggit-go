@@ -488,7 +488,7 @@ func TestGitLabClient_GetModifiedFiles(t *testing.T) {
 		)
 		defer cleanUp()
 
-		fileNames, err := client.(*GitLabClient).GetModifiedFiles(ctx, owner, repo1, "sha-1", "sha-2")
+		fileNames, err := client.GetModifiedFiles(ctx, owner, repo1, "sha-1", "sha-2")
 		require.NoError(t, err)
 		require.Equal(t, []string{
 			"doc/user/project/integrations/gitlab_slack_application.md",
@@ -521,7 +521,7 @@ func TestGitLabClient_GetModifiedFiles(t *testing.T) {
 			createGitLabHandler,
 		)
 		defer cleanUp()
-		_, err := client.(*GitLabClient).GetModifiedFiles(ctx, owner, repo1, "sha-1", "sha-2")
+		_, err := client.GetModifiedFiles(ctx, owner, repo1, "sha-1", "sha-2")
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "api/v4/projects/jfrog/repo-1/repository/compare: 500 failed to parse unexpected error type: <nil>")
 	})

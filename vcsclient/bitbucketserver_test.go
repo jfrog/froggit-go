@@ -566,7 +566,7 @@ func TestBitbucketServerClient_GetModifiedFiles(t *testing.T) {
 		)
 		defer closeServer()
 
-		actual, err := client.(*BitbucketServerClient).GetModifiedFiles(ctx, owner, repo1, "sha-1", "sha-2")
+		actual, err := client.GetModifiedFiles(ctx, owner, repo1, "sha-1", "sha-2")
 		require.NoError(t, err)
 		assert.Equal(t, []string{"path/to/file.txt", "path/to/other_file.txt", "path/to/other_file2.txt"}, actual)
 	})
@@ -594,7 +594,7 @@ func TestBitbucketServerClient_GetModifiedFiles(t *testing.T) {
 			createBitbucketServerHandler,
 		)
 		defer cleanUp()
-		_, err := client.(*BitbucketServerClient).GetModifiedFiles(ctx, owner, repo1, "sha-1", "sha-2")
+		_, err := client.GetModifiedFiles(ctx, owner, repo1, "sha-1", "sha-2")
 		require.Equal(t, errors.New("Status: 500 Internal Server Error, Body: null"), err)
 	})
 }
