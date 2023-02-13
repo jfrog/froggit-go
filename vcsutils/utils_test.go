@@ -2,6 +2,7 @@ package vcsutils
 
 import (
 	"github.com/go-git/go-git/v5"
+	"github.com/stretchr/testify/require"
 	"io"
 	"net/http"
 	"os"
@@ -191,4 +192,9 @@ func TestCreateDotGitFolderWithoutRemote(t *testing.T) {
 	assert.NoError(t, err)
 	defer os.RemoveAll(dir2)
 	assert.Error(t, CreateDotGitFolderWithRemote(dir2, "", "fakeurl"))
+}
+
+func TestPointerOf(t *testing.T) {
+	require.Equal(t, 5, *PointerOf(5))
+	require.Equal(t, "some", *PointerOf("some"))
 }

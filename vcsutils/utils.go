@@ -162,6 +162,11 @@ func DefaultIfNotNil[T any](val *T) T {
 	return *val
 }
 
+// PointerOf returns pointer to the provided value if it is not nil.
+func PointerOf[T any](v T) *T {
+	return &v
+}
+
 // AddBranchPrefix adds a branchPrefix to a branch name if it is not already present.
 func AddBranchPrefix(branch string) string {
 	if !strings.HasPrefix(branch, branchPrefix) {
