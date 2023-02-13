@@ -3,6 +3,7 @@ package vcsclient
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"math/rand"
@@ -546,6 +547,58 @@ func TestBitbucketServer_getRepositoryVisibility(t *testing.T) {
 	assert.Equal(t, Private, getBitbucketServerRepositoryVisibility(false))
 }
 
+func TestBitbucketServerClient_GetModifiedFiles(t *testing.T) {
+	ctx := context.Background()
+	t.Run("ok", func(t *testing.T) {
+		response, err := os.ReadFile(filepath.Join("testdata", "bitbucketserver", "compare_commits.json"))
+		assert.NoError(t, err)
+
+		client, closeServer := createBodyHandlingServerAndClient(
+			t,
+			vcsutils.BitbucketServer,
+			false,
+			response,
+			"/rest/api/1.0/projects/jfrog/repos/repo-1/compare/diff?contextLines=0&from=sha-1&to=sha-2",
+			http.StatusOK,
+			nil,
+			http.MethodGet,
+			createBitbucketServerWithBodyHandler,
+		)
+		defer closeServer()
+
+		actual, err := client.(*BitbucketServerClient).GetModifiedFiles(ctx, owner, repo1, "sha-1", "sha-2")
+		require.NoError(t, err)
+		assert.Equal(t, []string{"path/to/file.txt", "path/to/other_file.txt", "path/to/other_file2.txt"}, actual)
+	})
+
+	t.Run("validation fails", func(t *testing.T) {
+		client := BitbucketServerClient{}
+		_, err := client.GetModifiedFiles(ctx, "", repo1, "sha-1", "sha-2")
+		require.Equal(t, errors.New("validation failed: required parameter 'owner' is missing"), err)
+		_, err = client.GetModifiedFiles(ctx, owner, "", "sha-1", "sha-2")
+		require.Equal(t, errors.New("validation failed: required parameter 'repository' is missing"), err)
+		_, err = client.GetModifiedFiles(ctx, owner, repo1, "", "sha-2")
+		require.Equal(t, errors.New("validation failed: required parameter 'refBefore' is missing"), err)
+		_, err = client.GetModifiedFiles(ctx, owner, repo1, "sha-1", "")
+		require.Equal(t, errors.New("validation failed: required parameter 'refAfter' is missing"), err)
+	})
+
+	t.Run("failed request", func(t *testing.T) {
+		client, cleanUp := createServerAndClientReturningStatus(
+			t,
+			vcsutils.BitbucketServer,
+			true,
+			nil,
+			"/rest/api/1.0/projects/jfrog/repos/repo-1/compare/diff?contextLines=0&from=sha-1&to=sha-2",
+			http.StatusInternalServerError,
+			createBitbucketServerHandler,
+		)
+		defer cleanUp()
+		_, err := client.(*BitbucketServerClient).GetModifiedFiles(ctx, owner, repo1, "sha-1", "sha-2")
+		require.Equal(t, errors.New("Status: 500 Internal Server Error, Body: null"), err)
+	})
+}
+
 func createBitbucketServerHandler(t *testing.T, expectedURI string, response []byte, expectedStatusCode int) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(expectedStatusCode)
@@ -600,6 +653,9 @@ func createBitbucketServerWithBodyHandler(t *testing.T, expectedURI string, resp
 		assert.Equal(t, expectedURI, request.RequestURI)
 		assert.Equal(t, "Bearer "+token, request.Header.Get("Authorization"))
 
+		if expectedRequestBody == nil {
+			expectedRequestBody = []byte{}
+		}
 		b, err := io.ReadAll(request.Body)
 		require.NoError(t, err)
 		assert.Equal(t, expectedRequestBody, b)

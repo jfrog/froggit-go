@@ -1,0 +1,219 @@
+{
+  "diffs": [
+    {
+      "source": {
+        "components": [
+          "path",
+          "to",
+          "file.txt"
+        ],
+        "parent": "path/to",
+        "name": "file.txt",
+        "extension": "txt",
+        "toString": "path/to/file.txt"
+      },
+      "destination": {
+        "components": [
+          "path",
+          "to",
+          "file.txt"
+        ],
+        "parent": "path/to",
+        "name": "file.txt",
+        "extension": "txt",
+        "toString": "path/to/file.txt"
+      },
+      "hunks": [
+        {
+          "sourceLine": 1,
+          "sourceSpan": 1,
+          "destinationLine": 1,
+          "destinationSpan": 2,
+          "segments": [
+            {
+              "type": "REMOVED",
+              "lines": [
+                {
+                  "destination": 1,
+                  "source": 1,
+                  "line": "import sys",
+                  "truncated": false
+                }
+              ],
+              "truncated": false
+            },
+            {
+              "type": "ADDED",
+              "lines": [
+                {
+                  "destination": 1,
+                  "source": 2,
+                  "line": "import re",
+                  "truncated": false
+                },
+                {
+                  "destination": 2,
+                  "source": 3,
+                  "line": "import os",
+                  "truncated": false
+                }
+              ],
+              "truncated": false
+            }
+          ],
+          "truncated": false
+        }
+      ],
+      "truncated": "true",
+      "contextLines": "10",
+      "fromHash": "a0f224fd7bd5f28ea5a752d41b9c9f6372fc6d9e",
+      "toHash": "dc93f22caadcde35daf5cc2cd65d2738c87e31ca",
+      "whiteSpace": "SHOW"
+    },
+    {
+      "source": {
+        "components": [
+          "path",
+          "to",
+          "other_file.txt"
+        ],
+        "parent": "path/to",
+        "name": "other_file.txt",
+        "extension": "txt",
+        "toString": "path/to/other_file.txt"
+      },
+      "destination": {
+        "components": [
+          "path",
+          "to",
+          "other_file.txt"
+        ],
+        "parent": "path/to",
+        "name": "other_file.txt",
+        "extension": "txt",
+        "toString": "path/to/other_file.txt"
+      },
+      "hunks": [
+        {
+          "sourceLine": 1,
+          "sourceSpan": 1,
+          "destinationLine": 1,
+          "destinationSpan": 2,
+          "segments": [
+            {
+              "type": "REMOVED",
+              "lines": [
+                {
+                  "destination": 1,
+                  "source": 1,
+                  "line": "import sys",
+                  "truncated": false
+                }
+              ],
+              "truncated": false
+            },
+            {
+              "type": "ADDED",
+              "lines": [
+                {
+                  "destination": 1,
+                  "source": 2,
+                  "line": "import re",
+                  "truncated": false
+                },
+                {
+                  "destination": 2,
+                  "source": 3,
+                  "line": "import os",
+                  "truncated": false
+                }
+              ],
+              "truncated": false
+            }
+          ],
+          "truncated": false
+        }
+      ],
+      "truncated": "true",
+      "contextLines": "10",
+      "fromHash": "a0f224fd7bd5f28ea5a752d41b9c9f6372fc6d9e",
+      "toHash": "dc93f22caadcde35daf5cc2cd65d2738c87e31ca",
+      "whiteSpace": "SHOW"
+    },
+    {
+      "source": {
+        "components": [
+          "path",
+          "to",
+          "other_file.txt"
+        ],
+        "parent": "path/to",
+        "name": "other_file.txt",
+        "extension": "txt",
+        "toString": "path/to/other_file.txt"
+      },
+      "destination": {
+        "components": [
+          "path",
+          "to",
+          "other_file2.txt"
+        ],
+        "parent": "path/to",
+        "name": "other_file2.txt",
+        "extension": "txt",
+        "toString": "path/to/other_file2.txt"
+      },
+      "hunks": [
+        {
+          "sourceLine": 1,
+          "sourceSpan": 1,
+          "destinationLine": 1,
+          "destinationSpan": 2,
+          "segments": [
+            {
+              "type": "REMOVED",
+              "lines": [
+                {
+                  "destination": 1,
+                  "source": 1,
+                  "line": "import sys",
+                  "truncated": false
+                }
+              ],
+              "truncated": false
+            },
+            {
+              "type": "ADDED",
+              "lines": [
+                {
+                  "destination": 1,
+                  "source": 2,
+                  "line": "import re",
+                  "truncated": false
+                },
+                {
+                  "destination": 2,
+                  "source": 3,
+                  "line": "import os",
+                  "truncated": false
+                }
+              ],
+              "truncated": false
+            }
+          ],
+          "truncated": false
+        }
+      ],
+      "truncated": "true",
+      "contextLines": "10",
+      "fromHash": "a0f224fd7bd5f28ea5a752d41b9c9f6372fc6d9e",
+      "toHash": "dc93f22caadcde35daf5cc2cd65d2738c87e31ca",
+      "whiteSpace": "SHOW"
+    }
+  ],
+  "truncated": "true",
+  "contextLines": "10",
+  "fromHash": "a0f224fd7bd5f28ea5a752d41b9c9f6372fc6d9e",
+  "toHash": "dc93f22caadcde35daf5cc2cd65d2738c87e31ca",
+  "whiteSpace": "SHOW"
+}
