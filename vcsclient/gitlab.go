@@ -6,7 +6,9 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"github.com/jfrog/gofrog/datastructures"
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -412,6 +414,37 @@ func (client *GitLabClient) DownloadFileFromRepo(_ context.Context, owner, repos
 	}
 
 	return content, response.StatusCode, err
+}
+
+func (client *GitLabClient) GetModifiedFiles(_ context.Context, owner, repository, refBefore, refAfter string) ([]string, error) {
+	if err := validateParametersNotBlank(map[string]string{
+		"owner":      owner,
+		"repository": repository,
+		"refBefore":  refBefore,
+		"refAfter":   refAfter,
+	}); err != nil {
+		return nil, err
+	}
+
+	// No pagination is needed according to the official documentation at
+	// https://docs.gitlab.com/ce/api/repositories.html#compare-branches-tags-or-commits
+	compare, _, err := client.glClient.Repositories.Compare(
+		getProjectID(owner, repository),
+		&gitlab.CompareOptions{From: &refBefore, To: &refAfter},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	fileNamesSet := datastructures.MakeSet[string]()
+	for _, diff := range compare.Diffs {
+		fileNamesSet.Add(diff.NewPath)
+		fileNamesSet.Add(diff.OldPath)
+	}
+	_ = fileNamesSet.Remove("") // Make sure there are no blank filepath.
+	fileNamesList := fileNamesSet.ToSlice()
+	sort.Strings(fileNamesList)
+	return fileNamesList, nil
 }
 
 func getProjectID(owner, project string) string {

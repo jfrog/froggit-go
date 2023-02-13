@@ -1,0 +1,65 @@
+{
+  "commit": {
+    "id": "1c0a893703a70558fcf7bb13348847a1302b2c49",
+    "short_id": "1c0a8937",
+    "created_at": "2023-02-13T10:18:53.000+01:00",
+    "parent_ids": ["9cee818844e23dfa5922155d113a950ff86ff2e7"],
+    "title": "Update Slack notes",
+    "message": "Update Slack notes\n",
+    "author_name": "Ashraf Khamis",
+    "author_email": "akhamis@gitlab.com",
+    "authored_date": "2023-02-13T10:18:53.000+01:00",
+    "committer_name": "Ashraf Khamis",
+    "committer_email": "akhamis@gitlab.com",
+    "committed_date": "2023-02-13T10:18:53.000+01:00",
+    "trailers": {},
+    "web_url": "https://gitlab.com/gitlab-org/gitlab/-/commit/1c0a893703a70558fcf7bb13348847a1302b2c49"
+  },
+  "commits": [{
+    "id": "1c0a893703a70558fcf7bb13348847a1302b2c49",
+    "short_id": "1c0a8937",
+    "created_at": "2023-02-13T10:18:53.000+01:00",
+    "parent_ids": ["9cee818844e23dfa5922155d113a950ff86ff2e7"],
+    "title": "Update Slack notes",
+    "message": "Update Slack notes\n",
+    "author_name": "Ashraf Khamis",
+    "author_email": "akhamis@gitlab.com",
+    "authored_date": "2023-02-13T10:18:53.000+01:00",
+    "committer_name": "Ashraf Khamis",
+    "committer_email": "akhamis@gitlab.com",
+    "committed_date": "2023-02-13T10:18:53.000+01:00",
+    "trailers": {},
+    "web_url": "https://gitlab.com/gitlab-org/gitlab/-/commit/1c0a893703a70558fcf7bb13348847a1302b2c49"
+  }],
+  "diffs": [{
+    "diff": "@@ -7,11 +7,11 @@ info: To determine the technical writer assigned to the Stage/Group associated w\n # GitLab for Slack app **(FREE SAAS)**\n \n NOTE:\n-The GitLab for Slack app is only configurable for GitLab SaaS customers.\n-Self-managed GitLab customers should configure\n-[Slack slash commands](slack_slash_commands.md) and [Slack notifications](slack.md) instead. See\n-[Slack application integration for self-managed instances](https://gitlab.com/groups/gitlab-org/-/epics/1211)\n-for our plans to make the app configurable for all GitLab installations.\n+This feature is only configurable on GitLab.com.\n+For self-managed GitLab instances, use\n+[Slack slash commands](slack_slash_commands.md) and [Slack notifications](slack.md) instead.\n+For more information about our plans to make the app configurable for all GitLab installations,\n+see [epic 1211](https://gitlab.com/groups/gitlab-org/-/epics/1211).\n \n Slack provides a native application that you can enable with your project's\n integrations on GitLab.com.\n",
+    "new_path": "doc/user/project/integrations/gitlab_slack_application.md",
+    "old_path": "doc/user/project/integrations/gitlab_slack_application.md",
+    "a_mode": "100644",
+    "b_mode": "100644",
+    "new_file": false,
+    "renamed_file": false,
+    "deleted_file": false
+  }, {
+    "diff": "@@ -7,10 +7,10 @@ info: To determine the technical writer assigned to the Stage/Group associated w\n # Slack notifications integration **(FREE)**\n \n WARNING:\n-This feature was [deprecated](https://gitlab.com/gitlab-org/gitlab/-/issues/372411) for GitLab SaaS customers\n+This feature was [deprecated](https://gitlab.com/gitlab-org/gitlab/-/issues/372411) on GitLab.com\n in GitLab 15.10 and is [planned for removal](https://gitlab.com/groups/gitlab-org/-/epics/8673).\n-GitLab SaaS customers can use the [GitLab for Slack app](gitlab_slack_application.md) instead.\n-Self-managed GitLab customers can continue to use this feature.\n+Use the [GitLab for Slack app](gitlab_slack_application.md) instead.\n+On self-managed GitLab instances, you can continue to use this feature.\n \n The Slack notifications integration enables your GitLab project to send events\n (such as issue creation) to your existing Slack team as notifications. Setting up\n",
+    "new_path": "doc/user/project/integrations/slack.md",
+    "old_path": "doc/user/project/integrations/slack.md",
+    "a_mode": "100644",
+    "b_mode": "100644",
+    "new_file": false,
+    "renamed_file": false,
+    "deleted_file": false
+  }, {
+    "diff": "@@ -6,6 +6,10 @@ info: To determine the technical writer assigned to the Stage/Group associated w\n \n # Slack slash commands **(FREE SELF)**\n \n+NOTE:\n+This feature is only configurable on self-managed GitLab instances.\n+For GitLab.com, use the [GitLab for Slack app](gitlab_slack_application.md) instead.\n+\n If you want to control and view GitLab content while you're\n working in Slack, you can use Slack slash commands.\n To use Slack slash commands, you must configure both Slack and GitLab.\n@@ -13,9 +17,6 @@ To use Slack slash commands, you must configure both Slack and GitLab.\n GitLab can also send events (for example, `issue created`) to Slack as notifications.\n The [Slack notifications service](slack.md) is configured separately.\n \n-NOTE:\n-The Slack slash commands are only configurable on self-managed GitLab instances. For GitLab.com, use the [GitLab for Slack app](gitlab_slack_application.md) instead.\n-\n ## Configure GitLab and Slack\n \n Slack slash command integrations\n",
+    "new_path": "doc/user/project/integrations/slack_slash_commands.md",
+    "old_path": "doc/user/project/integrations/slack_slash_commands_2.md",
+    "a_mode": "100644",
+    "b_mode": "100644",
+    "new_file": false,
+    "renamed_file": false,
+    "deleted_file": false
+  }],
+  "compare_timeout": false,
+  "compare_same_ref": false,
+  "web_url": "https://gitlab.com/gitlab-org/gitlab/-/compare/9cee818844e23dfa5922155d113a950ff86ff2e7...1c0a893703a70558fcf7bb13348847a1302b2c49"
+}
