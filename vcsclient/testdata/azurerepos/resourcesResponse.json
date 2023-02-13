@@ -69,6 +69,16 @@
       "minVersion": "3.2",
       "maxVersion": "7.1",
       "releasedVersion": "0.0"
+    },
+    {
+      "id": "615588d5-c0c7-4b88-88f8-e625306446e8",
+      "area": "Location",
+      "resourceName": "ResourceAreas",
+      "routeTemplate": "_apis/{resource}/{areaId}",
+      "resourceVersion": 1,
+      "minVersion": "3.2",
+      "maxVersion": "7.1",
+      "releasedVersion": "0.0"
     }
   ],
   "count": 2
