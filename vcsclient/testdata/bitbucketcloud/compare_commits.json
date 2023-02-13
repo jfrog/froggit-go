@@ -1,0 +1,85 @@
+{
+  "pagelen": 500,
+  "values": [
+    {
+      "type": "diffstat",
+      "status": "modified",
+      "lines_removed": 1,
+      "lines_added": 2,
+      "old": {
+        "path": "setup.py",
+        "escaped_path": "setup.py",
+        "type": "commit_file",
+        "links": {
+          "self": {
+            "href": "https://api.bitbucket.org/2.0/repositories/bitbucket/geordi/src/e1749643d655d7c7014001a6c0f58abaf42ad850/setup.py"
+          }
+        }
+      },
+      "new": {
+        "path": "setup.py",
+        "escaped_path": "setup.py",
+        "type": "commit_file",
+        "links": {
+          "self": {
+            "href": "https://api.bitbucket.org/2.0/repositories/bitbucket/geordi/src/d222fa235229c55dad20b190b0b571adf737d5a6/setup.py"
+          }
+        }
+      }
+    },
+    {
+      "type": "diffstat",
+      "status": "modified",
+      "lines_removed": 1,
+      "lines_added": 2,
+      "old": {
+        "path": "some/full.py",
+        "escaped_path": "some%2Ffull.py",
+        "type": "commit_file",
+        "links": {
+          "self": {
+            "href": "https://api.bitbucket.org/2.0/repositories/bitbucket/geordi/src/e1749643d655d7c7054001a6c0f58abaf42ad850/some%2Ffull.py"
+          }
+        }
+      },
+      "new": {
+        "path": "some/full.py",
+        "escaped_path": "some%2Ffull.py",
+        "type": "commit_file",
+        "links": {
+          "self": {
+            "href": "https://api.bitbucket.org/2.0/repositories/bitbucket/geordi/src/d222fa23522dc55dad20b190b0b571adf737d5a6/some%2Ffull.py"
+          }
+        }
+      }
+    },
+    {
+      "type": "diffstat",
+      "status": "modified",
+      "lines_removed": 1,
+      "lines_added": 2,
+      "old": {
+        "path": "some/full.py",
+        "escaped_path": "some%2Ffull.py",
+        "type": "commit_file",
+        "links": {
+          "self": {
+            "href": "https://api.bitbucket.org/2.0/repositories/bitbucket/geordi/src/e1749643d655d7c7054001a6c0f58abaf42ad850/some%2Ffull.py"
+          }
+        }
+      },
+      "new": {
+        "path": "some/full.py",
+        "escaped_path": "some%2Ffull.py",
+        "type": "commit_file",
+        "links": {
+          "self": {
+            "href": "https://api.bitbucket.org/2.0/repositories/bitbucket/geordi/src/d222fa23522dc55dad20b190b0b571adf737d5a6/some%2Ffull.py"
+          }
+        }
+      }
+    }
+  ],
+  "page": 1,
+  "size": 2
+}

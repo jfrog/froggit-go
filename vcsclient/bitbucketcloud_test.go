@@ -3,6 +3,7 @@ package vcsclient
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -442,6 +443,51 @@ func TestBitbucketCloud_GetRepositoryEnvironmentInfo(t *testing.T) {
 func TestBitbucketCloud_getRepositoryVisibility(t *testing.T) {
 	assert.Equal(t, Private, getBitbucketCloudRepositoryVisibility(&bitbucket.Repository{Is_private: true}))
 	assert.Equal(t, Public, getBitbucketCloudRepositoryVisibility(&bitbucket.Repository{Is_private: false}))
+}
+
+func TestBitbucketCloudClient_GetModifiedFiles(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("ok", func(t *testing.T) {
+		response, err := os.ReadFile(filepath.Join("testdata", "bitbucketcloud", "compare_commits.json"))
+		assert.NoError(t, err)
+
+		client, cleanUp := createServerAndClientReturningStatus(t, vcsutils.BitbucketCloud, true, response,
+			fmt.Sprintf("/repositories/%s/%s/diffstat/sha-1..sha-2?page=1", owner, repo1), http.StatusOK,
+			createBitbucketCloudHandler)
+		defer cleanUp()
+
+		res, err := client.(*BitbucketCloudClient).GetModifiedFiles(ctx, owner, repo1, "sha-1", "sha-2")
+		require.NoError(t, err)
+		require.Equal(t, []string{"setup.py", "some/full.py"}, res)
+	})
+
+	t.Run("validation fails", func(t *testing.T) {
+		client := BitbucketCloudClient{}
+		_, err := client.GetModifiedFiles(ctx, "", repo1, "sha-1", "sha-2")
+		require.Equal(t, errors.New("validation failed: required parameter 'owner' is missing"), err)
+		_, err = client.GetModifiedFiles(ctx, owner, "", "sha-1", "sha-2")
+		require.Equal(t, errors.New("validation failed: required parameter 'repository' is missing"), err)
+		_, err = client.GetModifiedFiles(ctx, owner, repo1, "", "sha-2")
+		require.Equal(t, errors.New("validation failed: required parameter 'refBefore' is missing"), err)
+		_, err = client.GetModifiedFiles(ctx, owner, repo1, "sha-1", "")
+		require.Equal(t, errors.New("validation failed: required parameter 'refAfter' is missing"), err)
+	})
+
+	t.Run("failed request", func(t *testing.T) {
+		client, cleanUp := createServerAndClientReturningStatus(
+			t,
+			vcsutils.BitbucketCloud,
+			true,
+			nil,
+			fmt.Sprintf("/repositories/%s/%s/diffstat/sha-1..sha-2?page=1", owner, repo1),
+			http.StatusInternalServerError,
+			createBitbucketCloudHandler,
+		)
+		defer cleanUp()
+		_, err := client.(*BitbucketCloudClient).GetModifiedFiles(ctx, owner, repo1, "sha-1", "sha-2")
+		require.Equal(t, errors.New("500 Internal Server Error"), err)
+	})
 }
 
 func createBitbucketCloudHandler(t *testing.T, expectedURI string, response []byte, expectedStatusCode int) http.HandlerFunc {
