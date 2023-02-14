@@ -566,13 +566,13 @@ ctx := context.Background()
 logger := vcsclient.EmptyLogger{}
 // Webhook contextual information
 origin := webhookparser.WebhookOrigin{
-    // The VCS provider (required)
-    VcsProvider: vcsutils.GitHub,
+  // The VCS provider (required)
+  VcsProvider: vcsutils.GitHub,
 	// Optional URL of the VCS provider (used for building some URLs)
-    OriginURL: "https://api.github.com",
-    // Token to authenticate incoming webhooks. If empty, signature will not be verified. 
-	// The token is a random key generated in the CreateWebhook command. 
-	Token: []byte("abc123"),
+  OriginURL: "https://api.github.com",
+  // Token to authenticate incoming webhooks. If empty, signature will not be verified. 
+  // The token is a random key generated in the CreateWebhook command. 
+  Token: []byte("abc123"),
 }
 // The HTTP request of the incoming webhook
 request := http.Request{}

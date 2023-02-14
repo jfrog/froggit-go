@@ -61,7 +61,7 @@ func (webhook *gitLabWebhookParser) parsePushEvent(event *gitlab.PushEvent) *Web
 	if len(event.Commits) > 0 {
 		localTimestamp = event.Commits[0].Timestamp.Local().Unix()
 	}
-	lastCommit := optional(webhook.getLastCommit(event))
+	lastCommit := vcsutils.DefaultIfNotNil(webhook.getLastCommit(event))
 	return &WebhookInfo{
 		TargetRepositoryDetails: webhook.parseRepoDetails(event.Project.PathWithNamespace),
 		TargetBranch:            strings.TrimPrefix(event.Ref, "refs/heads/"),

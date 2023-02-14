@@ -67,8 +67,8 @@ func (webhook *gitHubWebhookParser) parseIncomingWebhook(_ context.Context, requ
 
 func (webhook *gitHubWebhookParser) parsePushEvent(event *github.PushEvent) *WebhookInfo {
 	repoDetails := WebHookInfoRepoDetails{
-		Name:  optional(optional(event.GetRepo()).Name),
-		Owner: optional(optional(optional(event.GetRepo()).Owner).Login),
+		Name:  vcsutils.DefaultIfNotNil(vcsutils.DefaultIfNotNil(event.GetRepo()).Name),
+		Owner: vcsutils.DefaultIfNotNil(vcsutils.DefaultIfNotNil(vcsutils.DefaultIfNotNil(event.GetRepo()).Owner).Login),
 	}
 	compareURL := ""
 	if webhook.endpoint != "" {
@@ -82,16 +82,16 @@ func (webhook *gitHubWebhookParser) parsePushEvent(event *github.PushEvent) *Web
 		Event:                   vcsutils.Push,
 		Commit: WebHookInfoCommit{
 			Hash:    event.GetAfter(),
-			Message: optional(optional(event.HeadCommit).Message),
-			Url:     optional(optional(event.HeadCommit).URL),
+			Message: vcsutils.DefaultIfNotNil(vcsutils.DefaultIfNotNil(event.HeadCommit).Message),
+			Url:     vcsutils.DefaultIfNotNil(vcsutils.DefaultIfNotNil(event.HeadCommit).URL),
 		},
 		BeforeCommit: WebHookInfoCommit{
 			Hash: event.GetBefore(),
 		},
 		BranchStatus: webhook.branchStatus(event),
 		TriggeredBy:  webhook.user(event.Pusher),
-		Committer:    webhook.commitAuthor(optional(event.HeadCommit).Committer),
-		Author:       webhook.commitAuthor(optional(event.HeadCommit).Author),
+		Committer:    webhook.commitAuthor(vcsutils.DefaultIfNotNil(event.HeadCommit).Committer),
+		Author:       webhook.commitAuthor(vcsutils.DefaultIfNotNil(event.HeadCommit).Author),
 		CompareUrl:   compareURL,
 	}
 }
@@ -105,9 +105,9 @@ func (webhook *gitHubWebhookParser) user(u *github.User) WebHookInfoUser {
 		return WebHookInfoUser{}
 	}
 	return WebHookInfoUser{
-		Login:       optional(u.Login),
-		DisplayName: optional(u.Name),
-		Email:       optional(u.Email),
+		Login:       vcsutils.DefaultIfNotNil(u.Login),
+		DisplayName: vcsutils.DefaultIfNotNil(u.Name),
+		Email:       vcsutils.DefaultIfNotNil(u.Email),
 		AvatarUrl:   "",
 	}
 }
@@ -117,9 +117,9 @@ func (webhook *gitHubWebhookParser) commitAuthor(u *github.CommitAuthor) WebHook
 		return WebHookInfoUser{}
 	}
 	return WebHookInfoUser{
-		Login:       optional(u.Login),
-		DisplayName: optional(u.Name),
-		Email:       optional(u.Email),
+		Login:       vcsutils.DefaultIfNotNil(u.Login),
+		DisplayName: vcsutils.DefaultIfNotNil(u.Name),
+		Email:       vcsutils.DefaultIfNotNil(u.Email),
 		AvatarUrl:   "",
 	}
 }
