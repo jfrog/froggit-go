@@ -13,15 +13,15 @@ import (
 	"github.com/jfrog/froggit-go/vcsutils"
 )
 
-// GitHubWebhook represents an incoming webhook on GitHub
-type GitHubWebhook struct {
+// gitHubWebhookParser represents an incoming webhook on GitHub
+type gitHubWebhookParser struct {
 	logger vcsclient.Log
-	// used for GitHub On-prem
+	// Used for GitHub On-prem
 	endpoint string
 }
 
-// NewGitHubWebhook create a new GitHubWebhook instance
-func NewGitHubWebhook(logger vcsclient.Log, endpoint string) *GitHubWebhook {
+// newGitHubWebhookParser create a new gitHubWebhookParser instance
+func newGitHubWebhookParser(logger vcsclient.Log, endpoint string) *gitHubWebhookParser {
 	if endpoint == "" {
 		// Default to GitHub "Cloud"
 		endpoint = "https://github.com"
@@ -31,18 +31,14 @@ func NewGitHubWebhook(logger vcsclient.Log, endpoint string) *GitHubWebhook {
 		// Applied to Cloud and On-Prem versions of GitHub
 		endpoint = strings.Replace(endpoint, "://api.", "://", 1)
 	}
-	w := &GitHubWebhook{
+	logger.Debug("Github URL: ", endpoint)
+	return &gitHubWebhookParser{
 		logger:   logger,
 		endpoint: endpoint,
 	}
-	return w
 }
 
-func (webhook *GitHubWebhook) Parse(ctx context.Context, request *http.Request, token []byte) (*WebhookInfo, error) {
-	return validateAndParseHttpRequest(ctx, webhook, token, request)
-}
-
-func (webhook *GitHubWebhook) validatePayload(_ context.Context, request *http.Request, token []byte) ([]byte, error) {
+func (webhook *gitHubWebhookParser) validatePayload(_ context.Context, request *http.Request, token []byte) ([]byte, error) {
 	// Make sure X-Hub-Signature-256 header exist
 	if len(token) > 0 && len(request.Header.Get(github.SHA256SignatureHeader)) == 0 {
 		return nil, errors.New(github.SHA256SignatureHeader + " header is missing")
@@ -55,7 +51,7 @@ func (webhook *GitHubWebhook) validatePayload(_ context.Context, request *http.R
 	return payload, nil
 }
 
-func (webhook *GitHubWebhook) parseIncomingWebhook(_ context.Context, request *http.Request, payload []byte) (*WebhookInfo, error) {
+func (webhook *gitHubWebhookParser) parseIncomingWebhook(_ context.Context, request *http.Request, payload []byte) (*WebhookInfo, error) {
 	event, err := github.ParseWebHook(github.WebHookType(request), payload)
 	if err != nil {
 		return nil, err
@@ -69,7 +65,7 @@ func (webhook *GitHubWebhook) parseIncomingWebhook(_ context.Context, request *h
 	return nil, nil
 }
 
-func (webhook *GitHubWebhook) parsePushEvent(event *github.PushEvent) *WebhookInfo {
+func (webhook *gitHubWebhookParser) parsePushEvent(event *github.PushEvent) *WebhookInfo {
 	repoDetails := WebHookInfoRepoDetails{
 		Name:  optional(optional(event.GetRepo()).Name),
 		Owner: optional(optional(optional(event.GetRepo()).Owner).Login),
@@ -100,11 +96,11 @@ func (webhook *GitHubWebhook) parsePushEvent(event *github.PushEvent) *WebhookIn
 	}
 }
 
-func (webhook *GitHubWebhook) trimRefPrefix(ref string) string {
+func (webhook *gitHubWebhookParser) trimRefPrefix(ref string) string {
 	return strings.TrimPrefix(ref, "refs/heads/")
 }
 
-func (webhook *GitHubWebhook) user(u *github.User) WebHookInfoUser {
+func (webhook *gitHubWebhookParser) user(u *github.User) WebHookInfoUser {
 	if u == nil {
 		return WebHookInfoUser{}
 	}
@@ -116,7 +112,7 @@ func (webhook *GitHubWebhook) user(u *github.User) WebHookInfoUser {
 	}
 }
 
-func (webhook *GitHubWebhook) commitAuthor(u *github.CommitAuthor) WebHookInfoUser {
+func (webhook *gitHubWebhookParser) commitAuthor(u *github.CommitAuthor) WebHookInfoUser {
 	if u == nil {
 		return WebHookInfoUser{}
 	}
@@ -128,7 +124,7 @@ func (webhook *GitHubWebhook) commitAuthor(u *github.CommitAuthor) WebHookInfoUs
 	}
 }
 
-func (webhook *GitHubWebhook) parsePrEvents(event *github.PullRequestEvent) *WebhookInfo {
+func (webhook *gitHubWebhookParser) parsePrEvents(event *github.PullRequestEvent) *WebhookInfo {
 	var webhookEvent vcsutils.WebhookEvent
 	switch event.GetAction() {
 	case "opened", "reopened":
@@ -158,14 +154,14 @@ func (webhook *GitHubWebhook) parsePrEvents(event *github.PullRequestEvent) *Web
 	}
 }
 
-func (webhook *GitHubWebhook) resolveClosedEventType(event *github.PullRequestEvent) vcsutils.WebhookEvent {
+func (webhook *gitHubWebhookParser) resolveClosedEventType(event *github.PullRequestEvent) vcsutils.WebhookEvent {
 	if event.GetPullRequest().GetMerged() {
 		return vcsutils.PrMerged
 	}
 	return vcsutils.PrRejected
 }
 
-func (webhook *GitHubWebhook) branchStatus(event *github.PushEvent) WebHookInfoBranchStatus {
+func (webhook *gitHubWebhookParser) branchStatus(event *github.PushEvent) WebHookInfoBranchStatus {
 	existsAfter := event.GetAfter() != gitNilHash
 	existedBefore := event.GetBefore() != gitNilHash
 	return branchStatus(existedBefore, existsAfter)

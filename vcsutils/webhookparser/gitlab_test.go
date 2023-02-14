@@ -64,7 +64,7 @@ func TestGitLabParseIncomingPushWebhook(t *testing.T) {
 	assert.Equal(t, WebHookInfoCommit{
 		Hash: "450cd4687e3644d544ca4cb3a7a355fea9e6f0dc",
 	}, actual.BeforeCommit)
-	assert.Equal(t, WebhookinfobranchstatusUpdated, actual.BranchStatus)
+	assert.Equal(t, WebhookInfoBranchStatusUpdated, actual.BranchStatus)
 	assert.Equal(t, "", actual.CompareUrl)
 }
 
@@ -151,13 +151,13 @@ func TestGitLabParseIncomingWebhookError(t *testing.T) {
 
 	require.Error(t, err)
 
-	webhook := GitLabWebhook{logger: vcsclient.EmptyLogger{}}
+	webhook := gitLabWebhookParser{logger: vcsclient.EmptyLogger{}}
 	_, err = webhook.parseIncomingWebhook(context.Background(), request, []byte{})
 	assert.Error(t, err)
 }
 
 func TestGitLabParsePrEventsError(t *testing.T) {
-	webhook := GitLabWebhook{}
+	webhook := gitLabWebhookParser{}
 	webhookInfo, _ := webhook.parsePrEvents(&gitlab.MergeEvent{})
 	assert.Nil(t, webhookInfo)
 }

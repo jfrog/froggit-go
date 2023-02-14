@@ -16,19 +16,19 @@ import (
 
 const gitLabKeyHeader = "X-GitLab-Token"
 
-// GitLabWebhook represents an incoming webhook on GitLab
-type GitLabWebhook struct {
+// gitLabWebhookParser represents an incoming webhook on GitLab
+type gitLabWebhookParser struct {
 	logger vcsclient.Log
 }
 
-// NewGitLabWebhook create a new GitLabWebhook instance
-func NewGitLabWebhook(logger vcsclient.Log) *GitLabWebhook {
-	return &GitLabWebhook{
+// newGitLabWebhookParser create a new gitLabWebhookParser instance
+func newGitLabWebhookParser(logger vcsclient.Log) *gitLabWebhookParser {
+	return &gitLabWebhookParser{
 		logger: logger,
 	}
 }
 
-func (webhook *GitLabWebhook) validatePayload(_ context.Context, request *http.Request, token []byte) ([]byte, error) {
+func (webhook *gitLabWebhookParser) validatePayload(_ context.Context, request *http.Request, token []byte) ([]byte, error) {
 	actualToken := request.Header.Get(gitLabKeyHeader)
 	if len(token) != 0 || len(actualToken) > 0 {
 		if actualToken != string(token) {
@@ -42,7 +42,7 @@ func (webhook *GitLabWebhook) validatePayload(_ context.Context, request *http.R
 	}
 	return payload.Bytes(), nil
 }
-func (webhook *GitLabWebhook) parseIncomingWebhook(_ context.Context, request *http.Request, payload []byte) (*WebhookInfo, error) {
+func (webhook *gitLabWebhookParser) parseIncomingWebhook(_ context.Context, request *http.Request, payload []byte) (*WebhookInfo, error) {
 	event, err := gitlab.ParseWebhook(gitlab.WebhookEventType(request), payload)
 	if err != nil {
 		return nil, err
@@ -56,11 +56,7 @@ func (webhook *GitLabWebhook) parseIncomingWebhook(_ context.Context, request *h
 	return nil, nil
 }
 
-func (webhook *GitLabWebhook) Parse(ctx context.Context, request *http.Request, token []byte) (*WebhookInfo, error) {
-	return validateAndParseHttpRequest(ctx, webhook, token, request)
-}
-
-func (webhook *GitLabWebhook) parsePushEvent(event *gitlab.PushEvent) *WebhookInfo {
+func (webhook *gitLabWebhookParser) parsePushEvent(event *gitlab.PushEvent) *WebhookInfo {
 	var localTimestamp int64
 	if len(event.Commits) > 0 {
 		localTimestamp = event.Commits[0].Timestamp.Local().Unix()
@@ -97,7 +93,7 @@ func (webhook *GitLabWebhook) parsePushEvent(event *gitlab.PushEvent) *WebhookIn
 	}
 }
 
-func (webhook *GitLabWebhook) getLastCommit(event *gitlab.PushEvent) *struct {
+func (webhook *gitLabWebhookParser) getLastCommit(event *gitlab.PushEvent) *struct {
 	ID        string     `json:"id"`
 	Message   string     `json:"message"`
 	Title     string     `json:"title"`
@@ -117,7 +113,7 @@ func (webhook *GitLabWebhook) getLastCommit(event *gitlab.PushEvent) *struct {
 	return event.Commits[len(event.Commits)-1]
 }
 
-func (webhook *GitLabWebhook) parseRepoDetails(pathWithNamespace string) WebHookInfoRepoDetails {
+func (webhook *gitLabWebhookParser) parseRepoDetails(pathWithNamespace string) WebHookInfoRepoDetails {
 	split := strings.Split(pathWithNamespace, "/")
 	return WebHookInfoRepoDetails{
 		Name:  split[1],
@@ -125,7 +121,7 @@ func (webhook *GitLabWebhook) parseRepoDetails(pathWithNamespace string) WebHook
 	}
 }
 
-func (webhook *GitLabWebhook) parsePrEvents(event *gitlab.MergeEvent) (*WebhookInfo, error) {
+func (webhook *gitLabWebhookParser) parsePrEvents(event *gitlab.MergeEvent) (*WebhookInfo, error) {
 	var webhookEvent vcsutils.WebhookEvent
 	switch event.ObjectAttributes.Action {
 	case "open", "reopen":
@@ -155,7 +151,7 @@ func (webhook *GitLabWebhook) parsePrEvents(event *gitlab.MergeEvent) (*WebhookI
 	}, nil
 }
 
-func (webhook *GitLabWebhook) branchStatus(event *gitlab.PushEvent) WebHookInfoBranchStatus {
+func (webhook *gitLabWebhookParser) branchStatus(event *gitlab.PushEvent) WebHookInfoBranchStatus {
 	existsAfter := event.After != gitNilHash
 	existedBefore := event.Before != gitNilHash
 	return branchStatus(existedBefore, existsAfter)

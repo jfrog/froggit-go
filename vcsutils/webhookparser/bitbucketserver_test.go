@@ -52,8 +52,8 @@ func TestBitbucketServerParseIncomingPushWebhook(t *testing.T) {
 	request.Header.Add(sha256Signature, "sha256="+bitbucketServerPushSha256)
 
 	// Parse webhook
-	parser := NewBitbucketServerWebhookWebhook(vcsclient.EmptyLogger{}, "https://bitbucket.test/rest")
-	actual, err := parser.Parse(context.Background(), request, token)
+	parser := newBitbucketServerWebhookParser(vcsclient.EmptyLogger{}, "https://bitbucket.test/rest")
+	actual, err := validateAndParseHttpRequest(context.Background(), vcsclient.EmptyLogger{}, parser, token, request)
 	require.NoError(t, err)
 
 	// Check values
@@ -73,7 +73,7 @@ func TestBitbucketServerParseIncomingPushWebhook(t *testing.T) {
 	assert.Equal(t, WebHookInfoCommit{
 		Hash: "0000000000000000000000000000000000000000",
 	}, actual.BeforeCommit)
-	assert.Equal(t, WebhookinfobranchstatusCreated, actual.BranchStatus)
+	assert.Equal(t, WebhookInfoBranchStatusCreated, actual.BranchStatus)
 	assert.Equal(t, "", actual.CompareUrl)
 }
 
@@ -173,13 +173,13 @@ func TestBitbucketServerParseIncomingWebhookError(t *testing.T) {
 		request)
 	require.Error(t, err)
 
-	webhook := BitbucketServerWebhook{}
+	webhook := bitbucketServerWebhookParser{}
 	_, err = webhook.parseIncomingWebhook(context.Background(), request, []byte{})
 	assert.Error(t, err)
 }
 
 func TestBitbucketServerParsePrEventsError(t *testing.T) {
-	webhook := BitbucketServerWebhook{logger: vcsclient.EmptyLogger{}}
+	webhook := bitbucketServerWebhookParser{logger: vcsclient.EmptyLogger{}}
 	_, err := webhook.parsePrEvents(&bitbucketServerWebHook{}, vcsutils.Push)
 	assert.Error(t, err)
 }

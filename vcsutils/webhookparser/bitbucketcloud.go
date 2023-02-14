@@ -15,23 +15,19 @@ import (
 	"github.com/jfrog/froggit-go/vcsutils"
 )
 
-// BitbucketCloudWebhook represents an incoming webhook on Bitbucket cloud
-type BitbucketCloudWebhook struct {
+// bitbucketCloudWebhookParser represents an incoming webhook on Bitbucket cloud
+type bitbucketCloudWebhookParser struct {
 	logger vcsclient.Log
 }
 
-// NewBitbucketCloudWebhookWebhook create a new BitbucketCloudWebhook instance
-func NewBitbucketCloudWebhookWebhook(logger vcsclient.Log) *BitbucketCloudWebhook {
-	return &BitbucketCloudWebhook{
+// newBitbucketCloudWebhookParser create a new bitbucketCloudWebhookParser instance
+func newBitbucketCloudWebhookParser(logger vcsclient.Log) *bitbucketCloudWebhookParser {
+	return &bitbucketCloudWebhookParser{
 		logger: logger,
 	}
 }
 
-func (webhook *BitbucketCloudWebhook) Parse(ctx context.Context, request *http.Request, token []byte) (*WebhookInfo, error) {
-	return validateAndParseHttpRequest(ctx, webhook, token, request)
-}
-
-func (webhook *BitbucketCloudWebhook) validatePayload(_ context.Context, request *http.Request, token []byte) ([]byte, error) {
+func (webhook *bitbucketCloudWebhookParser) validatePayload(_ context.Context, request *http.Request, token []byte) ([]byte, error) {
 	keys, tokenParamsExist := request.URL.Query()["token"]
 	if len(token) > 0 || tokenParamsExist {
 		if keys[0] != string(token) {
@@ -45,7 +41,7 @@ func (webhook *BitbucketCloudWebhook) validatePayload(_ context.Context, request
 	return payload.Bytes(), nil
 }
 
-func (webhook *BitbucketCloudWebhook) parseIncomingWebhook(_ context.Context, request *http.Request, payload []byte) (*WebhookInfo, error) {
+func (webhook *bitbucketCloudWebhookParser) parseIncomingWebhook(_ context.Context, request *http.Request, payload []byte) (*WebhookInfo, error) {
 	bitbucketCloudWebHook := &bitbucketCloudWebHook{}
 	err := json.Unmarshal(payload, bitbucketCloudWebHook)
 	if err != nil {
@@ -68,7 +64,7 @@ func (webhook *BitbucketCloudWebhook) parseIncomingWebhook(_ context.Context, re
 	return nil, nil
 }
 
-func (webhook *BitbucketCloudWebhook) parsePushEvent(bitbucketCloudWebHook *bitbucketCloudWebHook) *WebhookInfo {
+func (webhook *bitbucketCloudWebhookParser) parsePushEvent(bitbucketCloudWebHook *bitbucketCloudWebHook) *WebhookInfo {
 	// In Push events, the hook provides a list of changes. Only the first one is relevant in our point of view.
 	firstChange := bitbucketCloudWebHook.Push.Changes[0]
 	lastCommit := firstChange.New.Target
@@ -102,7 +98,7 @@ func (webhook *BitbucketCloudWebhook) parsePushEvent(bitbucketCloudWebHook *bitb
 }
 
 // compareURL generates the HTML URL for the comparison between commits before and after push
-func (webhook *BitbucketCloudWebhook) compareURL(bitbucketCloudWebHook *bitbucketCloudWebHook,
+func (webhook *bitbucketCloudWebhookParser) compareURL(bitbucketCloudWebHook *bitbucketCloudWebHook,
 	lastCommit bitbucketCommit, beforeCommitHash string) string {
 	if lastCommit.Hash == "" || beforeCommitHash == "" {
 		return ""
@@ -112,7 +108,7 @@ func (webhook *BitbucketCloudWebhook) compareURL(bitbucketCloudWebHook *bitbucke
 }
 
 // branchName gives the branch name a commit event refers to. It can be a branch that was created, updated or deleted.
-func (webhook *BitbucketCloudWebhook) branchName(change bitbucketChange) string {
+func (webhook *bitbucketCloudWebhookParser) branchName(change bitbucketChange) string {
 	branchName := change.New.Name
 	if branchName == "" {
 		branchName = change.Old.Name
@@ -122,7 +118,7 @@ func (webhook *BitbucketCloudWebhook) branchName(change bitbucketChange) string 
 
 // email gives the email of a commit author. The email is actually contained in a raw string using RFC 5322 format
 // e.g. "Barry Gibbs <bg@example.com>".
-func (webhook *BitbucketCloudWebhook) email(lastCommit bitbucketCommit) string {
+func (webhook *bitbucketCloudWebhookParser) email(lastCommit bitbucketCommit) string {
 	email := lastCommit.Author.Raw
 	parsedEmail, err := mail.ParseAddress(lastCommit.Author.Raw)
 	if err == nil && parsedEmail != nil {
@@ -131,7 +127,7 @@ func (webhook *BitbucketCloudWebhook) email(lastCommit bitbucketCommit) string {
 	return email
 }
 
-func (webhook *BitbucketCloudWebhook) parsePrEvents(bitbucketCloudWebHook *bitbucketCloudWebHook, event vcsutils.WebhookEvent) *WebhookInfo {
+func (webhook *bitbucketCloudWebhookParser) parsePrEvents(bitbucketCloudWebHook *bitbucketCloudWebHook, event vcsutils.WebhookEvent) *WebhookInfo {
 	return &WebhookInfo{
 		PullRequestId:           bitbucketCloudWebHook.PullRequest.ID,
 		TargetRepositoryDetails: webhook.parseRepoFullName(bitbucketCloudWebHook.PullRequest.Destination.Repository.FullName),
@@ -143,7 +139,7 @@ func (webhook *BitbucketCloudWebhook) parsePrEvents(bitbucketCloudWebHook *bitbu
 	}
 }
 
-func (webhook *BitbucketCloudWebhook) parseRepoFullName(fullName string) WebHookInfoRepoDetails {
+func (webhook *bitbucketCloudWebhookParser) parseRepoFullName(fullName string) WebHookInfoRepoDetails {
 	// From https://support.atlassian.com/bitbucket-cloud/docs/event-payloads/#Repository
 	// "full_name : The workspace and repository slugs joined with a '/'."
 	split := strings.Split(fullName, "/")
@@ -153,7 +149,7 @@ func (webhook *BitbucketCloudWebhook) parseRepoFullName(fullName string) WebHook
 	}
 }
 
-func (webhook *BitbucketCloudWebhook) parentOfLastCommit(lastCommit bitbucketCommit) string {
+func (webhook *bitbucketCloudWebhookParser) parentOfLastCommit(lastCommit bitbucketCommit) string {
 	if len(lastCommit.Parents) == 0 {
 		return ""
 	}
@@ -161,14 +157,14 @@ func (webhook *BitbucketCloudWebhook) parentOfLastCommit(lastCommit bitbucketCom
 }
 
 // login gets the username of a commit author.
-func (webhook *BitbucketCloudWebhook) login(hook *bitbucketCloudWebHook, lastCommit bitbucketCommit) string {
+func (webhook *bitbucketCloudWebhookParser) login(hook *bitbucketCloudWebHook, lastCommit bitbucketCommit) string {
 	if lastCommit.Author.User.Nickname != "" {
 		return lastCommit.Author.User.Nickname
 	}
 	return hook.Actor.Nickname
 }
 
-func (webhook *BitbucketCloudWebhook) branchStatus(change bitbucketChange) WebHookInfoBranchStatus {
+func (webhook *bitbucketCloudWebhookParser) branchStatus(change bitbucketChange) WebHookInfoBranchStatus {
 	existsAfter := change.New.Name != ""
 	existedBefore := change.Old.Name != ""
 	return branchStatus(existedBefore, existsAfter)

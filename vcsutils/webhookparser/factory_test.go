@@ -10,14 +10,14 @@ import (
 )
 
 func TestCreateWebhookParser(t *testing.T) {
-	assert.IsType(t, &GitHubWebhook{}, newParser(vcsutils.GitHub))
-	assert.IsType(t, &GitLabWebhook{}, newParser(vcsutils.GitLab))
-	assert.IsType(t, &BitbucketServerWebhook{}, newParser(vcsutils.BitbucketServer))
-	assert.IsType(t, &BitbucketCloudWebhook{}, newParser(vcsutils.BitbucketCloud))
+	assert.IsType(t, &gitHubWebhookParser{}, newParser(vcsutils.GitHub))
+	assert.IsType(t, &gitLabWebhookParser{}, newParser(vcsutils.GitLab))
+	assert.IsType(t, &bitbucketServerWebhookParser{}, newParser(vcsutils.BitbucketServer))
+	assert.IsType(t, &bitbucketCloudWebhookParser{}, newParser(vcsutils.BitbucketCloud))
 	assert.Nil(t, newParser(5))
 }
 
-func newParser(provider vcsutils.VcsProvider) WebhookParser {
+func newParser(provider vcsutils.VcsProvider) webhookParser {
 	return createWebhookParser(
 		vcsclient.EmptyLogger{},
 		WebhookOrigin{

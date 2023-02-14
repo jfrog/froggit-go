@@ -80,7 +80,7 @@ func TestGitHubParseIncomingPushWebhook(t *testing.T) {
 	assert.Equal(t, WebHookInfoCommit{
 		Hash: "a82aa1b065b4fa17db4b7a055109044be377ddf7",
 	}, actual.BeforeCommit)
-	assert.Equal(t, WebhookinfobranchstatusUpdated, actual.BranchStatus)
+	assert.Equal(t, WebhookInfoBranchStatusUpdated, actual.BranchStatus)
 	assert.Equal(t, "https://github.com/yahavi/hello-world/compare/a82aa1b065b4fa17db4b7a055109044be377ddf7...9d497bd67a395a8063774f200338769ccbcee916", actual.CompareUrl)
 }
 
@@ -181,13 +181,13 @@ func TestGitHubParseIncomingWebhookError(t *testing.T) {
 
 	require.Error(t, err)
 
-	webhook := GitHubWebhook{logger: vcsclient.EmptyLogger{}}
+	webhook := gitHubWebhookParser{logger: vcsclient.EmptyLogger{}}
 	_, err = webhook.parseIncomingWebhook(context.Background(), request, []byte{})
 	assert.Error(t, err)
 }
 
 func TestGitHubParsePrEventsError(t *testing.T) {
-	webhook := GitHubWebhook{}
+	webhook := gitHubWebhookParser{}
 	assert.Nil(t, webhook.parsePrEvents(nil))
 }
 

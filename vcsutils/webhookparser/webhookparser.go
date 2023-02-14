@@ -63,19 +63,19 @@ type WebHookInfoCommit struct {
 type WebHookInfoBranchStatus string
 
 const (
-	WebhookinfobranchstatusCreated WebHookInfoBranchStatus = "created"
-	WebhookinfobranchstatusUpdated WebHookInfoBranchStatus = "updated"
-	WebhookinfobranchstatusDeleted WebHookInfoBranchStatus = "deleted"
+	WebhookInfoBranchStatusCreated WebHookInfoBranchStatus = "created"
+	WebhookInfoBranchStatusUpdated WebHookInfoBranchStatus = "updated"
+	WebhookInfoBranchStatusDeleted WebHookInfoBranchStatus = "deleted"
 )
 
 func branchStatus(existedBefore, existsAfter bool) WebHookInfoBranchStatus {
 	switch {
 	case existsAfter && !existedBefore:
-		return WebhookinfobranchstatusCreated
+		return WebhookInfoBranchStatusCreated
 	case !existsAfter && existedBefore:
-		return WebhookinfobranchstatusDeleted
+		return WebhookInfoBranchStatusDeleted
 	default:
-		return WebhookinfobranchstatusUpdated
+		return WebhookInfoBranchStatusUpdated
 	}
 }
 
@@ -90,14 +90,12 @@ type WebHookInfoFile struct {
 	Path string `json:"path,omitempty"`
 }
 
-// WebhookParser is a webhook parser of an incoming webhook from a VCS server
-type WebhookParser interface {
+// webhookParser is a webhook parser of an incoming webhook from a VCS server
+type webhookParser interface {
 	// Validate the webhook payload with the expected token and return the payload
 	validatePayload(ctx context.Context, request *http.Request, token []byte) ([]byte, error)
 	// Parse the webhook payload and return WebhookInfo
 	parseIncomingWebhook(ctx context.Context, request *http.Request, payload []byte) (*WebhookInfo, error)
-	// Parse validates and parses the webhook payload.
-	Parse(ctx context.Context, request *http.Request, token []byte) (*WebhookInfo, error)
 }
 
 // ParseIncomingWebhook parses incoming webhook HTTP request into WebhookInfo struct.
@@ -107,7 +105,7 @@ type WebhookParser interface {
 // request - Received HTTP request
 func ParseIncomingWebhook(ctx context.Context, logger vcsclient.Log, origin WebhookOrigin, request *http.Request) (*WebhookInfo, error) {
 	parser := createWebhookParser(logger, origin)
-	return parser.Parse(ctx, request, origin.Token)
+	return validateAndParseHttpRequest(ctx, logger, parser, origin.Token, request)
 }
 
 // WebhookOrigin provides information about the hook to parse.
@@ -121,21 +119,20 @@ type WebhookOrigin struct {
 	Token []byte
 }
 
-func validateAndParseHttpRequest(ctx context.Context, parser WebhookParser, token []byte, request *http.Request) (webhookInfo *WebhookInfo, err error) {
+func validateAndParseHttpRequest(ctx context.Context, logger vcsclient.Log, parser webhookParser, token []byte, request *http.Request) (*WebhookInfo, error) {
 	if request.Body != nil {
 		defer func() {
-			e := request.Body.Close()
-			if e != nil {
-				err = e
+			err := request.Body.Close()
+			if err != nil {
+				logger.Warn("Error when closing HTTP request body: ", err)
 			}
 		}()
 	}
 
 	payload, err := parser.validatePayload(ctx, request, token)
 	if err != nil {
-		return
+		return nil, err
 	}
 
-	webhookInfo, err = parser.parseIncomingWebhook(ctx, request, payload)
-	return
+	return parser.parseIncomingWebhook(ctx, request, payload)
 }

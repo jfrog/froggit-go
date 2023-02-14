@@ -22,25 +22,21 @@ import (
 const sha256Signature = "X-Hub-Signature"
 const bitbucketServerEventHeader = "X-Event-Key"
 
-// BitbucketServerWebhook represents an incoming webhook on Bitbucket server
-type BitbucketServerWebhook struct {
+// bitbucketServerWebhookParser represents an incoming webhook on Bitbucket server
+type bitbucketServerWebhookParser struct {
 	logger   vcsclient.Log
 	endpoint string
 }
 
-// NewBitbucketServerWebhookWebhook create a new BitbucketServerWebhook instance
-func NewBitbucketServerWebhookWebhook(logger vcsclient.Log, endpoint string) *BitbucketServerWebhook {
-	return &BitbucketServerWebhook{
+// newBitbucketServerWebhookParser create a new bitbucketServerWebhookParser instance
+func newBitbucketServerWebhookParser(logger vcsclient.Log, endpoint string) *bitbucketServerWebhookParser {
+	return &bitbucketServerWebhookParser{
 		logger:   logger,
 		endpoint: endpoint,
 	}
 }
 
-func (webhook *BitbucketServerWebhook) Parse(ctx context.Context, request *http.Request, token []byte) (*WebhookInfo, error) {
-	return validateAndParseHttpRequest(ctx, webhook, token, request)
-}
-
-func (webhook *BitbucketServerWebhook) validatePayload(_ context.Context, request *http.Request, token []byte) ([]byte, error) {
+func (webhook *bitbucketServerWebhookParser) validatePayload(_ context.Context, request *http.Request, token []byte) ([]byte, error) {
 	payload := new(bytes.Buffer)
 	if _, err := payload.ReadFrom(request.Body); err != nil {
 		return nil, err
@@ -56,7 +52,7 @@ func (webhook *BitbucketServerWebhook) validatePayload(_ context.Context, reques
 	return payload.Bytes(), nil
 }
 
-func (webhook *BitbucketServerWebhook) parseIncomingWebhook(_ context.Context, request *http.Request, payload []byte) (*WebhookInfo, error) {
+func (webhook *bitbucketServerWebhookParser) parseIncomingWebhook(_ context.Context, request *http.Request, payload []byte) (*WebhookInfo, error) {
 	bitbucketServerWebHook := &bitbucketServerWebHook{}
 	err := json.Unmarshal(payload, bitbucketServerWebHook)
 	if err != nil {
@@ -85,7 +81,7 @@ func calculatePayloadSignature(payload []byte, token []byte) string {
 	return hex.EncodeToString(hmacHash.Sum(nil))
 }
 
-func (webhook *BitbucketServerWebhook) parsePushEvent(bitbucketCloudWebHook *bitbucketServerWebHook) (*WebhookInfo, error) {
+func (webhook *bitbucketServerWebhookParser) parsePushEvent(bitbucketCloudWebHook *bitbucketServerWebHook) (*WebhookInfo, error) {
 	eventTime, err := time.Parse("2006-01-02T15:04:05-0700", bitbucketCloudWebHook.Date)
 	if err != nil {
 		return nil, err
@@ -125,14 +121,14 @@ func (webhook *BitbucketServerWebhook) parsePushEvent(bitbucketCloudWebHook *bit
 	}, nil
 }
 
-func (webhook *BitbucketServerWebhook) getRepositoryDetails(repository bitbucketv1.Repository) WebHookInfoRepoDetails {
+func (webhook *bitbucketServerWebhookParser) getRepositoryDetails(repository bitbucketv1.Repository) WebHookInfoRepoDetails {
 	return WebHookInfoRepoDetails{
 		Name:  repository.Slug,
 		Owner: repository.Project.Key,
 	}
 }
 
-func (webhook *BitbucketServerWebhook) parsePrEvents(bitbucketCloudWebHook *bitbucketServerWebHook, event vcsutils.WebhookEvent) (*WebhookInfo, error) {
+func (webhook *bitbucketServerWebhookParser) parsePrEvents(bitbucketCloudWebHook *bitbucketServerWebHook, event vcsutils.WebhookEvent) (*WebhookInfo, error) {
 	eventTime, err := time.Parse("2006-01-02T15:04:05-0700", bitbucketCloudWebHook.Date)
 	if err != nil {
 		return nil, err
@@ -148,7 +144,7 @@ func (webhook *BitbucketServerWebhook) parsePrEvents(bitbucketCloudWebHook *bitb
 	}, nil
 }
 
-func (webhook *BitbucketServerWebhook) branchStatus(to string, from string) WebHookInfoBranchStatus {
+func (webhook *bitbucketServerWebhookParser) branchStatus(to string, from string) WebHookInfoBranchStatus {
 	existsAfter := to != gitNilHash
 	existedBefore := from != gitNilHash
 	return branchStatus(existedBefore, existsAfter)

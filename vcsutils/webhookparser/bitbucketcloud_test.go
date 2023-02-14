@@ -60,7 +60,7 @@ func TestBitbucketCloudParseIncomingPushWebhook(t *testing.T) {
 	assert.Equal(t, WebHookInfoCommit{
 		Hash: "a2b4032ae25e08844b894e413d80ee75b4c1995b",
 	}, actual.BeforeCommit)
-	assert.Equal(t, WebhookinfobranchstatusUpdated, actual.BranchStatus)
+	assert.Equal(t, WebhookInfoBranchStatusUpdated, actual.BranchStatus)
 	assert.Equal(t, "https://bitbucket.org/yahavi/hello-world/branches/compare/fa8c303777d0006fa99b843b830ad1ed18a6928e..a2b4032ae25e08844b894e413d80ee75b4c1995b#diff", actual.CompareUrl)
 }
 
@@ -146,7 +146,7 @@ func TestBitbucketCloudParseIncomingWebhookError(t *testing.T) {
 		request)
 	assert.Error(t, err)
 
-	webhook := BitbucketCloudWebhook{}
+	webhook := bitbucketCloudWebhookParser{}
 	_, err = webhook.parseIncomingWebhook(context.Background(), request, []byte{})
 	assert.Error(t, err)
 }

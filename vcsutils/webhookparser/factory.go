@@ -7,17 +7,17 @@ import (
 	"github.com/jfrog/froggit-go/vcsutils"
 )
 
-func createWebhookParser(logger vcsclient.Log, origin WebhookOrigin) WebhookParser {
+func createWebhookParser(logger vcsclient.Log, origin WebhookOrigin) webhookParser {
 	origin.OriginURL = strings.TrimSuffix(origin.OriginURL, "/")
 	switch origin.VcsProvider {
 	case vcsutils.GitHub:
-		return NewGitHubWebhook(logger, origin.OriginURL)
+		return newGitHubWebhookParser(logger, origin.OriginURL)
 	case vcsutils.GitLab:
-		return NewGitLabWebhook(logger)
+		return newGitLabWebhookParser(logger)
 	case vcsutils.BitbucketServer:
-		return NewBitbucketServerWebhookWebhook(logger, origin.OriginURL)
+		return newBitbucketServerWebhookParser(logger, origin.OriginURL)
 	case vcsutils.BitbucketCloud:
-		return NewBitbucketCloudWebhookWebhook(logger)
+		return newBitbucketCloudWebhookParser(logger)
 	}
 	return nil
 }

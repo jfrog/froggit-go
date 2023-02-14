@@ -7,9 +7,9 @@ import (
 )
 
 func TestBranchStatus(t *testing.T) {
-	assert.Equal(t, WebhookinfobranchstatusDeleted, branchStatus(true, false))
-	assert.Equal(t, WebhookinfobranchstatusCreated, branchStatus(false, true))
-	assert.Equal(t, WebhookinfobranchstatusUpdated, branchStatus(true, true))
+	assert.Equal(t, WebhookInfoBranchStatusDeleted, branchStatus(true, false))
+	assert.Equal(t, WebhookInfoBranchStatusCreated, branchStatus(false, true))
+	assert.Equal(t, WebhookInfoBranchStatusUpdated, branchStatus(true, true))
 	// this one should never happen
-	assert.Equal(t, WebhookinfobranchstatusUpdated, branchStatus(false, false))
+	assert.Equal(t, WebhookInfoBranchStatusUpdated, branchStatus(false, false))
 }
