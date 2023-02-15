@@ -1,41 +1,58 @@
 package webhookparser
 
 import (
+	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 
 	"github.com/google/go-github/v45/github"
+
+	"github.com/jfrog/froggit-go/vcsclient"
 	"github.com/jfrog/froggit-go/vcsutils"
 )
 
-// GitHubWebhook represents an incoming webhook on GitHub
-type GitHubWebhook struct {
-	request *http.Request
+// gitHubWebhookParser represents an incoming webhook on GitHub
+type gitHubWebhookParser struct {
+	logger vcsclient.Log
+	// Used for GitHub On-prem
+	endpoint string
 }
 
-// NewGitHubWebhook create a new GitHubWebhook instance
-func NewGitHubWebhook(request *http.Request) *GitHubWebhook {
-	return &GitHubWebhook{
-		request: request,
+// newGitHubWebhookParser create a new gitHubWebhookParser instance
+func newGitHubWebhookParser(logger vcsclient.Log, endpoint string) *gitHubWebhookParser {
+	if endpoint == "" {
+		// Default to GitHub "Cloud"
+		endpoint = "https://github.com"
+	} else {
+		// For GitHub the API endpoint is https://api.github.com but the Web Interface URL is https://github.com
+		// So we remove the "api." prefix to the hostname
+		// Applied to Cloud and On-Prem versions of GitHub
+		endpoint = strings.Replace(endpoint, "://api.", "://", 1)
+	}
+	logger.Debug("Github URL: ", endpoint)
+	return &gitHubWebhookParser{
+		logger:   logger,
+		endpoint: endpoint,
 	}
 }
 
-func (webhook *GitHubWebhook) validatePayload(token []byte) ([]byte, error) {
+func (webhook *gitHubWebhookParser) validatePayload(_ context.Context, request *http.Request, token []byte) ([]byte, error) {
 	// Make sure X-Hub-Signature-256 header exist
-	if len(token) > 0 && len(webhook.request.Header.Get(github.SHA256SignatureHeader)) == 0 {
+	if len(token) > 0 && len(request.Header.Get(github.SHA256SignatureHeader)) == 0 {
 		return nil, errors.New(github.SHA256SignatureHeader + " header is missing")
 	}
 
-	payload, err := github.ValidatePayload(webhook.request, token)
+	payload, err := github.ValidatePayload(request, token)
 	if err != nil {
 		return nil, err
 	}
 	return payload, nil
 }
 
-func (webhook *GitHubWebhook) parseIncomingWebhook(payload []byte) (*WebhookInfo, error) {
-	event, err := github.ParseWebHook(github.WebHookType(webhook.request), payload)
+func (webhook *gitHubWebhookParser) parseIncomingWebhook(_ context.Context, request *http.Request, payload []byte) (*WebhookInfo, error) {
+	event, err := github.ParseWebHook(github.WebHookType(request), payload)
 	if err != nil {
 		return nil, err
 	}
@@ -48,19 +65,66 @@ func (webhook *GitHubWebhook) parseIncomingWebhook(payload []byte) (*WebhookInfo
 	return nil, nil
 }
 
-func (webhook *GitHubWebhook) parsePushEvent(event *github.PushEvent) *WebhookInfo {
+func (webhook *gitHubWebhookParser) parsePushEvent(event *github.PushEvent) *WebhookInfo {
+	repoDetails := WebHookInfoRepoDetails{
+		Name:  vcsutils.DefaultIfNotNil(vcsutils.DefaultIfNotNil(event.GetRepo()).Name),
+		Owner: vcsutils.DefaultIfNotNil(vcsutils.DefaultIfNotNil(vcsutils.DefaultIfNotNil(event.GetRepo()).Owner).Login),
+	}
+	compareURL := ""
+	if webhook.endpoint != "" {
+		compareURL = fmt.Sprintf("%s/%s/%s/compare/%s...%s", webhook.endpoint, repoDetails.Owner, repoDetails.Name,
+			event.GetBefore(), event.GetAfter())
+	}
 	return &WebhookInfo{
-		TargetRepositoryDetails: WebHookInfoRepoDetails{
-			Name:  *event.GetRepo().Name,
-			Owner: *event.GetRepo().Owner.Login,
+		TargetRepositoryDetails: repoDetails,
+		TargetBranch:            webhook.trimRefPrefix(event.GetRef()),
+		Timestamp:               event.GetHeadCommit().GetTimestamp().UTC().Unix(),
+		Event:                   vcsutils.Push,
+		Commit: WebHookInfoCommit{
+			Hash:    event.GetAfter(),
+			Message: vcsutils.DefaultIfNotNil(vcsutils.DefaultIfNotNil(event.HeadCommit).Message),
+			Url:     vcsutils.DefaultIfNotNil(vcsutils.DefaultIfNotNil(event.HeadCommit).URL),
 		},
-		TargetBranch: strings.TrimPrefix(event.GetRef(), "refs/heads/"),
-		Timestamp:    event.GetHeadCommit().GetTimestamp().UTC().Unix(),
-		Event:        vcsutils.Push,
+		BeforeCommit: WebHookInfoCommit{
+			Hash: event.GetBefore(),
+		},
+		BranchStatus: webhook.branchStatus(event),
+		TriggeredBy:  webhook.user(event.Pusher),
+		Committer:    webhook.commitAuthor(vcsutils.DefaultIfNotNil(event.HeadCommit).Committer),
+		Author:       webhook.commitAuthor(vcsutils.DefaultIfNotNil(event.HeadCommit).Author),
+		CompareUrl:   compareURL,
 	}
 }
 
-func (webhook *GitHubWebhook) parsePrEvents(event *github.PullRequestEvent) *WebhookInfo {
+func (webhook *gitHubWebhookParser) trimRefPrefix(ref string) string {
+	return strings.TrimPrefix(ref, "refs/heads/")
+}
+
+func (webhook *gitHubWebhookParser) user(u *github.User) WebHookInfoUser {
+	if u == nil {
+		return WebHookInfoUser{}
+	}
+	return WebHookInfoUser{
+		Login:       vcsutils.DefaultIfNotNil(u.Login),
+		DisplayName: vcsutils.DefaultIfNotNil(u.Name),
+		Email:       vcsutils.DefaultIfNotNil(u.Email),
+		AvatarUrl:   "",
+	}
+}
+
+func (webhook *gitHubWebhookParser) commitAuthor(u *github.CommitAuthor) WebHookInfoUser {
+	if u == nil {
+		return WebHookInfoUser{}
+	}
+	return WebHookInfoUser{
+		Login:       vcsutils.DefaultIfNotNil(u.Login),
+		DisplayName: vcsutils.DefaultIfNotNil(u.Name),
+		Email:       vcsutils.DefaultIfNotNil(u.Email),
+		AvatarUrl:   "",
+	}
+}
+
+func (webhook *gitHubWebhookParser) parsePrEvents(event *github.PullRequestEvent) *WebhookInfo {
 	var webhookEvent vcsutils.WebhookEvent
 	switch event.GetAction() {
 	case "opened", "reopened":
@@ -90,9 +154,15 @@ func (webhook *GitHubWebhook) parsePrEvents(event *github.PullRequestEvent) *Web
 	}
 }
 
-func (webhook *GitHubWebhook) resolveClosedEventType(event *github.PullRequestEvent) vcsutils.WebhookEvent {
+func (webhook *gitHubWebhookParser) resolveClosedEventType(event *github.PullRequestEvent) vcsutils.WebhookEvent {
 	if event.GetPullRequest().GetMerged() {
 		return vcsutils.PrMerged
 	}
 	return vcsutils.PrRejected
+}
+
+func (webhook *gitHubWebhookParser) branchStatus(event *github.PushEvent) WebHookInfoBranchStatus {
+	existsAfter := event.GetAfter() != gitNilHash
+	existedBefore := event.GetBefore() != gitNilHash
+	return branchStatus(existedBefore, existsAfter)
 }

@@ -1,21 +1,23 @@
 package webhookparser
 
 import (
-	"net/http"
+	"strings"
 
+	"github.com/jfrog/froggit-go/vcsclient"
 	"github.com/jfrog/froggit-go/vcsutils"
 )
 
-func createWebhookParser(provider vcsutils.VcsProvider, request *http.Request) WebhookParser {
-	switch provider {
+func createWebhookParser(logger vcsclient.Log, origin WebhookOrigin) webhookParser {
+	origin.OriginURL = strings.TrimSuffix(origin.OriginURL, "/")
+	switch origin.VcsProvider {
 	case vcsutils.GitHub:
-		return NewGitHubWebhook(request)
-	case vcsutils.BitbucketCloud:
-		return NewBitbucketCloudWebhookWebhook(request)
-	case vcsutils.BitbucketServer:
-		return NewBitbucketServerWebhookWebhook(request)
+		return newGitHubWebhookParser(logger, origin.OriginURL)
 	case vcsutils.GitLab:
-		return NewGitLabWebhook(request)
+		return newGitLabWebhookParser(logger)
+	case vcsutils.BitbucketServer:
+		return newBitbucketServerWebhookParser(logger, origin.OriginURL)
+	case vcsutils.BitbucketCloud:
+		return newBitbucketCloudWebhookParser(logger)
 	}
 	return nil
 }

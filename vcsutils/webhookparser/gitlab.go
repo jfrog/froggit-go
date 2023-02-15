@@ -2,31 +2,34 @@ package webhookparser
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"net/http"
 	"strings"
 	"time"
 
-	"github.com/jfrog/froggit-go/vcsutils"
 	"github.com/xanzy/go-gitlab"
+
+	"github.com/jfrog/froggit-go/vcsclient"
+	"github.com/jfrog/froggit-go/vcsutils"
 )
 
 const gitLabKeyHeader = "X-GitLab-Token"
 
-// GitLabWebhook represents an incoming webhook on GitLab
-type GitLabWebhook struct {
-	request *http.Request
+// gitLabWebhookParser represents an incoming webhook on GitLab
+type gitLabWebhookParser struct {
+	logger vcsclient.Log
 }
 
-// NewGitLabWebhook create a new GitLabWebhook instance
-func NewGitLabWebhook(request *http.Request) *GitLabWebhook {
-	return &GitLabWebhook{
-		request: request,
+// newGitLabWebhookParser create a new gitLabWebhookParser instance
+func newGitLabWebhookParser(logger vcsclient.Log) *gitLabWebhookParser {
+	return &gitLabWebhookParser{
+		logger: logger,
 	}
 }
 
-func (webhook *GitLabWebhook) validatePayload(token []byte) ([]byte, error) {
-	actualToken := webhook.request.Header.Get(gitLabKeyHeader)
+func (webhook *gitLabWebhookParser) validatePayload(_ context.Context, request *http.Request, token []byte) ([]byte, error) {
+	actualToken := request.Header.Get(gitLabKeyHeader)
 	if len(token) != 0 || len(actualToken) > 0 {
 		if actualToken != string(token) {
 			return nil, errors.New("token mismatch")
@@ -34,13 +37,13 @@ func (webhook *GitLabWebhook) validatePayload(token []byte) ([]byte, error) {
 	}
 
 	payload := new(bytes.Buffer)
-	if _, err := payload.ReadFrom(webhook.request.Body); err != nil {
+	if _, err := payload.ReadFrom(request.Body); err != nil {
 		return nil, err
 	}
 	return payload.Bytes(), nil
 }
-func (webhook *GitLabWebhook) parseIncomingWebhook(payload []byte) (*WebhookInfo, error) {
-	event, err := gitlab.ParseWebhook(gitlab.WebhookEventType(webhook.request), payload)
+func (webhook *gitLabWebhookParser) parseIncomingWebhook(_ context.Context, request *http.Request, payload []byte) (*WebhookInfo, error) {
+	event, err := gitlab.ParseWebhook(gitlab.WebhookEventType(request), payload)
 	if err != nil {
 		return nil, err
 	}
@@ -53,20 +56,64 @@ func (webhook *GitLabWebhook) parseIncomingWebhook(payload []byte) (*WebhookInfo
 	return nil, nil
 }
 
-func (webhook *GitLabWebhook) parsePushEvent(event *gitlab.PushEvent) *WebhookInfo {
+func (webhook *gitLabWebhookParser) parsePushEvent(event *gitlab.PushEvent) *WebhookInfo {
 	var localTimestamp int64
 	if len(event.Commits) > 0 {
 		localTimestamp = event.Commits[0].Timestamp.Local().Unix()
 	}
+	lastCommit := vcsutils.DefaultIfNotNil(webhook.getLastCommit(event))
 	return &WebhookInfo{
 		TargetRepositoryDetails: webhook.parseRepoDetails(event.Project.PathWithNamespace),
 		TargetBranch:            strings.TrimPrefix(event.Ref, "refs/heads/"),
 		Timestamp:               localTimestamp,
 		Event:                   vcsutils.Push,
+		Commit: WebHookInfoCommit{
+			Hash:    event.After,
+			Message: lastCommit.Message,
+			Url:     lastCommit.URL,
+		},
+		BeforeCommit: WebHookInfoCommit{
+			Hash: event.Before,
+		},
+		BranchStatus: webhook.branchStatus(event),
+		TriggeredBy: WebHookInfoUser{
+			Login:       event.UserUsername,
+			Email:       event.UserEmail,
+			DisplayName: event.UserName,
+			AvatarUrl:   event.UserAvatar,
+		},
+		Committer: WebHookInfoUser{
+			DisplayName: lastCommit.Author.Name,
+			Email:       lastCommit.Author.Email,
+		},
+		Author: WebHookInfoUser{
+			DisplayName: lastCommit.Author.Name,
+			Email:       lastCommit.Author.Email,
+		},
 	}
 }
 
-func (webhook *GitLabWebhook) parseRepoDetails(pathWithNamespace string) WebHookInfoRepoDetails {
+func (webhook *gitLabWebhookParser) getLastCommit(event *gitlab.PushEvent) *struct {
+	ID        string     `json:"id"`
+	Message   string     `json:"message"`
+	Title     string     `json:"title"`
+	Timestamp *time.Time `json:"timestamp"`
+	URL       string     `json:"url"`
+	Author    struct {
+		Name  string `json:"name"`
+		Email string `json:"email"`
+	} `json:"author"`
+	Added    []string `json:"added"`
+	Modified []string `json:"modified"`
+	Removed  []string `json:"removed"`
+} {
+	if len(event.Commits) == 0 {
+		return nil
+	}
+	return event.Commits[len(event.Commits)-1]
+}
+
+func (webhook *gitLabWebhookParser) parseRepoDetails(pathWithNamespace string) WebHookInfoRepoDetails {
 	split := strings.Split(pathWithNamespace, "/")
 	return WebHookInfoRepoDetails{
 		Name:  split[1],
@@ -74,7 +121,7 @@ func (webhook *GitLabWebhook) parseRepoDetails(pathWithNamespace string) WebHook
 	}
 }
 
-func (webhook *GitLabWebhook) parsePrEvents(event *gitlab.MergeEvent) (*WebhookInfo, error) {
+func (webhook *gitLabWebhookParser) parsePrEvents(event *gitlab.MergeEvent) (*WebhookInfo, error) {
 	var webhookEvent vcsutils.WebhookEvent
 	switch event.ObjectAttributes.Action {
 	case "open", "reopen":
@@ -102,4 +149,10 @@ func (webhook *GitLabWebhook) parsePrEvents(event *gitlab.MergeEvent) (*WebhookI
 		Timestamp:               eventTime.UTC().Unix(),
 		Event:                   webhookEvent,
 	}, nil
+}
+
+func (webhook *gitLabWebhookParser) branchStatus(event *gitlab.PushEvent) WebHookInfoBranchStatus {
+	existsAfter := event.After != gitNilHash
+	existedBefore := event.Before != gitNilHash
+	return branchStatus(existedBefore, existsAfter)
 }

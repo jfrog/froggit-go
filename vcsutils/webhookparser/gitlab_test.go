@@ -1,6 +1,7 @@
 package webhookparser
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -10,8 +11,10 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/xanzy/go-gitlab"
 
-	"github.com/jfrog/froggit-go/vcsutils"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/jfrog/froggit-go/vcsclient"
+	"github.com/jfrog/froggit-go/vcsutils"
 )
 
 const (
@@ -36,7 +39,12 @@ func TestGitLabParseIncomingPushWebhook(t *testing.T) {
 	request.Header.Add(gitLabEventHeader, "Push Hook")
 
 	// Parse webhook
-	actual, err := ParseIncomingWebhook(vcsutils.GitLab, token, request)
+	actual, err := ParseIncomingWebhook(context.Background(),
+		vcsclient.EmptyLogger{},
+		WebhookOrigin{
+			VcsProvider: vcsutils.GitLab,
+			Token:       token,
+		}, request)
 	require.NoError(t, err)
 
 	// Check values
@@ -45,6 +53,19 @@ func TestGitLabParseIncomingPushWebhook(t *testing.T) {
 	assert.Equal(t, expectedBranch, actual.TargetBranch)
 	assert.Equal(t, gitlabPushExpectedTime, actual.Timestamp)
 	assert.Equal(t, vcsutils.Push, actual.Event)
+	assert.Equal(t, WebHookInfoUser{DisplayName: "Yahav Itzhak", Email: "yahavitz@gmail.com"}, actual.Author)
+	assert.Equal(t, WebHookInfoUser{DisplayName: "Yahav Itzhak", Email: "yahavitz@gmail.com"}, actual.Committer)
+	assert.Equal(t, WebHookInfoUser{Login: "yahavi", DisplayName: "Yahav Itzhak", AvatarUrl: "https://secure.gravatar.com/avatar/9680da1674e22a1de17acb19bb233ebf?s=80&d=identicon"}, actual.TriggeredBy)
+	assert.Equal(t, WebHookInfoCommit{
+		Hash:    "450cd4687e3644d544ca4cb3a7a355fea9e6f0dc",
+		Message: "Initial commit",
+		Url:     "https://gitlab.com/yahavi/hello-world/-/commit/450cd4687e3644d544ca4cb3a7a355fea9e6f0dc",
+	}, actual.Commit)
+	assert.Equal(t, WebHookInfoCommit{
+		Hash: "450cd4687e3644d544ca4cb3a7a355fea9e6f0dc",
+	}, actual.BeforeCommit)
+	assert.Equal(t, WebhookInfoBranchStatusUpdated, actual.BranchStatus)
+	assert.Equal(t, "", actual.CompareUrl)
 }
 
 func TestGitLabParseIncomingPrWebhook(t *testing.T) {
@@ -97,7 +118,12 @@ func TestGitLabParseIncomingPrWebhook(t *testing.T) {
 			request.Header.Add(gitLabEventHeader, "Merge Request Hook")
 
 			// Parse webhook
-			actual, err := ParseIncomingWebhook(vcsutils.GitLab, token, request)
+			actual, err := ParseIncomingWebhook(context.Background(),
+				vcsclient.EmptyLogger{},
+				WebhookOrigin{
+					VcsProvider: vcsutils.GitLab,
+					Token:       token,
+				}, request)
 			require.NoError(t, err)
 
 			// Check values
@@ -115,16 +141,23 @@ func TestGitLabParseIncomingPrWebhook(t *testing.T) {
 }
 
 func TestGitLabParseIncomingWebhookError(t *testing.T) {
-	_, err := ParseIncomingWebhook(vcsutils.GitLab, token, &http.Request{})
+	request := &http.Request{}
+	_, err := ParseIncomingWebhook(context.Background(),
+		vcsclient.EmptyLogger{},
+		WebhookOrigin{
+			VcsProvider: vcsutils.GitLab,
+			Token:       token,
+		}, request)
+
 	require.Error(t, err)
 
-	webhook := GitLabWebhook{request: &http.Request{}}
-	_, err = webhook.parseIncomingWebhook([]byte{})
+	webhook := gitLabWebhookParser{logger: vcsclient.EmptyLogger{}}
+	_, err = webhook.parseIncomingWebhook(context.Background(), request, []byte{})
 	assert.Error(t, err)
 }
 
 func TestGitLabParsePrEventsError(t *testing.T) {
-	webhook := GitLabWebhook{}
+	webhook := gitLabWebhookParser{}
 	webhookInfo, _ := webhook.parsePrEvents(&gitlab.MergeEvent{})
 	assert.Nil(t, webhookInfo)
 }
@@ -140,6 +173,11 @@ func TestGitLabPayloadMismatchSignature(t *testing.T) {
 	request.Header.Add(gitLabEventHeader, "Push Hook")
 
 	// Parse webhook
-	_, err = ParseIncomingWebhook(vcsutils.GitLab, token, request)
+	_, err = ParseIncomingWebhook(context.Background(),
+		vcsclient.EmptyLogger{},
+		WebhookOrigin{
+			VcsProvider: vcsutils.GitLab,
+			Token:       token,
+		}, request)
 	assert.EqualError(t, err, "token mismatch")
 }

@@ -1,6 +1,7 @@
 package webhookparser
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"net/http"
@@ -12,8 +13,10 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/jfrog/froggit-go/vcsutils"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/jfrog/froggit-go/vcsclient"
+	"github.com/jfrog/froggit-go/vcsutils"
 )
 
 const (
@@ -49,7 +52,8 @@ func TestBitbucketServerParseIncomingPushWebhook(t *testing.T) {
 	request.Header.Add(sha256Signature, "sha256="+bitbucketServerPushSha256)
 
 	// Parse webhook
-	actual, err := ParseIncomingWebhook(vcsutils.BitbucketServer, token, request)
+	parser := newBitbucketServerWebhookParser(vcsclient.EmptyLogger{}, "https://bitbucket.test/rest")
+	actual, err := validateAndParseHttpRequest(context.Background(), vcsclient.EmptyLogger{}, parser, token, request)
 	require.NoError(t, err)
 
 	// Check values
@@ -58,6 +62,19 @@ func TestBitbucketServerParseIncomingPushWebhook(t *testing.T) {
 	assert.Equal(t, expectedBranch, actual.TargetBranch)
 	assert.Equal(t, bitbucketServerPushExpectedTime, actual.Timestamp)
 	assert.Equal(t, vcsutils.Push, actual.Event)
+	assert.Equal(t, WebHookInfoUser{DisplayName: "Yahav Itzhak", Email: "yahavi@jfrog.com"}, actual.Author)
+	assert.Equal(t, WebHookInfoUser{DisplayName: "Yahav Itzhak", Email: "yahavi@jfrog.com"}, actual.Committer)
+	assert.Equal(t, WebHookInfoUser{Login: "yahavi", DisplayName: "Yahav Itzhak"}, actual.TriggeredBy)
+	assert.Equal(t, WebHookInfoCommit{
+		Hash:    "929d3054cf60e11a38672966f948bb5d95f48f0e",
+		Message: "",
+		Url:     "https://bitbucket.test/rest/projects/~YAHAVI/repos/hello-world/commits/929d3054cf60e11a38672966f948bb5d95f48f0e",
+	}, actual.Commit)
+	assert.Equal(t, WebHookInfoCommit{
+		Hash: "0000000000000000000000000000000000000000",
+	}, actual.BeforeCommit)
+	assert.Equal(t, WebhookInfoBranchStatusCreated, actual.BranchStatus)
+	assert.Equal(t, "", actual.CompareUrl)
 }
 
 func TestBitbucketServerParseIncomingPrWebhook(t *testing.T) {
@@ -122,7 +139,13 @@ func TestBitbucketServerParseIncomingPrWebhook(t *testing.T) {
 			request.Header.Add(sha256Signature, "sha256="+tt.payloadSha)
 
 			// Parse webhook
-			actual, err := ParseIncomingWebhook(vcsutils.BitbucketServer, token, request)
+			actual, err := ParseIncomingWebhook(context.Background(),
+				vcsclient.EmptyLogger{},
+				WebhookOrigin{
+					VcsProvider: vcsutils.BitbucketServer,
+					Token:       token,
+				},
+				request)
 			require.NoError(t, err)
 
 			// Check values
@@ -140,16 +163,23 @@ func TestBitbucketServerParseIncomingPrWebhook(t *testing.T) {
 }
 
 func TestBitbucketServerParseIncomingWebhookError(t *testing.T) {
-	_, err := ParseIncomingWebhook(vcsutils.BitbucketServer, token, &http.Request{Body: io.NopCloser(io.MultiReader())})
+	request := &http.Request{Body: io.NopCloser(io.MultiReader())}
+	_, err := ParseIncomingWebhook(context.Background(),
+		vcsclient.EmptyLogger{},
+		WebhookOrigin{
+			VcsProvider: vcsutils.BitbucketServer,
+			Token:       token,
+		},
+		request)
 	require.Error(t, err)
 
-	webhook := BitbucketServerWebhook{}
-	_, err = webhook.parseIncomingWebhook([]byte{})
+	webhook := bitbucketServerWebhookParser{}
+	_, err = webhook.parseIncomingWebhook(context.Background(), request, []byte{})
 	assert.Error(t, err)
 }
 
 func TestBitbucketServerParsePrEventsError(t *testing.T) {
-	webhook := BitbucketServerWebhook{request: &http.Request{}}
+	webhook := bitbucketServerWebhookParser{logger: vcsclient.EmptyLogger{}}
 	_, err := webhook.parsePrEvents(&bitbucketServerWebHook{}, vcsutils.Push)
 	assert.Error(t, err)
 }
@@ -165,7 +195,13 @@ func TestBitbucketServerPayloadMismatchSignature(t *testing.T) {
 	request.Header.Add(sha256Signature, "sha256=wrongsianature")
 
 	// Parse webhook
-	_, err = ParseIncomingWebhook(vcsutils.BitbucketServer, token, request)
+	_, err = ParseIncomingWebhook(context.Background(),
+		vcsclient.EmptyLogger{},
+		WebhookOrigin{
+			VcsProvider: vcsutils.BitbucketServer,
+			Token:       token,
+		},
+		request)
 	assert.EqualError(t, err, "payload signature mismatch")
 }
 

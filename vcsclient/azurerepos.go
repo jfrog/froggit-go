@@ -4,13 +4,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/jfrog/froggit-go/vcsutils"
-	"github.com/microsoft/azure-devops-go-api/azuredevops"
-	"github.com/microsoft/azure-devops-go-api/azuredevops/git"
 	"io"
 	"net/http"
 	"os"
 	"strings"
+
+	"github.com/microsoft/azure-devops-go-api/azuredevops"
+	"github.com/microsoft/azure-devops-go-api/azuredevops/git"
+
+	"github.com/jfrog/froggit-go/vcsutils"
 )
 
 // Azure Devops API version 6
@@ -23,7 +25,7 @@ type AzureReposClient struct {
 // NewAzureReposClient create a new AzureReposClient
 func NewAzureReposClient(vcsInfo VcsInfo, logger Log) (*AzureReposClient, error) {
 	client := &AzureReposClient{vcsInfo: vcsInfo, logger: logger}
-	baseUrl := strings.TrimSuffix(client.vcsInfo.APIEndpoint, string(os.PathSeparator))
+	baseUrl := strings.TrimSuffix(client.vcsInfo.APIEndpoint, "/")
 	client.connectionDetails = azuredevops.NewPatConnection(baseUrl, client.vcsInfo.Token)
 	return client, nil
 }
