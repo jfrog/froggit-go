@@ -197,18 +197,22 @@ type VcsClient interface {
 	// owner         - User or organization
 	// repository    - VCS repository name
 	// branch        - The name of the branch
-	// scan  		 - Code scanning analysis
+	// scan          - Code scanning analysis
 	UploadCodeScanning(ctx context.Context, owner, repository, branch, scanResults string) (string, error)
 
 	// DownloadFileFromRepo Downloads a file from path in a repository
 	// owner         - User or organization
 	// repository    - VCS repository name
 	// branch        - The name of the branch
-	// path  		 - The path to the requested file
+	// path          - The path to the requested file
 	DownloadFileFromRepo(ctx context.Context, owner, repository, branch, path string) ([]byte, int, error)
 
 	// GetRepositoryEnvironmentInfo Gets the environment info configured for a repository
+	// owner         - User or organization
+	// repository    - VCS repository name
+	// name          - The environment name
 	GetRepositoryEnvironmentInfo(ctx context.Context, owner, repository, name string) (RepositoryEnvironmentInfo, error)
+
 	// GetModifiedFiles returns list of file names modified between two VCS references
 	// owner         - User or organization
 	// repository    - VCS repository name
