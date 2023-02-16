@@ -3,6 +3,7 @@ package vcsclient
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"math"
@@ -469,6 +470,61 @@ func TestGitlabClient_GetRepositoryEnvironmentInfo(t *testing.T) {
 
 	_, err := client.GetRepositoryEnvironmentInfo(ctx, owner, repo1, envName)
 	assert.ErrorIs(t, err, errGitLabGetRepoEnvironmentInfoNotSupported)
+}
+
+func TestGitLabClient_GetModifiedFiles(t *testing.T) {
+	ctx := context.Background()
+	t.Run("ok", func(t *testing.T) {
+		response, err := os.ReadFile(filepath.Join("testdata", "gitlab", "compare_commits.json"))
+		require.NoError(t, err)
+
+		client, cleanUp := createServerAndClient(
+			t,
+			vcsutils.GitLab,
+			true,
+			response,
+			fmt.Sprintf("/api/v4/projects/%s/repository/compare?from=sha-1&to=sha-2", url.PathEscape(owner+"/"+repo1)),
+			createGitLabHandler,
+		)
+		defer cleanUp()
+
+		fileNames, err := client.GetModifiedFiles(ctx, owner, repo1, "sha-1", "sha-2")
+		require.NoError(t, err)
+		require.Equal(t, []string{
+			"doc/user/project/integrations/gitlab_slack_application.md",
+			"doc/user/project/integrations/slack.md",
+			"doc/user/project/integrations/slack_slash_commands.md",
+			"doc/user/project/integrations/slack_slash_commands_2.md",
+		}, fileNames)
+	})
+
+	t.Run("validation fails", func(t *testing.T) {
+		client := GitLabClient{}
+		_, err := client.GetModifiedFiles(ctx, "", repo1, "sha-1", "sha-2")
+		require.Equal(t, errors.New("validation failed: required parameter 'owner' is missing"), err)
+		_, err = client.GetModifiedFiles(ctx, owner, "", "sha-1", "sha-2")
+		require.Equal(t, errors.New("validation failed: required parameter 'repository' is missing"), err)
+		_, err = client.GetModifiedFiles(ctx, owner, repo1, "", "sha-2")
+		require.Equal(t, errors.New("validation failed: required parameter 'refBefore' is missing"), err)
+		_, err = client.GetModifiedFiles(ctx, owner, repo1, "sha-1", "")
+		require.Equal(t, errors.New("validation failed: required parameter 'refAfter' is missing"), err)
+	})
+
+	t.Run("failed request", func(t *testing.T) {
+		client, cleanUp := createServerAndClientReturningStatus(
+			t,
+			vcsutils.GitLab,
+			true,
+			nil,
+			"/api/v4/projects/jfrog%2Frepo-1/repository/compare?from=sha-1&to=sha-2",
+			http.StatusInternalServerError,
+			createGitLabHandler,
+		)
+		defer cleanUp()
+		_, err := client.GetModifiedFiles(ctx, owner, repo1, "sha-1", "sha-2")
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "api/v4/projects/jfrog/repo-1/repository/compare: 500 failed to parse unexpected error type: <nil>")
+	})
 }
 
 func createGitLabHandler(t *testing.T, expectedURI string, response []byte, expectedStatusCode int) http.HandlerFunc {

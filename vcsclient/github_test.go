@@ -3,6 +3,7 @@ package vcsclient
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"math"
@@ -615,6 +616,77 @@ func TestGitHubClient_ExtractGitHubEnvironmentReviewers(t *testing.T) {
 	actualReviewers, err := extractGitHubEnvironmentReviewers(environment)
 	assert.NoError(t, err)
 	assert.Equal(t, []string{reviewer1, reviewer2}, actualReviewers)
+}
+
+func TestGitHubClient_GetModifiedFiles(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("ok", func(t *testing.T) {
+		response, err := os.ReadFile(filepath.Join("testdata", "github", "compare_commits.json"))
+		assert.NoError(t, err)
+
+		client, cleanUp := createServerAndClient(
+			t,
+			vcsutils.GitHub,
+			false,
+			response,
+			"/repos/jfrog/repo-1/compare/sha-1...sha-2?per_page=1",
+			createGitHubHandler,
+		)
+		defer cleanUp()
+
+		fileNames, err := client.GetModifiedFiles(ctx, owner, repo1, "sha-1", "sha-2")
+		assert.NoError(t, err)
+		assert.Equal(t, []string{
+			"README.md",
+			"vcsclient/azurerepos.go",
+			"vcsclient/azurerepos_test.go",
+			"vcsclient/bitbucketcloud.go",
+			"vcsclient/bitbucketcloud_test.go",
+			"vcsclient/bitbucketcommon.go",
+			"vcsclient/bitbucketserver.go",
+			"vcsclient/bitbucketserver_test.go",
+			"vcsclient/common_test.go",
+			"vcsclient/github.go",
+			"vcsclient/github_test.go",
+			"vcsclient/gitlab.go",
+			"vcsclient/gitlab_test.go",
+			"vcsclient/gitlabcommon.go",
+			"vcsclient/testdata/github/repository_environment_response.json",
+			"vcsclient/vcsclient.go",
+			"vcsclient/vcsclient_old.go",
+		},
+			fileNames,
+		)
+	})
+
+	t.Run("validation fails", func(t *testing.T) {
+		client := GitHubClient{}
+		_, err := client.GetModifiedFiles(ctx, "", repo1, "sha-1", "sha-2")
+		require.Equal(t, errors.New("validation failed: required parameter 'owner' is missing"), err)
+		_, err = client.GetModifiedFiles(ctx, owner, "", "sha-1", "sha-2")
+		require.Equal(t, errors.New("validation failed: required parameter 'repository' is missing"), err)
+		_, err = client.GetModifiedFiles(ctx, owner, repo1, "", "sha-2")
+		require.Equal(t, errors.New("validation failed: required parameter 'refBefore' is missing"), err)
+		_, err = client.GetModifiedFiles(ctx, owner, repo1, "sha-1", "")
+		require.Equal(t, errors.New("validation failed: required parameter 'refAfter' is missing"), err)
+	})
+
+	t.Run("failed request", func(t *testing.T) {
+		client, cleanUp := createServerAndClientReturningStatus(
+			t,
+			vcsutils.GitHub,
+			true,
+			nil,
+			"/repos/jfrog/repo-1/compare/sha-1...sha-2?per_page=1",
+			http.StatusInternalServerError,
+			createGitHubHandler,
+		)
+		defer cleanUp()
+		_, err := client.GetModifiedFiles(ctx, owner, repo1, "sha-1", "sha-2")
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "repos/jfrog/repo-1/compare/sha-1...sha-2?per_page=1: 500  []")
+	})
 }
 
 func createBadGitHubClient(t *testing.T) VcsClient {

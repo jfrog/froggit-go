@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/jfrog/froggit-go/vcsutils"
 	"github.com/microsoft/azure-devops-go-api/azuredevops"
@@ -377,6 +378,69 @@ func TestGetUnsupportedInAzureError(t *testing.T) {
 	functionName := "foo"
 	assert.Error(t, getUnsupportedInAzureError(functionName))
 	assert.Equal(t, "foo is currently not supported for Azure Repos", getUnsupportedInAzureError(functionName).Error())
+}
+
+func TestAzureReposClient_GetModifiedFiles(t *testing.T) {
+	ctx := context.Background()
+	t.Run("ok", func(t *testing.T) {
+		response, err := os.ReadFile(filepath.Join("testdata", "azurerepos", "compare_commits.json"))
+		require.NoError(t, err)
+
+		const expectedURI = "/_apis/ResourceAreas?%24skip=0&%24top=100&baseVersion=sha-1&diffCommonCommit=true&targetVersion=sha-2"
+		client, cleanUp := createServerAndClient(t, vcsutils.AzureRepos, true, response, expectedURI, createAzureReposHandler)
+		defer cleanUp()
+
+		actual, err := client.GetModifiedFiles(ctx, "", repo1, "sha-1", "sha-2")
+		require.NoError(t, err)
+		assert.Equal(t, []string{
+			"CustomerAddressModule/CustomerAddressModule.sln",
+			"CustomerAddressModule/CustomerAddressModule/App.config",
+			"CustomerAddressModule/CustomerAddressModule/CustomerAddressModule.csproj",
+			"CustomerAddressModule/CustomerAddressModule/Form1.Designer.cs",
+			"CustomerAddressModule/CustomerAddressModule/Form1.cs",
+			"CustomerAddressModule/CustomerAddressModule/Form1.resx",
+			"CustomerAddressModule/CustomerAddressModule/Program.cs",
+			"CustomerAddressModule/CustomerAddressModule/Properties/AssemblyInfo.cs",
+			"CustomerAddressModule/CustomerAddressModule/Properties/Resources.Designer.cs",
+			"CustomerAddressModule/CustomerAddressModule/Properties/Resources.resx",
+			"CustomerAddressModule/CustomerAddressModule/Properties/Settings.Designer.cs",
+			"CustomerAddressModule/CustomerAddressModule/Properties/Settings.settings",
+			"HelloWorld/.classpath",
+			"HelloWorld/.project",
+			"HelloWorld/build.xml",
+			"HelloWorld/dist/lib/MyProject-20140210.jar",
+			"HelloWorld/src/HelloWorld.java",
+			"MyWebSite/MyWebSite/Views/Home/_Register.cshtml",
+			"MyWebSite/MyWebSite/Web.config",
+		}, actual)
+	})
+
+	t.Run("validation fails", func(t *testing.T) {
+		client := AzureReposClient{}
+		_, err := client.GetModifiedFiles(ctx, owner, "", "sha-1", "sha-2")
+		require.Equal(t, errors.New("validation failed: required parameter 'repository' is missing"), err)
+		_, err = client.GetModifiedFiles(ctx, owner, repo1, "", "sha-2")
+		require.Equal(t, errors.New("validation failed: required parameter 'refBefore' is missing"), err)
+		_, err = client.GetModifiedFiles(ctx, owner, repo1, "sha-1", "")
+		require.Equal(t, errors.New("validation failed: required parameter 'refAfter' is missing"), err)
+	})
+
+	t.Run("failed request", func(t *testing.T) {
+		const expectedURI = "/_apis/ResourceAreas?%24skip=0&%24top=100&baseVersion=sha-1&diffCommonCommit=true&targetVersion=sha-2"
+		client, cleanUp := createServerAndClientReturningStatus(
+			t,
+			vcsutils.AzureRepos,
+			true,
+			nil,
+			expectedURI,
+			http.StatusInternalServerError,
+			createAzureReposHandler,
+		)
+		defer cleanUp()
+
+		_, err := client.GetModifiedFiles(ctx, "", repo1, "sha-1", "sha-2")
+		require.EqualError(t, err, "null")
+	})
 }
 
 func createAzureReposHandler(t *testing.T, expectedURI string, response []byte, expectedStatusCode int) http.HandlerFunc {

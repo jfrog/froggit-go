@@ -6,8 +6,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/jfrog/gofrog/datastructures"
 	"io"
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -640,6 +642,55 @@ func (client *BitbucketServerClient) mapBitbucketServerCommitToCommitInfo(commit
 
 func (client *BitbucketServerClient) UploadCodeScanning(ctx context.Context, owner string, repository string, branch string, scanResults string) (string, error) {
 	return "", errBitbucketCodeScanningNotSupported
+}
+
+type diffPayload struct {
+	Diffs []struct {
+		Source struct {
+			ToString string `mapstructure:"toString"`
+		} `mapstructure:"source"`
+		Destination struct {
+			ToString string `mapstructure:"toString"`
+		} `mapstructure:"destination"`
+	} `mapstructure:"diffs"`
+}
+
+func (client *BitbucketServerClient) GetModifiedFiles(ctx context.Context, owner, repository, refBefore, refAfter string) ([]string, error) {
+	err := validateParametersNotBlank(map[string]string{
+		"owner":      owner,
+		"repository": repository,
+		"refBefore":  refBefore,
+		"refAfter":   refAfter,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	bitbucketClient, err := client.buildBitbucketClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	params := map[string]interface{}{"contextLines": int32(0), "from": refBefore, "to": refAfter}
+	resp, err := bitbucketClient.StreamDiff_37(owner, repository, "", params)
+	if err != nil {
+		return nil, err
+	}
+
+	dst, err := remapFields[diffPayload](resp.Values, "")
+	if err != nil {
+		return nil, err
+	}
+
+	fileNamesSet := datastructures.MakeSet[string]()
+	for _, diff := range dst.Diffs {
+		fileNamesSet.Add(diff.Source.ToString)
+		fileNamesSet.Add(diff.Destination.ToString)
+	}
+	_ = fileNamesSet.Remove("") // Make sure there are no blank filepath.
+	fileNamesList := fileNamesSet.ToSlice()
+	sort.Strings(fileNamesList)
+	return fileNamesList, nil
 }
 
 func getBitbucketServerRepositoryVisibility(public bool) RepositoryVisibility {

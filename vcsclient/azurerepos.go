@@ -7,10 +7,13 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"sort"
 	"strings"
 
+	"github.com/jfrog/gofrog/datastructures"
 	"github.com/microsoft/azure-devops-go-api/azuredevops"
 	"github.com/microsoft/azure-devops-go-api/azuredevops/git"
+	"github.com/mitchellh/mapstructure"
 
 	"github.com/jfrog/froggit-go/vcsutils"
 )
@@ -366,4 +369,85 @@ func (client *AzureReposClient) DownloadFileFromRepo(ctx context.Context, owner,
 // GetRepositoryEnvironmentInfo on GitLab
 func (client *AzureReposClient) GetRepositoryEnvironmentInfo(ctx context.Context, owner, repository, name string) (RepositoryEnvironmentInfo, error) {
 	return RepositoryEnvironmentInfo{}, getUnsupportedInAzureError("get repository environment info")
+}
+
+func (client *AzureReposClient) GetModifiedFiles(ctx context.Context, _, repository, refBefore, refAfter string) ([]string, error) {
+	if err := validateParametersNotBlank(map[string]string{
+		"repository": repository,
+		"refBefore":  refBefore,
+		"refAfter":   refAfter,
+	}); err != nil {
+		return nil, err
+	}
+
+	azureReposGitClient, err := client.buildAzureReposClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	fileNamesSet := datastructures.MakeSet[string]()
+	changesToReturn := vcsutils.PointerOf(100)
+	changesToSkip := vcsutils.PointerOf(0)
+
+	for *changesToReturn >= 0 {
+		commitDiffs, err := azureReposGitClient.GetCommitDiffs(ctx, git.GetCommitDiffsArgs{
+			Top:                     changesToReturn,
+			Skip:                    changesToSkip,
+			RepositoryId:            &repository,
+			Project:                 &client.vcsInfo.Project,
+			DiffCommonCommit:        vcsutils.PointerOf(true),
+			BaseVersionDescriptor:   &git.GitBaseVersionDescriptor{BaseVersion: &refBefore},
+			TargetVersionDescriptor: &git.GitTargetVersionDescriptor{TargetVersion: &refAfter},
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		changes := vcsutils.DefaultIfNotNil(commitDiffs.Changes)
+		if len(changes) < *changesToReturn {
+			changesToReturn = vcsutils.PointerOf(-1)
+		} else {
+			changesToSkip = vcsutils.PointerOf(*changesToSkip + *changesToReturn)
+		}
+
+		for _, anyChange := range changes {
+			change, err := remapFields[git.GitChange](anyChange, "json")
+			if err != nil {
+				return nil, err
+			}
+
+			changedItem, err := remapFields[git.GitItem](change.Item, "json")
+			if err != nil {
+				return nil, err
+			}
+
+			if vcsutils.DefaultIfNotNil(changedItem.GitObjectType) != git.GitObjectTypeValues.Blob {
+				// We are not interested in the folders (trees) and other Git types.
+				continue
+			}
+
+			// Azure returns all paths with '/' prefix. Other providers doesn't, so let's
+			// remove the prefix here to produce output of the same format.
+			fileNamesSet.Add(strings.TrimPrefix(vcsutils.DefaultIfNotNil(changedItem.Path), "/"))
+		}
+	}
+	_ = fileNamesSet.Remove("") // Make sure there are no blank filepath.
+	fileNamesList := fileNamesSet.ToSlice()
+	sort.Strings(fileNamesList)
+	return fileNamesList, nil
+}
+
+// remapFields creates an instance of the T type and copies data from src parameter to it
+// by mapping fields based on the tags with tagName (if not provided 'mapstructure' tag is used).
+func remapFields[T any](src any, tagName string) (T, error) {
+	var dst T
+	if changeDecoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
+		TagName: tagName,
+		Result:  &dst,
+	}); err != nil {
+		return dst, err
+	} else if err := changeDecoder.Decode(src); err != nil {
+		return dst, err
+	}
+	return dst, nil
 }

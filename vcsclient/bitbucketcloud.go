@@ -5,8 +5,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/jfrog/gofrog/datastructures"
 	"net/http"
 	"net/url"
+	"sort"
 	"strings"
 	"time"
 
@@ -469,6 +471,60 @@ func (client *BitbucketCloudClient) DownloadFileFromRepo(ctx context.Context, ow
 // GetRepositoryEnvironmentInfo on Bitbucket cloud
 func (client *BitbucketCloudClient) GetRepositoryEnvironmentInfo(ctx context.Context, owner, repository, name string) (RepositoryEnvironmentInfo, error) {
 	return RepositoryEnvironmentInfo{}, errBitbucketGetRepoEnvironmentInfoNotSupported
+}
+
+func (client *BitbucketCloudClient) GetModifiedFiles(ctx context.Context, owner, repository, refBefore, refAfter string) ([]string, error) {
+	err := validateParametersNotBlank(map[string]string{
+		"owner":      owner,
+		"repository": repository,
+		"refBefore":  refBefore,
+		"refAfter":   refAfter,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	bitbucketClient := client.buildBitbucketCloudClient(ctx)
+	options := &bitbucket.DiffStatOptions{
+		Owner:    owner,
+		RepoSlug: repository,
+		// We use 2 dots for spec because of the case described at the page:
+		// https://developer.atlassian.com/cloud/bitbucket/rest/api-group-commits/#two-commit-spec
+		// As there is no `topic` set it will be treated as `refBefore...refAfter` actually.
+		Spec:    refBefore + ".." + refAfter,
+		Renames: true,
+		Merge:   true,
+	}
+
+	fileNamesSet := datastructures.MakeSet[string]()
+	nextPage := 1
+
+	for nextPage > 0 {
+		options.PageNum = nextPage
+		diffStatRes, err := bitbucketClient.Repositories.Diff.GetDiffStat(options)
+		if err != nil {
+			return nil, err
+		}
+
+		if diffStatRes.Next == "" {
+			nextPage = -1
+		} else {
+			nextPage++
+		}
+
+		for _, diffStat := range diffStatRes.DiffStats {
+			if path, ok := diffStat.New["path"].(string); ok {
+				fileNamesSet.Add(path)
+			}
+			if path, ok := diffStat.Old["path"].(string); ok {
+				fileNamesSet.Add(path)
+			}
+		}
+	}
+	_ = fileNamesSet.Remove("") // Make sure there are no blank filepath.
+	fileNamesList := fileNamesSet.ToSlice()
+	sort.Strings(fileNamesList)
+	return fileNamesList, nil
 }
 
 func extractCommitFromResponse(commits interface{}) (*commitResponse, error) {
