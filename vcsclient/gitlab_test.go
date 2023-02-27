@@ -146,8 +146,9 @@ func TestGitLabClient_DownloadRepository(t *testing.T) {
 	require.NoError(t, err)
 	fileinfo, err := os.ReadDir(dir)
 	require.NoError(t, err)
-	assert.Len(t, fileinfo, 1)
-	assert.Equal(t, "README.md", fileinfo[0].Name())
+	assert.Len(t, fileinfo, 2)
+	assert.Equal(t, ".git", fileinfo[0].Name())
+	assert.Equal(t, "README.md", fileinfo[1].Name())
 }
 
 func TestGitLabClient_DownloadFileFromRepo(t *testing.T) {
