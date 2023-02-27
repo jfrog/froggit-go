@@ -10,6 +10,7 @@ import (
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/config"
 	"github.com/google/uuid"
+	"github.com/jfrog/jfrog-client-go/utils/log"
 	"io"
 	"net/http"
 	"os"
@@ -275,6 +276,7 @@ func generateErrorString(bodyArray []byte) string {
 
 // CreateDotGitFolderWithRemote creates a .git folder inside path with remote details of remoteName and remoteUrl
 func CreateDotGitFolderWithRemote(path, remoteName, remoteUrl string) error {
+	log.Debug("initializing .git folder with remote details:", fmt.Sprintf("%s/%s", remoteName, remoteUrl))
 	repo, err := git.PlainInit(path, false)
 	if err == git.ErrRepositoryAlreadyExists {
 		// If the .git folder already exists, we can skip this function
