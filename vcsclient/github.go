@@ -25,6 +25,28 @@ type GitHubClient struct {
 	logger  Log
 }
 
+// GetCommitStatus gets commit statuses
+func (client *GitHubClient) GetCommitStatus(ctx context.Context, owner, repository, ref string) (status []CommitStatus, err error) {
+	ghClient, err := client.buildGithubClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+	statuses, _, err := ghClient.Repositories.GetCombinedStatus(ctx, owner, repository, ref, nil)
+	if err != nil {
+		return nil, err
+	}
+	results := make([]CommitStatus, 0)
+	for _, singleStatus := range statuses.Statuses {
+		results = append(results, CommitStatus{
+			State:       singleStatus.GetState(),
+			Description: singleStatus.GetDescription(),
+			DetailsUrl:  singleStatus.GetTargetURL(),
+			Creator:     singleStatus.GetCreator().GetName(),
+		})
+	}
+	return results, err
+}
+
 // NewGitHubClient create a new GitHubClient
 func NewGitHubClient(vcsInfo VcsInfo, logger Log) (*GitHubClient, error) {
 	return &GitHubClient{vcsInfo: vcsInfo, logger: logger}, nil
@@ -173,7 +195,7 @@ func (client *GitHubClient) DeleteWebhook(ctx context.Context, owner, repository
 }
 
 // SetCommitStatus on GitHub
-func (client *GitHubClient) SetCommitStatus(ctx context.Context, commitStatus CommitStatus, owner, repository, ref,
+func (client *GitHubClient) SetCommitStatus(ctx context.Context, commitStatus CommitStatusState, owner, repository, ref,
 	title, description, detailsURL string) error {
 	ghClient, err := client.buildGithubClient(ctx)
 	if err != nil {
@@ -661,7 +683,7 @@ func getGitHubRepositoryVisibility(repo *github.Repository) RepositoryVisibility
 	}
 }
 
-func getGitHubCommitState(commitState CommitStatus) string {
+func getGitHubCommitState(commitState CommitStatusState) string {
 	switch commitState {
 	case Pass:
 		return "success"

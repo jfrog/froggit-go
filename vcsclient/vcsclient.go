@@ -9,12 +9,12 @@ import (
 	"github.com/jfrog/froggit-go/vcsutils"
 )
 
-// CommitStatus the status of the commit in the VCS
-type CommitStatus int
+// CommitStatusState the status of the commit in the VCS
+type CommitStatusState int
 
 const (
 	// Pass means that the commit passed the tests
-	Pass CommitStatus = iota
+	Pass CommitStatusState = iota
 	// Fail means that the commit failed the tests
 	Fail
 	// Error means that an unexpected error occurred
@@ -61,6 +61,18 @@ type RepositoryEnvironmentInfo struct {
 	Reviewers []string
 }
 
+// CommitStatus status which is then reflected in pull requests involving those commits
+// State        - One of success, pending, failure, or error
+// Description  - Description of the commit status
+// DetailsUrl   - The URL for component status link
+// Creator      - The creator of the status
+type CommitStatus struct {
+	State       string
+	Description string
+	DetailsUrl  string
+	Creator     string
+}
+
 // VcsClient is a base class of all Vcs clients - GitHub, GitLab, Bitbucket server and cloud clients
 type VcsClient interface {
 	// TestConnection Returns nil if connection and authorization established successfully
@@ -100,14 +112,20 @@ type VcsClient interface {
 	DeleteWebhook(ctx context.Context, owner, repository, webhookID string) error
 
 	// SetCommitStatus Sets commit status
-	// commitStatus - One of Pass, Fail, Error, or InProgress
+	// commitStatusState - One of Pass, Fail, Error, or InProgress
 	// owner        - User or organization
 	// repository   - VCS repository name
 	// ref          - SHA, a branch name, or a tag name.
 	// title        - Title of the commit status
 	// description  - Description of the commit status
 	// detailsUrl   - The URL for component status link
-	SetCommitStatus(ctx context.Context, commitStatus CommitStatus, owner, repository, ref, title, description, detailsURL string) error
+	SetCommitStatus(ctx context.Context, commitStatusState CommitStatusState, owner, repository, ref, title, description, detailsURL string) error
+
+	// GetCommitStatus gets commit status info
+	// owner        - User or organization
+	// repository   - VCS repository name
+	// ref          - SHA, a branch name, or a tag name.
+	GetCommitStatus(ctx context.Context, owner, repository, ref string) (status []CommitStatus, err error)
 
 	// DownloadRepository Downloads and extracts a VCS repository
 	// owner      - User or organization
