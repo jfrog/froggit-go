@@ -22,6 +22,21 @@ type GitLabClient struct {
 	logger   Log
 }
 
+// GetCommitStatus on GitLab
+func (client *GitLabClient) GetCommitStatus(ctx context.Context, owner, repository, ref string) (status []CommitStatus, err error) {
+	statuses, _, err := client.glClient.Commits.GetCommitStatuses(repository, ref, nil)
+	results := make([]CommitStatus, 0)
+	for _, singleStatus := range statuses {
+		results = append(results, CommitStatus{
+			State:       singleStatus.Status,
+			Description: singleStatus.Description,
+			DetailsUrl:  singleStatus.TargetURL,
+			Creator:     singleStatus.Author.Name,
+		})
+	}
+	return results, nil
+}
+
 // NewGitLabClient create a new GitLabClient
 func NewGitLabClient(vcsInfo VcsInfo, logger Log) (*GitLabClient, error) {
 	var client *gitlab.Client
@@ -161,7 +176,7 @@ func (client *GitLabClient) DeleteWebhook(ctx context.Context, owner, repository
 }
 
 // SetCommitStatus on GitLab
-func (client *GitLabClient) SetCommitStatus(ctx context.Context, commitStatus CommitStatus, owner, repository, ref,
+func (client *GitLabClient) SetCommitStatus(ctx context.Context, commitStatus CommitStatusState, owner, repository, ref,
 	title, description, detailsURL string) error {
 	options := &gitlab.SetCommitStatusOptions{
 		State:       gitlab.BuildStateValue(getGitLabCommitState(commitStatus)),
@@ -476,7 +491,7 @@ func getGitLabProjectVisibility(project *gitlab.Project) RepositoryVisibility {
 	}
 }
 
-func getGitLabCommitState(commitState CommitStatus) string {
+func getGitLabCommitState(commitState CommitStatusState) string {
 	switch commitState {
 	case Pass:
 		return "success"
