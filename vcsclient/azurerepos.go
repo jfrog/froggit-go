@@ -25,6 +25,32 @@ type AzureReposClient struct {
 	logger            Log
 }
 
+func (client *AzureReposClient) GetCommitStatus(ctx context.Context, owner, repository, ref string) (status []CommitStatus, err error) {
+	azureReposGitClient, err := client.buildAzureReposClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+	commitStatusArgs := git.GetStatusesArgs{
+		CommitId:     &ref,
+		RepositoryId: &repository,
+		Project:      &repository,
+	}
+	resGitStatus, err := azureReposGitClient.GetStatuses(ctx, commitStatusArgs)
+	if err != nil {
+		return nil, err
+	}
+	results := make([]CommitStatus, 0)
+	for _, singleStatus := range *resGitStatus {
+		results = append(results, CommitStatus{
+			string(*singleStatus.State),
+			*singleStatus.Description,
+			*singleStatus.TargetUrl,
+			*singleStatus.CreatedBy.DisplayName,
+		})
+	}
+	return results, err
+}
+
 // NewAzureReposClient create a new AzureReposClient
 func NewAzureReposClient(vcsInfo VcsInfo, logger Log) (*AzureReposClient, error) {
 	client := &AzureReposClient{vcsInfo: vcsInfo, logger: logger}
@@ -356,9 +382,39 @@ func (client *AzureReposClient) DeleteWebhook(ctx context.Context, owner, reposi
 	return getUnsupportedInAzureError("delete webhook")
 }
 
+func CommitStatusToStringStatus(state CommitStatusState) string {
+	conversionMap := map[CommitStatusState]string{
+		0: "success",
+		1: "fail",
+		2: "error",
+		3: "pending",
+	}
+	return conversionMap[state]
+}
+
 // SetCommitStatus on Azure Repos
-func (client *AzureReposClient) SetCommitStatus(ctx context.Context, commitStatus CommitStatus, owner, repository, ref, title, description, detailsURL string) error {
-	return getUnsupportedInAzureError("set commit status")
+func (client *AzureReposClient) SetCommitStatus(ctx context.Context, commitStatus CommitStatusState, owner, repository, ref, title, description, detailsURL string) error {
+	azureReposGitClient, err := client.buildAzureReposClient(ctx)
+	if err != nil {
+		return err
+	}
+	statusState := git.GitStatusState(CommitStatusToStringStatus(commitStatus))
+	commitStatusArgs := git.CreateCommitStatusArgs{
+		GitCommitStatusToCreate: &git.GitStatus{
+			Description: &description,
+			State:       &statusState,
+			TargetUrl:   &detailsURL,
+			Context: &git.GitStatusContext{
+				Name:  &owner,
+				Genre: &title,
+			},
+		},
+		CommitId:     &ref,
+		RepositoryId: &repository,
+		Project:      &repository,
+	}
+	_, err = azureReposGitClient.CreateCommitStatus(ctx, commitStatusArgs)
+	return err
 }
 
 // DownloadFileFromRepo on Azure Repos

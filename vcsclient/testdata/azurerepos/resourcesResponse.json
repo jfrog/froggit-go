@@ -79,6 +79,16 @@
       "minVersion": "3.2",
       "maxVersion": "7.1",
       "releasedVersion": "0.0"
+    },
+    {
+      "id": "428dd4fb-fda5-4722-af02-9313b80305da",
+      "area": "Location",
+      "resourceName": "ResourceAreas",
+      "routeTemplate": "_apis/{resource}/commitStatus",
+      "resourceVersion": 1,
+      "minVersion": "3.2",
+      "maxVersion": "7.1",
+      "releasedVersion": "0.0"
     }
   ],
   "count": 2

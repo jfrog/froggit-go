@@ -352,10 +352,12 @@ func TestAzureReposClient_DeleteWebhook(t *testing.T) {
 
 func TestAzureReposClient_SetCommitStatus(t *testing.T) {
 	ctx := context.Background()
-	client, cleanUp := createServerAndClient(t, vcsutils.AzureRepos, true, "", "unsupportedTest", createAzureReposHandler)
+	commitHash := "86d6919952702f9ab03bc95b45687f145a663de0"
+	expectedUri := "/_apis/ResourceAreas/commitStatus"
+	client, cleanUp := createServerAndClient(t, vcsutils.AzureRepos, true, nil, expectedUri, createAzureReposHandler)
 	defer cleanUp()
-	err := client.SetCommitStatus(ctx, 1, owner, repo1, "", "", "", "")
-	assert.Error(t, err)
+	err := client.SetCommitStatus(ctx, 1, owner, repo1, commitHash, "", "", "")
+	assert.NoError(t, err)
 }
 
 func TestAzureReposClient_GetLabel(t *testing.T) {
@@ -483,4 +485,16 @@ func createBadAzureReposClient(t *testing.T, response []byte) (VcsClient, func()
 			branch1),
 		createAzureReposHandler)
 	return client, cleanUp
+}
+
+func TestAzureReposClient_GetCommitStatus(t *testing.T) {
+	ctx := context.Background()
+	commitHash := "86d6919952702f9ab03bc95b45687f145a663de0"
+	expectedUri := "/_apis/ResourceAreas/commitStatus"
+	response, err := os.ReadFile(filepath.Join("testdata", "azurerepos", "commits_statuses.json"))
+	client, cleanUp := createServerAndClient(t, vcsutils.AzureRepos, true, response, expectedUri, createAzureReposHandler)
+	defer cleanUp()
+	statuses, err := client.GetCommitStatus(ctx, owner, repo1, commitHash)
+	assert.True(t, len(statuses) == 1)
+	assert.NoError(t, err)
 }
