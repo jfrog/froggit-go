@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"github.com/jfrog/gofrog/datastructures"
 	"io"
+	//"io/ioutil"
 	"net/http"
 	"sort"
 	"strconv"
@@ -24,6 +25,30 @@ import (
 type BitbucketServerClient struct {
 	vcsInfo VcsInfo
 	logger  Log
+}
+
+func (client *BitbucketServerClient) GetCommitStatus(ctx context.Context, owner, repository, ref string) (status []CommitStatus, err error) {
+	bitbucketClient, err := client.buildBitbucketClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+	response, err := bitbucketClient.GetCommitStatus(ref)
+	if err != nil {
+		return nil, err
+	}
+	results := make([]CommitStatus, 0)
+	for key, element := range response.Values {
+		floatValue, _ := element.(float64)
+		if floatValue == 1 {
+			results = append(results, CommitStatus{
+				State: key,
+				//Description: "", currently other fields are not supported
+				//DetailsUrl:  "",
+				//Creator:     "",
+			})
+		}
+	}
+	return results, err
 }
 
 // NewBitbucketServerClient create a new BitbucketServerClient
@@ -241,7 +266,7 @@ func (client *BitbucketServerClient) DeleteWebhook(ctx context.Context, owner, r
 }
 
 // SetCommitStatus on Bitbucket server
-func (client *BitbucketServerClient) SetCommitStatus(ctx context.Context, commitStatus CommitStatus, _, _, ref, title,
+func (client *BitbucketServerClient) SetCommitStatus(ctx context.Context, commitStatus CommitStatusState, _, _, ref, title,
 	description, detailsURL string) error {
 	bitbucketClient, err := client.buildBitbucketClient(ctx)
 	if err != nil {

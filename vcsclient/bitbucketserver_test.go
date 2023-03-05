@@ -671,3 +671,13 @@ func createBadBitbucketServerClient(t *testing.T) VcsClient {
 	require.NoError(t, err)
 	return client
 }
+
+func TestBitbucketServer_TestGetCommitStatus(t *testing.T) {
+	ctx := context.Background()
+	ref := "9caf1c431fb783b669f0f909bd018b40f2ea3808"
+	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, false, nil,
+		fmt.Sprintf("/rest/build-status/1.0/commits/%s", ref), createBitbucketServerHandler)
+	defer cleanUp()
+	_, err := client.GetCommitStatus(ctx, owner, repo1, ref)
+	assert.NoError(t, err)
+}
