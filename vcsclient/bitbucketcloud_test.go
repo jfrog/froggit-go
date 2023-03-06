@@ -508,3 +508,22 @@ func createBitbucketCloudHandler(t *testing.T, expectedURI string, response []by
 		assert.Equal(t, basicAuthHeader, r.Header.Get("Authorization"))
 	}
 }
+
+func TestBitbucketCloudClient_GetCommitStatus(t *testing.T) {
+	//TODO implement me
+	//ctx := context.Background()
+	//mockResponse := map[][string]CommitStatus{
+	//	"values": {
+	//		State:       "somestate",
+	//		Description: "desc",
+	//		DetailsUrl:  "url",
+	//		Creator:     "me",
+	//	},
+	//}
+	//client, cleanUp := createServerAndClient(t, vcsutils.BitbucketCloud, true, mockResponse, "/repositories/owner/repo/commit/ref/statuses", createBitbucketCloudHandler)
+	//defer cleanUp()
+	//
+	//statuses, err := client.GetCommitStatus(ctx, "owner", "repo", "ref")
+	//assert.True(t, len(statuses) == 1)
+	//assert.NoError(t, err)
+}

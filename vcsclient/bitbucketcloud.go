@@ -25,6 +25,30 @@ type BitbucketCloudClient struct {
 	logger  Log
 }
 
+func (client *BitbucketCloudClient) GetCommitStatus(ctx context.Context, owner, repository, ref string) (status []CommitStatus, err error) {
+	bitbucketClient := client.buildBitbucketCloudClient(ctx)
+	commitOptions := &bitbucket.CommitsOptions{
+		Owner:    owner,
+		RepoSlug: repository,
+		Revision: ref,
+	}
+	results := make([]CommitStatus, 0)
+	statuses, err := bitbucketClient.Repositories.Commits.GetCommitStatuses(commitOptions)
+
+	if err != nil {
+		return nil, err
+	}
+	//TODO refactor this
+	currentValue := statuses.(map[string]interface{})["values"].([]interface{})[0].(map[string]interface{})
+	results = append(results, CommitStatus{
+		State:       currentValue["state"].(string),
+		Description: currentValue["description"].(string),
+		DetailsUrl:  currentValue["url"].(string),
+		Creator:     currentValue["name"].(string),
+	})
+	return results, err
+}
+
 // NewBitbucketCloudClient create a new BitbucketCloudClient
 func NewBitbucketCloudClient(vcsInfo VcsInfo, logger Log) (*BitbucketCloudClient, error) {
 	bitbucketClient := &BitbucketCloudClient{
@@ -197,7 +221,7 @@ func (client *BitbucketCloudClient) DeleteWebhook(ctx context.Context, owner, re
 }
 
 // SetCommitStatus on Bitbucket cloud
-func (client *BitbucketCloudClient) SetCommitStatus(ctx context.Context, commitStatus CommitStatus, owner, repository,
+func (client *BitbucketCloudClient) SetCommitStatus(ctx context.Context, commitStatus CommitStatusState, owner, repository,
 	ref, title, description, detailsURL string) error {
 	bitbucketClient := client.buildBitbucketCloudClient(ctx)
 	commitOptions := &bitbucket.CommitsOptions{
@@ -210,6 +234,7 @@ func (client *BitbucketCloudClient) SetCommitStatus(ctx context.Context, commitS
 		Key:         title,
 		Description: description,
 		Url:         detailsURL,
+		Name:        "frogbot",
 	}
 	_, err := bitbucketClient.Repositories.Commits.CreateCommitStatus(commitOptions, commitStatusOptions)
 	return err
