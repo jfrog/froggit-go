@@ -25,6 +25,7 @@ type BitbucketCloudClient struct {
 	logger  Log
 }
 
+// GetCommitStatus for a specific branch, NOTE: currently does not support pagination !
 func (client *BitbucketCloudClient) GetCommitStatus(ctx context.Context, owner, repository, ref string) (status []CommitStatus, err error) {
 	bitbucketClient := client.buildBitbucketCloudClient(ctx)
 	commitOptions := &bitbucket.CommitsOptions{
@@ -33,19 +34,31 @@ func (client *BitbucketCloudClient) GetCommitStatus(ctx context.Context, owner, 
 		Revision: ref,
 	}
 	results := make([]CommitStatus, 0)
-	statuses, err := bitbucketClient.Repositories.Commits.GetCommitStatuses(commitOptions)
-
+	rawStatuses, err := bitbucketClient.Repositories.Commits.GetCommitStatuses(commitOptions)
 	if err != nil {
 		return nil, err
 	}
-	//TODO refactor this
-	currentValue := statuses.(map[string]interface{})["values"].([]interface{})[0].(map[string]interface{})
-	results = append(results, CommitStatus{
-		State:       currentValue["state"].(string),
-		Description: currentValue["description"].(string),
-		DetailsUrl:  currentValue["url"].(string),
-		Creator:     currentValue["name"].(string),
-	})
+	statuses := struct {
+		Statuses []struct {
+			Title       string `mapstructure:"key"`
+			Url         string `mapstructure:"url"`
+			State       string `mapstructure:"state"`
+			Description string `mapstructure:"description"`
+			Creator     string `mapstructure:"name"`
+		} `mapstructure:"values"`
+	}{}
+	err = mapstructure.Decode(rawStatuses, &statuses)
+	if err != nil {
+		return nil, err
+	}
+	for _, commitStatus := range statuses.Statuses {
+		results = append(results, CommitStatus{
+			State:       commitStatus.State,
+			Description: commitStatus.Description,
+			DetailsUrl:  commitStatus.Url,
+			Creator:     commitStatus.Creator,
+		})
+	}
 	return results, err
 }
 
@@ -413,7 +426,7 @@ func (client *BitbucketCloudClient) GetRepositoryInfo(ctx context.Context, owner
 
 	holder := struct {
 		Clone []struct {
-			Name string `mapstructure:"name"`
+			Name string `f:"name"`
 			HRef string `mapstructure:"href"`
 		} `mapstructure:"clone"`
 	}{}

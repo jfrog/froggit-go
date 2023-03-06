@@ -510,20 +510,15 @@ func createBitbucketCloudHandler(t *testing.T, expectedURI string, response []by
 }
 
 func TestBitbucketCloudClient_GetCommitStatus(t *testing.T) {
-	//TODO implement me
-	//ctx := context.Background()
-	//mockResponse := map[][string]CommitStatus{
-	//	"values": {
-	//		State:       "somestate",
-	//		Description: "desc",
-	//		DetailsUrl:  "url",
-	//		Creator:     "me",
-	//	},
-	//}
-	//client, cleanUp := createServerAndClient(t, vcsutils.BitbucketCloud, true, mockResponse, "/repositories/owner/repo/commit/ref/statuses", createBitbucketCloudHandler)
-	//defer cleanUp()
-	//
-	//statuses, err := client.GetCommitStatus(ctx, "owner", "repo", "ref")
-	//assert.True(t, len(statuses) == 1)
-	//assert.NoError(t, err)
+	ctx := context.Background()
+	mockResponse, err := os.ReadFile(filepath.Join("testdata", "bitbucketcloud", "get_commit_status_response.json"))
+	assert.NoError(t, err)
+	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketCloud, true, mockResponse, "/repositories/owner/repo/commit/ref/statuses", createBitbucketCloudHandler)
+	defer cleanUp()
+	statuses, err := client.GetCommitStatus(ctx, "owner", "repo", "ref")
+	assert.True(t, len(statuses) == 3)
+	assert.True(t, statuses[0].State == "FAILED")
+	assert.True(t, statuses[1].State == "PENDING")
+	assert.True(t, statuses[2].State == "SUCCESS")
+	assert.NoError(t, err)
 }
