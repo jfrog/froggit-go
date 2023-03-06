@@ -234,7 +234,6 @@ func (client *BitbucketCloudClient) SetCommitStatus(ctx context.Context, commitS
 		Key:         title,
 		Description: description,
 		Url:         detailsURL,
-		Name:        "frogbot",
 	}
 	_, err := bitbucketClient.Repositories.Commits.CreateCommitStatus(commitOptions, commitStatusOptions)
 	return err
