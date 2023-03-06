@@ -208,7 +208,8 @@ func (client *GitLabClient) DownloadRepository(ctx context.Context, owner, repos
 		return err
 	}
 	client.logger.Info("extracted repository successfully")
-	return nil
+	return vcsutils.CreateDotGitFolderWithRemote(localPath, "origin",
+		fmt.Sprintf("https://gitlab.com/%s/%s.git", owner, repository))
 }
 
 // CreatePullRequest on GitLab
@@ -409,7 +410,7 @@ func (client *GitLabClient) UploadCodeScanning(_ context.Context, _ string, _ st
 }
 
 // GetRepositoryEnvironmentInfo on GitLab
-func (client *GitLabClient) GetRepositoryEnvironmentInfo(ctx context.Context, owner, repository, name string) (RepositoryEnvironmentInfo, error) {
+func (client *GitLabClient) GetRepositoryEnvironmentInfo(_ context.Context, _, _, _ string) (RepositoryEnvironmentInfo, error) {
 	return RepositoryEnvironmentInfo{}, errGitLabGetRepoEnvironmentInfoNotSupported
 }
 
