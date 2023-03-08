@@ -19,6 +19,7 @@ import (
 // GitLabClient API version 4
 type GitLabClient struct {
 	glClient *gitlab.Client
+	vcsInfo  VcsInfo
 	logger   Log
 }
 
@@ -37,6 +38,7 @@ func NewGitLabClient(vcsInfo VcsInfo, logger Log) (*GitLabClient, error) {
 
 	return &GitLabClient{
 		glClient: client,
+		vcsInfo:  vcsInfo,
 		logger:   logger,
 	}, nil
 }
@@ -193,8 +195,7 @@ func (client *GitLabClient) DownloadRepository(ctx context.Context, owner, repos
 		return err
 	}
 	client.logger.Info("extracted repository successfully")
-	return vcsutils.CreateDotGitFolderWithRemote(localPath, "origin",
-		fmt.Sprintf("https://gitlab.com/%s/%s.git", owner, repository))
+	return vcsutils.CreateDotGitFolderWithRemote(localPath, vcsutils.RemoteName, vcsutils.GetGenericGitRemoteUrl(client.vcsInfo.APIEndpoint, owner, repository))
 }
 
 // CreatePullRequest on GitLab
