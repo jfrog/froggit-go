@@ -224,7 +224,7 @@ func (client *GitHubClient) DownloadRepository(ctx context.Context, owner, repos
 	}
 	client.logger.Info("extracted repository successfully")
 	return vcsutils.CreateDotGitFolderWithRemote(localPath, "origin",
-		fmt.Sprintf("https://github.com/%s/%s.git", owner, repository))
+		fmt.Sprintf("%s/%s/%s.git", strings.TrimSuffix(client.vcsInfo.APIEndpoint, "/"), owner, repository))
 }
 
 // CreatePullRequest on GitHub
