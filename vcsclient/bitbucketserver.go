@@ -673,7 +673,7 @@ func (client *BitbucketServerClient) GetModifiedFiles(ctx context.Context, owner
 		return nil, err
 	}
 
-	params := map[string]interface{}{"contextLines": int32(0), "from": refBefore, "to": refAfter}
+	params := map[string]interface{}{"contextLines": int32(0), "from": refAfter, "to": refBefore}
 	resp, err := bitbucketClient.StreamDiff_37(owner, repository, "", params)
 	if err != nil {
 		return nil, err

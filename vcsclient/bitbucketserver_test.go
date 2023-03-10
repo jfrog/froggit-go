@@ -558,7 +558,7 @@ func TestBitbucketServerClient_GetModifiedFiles(t *testing.T) {
 			vcsutils.BitbucketServer,
 			false,
 			response,
-			"/rest/api/1.0/projects/jfrog/repos/repo-1/compare/diff?contextLines=0&from=sha-1&to=sha-2",
+			"/rest/api/1.0/projects/jfrog/repos/repo-1/compare/diff?contextLines=0&from=sha-2&to=sha-1",
 			http.StatusOK,
 			nil,
 			http.MethodGet,
@@ -589,7 +589,7 @@ func TestBitbucketServerClient_GetModifiedFiles(t *testing.T) {
 			vcsutils.BitbucketServer,
 			true,
 			nil,
-			"/rest/api/1.0/projects/jfrog/repos/repo-1/compare/diff?contextLines=0&from=sha-1&to=sha-2",
+			"/rest/api/1.0/projects/jfrog/repos/repo-1/compare/diff?contextLines=0&from=sha-2&to=sha-1",
 			http.StatusInternalServerError,
 			createBitbucketServerHandler,
 		)
