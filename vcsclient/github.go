@@ -202,8 +202,6 @@ func (client *GitHubClient) DownloadRepository(ctx context.Context, owner, repos
 	if err != nil {
 		return err
 	}
-
-	client.logger.Debug("received archive url:", baseURL.String())
 	httpClient := &http.Client{}
 	req, err := http.NewRequest("GET", baseURL.String(), nil)
 	if err != nil {
