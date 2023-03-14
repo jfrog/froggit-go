@@ -248,12 +248,12 @@ func (client *BitbucketCloudClient) DownloadRepository(ctx context.Context, owne
 	if err = vcsutils.CheckResponseStatusWithBody(response, http.StatusOK); err != nil {
 		return err
 	}
-	client.logger.Info(repository, "downloaded successfully, starting with repository extraction")
+	client.logger.Info(repository, successfulRepoDownload)
 	err = vcsutils.Untar(localPath, response.Body, true)
 	if err != nil {
 		return err
 	}
-	client.logger.Info("extracted repository successfully")
+	client.logger.Info(successfulRepoExtraction)
 	// Generate .git folder with remote details
 	return vcsutils.CreateDotGitFolderWithRemote(localPath, "origin",
 		fmt.Sprintf("https://bitbucket.org/%s/%s.git", owner, repository))
@@ -263,7 +263,7 @@ func (client *BitbucketCloudClient) DownloadRepository(ctx context.Context, owne
 func (client *BitbucketCloudClient) CreatePullRequest(ctx context.Context, owner, repository, sourceBranch,
 	targetBranch, title, description string) error {
 	bitbucketClient := client.buildBitbucketCloudClient(ctx)
-	client.logger.Debug("creating new pull request:", title)
+	client.logger.Debug(creatingPullRequest, title)
 	options := &bitbucket.PullRequestsOptions{
 		Owner:             owner,
 		SourceRepository:  owner + "/" + repository,
@@ -284,7 +284,7 @@ func (client *BitbucketCloudClient) ListOpenPullRequests(ctx context.Context, ow
 		return nil, err
 	}
 	bitbucketClient := client.buildBitbucketCloudClient(ctx)
-	client.logger.Debug("fetching open pull requests in", repository)
+	client.logger.Debug(fetchingOpenPullRequests, repository)
 	options := &bitbucket.PullRequestsOptions{
 		Owner:    owner,
 		RepoSlug: repository,

@@ -271,12 +271,12 @@ func (client *BitbucketServerClient) DownloadRepository(ctx context.Context, own
 	if err != nil {
 		return err
 	}
-	client.logger.Info(repository, "downloaded successfully, starting with repository extraction")
+	client.logger.Info(repository, successfulRepoDownload)
 	err = vcsutils.Untar(localPath, bytes.NewReader(response.Payload), false)
 	if err != nil {
 		return err
 	}
-	client.logger.Info("extracted repository successfully")
+	client.logger.Info(successfulRepoExtraction)
 	// Generate .git folder with remote details
 	return vcsutils.CreateDotGitFolderWithRemote(
 		localPath,
