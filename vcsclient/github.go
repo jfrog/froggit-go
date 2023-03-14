@@ -220,9 +220,9 @@ func (client *GitHubClient) DownloadRepository(ctx context.Context, owner, repos
 	if err != nil {
 		return err
 	}
+
 	client.logger.Info(successfulRepoExtraction)
-	return vcsutils.CreateDotGitFolderWithRemote(localPath, "origin",
-		fmt.Sprintf("https://github.com/%s/%s.git", owner, repository))
+	return vcsutils.CreateDotGitFolderWithRemote(localPath, vcsutils.RemoteName, vcsutils.GetGenericGitRemoteUrl(client.vcsInfo.APIEndpoint, owner, repository))
 }
 
 // CreatePullRequest on GitHub
