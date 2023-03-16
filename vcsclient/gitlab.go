@@ -26,6 +26,9 @@ type GitLabClient struct {
 // GetCommitStatus on GitLab
 func (client *GitLabClient) GetCommitStatus(ctx context.Context, owner, repository, ref string) (status []CommitStatus, err error) {
 	statuses, _, err := client.glClient.Commits.GetCommitStatuses(repository, ref, nil)
+	if err != nil {
+		return nil, err
+	}
 	results := make([]CommitStatus, 0)
 	for _, singleStatus := range statuses {
 		results = append(results, CommitStatus{
