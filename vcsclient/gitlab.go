@@ -19,6 +19,7 @@ import (
 // GitLabClient API version 4
 type GitLabClient struct {
 	glClient *gitlab.Client
+	vcsInfo  VcsInfo
 	logger   Log
 }
 
@@ -52,6 +53,7 @@ func NewGitLabClient(vcsInfo VcsInfo, logger Log) (*GitLabClient, error) {
 
 	return &GitLabClient{
 		glClient: client,
+		vcsInfo:  vcsInfo,
 		logger:   logger,
 	}, nil
 }
@@ -202,14 +204,14 @@ func (client *GitLabClient) DownloadRepository(ctx context.Context, owner, repos
 	if err != nil {
 		return err
 	}
-	client.logger.Info(repository, "downloaded successfully, starting with repository extraction")
+	client.logger.Info(repository, successfulRepoDownload)
 	err = vcsutils.Untar(localPath, bytes.NewReader(response), true)
 	if err != nil {
 		return err
 	}
-	client.logger.Info("extracted repository successfully")
-	return vcsutils.CreateDotGitFolderWithRemote(localPath, "origin",
-		fmt.Sprintf("https://gitlab.com/%s/%s.git", owner, repository))
+
+	client.logger.Info(successfulRepoExtraction)
+	return vcsutils.CreateDotGitFolderWithRemote(localPath, vcsutils.RemoteName, vcsutils.GetGenericGitRemoteUrl(client.vcsInfo.APIEndpoint, owner, repository))
 }
 
 // CreatePullRequest on GitLab
@@ -235,7 +237,7 @@ func (client *GitLabClient) ListOpenPullRequests(ctx context.Context, _, reposit
 		State: &openState,
 		Scope: &allScope,
 	}
-	client.logger.Debug("fetching open pull requests in", repository)
+	client.logger.Debug("fetching open merge requests in", repository)
 	mergeRequests, _, err := client.glClient.MergeRequests.ListMergeRequests(options,
 		gitlab.WithContext(ctx))
 	if err != nil {

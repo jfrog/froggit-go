@@ -143,9 +143,11 @@ func (client *AzureReposClient) DownloadRepository(ctx context.Context, owner, r
 	if err != nil {
 		return err
 	}
-	client.logger.Info("extracted repository successfully")
+	client.logger.Info(successfulRepoExtraction)
 	// Generate .git folder with remote details
-	return vcsutils.CreateDotGitFolderWithRemote(localPath, "origin",
+	return vcsutils.CreateDotGitFolderWithRemote(
+		localPath,
+		vcsutils.RemoteName,
 		fmt.Sprintf("https://%s@%s/%s/_git/%s", owner, strings.TrimPrefix(client.connectionDetails.BaseUrl, "https://"), client.vcsInfo.Project, repository))
 }
 
@@ -155,7 +157,7 @@ func (client *AzureReposClient) sendDownloadRepoRequest(ctx context.Context, rep
 		client.vcsInfo.Project,
 		repository,
 		branch)
-	client.logger.Debug("download url:", downloadRepoUrl)
+	client.logger.Debug("Download url:", downloadRepoUrl)
 	headers := map[string]string{
 		"Authorization":  client.connectionDetails.AuthorizationString,
 		"download":       "true",
@@ -176,7 +178,7 @@ func (client *AzureReposClient) sendDownloadRepoRequest(ctx context.Context, rep
 	if err = vcsutils.CheckResponseStatusWithBody(res, http.StatusOK); err != nil {
 		return &http.Response{}, err
 	}
-	client.logger.Info(repository, "downloaded successfully, starting with repository extraction")
+	client.logger.Info(repository, successfulRepoDownload)
 	return
 }
 
@@ -188,7 +190,7 @@ func (client *AzureReposClient) CreatePullRequest(ctx context.Context, _, reposi
 	}
 	sourceBranch = vcsutils.AddBranchPrefix(sourceBranch)
 	targetBranch = vcsutils.AddBranchPrefix(targetBranch)
-	client.logger.Debug("creating new pull request:", title)
+	client.logger.Debug(creatingPullRequest, title)
 	_, err = azureReposGitClient.CreatePullRequest(ctx, git.CreatePullRequestArgs{
 		GitPullRequestToCreate: &git.GitPullRequest{
 			Description:   &description,
@@ -263,7 +265,7 @@ func (client *AzureReposClient) ListOpenPullRequests(ctx context.Context, _, rep
 	if err != nil {
 		return nil, err
 	}
-	client.logger.Debug("fetching open pull requests in", repository)
+	client.logger.Debug(fetchingOpenPullRequests, repository)
 	pullRequests, err := azureReposGitClient.GetPullRequests(ctx, git.GetPullRequestsArgs{
 		RepositoryId:   &repository,
 		Project:        &client.vcsInfo.Project,

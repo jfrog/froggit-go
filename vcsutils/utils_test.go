@@ -14,7 +14,9 @@ import (
 
 func TestUntar(t *testing.T) {
 	destDir, tarball := openTarball(t)
-	defer tarball.Close()
+	defer func() {
+		assert.NoError(t, tarball.Close())
+	}()
 
 	err := Untar(destDir, tarball, false)
 	assert.NoError(t, err)
@@ -27,7 +29,9 @@ func TestUntar(t *testing.T) {
 
 func TestUntarRemoveBaseDir(t *testing.T) {
 	destDir, tarball := openTarball(t)
-	defer tarball.Close()
+	defer func() {
+		assert.NoError(t, tarball.Close())
+	}()
 
 	err := Untar(destDir, tarball, true)
 	assert.NoError(t, err)
@@ -100,7 +104,9 @@ func TestDiscardResponseBody(t *testing.T) {
 func openTarball(t *testing.T) (string, *os.File) {
 	dir, err := os.MkdirTemp("", "")
 	assert.NoError(t, err)
-	defer os.RemoveAll(dir)
+	defer func() {
+		assert.NoError(t, os.RemoveAll(dir))
+	}()
 
 	tarball, err := os.Open(filepath.Join("testdata", "a.tar.gz"))
 	assert.NoError(t, err)
@@ -173,7 +179,9 @@ func TestCheckResponseStatusWithBody(t *testing.T) {
 func TestCreateDotGitFolderWithRemote(t *testing.T) {
 	dir1, err := os.MkdirTemp("", "tmp")
 	assert.NoError(t, err)
-	defer os.RemoveAll(dir1)
+	defer func() {
+		assert.NoError(t, os.RemoveAll(dir1))
+	}()
 	err = CreateDotGitFolderWithRemote(dir1, "origin", "fakeurl")
 	assert.NoError(t, err)
 	repo, err := git.PlainOpen(filepath.Join(dir1, ".git"))
@@ -190,11 +198,65 @@ func TestCreateDotGitFolderWithoutRemote(t *testing.T) {
 	// Return error if remote name is empty
 	dir2, err := os.MkdirTemp("", "tmp")
 	assert.NoError(t, err)
-	defer os.RemoveAll(dir2)
+	defer func() {
+		assert.NoError(t, os.RemoveAll(dir2))
+	}()
 	assert.Error(t, CreateDotGitFolderWithRemote(dir2, "", "fakeurl"))
 }
 
 func TestPointerOf(t *testing.T) {
 	require.Equal(t, 5, *PointerOf(5))
 	require.Equal(t, "some", *PointerOf("some"))
+}
+
+func TestGetGenericGitRemoteUrl(t *testing.T) {
+	testCases := []struct {
+		name           string
+		apiEndpoint    string
+		owner          string
+		repo           string
+		expectedResult string
+	}{
+		{
+			name:           "Bitbucket Server",
+			apiEndpoint:    "https://bitbucket.example.com/scm",
+			owner:          "my-org",
+			repo:           "my-repo",
+			expectedResult: "https://bitbucket.example.com/scm/my-org/my-repo.git",
+		},
+		{
+			name:           "GitHub Cloud",
+			apiEndpoint:    "https://api.github.com",
+			owner:          "my-org",
+			repo:           "my-repo",
+			expectedResult: "https://api.github.com/my-org/my-repo.git",
+		},
+		{
+			name:           "GitHub On-Premises",
+			apiEndpoint:    "https://github.example.com/api/v3",
+			owner:          "my-org",
+			repo:           "my-repo",
+			expectedResult: "https://github.example.com/api/v3/my-org/my-repo.git",
+		},
+		{
+			name:           "GitLab",
+			apiEndpoint:    "https://gitlab.com/",
+			owner:          "my-org",
+			repo:           "my-repo",
+			expectedResult: "https://gitlab.com/my-org/my-repo.git",
+		},
+		{
+			name:           "GitLab On-Premises",
+			apiEndpoint:    "https://gitlab.example.com/api/v4",
+			owner:          "my-org",
+			repo:           "my-repo",
+			expectedResult: "https://gitlab.example.com/api/v4/my-org/my-repo.git",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			assert.Equal(t, tc.expectedResult, GetGenericGitRemoteUrl(tc.apiEndpoint, tc.owner, tc.repo))
+		})
+	}
 }

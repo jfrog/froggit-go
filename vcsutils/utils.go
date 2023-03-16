@@ -17,6 +17,8 @@ import (
 	"strings"
 )
 
+const RemoteName = "origin"
+
 // CreateToken create a random UUID
 func CreateToken() string {
 	return uuid.New().String()
@@ -288,4 +290,8 @@ func CreateDotGitFolderWithRemote(path, remoteName, remoteUrl string) error {
 		URLs: []string{remoteUrl},
 	})
 	return err
+}
+
+func GetGenericGitRemoteUrl(apiEndpoint, owner, repo string) string {
+	return fmt.Sprintf("%s/%s/%s.git", strings.TrimSuffix(apiEndpoint, "/"), owner, repo)
 }
