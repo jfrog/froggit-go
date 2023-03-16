@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"github.com/jfrog/gofrog/datastructures"
 	"io"
-	//"io/ioutil"
 	"net/http"
 	"sort"
 	"strconv"

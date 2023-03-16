@@ -426,7 +426,7 @@ func (client *BitbucketCloudClient) GetRepositoryInfo(ctx context.Context, owner
 
 	holder := struct {
 		Clone []struct {
-			Name string `f:"name"`
+			Name string `mapstructure:"name"`
 			HRef string `mapstructure:"href"`
 		} `mapstructure:"clone"`
 	}{}
