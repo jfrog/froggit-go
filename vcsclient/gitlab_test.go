@@ -631,7 +631,7 @@ func createGitLabWithBodyHandler(t *testing.T, expectedURI string, response []by
 func TestGitLabClient_TestGetCommitStatus(t *testing.T) {
 	ctx := context.Background()
 	ref := "5fbf81b31ff7a3b06bd362d1891e2f01bdb2be69"
-	client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, gitlab.CommitStatus{},
+	client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, []CommitStatus{},
 		fmt.Sprintf("/api/v4/projects/%s/repository/commits/%s/statuses", repo1, ref),
 		createGitLabHandler)
 	defer cleanUp()

@@ -810,3 +810,13 @@ func createGitHubSarifUploadHandler(t *testing.T, _ string, _ []byte, _ int) htt
 		}
 	}
 }
+
+func TestGitHubClient_TestGetCommitStatus(t *testing.T) {
+	ctx := context.Background()
+	ref := "5fbf81b31ff7a3b06bd362d1891e2f01bdb2be69"
+	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, CommitStatus{}, fmt.Sprintf("/repos/jfrog/%s/commits/%s/status", repo1, ref), createGitHubHandler)
+	defer cleanUp()
+	commitStatus, err := client.GetCommitStatus(ctx, owner, repo1, ref)
+	assert.NoError(t, err)
+	assert.Equal(t, []CommitStatus{}, commitStatus)
+}
