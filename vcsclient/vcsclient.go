@@ -320,11 +320,9 @@ func CommitStatusAsStringToStatus(rawStatus string) CommitStatusState {
 		return CommitStatusStateSuccess
 	case "fail", "failure", "failed":
 		return CommitStatusStateFailure
-	case "error":
-		return CommitStatusStateError
 	case "pending", "inprogress":
 		return CommitStatusStatePending
 	default:
-		return CommitStatusStateFailure
+		return CommitStatusStateError
 	}
 }
