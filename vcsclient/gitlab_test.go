@@ -630,11 +630,29 @@ func createGitLabWithBodyHandler(t *testing.T, expectedURI string, response []by
 }
 func TestGitLabClient_TestGetCommitStatus(t *testing.T) {
 	ctx := context.Background()
-	ref := "5fbf81b31ff7a3b06bd362d1891e2f01bdb2be69"
-	client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, []CommitStatus{},
-		fmt.Sprintf("/api/v4/projects/%s/repository/commits/%s/statuses", repo1, ref),
-		createGitLabHandler)
-	defer cleanUp()
-	_, err := client.GetCommitStatus(ctx, owner, repo1, ref)
-	assert.NoError(t, err)
+
+	t.Run("empty response", func(t *testing.T) {
+		ref := "5fbf81b31ff7a3b06bd362d1891e2f01bdb2be69"
+		client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, []CommitStatus{},
+			fmt.Sprintf("/api/v4/projects/%s/repository/commits/%s/statuses", repo1, ref),
+			createGitLabHandler)
+		defer cleanUp()
+		_, err := client.GetCommitStatus(ctx, owner, repo1, ref)
+		assert.NoError(t, err)
+	})
+
+	t.Run("not empty response", func(t *testing.T) {
+		ref := "5fbf81b31ff7a3b06bd362d1891e2f01bdb2be69"
+		response, err := os.ReadFile(filepath.Join("testdata", "gitlab", "commits_statuses.json"))
+		client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, response,
+			fmt.Sprintf("/api/v4/projects/%s/repository/commits/%s/statuses", repo1, ref),
+			createGitLabHandler)
+		defer cleanUp()
+		commitStatuses, err := client.GetCommitStatus(ctx, owner, repo1, ref)
+		assert.True(t, len(commitStatuses) == 3)
+		assert.True(t, commitStatuses[0].State == "pending")
+		assert.True(t, commitStatuses[1].State == "success")
+		assert.True(t, commitStatuses[2].State == "failure")
+		assert.NoError(t, err)
+	})
 }

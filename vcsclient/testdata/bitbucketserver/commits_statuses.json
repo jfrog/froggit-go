@@ -1,0 +1,36 @@
+{ "values": [
+    {
+    "uuid": "<string>",
+    "key": "<string>",
+    "refname": "<string>",
+    "url": "<string>",
+    "state": "INPROGRESS",
+    "name": "<string>",
+    "description": "<string>",
+    "created_on": "<string>",
+    "updated_on": "<string>"
+  },
+    {
+      "uuid": "<string>",
+      "key": "<string>",
+      "refname": "<string>",
+      "url": "<string>",
+      "state": "SUCCESSFUL",
+      "name": "<string>",
+      "description": "<string>",
+      "created_on": "<string>",
+      "updated_on": "<string>"
+    },
+    {
+      "uuid": "<string>",
+      "key": "<string>",
+      "refname": "<string>",
+      "url": "<string>",
+      "state": "FAILED",
+      "name": "<string>",
+      "description": "<string>",
+      "created_on": "<string>",
+      "updated_on": "<string>"
+    }
+  ]
+}

@@ -35,17 +35,28 @@ func (client *BitbucketServerClient) GetCommitStatus(ctx context.Context, owner,
 	if err != nil {
 		return nil, err
 	}
+	statuses := struct {
+		Statuses []struct {
+			Title       string `mapstructure:"key"`
+			Url         string `mapstructure:"url"`
+			State       string `mapstructure:"state"`
+			Description string `mapstructure:"description"`
+			Creator     string `mapstructure:"name"`
+		} `mapstructure:"values"`
+	}{}
+	err = mapstructure.Decode(response.Values, &statuses)
+	if err != nil {
+		return nil, err
+	}
 	results := make([]CommitStatus, 0)
-	for key, element := range response.Values {
-		floatValue, _ := element.(float64)
-		if floatValue == 1 {
-			results = append(results, CommitStatus{
-				State: key,
-				//Description: "", currently other fields are not supported
-				//DetailsUrl:  "",
-				//Creator:     "",
-			})
-		}
+	for _, element := range statuses.Statuses {
+		results = append(results, CommitStatus{
+			State:       element.State,
+			Description: element.Description,
+			DetailsUrl:  element.Url,
+			Creator:     element.Creator,
+		})
+
 	}
 	return results, err
 }
