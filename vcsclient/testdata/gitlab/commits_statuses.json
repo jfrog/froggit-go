@@ -1,6 +1,6 @@
 [
    {
-      "status" : "pending",
+      "status" : "success",
       "created_at" : "2016-01-19T08:40:25.934Z",
       "started_at" : null,
       "name" : "bundler:audit",
@@ -24,7 +24,7 @@
       "started_at" : null,
       "name" : "test",
       "allow_failure" : false,
-      "status" : "success",
+      "status" : "pending",
       "created_at" : "2016-01-19T08:40:25.832Z",
       "target_url" : "https://gitlab.example.com/janedoe/gitlab-foss/builds/90",
       "id" : 90,

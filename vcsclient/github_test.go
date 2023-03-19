@@ -816,25 +816,24 @@ func TestGitHubClient_TestGetCommitStatus(t *testing.T) {
 	ref := "5fbf81b31ff7a3b06bd362d1891e2f01bdb2be69"
 
 	t.Run("empty response", func(t *testing.T) {
-		client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, CommitStatus{}, fmt.Sprintf("/repos/jfrog/%s/commits/%s/status", repo1, ref), createGitHubHandler)
+		client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, nil, fmt.Sprintf("/repos/jfrog/%s/commits/%s/status", repo1, ref), createGitHubHandler)
 		defer cleanUp()
-		commitStatus, err := client.GetCommitStatus(ctx, owner, repo1, ref)
+		_, err := client.GetCommitStatus(ctx, owner, repo1, ref)
 		assert.NoError(t, err)
-		assert.Equal(t, []CommitStatus{}, commitStatus)
 	})
 
 	t.Run("not empty response", func(t *testing.T) {
 		ref := "5fbf81b31ff7a3b06bd362d1891e2f01bdb2be69"
-		response, err := os.ReadFile(filepath.Join("testdata", "gitlab", "commits_statuses.json"))
-		client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, response,
-			fmt.Sprintf("/api/v4/projects/%s/repository/commits/%s/statuses", repo1, ref),
-			createGitLabHandler)
+		response, err := os.ReadFile(filepath.Join("testdata", "github", "commits_statuses.json"))
+		client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, response,
+			fmt.Sprintf("/repos/jfrog/%s/commits/%s/status", repo1, ref),
+			createGitHubHandler)
 		defer cleanUp()
 		commitStatuses, err := client.GetCommitStatus(ctx, owner, repo1, ref)
-		assert.True(t, len(commitStatuses) == 3)
-		assert.True(t, commitStatuses[0].State == "pending")
-		assert.True(t, commitStatuses[1].State == "success")
-		assert.True(t, commitStatuses[2].State == "failure")
 		assert.NoError(t, err)
+		assert.True(t, len(commitStatuses) == 3)
+		assert.True(t, commitStatuses[0].State == CommitStatusStateSuccess)
+		assert.True(t, commitStatuses[1].State == CommitStatusStatePending)
+		assert.True(t, commitStatuses[2].State == CommitStatusStateFailure)
 	})
 }

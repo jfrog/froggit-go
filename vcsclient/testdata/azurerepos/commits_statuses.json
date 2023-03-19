@@ -20,7 +20,7 @@
     },
     {
       "state": "pending",
-      "description": "The build is successful",
+      "description": "The build is pending",
       "context": {
         "name": "Build123",
         "genre": "continuous-integration"
@@ -37,7 +37,7 @@
     },
     {
       "state": "failed",
-      "description": "The build is successful",
+      "description": "The build has failed",
       "context": {
         "name": "Build123",
         "genre": "continuous-integration"

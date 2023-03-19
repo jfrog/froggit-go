@@ -6,7 +6,7 @@
     "url": "<string>",
     "state": "INPROGRESS",
     "name": "<string>",
-    "description": "<string>",
+    "description": "this is pending",
     "created_on": "<string>",
     "updated_on": "<string>"
   },
@@ -17,7 +17,7 @@
       "url": "<string>",
       "state": "SUCCESSFUL",
       "name": "<string>",
-      "description": "<string>",
+      "description": "this is successful",
       "created_on": "<string>",
       "updated_on": "<string>"
     },
@@ -28,7 +28,7 @@
       "url": "<string>",
       "state": "FAILED",
       "name": "<string>",
-      "description": "<string>",
+      "description": "this is a failure",
       "created_on": "<string>",
       "updated_on": "<string>"
     }

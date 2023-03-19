@@ -53,7 +53,7 @@ func (client *BitbucketCloudClient) GetCommitStatus(ctx context.Context, owner, 
 	}
 	for _, commitStatus := range statuses.Statuses {
 		results = append(results, CommitStatus{
-			State:       commitStatus.State,
+			State:       CommitStatusAsStringToStatus(commitStatus.State),
 			Description: commitStatus.Description,
 			DetailsUrl:  commitStatus.Url,
 			Creator:     commitStatus.Creator,

@@ -21,6 +21,11 @@ const (
 	Error
 	// InProgress means than the status check is in progress
 	InProgress
+
+	CommitStatusStateSuccess = CommitStatusState(0)
+	CommitStatusStateFailure = CommitStatusState(1)
+	CommitStatusStateError   = CommitStatusState(2)
+	CommitStatusStatePending = CommitStatusState(3)
 )
 
 // Permission the ssh key permission on the VCS repository
@@ -67,7 +72,7 @@ type RepositoryEnvironmentInfo struct {
 // DetailsUrl   - The URL for component status link
 // Creator      - The creator of the status
 type CommitStatus struct {
-	State       string
+	State       CommitStatusState
 	Description string
 	DetailsUrl  string
 	Creator     string
@@ -307,4 +312,19 @@ func validateParametersNotBlank(paramNameValueMap map[string]string) error {
 		return fmt.Errorf("validation failed: %s", strings.Join(errorMessages, ", "))
 	}
 	return nil
+}
+
+func CommitStatusAsStringToStatus(rawStatus string) CommitStatusState {
+	switch strings.ToLower(rawStatus) {
+	case "success", "succeeded", "successful":
+		return CommitStatusStateSuccess
+	case "fail", "failure", "failed":
+		return CommitStatusStateFailure
+	case "error":
+		return CommitStatusStateError
+	case "pending", "inprogress":
+		return CommitStatusStatePending
+	default:
+		return CommitStatusStateFailure
+	}
 }

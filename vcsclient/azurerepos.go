@@ -4,18 +4,16 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/jfrog/froggit-go/vcsutils"
+	"github.com/jfrog/gofrog/datastructures"
+	"github.com/microsoft/azure-devops-go-api/azuredevops"
+	"github.com/microsoft/azure-devops-go-api/azuredevops/git"
+	"github.com/mitchellh/mapstructure"
 	"io"
 	"net/http"
 	"os"
 	"sort"
 	"strings"
-
-	"github.com/jfrog/gofrog/datastructures"
-	"github.com/microsoft/azure-devops-go-api/azuredevops"
-	"github.com/microsoft/azure-devops-go-api/azuredevops/git"
-	"github.com/mitchellh/mapstructure"
-
-	"github.com/jfrog/froggit-go/vcsutils"
 )
 
 // Azure Devops API version 6
@@ -42,7 +40,7 @@ func (client *AzureReposClient) GetCommitStatus(ctx context.Context, owner, repo
 	results := make([]CommitStatus, 0)
 	for _, singleStatus := range *resGitStatus {
 		results = append(results, CommitStatus{
-			string(*singleStatus.State),
+			CommitStatusAsStringToStatus(string(*singleStatus.State)),
 			*singleStatus.Description,
 			*singleStatus.TargetUrl,
 			*singleStatus.CreatedBy.DisplayName,

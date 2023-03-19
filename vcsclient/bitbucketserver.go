@@ -51,7 +51,7 @@ func (client *BitbucketServerClient) GetCommitStatus(ctx context.Context, owner,
 	results := make([]CommitStatus, 0)
 	for _, element := range statuses.Statuses {
 		results = append(results, CommitStatus{
-			State:       element.State,
+			State:       CommitStatusAsStringToStatus(element.State),
 			Description: element.Description,
 			DetailsUrl:  element.Url,
 			Creator:     element.Creator,

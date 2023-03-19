@@ -499,9 +499,9 @@ func TestAzureReposClient_GetCommitStatus(t *testing.T) {
 		defer cleanUp()
 		commitStatuses, err := client.GetCommitStatus(ctx, owner, repo1, commitHash)
 		assert.True(t, len(commitStatuses) == 3)
-		assert.True(t, commitStatuses[0].State == "succeeded")
-		assert.True(t, commitStatuses[1].State == "pending")
-		assert.True(t, commitStatuses[2].State == "failed")
+		assert.True(t, commitStatuses[0].State == CommitStatusStateSuccess)
+		assert.True(t, commitStatuses[1].State == CommitStatusStatePending)
+		assert.True(t, commitStatuses[2].State == CommitStatusStateFailure)
 
 	})
 	t.Run("empty response", func(t *testing.T) {
