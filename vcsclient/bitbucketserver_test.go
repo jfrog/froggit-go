@@ -698,4 +698,28 @@ func TestBitbucketServer_TestGetCommitStatus(t *testing.T) {
 		assert.True(t, commitStatuses[1].State == CommitStatusStateSuccess)
 		assert.True(t, commitStatuses[2].State == CommitStatusStateFailure)
 	})
+
+	t.Run("failure tests", func(t *testing.T) {
+		ref := "9caf1c431fb783b669f0f909bd018b40f2ea3808"
+		response, err := os.ReadFile(filepath.Join("testdata", "github", "commits_statuses_bad_json.json"))
+		assert.NoError(t, err)
+		client, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, false, response,
+			fmt.Sprintf("/rest/build-status/1.0/commits/%s", ref), createBitbucketServerHandler)
+		defer cleanUp()
+		_, err = client.GetCommitStatus(ctx, owner, repo1, ref)
+		assert.Error(t, err)
+		_, err = createBadBitbucketServerClient(t).GetCommitStatus(ctx, owner, repo1, ref)
+		assert.Error(t, err)
+	})
+
+	t.Run("failure tests", func(t *testing.T) {
+		ref := "9caf1c431fb783b669f0f909bd018b40f2ea3808"
+		response, err := os.ReadFile(filepath.Join("testdata", "bitbucketserver", "commits_statuses_bad_decode.json"))
+		assert.NoError(t, err)
+		client, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, false, response,
+			fmt.Sprintf("/rest/build-status/1.0/commits/%s", ref), createBitbucketServerHandler)
+		defer cleanUp()
+		_, err = client.GetCommitStatus(ctx, owner, repo1, ref)
+		assert.Error(t, err)
+	})
 }

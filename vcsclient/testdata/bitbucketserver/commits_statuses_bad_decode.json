@@ -1,0 +1,18 @@
+{
+  "values": [
+    {
+      "key": "Title 1",
+      "url": "https://example.com/page1",
+      "state": "active",
+      "description": "Description 1",
+      "name": "Creator 1"
+    },
+    {
+      "key": "Title 2",
+      "url": "https://example.com/page2",
+      "state": "inactive",
+      "description": "Description 2",
+      "name": {"invalid_key": "invalid_value"}
+    }
+  ]
+}

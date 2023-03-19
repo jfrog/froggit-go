@@ -838,4 +838,19 @@ func TestGitHubClient_TestGetCommitStatus(t *testing.T) {
 		assert.True(t, commitStatuses[2].State == CommitStatusStateFailure)
 		assert.True(t, commitStatuses[3].State == CommitStatusStateError)
 	})
+
+	t.Run("test failure cases", func(t *testing.T) {
+		ref := "5fbf81b31ff7a3b06bd362d1891e2f01bdb2be69"
+		response, err := os.ReadFile(filepath.Join("testdata", "github", "commits_statuses_bad_json.json"))
+		assert.NoError(t, err)
+		client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, response,
+			fmt.Sprintf("/repos/jfrog/%s/commits/%s/status", repo1, ref),
+			createGitHubHandler)
+		defer cleanUp()
+		_, err = client.GetCommitStatus(ctx, owner, repo1, ref)
+		assert.Error(t, err)
+
+		_, err = createBadGitHubClient(t).GetCommitStatus(ctx, owner, repo1, ref)
+		assert.Error(t, err)
+	})
 }

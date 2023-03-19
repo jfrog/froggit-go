@@ -656,4 +656,16 @@ func TestGitLabClient_TestGetCommitStatus(t *testing.T) {
 		assert.True(t, commitStatuses[2].State == CommitStatusStateFailure)
 		assert.NoError(t, err)
 	})
+
+	t.Run("crash response", func(t *testing.T) {
+		ref := "5fbf81b31ff7a3b06bd362d1891e2f01bdb2be69"
+		response, err := os.ReadFile(filepath.Join("testdata", "github", "commits_statuses_bad_json.json"))
+		assert.NoError(t, err)
+		client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, response,
+			fmt.Sprintf("/api/v4/projects/%s/repository/commits/%s/statuses", repo1, ref),
+			createGitLabHandler)
+		defer cleanUp()
+		_, err = client.GetCommitStatus(ctx, owner, repo1, ref)
+		assert.Error(t, err)
+	})
 }
