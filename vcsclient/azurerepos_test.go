@@ -498,11 +498,11 @@ func TestAzureReposClient_GetCommitStatus(t *testing.T) {
 		client, cleanUp := createServerAndClient(t, vcsutils.AzureRepos, true, response, expectedUri, createAzureReposHandler)
 		defer cleanUp()
 		commitStatuses, err := client.GetCommitStatus(ctx, owner, repo1, commitHash)
+		assert.NoError(t, err)
 		assert.True(t, len(commitStatuses) == 3)
 		assert.True(t, commitStatuses[0].State == CommitStatusStateSuccess)
 		assert.True(t, commitStatuses[1].State == CommitStatusStatePending)
 		assert.True(t, commitStatuses[2].State == CommitStatusStateFailure)
-
 	})
 	t.Run("empty response", func(t *testing.T) {
 		commitHash := "86d6919952702f9ab03bc95b45687f145a663de0"

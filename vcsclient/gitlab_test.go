@@ -644,6 +644,7 @@ func TestGitLabClient_TestGetCommitStatus(t *testing.T) {
 	t.Run("not empty response", func(t *testing.T) {
 		ref := "5fbf81b31ff7a3b06bd362d1891e2f01bdb2be69"
 		response, err := os.ReadFile(filepath.Join("testdata", "gitlab", "commits_statuses.json"))
+		assert.NoError(t, err)
 		client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, response,
 			fmt.Sprintf("/api/v4/projects/%s/repository/commits/%s/statuses", repo1, ref),
 			createGitLabHandler)
