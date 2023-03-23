@@ -26,22 +26,6 @@ type BitbucketServerClient struct {
 	logger  Log
 }
 
-func (client *BitbucketServerClient) GetCommitStatus(ctx context.Context, owner, repository, ref string) (status []CommitStatus, err error) {
-	bitbucketClient, err := client.buildBitbucketClient(ctx)
-	if err != nil {
-		return nil, err
-	}
-	response, err := bitbucketClient.GetCommitStatus(ref)
-	if err != nil {
-		return nil, err
-	}
-	results, err := BitbucketParseCommitStatuses(response.Values)
-	if err != nil {
-		return nil, err
-	}
-	return results, err
-}
-
 // NewBitbucketServerClient create a new BitbucketServerClient
 func NewBitbucketServerClient(vcsInfo VcsInfo, logger Log) (*BitbucketServerClient, error) {
 	bitbucketServerClient := &BitbucketServerClient{
@@ -270,6 +254,23 @@ func (client *BitbucketServerClient) SetCommitStatus(ctx context.Context, commit
 		Url:         detailsURL,
 	})
 	return err
+}
+
+// GetCommitStatus on Bitbucket server
+func (client *BitbucketServerClient) GetCommitStatus(ctx context.Context, owner, repository, ref string) (status []CommitStatus, err error) {
+	bitbucketClient, err := client.buildBitbucketClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+	response, err := bitbucketClient.GetCommitStatus(ref)
+	if err != nil {
+		return nil, err
+	}
+	results, err := BitbucketParseCommitStatuses(response.Values)
+	if err != nil {
+		return nil, err
+	}
+	return results, err
 }
 
 // DownloadRepository on Bitbucket server

@@ -21,11 +21,6 @@ const (
 	Error
 	// InProgress means than the status check is in progress
 	InProgress
-
-	CommitStatusStateSuccess = CommitStatusState(0)
-	CommitStatusStateFailure = CommitStatusState(1)
-	CommitStatusStateError   = CommitStatusState(2)
-	CommitStatusStatePending = CommitStatusState(3)
 )
 
 // Permission the ssh key permission on the VCS repository
@@ -316,15 +311,17 @@ func validateParametersNotBlank(paramNameValueMap map[string]string) error {
 	return nil
 }
 
+// CommitStatusAsStringToStatus maps status as string to CommitStatusState
+// Handles all the different statuses for every VCS provider
 func CommitStatusAsStringToStatus(rawStatus string) CommitStatusState {
 	switch strings.ToLower(rawStatus) {
 	case "success", "succeeded", "successful":
-		return CommitStatusStateSuccess
+		return Pass
 	case "fail", "failure", "failed":
-		return CommitStatusStateFailure
+		return Fail
 	case "pending", "inprogress":
-		return CommitStatusStatePending
+		return InProgress
 	default:
-		return CommitStatusStateError
+		return Error
 	}
 }

@@ -23,25 +23,6 @@ type GitLabClient struct {
 	logger   Log
 }
 
-// GetCommitStatus on GitLab
-func (client *GitLabClient) GetCommitStatus(ctx context.Context, owner, repository, ref string) (status []CommitStatus, err error) {
-	statuses, _, err := client.glClient.Commits.GetCommitStatuses(repository, ref, nil)
-	if err != nil {
-		return nil, err
-	}
-	results := make([]CommitStatus, 0)
-	for _, singleStatus := range statuses {
-		results = append(results, CommitStatus{
-			State:         CommitStatusAsStringToStatus(singleStatus.Status),
-			Description:   singleStatus.Description,
-			DetailsUrl:    singleStatus.TargetURL,
-			Creator:       singleStatus.Author.Name,
-			LastUpdatedAt: extractLastUpdateTime(singleStatus),
-		})
-	}
-	return results, nil
-}
-
 // extractLastUpdateTime from gitlab commit status with fallback to creation time
 func extractLastUpdateTime(singleStatus *gitlab.CommitStatus) (lastUpdateTime time.Time) {
 	if singleStatus.FinishedAt != nil {
@@ -206,6 +187,25 @@ func (client *GitLabClient) SetCommitStatus(ctx context.Context, commitStatus Co
 	_, _, err := client.glClient.Commits.SetCommitStatus(getProjectID(owner, repository), ref, options,
 		gitlab.WithContext(ctx))
 	return err
+}
+
+// GetCommitStatus on GitLab
+func (client *GitLabClient) GetCommitStatus(ctx context.Context, owner, repository, ref string) (status []CommitStatus, err error) {
+	statuses, _, err := client.glClient.Commits.GetCommitStatuses(repository, ref, nil, gitlab.WithContext(ctx))
+	if err != nil {
+		return nil, err
+	}
+	results := make([]CommitStatus, 0)
+	for _, singleStatus := range statuses {
+		results = append(results, CommitStatus{
+			State:         CommitStatusAsStringToStatus(singleStatus.Status),
+			Description:   singleStatus.Description,
+			DetailsUrl:    singleStatus.TargetURL,
+			Creator:       singleStatus.Author.Name,
+			LastUpdatedAt: extractLastUpdateTime(singleStatus),
+		})
+	}
+	return results, nil
 }
 
 // DownloadRepository on GitLab

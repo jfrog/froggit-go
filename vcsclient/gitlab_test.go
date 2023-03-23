@@ -651,9 +651,9 @@ func TestGitLabClient_TestGetCommitStatus(t *testing.T) {
 		defer cleanUp()
 		commitStatuses, err := client.GetCommitStatus(ctx, owner, repo1, ref)
 		assert.True(t, len(commitStatuses) == 3)
-		assert.True(t, commitStatuses[0].State == CommitStatusStateSuccess)
-		assert.True(t, commitStatuses[1].State == CommitStatusStatePending)
-		assert.True(t, commitStatuses[2].State == CommitStatusStateFailure)
+		assert.True(t, commitStatuses[0].State == Pass)
+		assert.True(t, commitStatuses[1].State == InProgress)
+		assert.True(t, commitStatuses[2].State == Fail)
 		assert.NoError(t, err)
 	})
 

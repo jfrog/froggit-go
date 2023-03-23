@@ -833,10 +833,10 @@ func TestGitHubClient_TestGetCommitStatus(t *testing.T) {
 		commitStatuses, err := client.GetCommitStatus(ctx, owner, repo1, ref)
 		assert.NoError(t, err)
 		assert.True(t, len(commitStatuses) == 4)
-		assert.True(t, commitStatuses[0].State == CommitStatusStateSuccess)
-		assert.True(t, commitStatuses[1].State == CommitStatusStatePending)
-		assert.True(t, commitStatuses[2].State == CommitStatusStateFailure)
-		assert.True(t, commitStatuses[3].State == CommitStatusStateError)
+		assert.True(t, commitStatuses[0].State == Pass)
+		assert.True(t, commitStatuses[1].State == InProgress)
+		assert.True(t, commitStatuses[2].State == Fail)
+		assert.True(t, commitStatuses[3].State == Error)
 	})
 
 	t.Run("test failure cases", func(t *testing.T) {

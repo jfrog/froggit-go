@@ -25,29 +25,6 @@ type GitHubClient struct {
 	logger  Log
 }
 
-// GetCommitStatus on GitHub
-func (client *GitHubClient) GetCommitStatus(ctx context.Context, owner, repository, ref string) (status []CommitStatus, err error) {
-	ghClient, err := client.buildGithubClient(ctx)
-	if err != nil {
-		return nil, err
-	}
-	statuses, _, err := ghClient.Repositories.GetCombinedStatus(ctx, owner, repository, ref, nil)
-	if err != nil {
-		return nil, err
-	}
-	results := make([]CommitStatus, 0)
-	for _, singleStatus := range statuses.Statuses {
-		results = append(results, CommitStatus{
-			State:         CommitStatusAsStringToStatus(*singleStatus.State),
-			Description:   singleStatus.GetDescription(),
-			DetailsUrl:    singleStatus.GetTargetURL(),
-			Creator:       singleStatus.GetCreator().GetName(),
-			LastUpdatedAt: singleStatus.GetUpdatedAt(),
-		})
-	}
-	return results, err
-}
-
 // NewGitHubClient create a new GitHubClient
 func NewGitHubClient(vcsInfo VcsInfo, logger Log) (*GitHubClient, error) {
 	return &GitHubClient{vcsInfo: vcsInfo, logger: logger}, nil
@@ -211,6 +188,29 @@ func (client *GitHubClient) SetCommitStatus(ctx context.Context, commitStatus Co
 	}
 	_, _, err = ghClient.Repositories.CreateStatus(ctx, owner, repository, ref, status)
 	return err
+}
+
+// GetCommitStatus on GitHub
+func (client *GitHubClient) GetCommitStatus(ctx context.Context, owner, repository, ref string) (status []CommitStatus, err error) {
+	ghClient, err := client.buildGithubClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+	statuses, _, err := ghClient.Repositories.GetCombinedStatus(ctx, owner, repository, ref, nil)
+	if err != nil {
+		return nil, err
+	}
+	results := make([]CommitStatus, 0)
+	for _, singleStatus := range statuses.Statuses {
+		results = append(results, CommitStatus{
+			State:         CommitStatusAsStringToStatus(*singleStatus.State),
+			Description:   singleStatus.GetDescription(),
+			DetailsUrl:    singleStatus.GetTargetURL(),
+			Creator:       singleStatus.GetCreator().GetName(),
+			LastUpdatedAt: singleStatus.GetUpdatedAt(),
+		})
+	}
+	return results, err
 }
 
 // DownloadRepository on GitHub

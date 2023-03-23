@@ -526,8 +526,8 @@ func TestBitbucketCloudClient_GetCommitStatus(t *testing.T) {
 		commitStatuses, err := client.GetCommitStatus(ctx, "owner", "repo", "ref")
 		assert.NoError(t, err)
 		assert.True(t, len(commitStatuses) == 3)
-		assert.True(t, commitStatuses[0].State == CommitStatusStatePending)
-		assert.True(t, commitStatuses[1].State == CommitStatusStateSuccess)
-		assert.True(t, commitStatuses[2].State == CommitStatusStateFailure)
+		assert.True(t, commitStatuses[0].State == InProgress)
+		assert.True(t, commitStatuses[1].State == Pass)
+		assert.True(t, commitStatuses[2].State == Fail)
 	})
 }
