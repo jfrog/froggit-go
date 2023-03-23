@@ -6,14 +6,14 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"github.com/jfrog/froggit-go/vcsutils"
 	"github.com/jfrog/gofrog/datastructures"
+	"github.com/xanzy/go-gitlab"
 	"net/http"
 	"sort"
 	"strconv"
 	"strings"
-
-	"github.com/jfrog/froggit-go/vcsutils"
-	"github.com/xanzy/go-gitlab"
+	"time"
 )
 
 // GitLabClient API version 4
@@ -32,13 +32,26 @@ func (client *GitLabClient) GetCommitStatus(ctx context.Context, owner, reposito
 	results := make([]CommitStatus, 0)
 	for _, singleStatus := range statuses {
 		results = append(results, CommitStatus{
-			State:       CommitStatusAsStringToStatus(singleStatus.Status),
-			Description: singleStatus.Description,
-			DetailsUrl:  singleStatus.TargetURL,
-			Creator:     singleStatus.Author.Name,
+			State:         CommitStatusAsStringToStatus(singleStatus.Status),
+			Description:   singleStatus.Description,
+			DetailsUrl:    singleStatus.TargetURL,
+			Creator:       singleStatus.Author.Name,
+			LastUpdatedAt: extractLastUpdateTime(singleStatus),
 		})
 	}
 	return results, nil
+}
+
+// extractLastUpdateTime from gitlab commit status with fallback to creation time
+func extractLastUpdateTime(singleStatus *gitlab.CommitStatus) (lastUpdateTime time.Time) {
+	if singleStatus.FinishedAt != nil {
+		lastUpdateTime = singleStatus.FinishedAt.UTC()
+	} else if singleStatus.CreatedAt != nil {
+		lastUpdateTime = singleStatus.CreatedAt.UTC()
+	} else {
+		lastUpdateTime = time.Time{}
+	}
+	return
 }
 
 // NewGitLabClient create a new GitLabClient

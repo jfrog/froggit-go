@@ -35,28 +35,9 @@ func (client *BitbucketServerClient) GetCommitStatus(ctx context.Context, owner,
 	if err != nil {
 		return nil, err
 	}
-	statuses := struct {
-		Statuses []struct {
-			Title       string `mapstructure:"key"`
-			Url         string `mapstructure:"url"`
-			State       string `mapstructure:"state"`
-			Description string `mapstructure:"description"`
-			Creator     string `mapstructure:"name"`
-		} `mapstructure:"values"`
-	}{}
-	err = mapstructure.Decode(response.Values, &statuses)
+	results, err := BitbucketParseCommitStatuses(response.Values)
 	if err != nil {
 		return nil, err
-	}
-	results := make([]CommitStatus, 0)
-	for _, element := range statuses.Statuses {
-		results = append(results, CommitStatus{
-			State:       CommitStatusAsStringToStatus(element.State),
-			Description: element.Description,
-			DetailsUrl:  element.Url,
-			Creator:     element.Creator,
-		})
-
 	}
 	return results, err
 }
@@ -735,4 +716,38 @@ func getBitbucketServerRepositoryVisibility(public bool) RepositoryVisibility {
 		return Public
 	}
 	return Private
+}
+
+// BitbucketParseCommitStatuses parse raw response into CommitStatus slice
+// The response is the same from cloud to server
+func BitbucketParseCommitStatuses(rawStatuses interface{}) ([]CommitStatus, error) {
+	results := make([]CommitStatus, 0)
+	statuses := struct {
+		Statuses []struct {
+			Title         string `mapstructure:"key"`
+			Url           string `mapstructure:"url"`
+			State         string `mapstructure:"state"`
+			Description   string `mapstructure:"description"`
+			Creator       string `mapstructure:"name"`
+			LastUpdatedAt string `mapstructure:"updated_on"`
+		} `mapstructure:"values"`
+	}{}
+	err := mapstructure.Decode(rawStatuses, &statuses)
+	if err != nil {
+		return nil, err
+	}
+	for _, commitStatus := range statuses.Statuses {
+		lastUpdatedAt, err := time.Parse(time.RFC3339, commitStatus.LastUpdatedAt)
+		if err != nil {
+			lastUpdatedAt = time.Time{}
+		}
+		results = append(results, CommitStatus{
+			State:         CommitStatusAsStringToStatus(commitStatus.State),
+			Description:   commitStatus.Description,
+			DetailsUrl:    commitStatus.Url,
+			Creator:       commitStatus.Creator,
+			LastUpdatedAt: lastUpdatedAt,
+		})
+	}
+	return results, err
 }

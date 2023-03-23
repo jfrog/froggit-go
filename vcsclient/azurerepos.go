@@ -14,6 +14,7 @@ import (
 	"os"
 	"sort"
 	"strings"
+	"time"
 )
 
 // Azure Devops API version 6
@@ -40,13 +41,30 @@ func (client *AzureReposClient) GetCommitStatus(ctx context.Context, owner, repo
 	results := make([]CommitStatus, 0)
 	for _, singleStatus := range *resGitStatus {
 		results = append(results, CommitStatus{
-			CommitStatusAsStringToStatus(string(*singleStatus.State)),
-			*singleStatus.Description,
-			*singleStatus.TargetUrl,
-			*singleStatus.CreatedBy.DisplayName,
+			State:         CommitStatusAsStringToStatus(string(*singleStatus.State)),
+			Description:   *singleStatus.Description,
+			DetailsUrl:    *singleStatus.TargetUrl,
+			Creator:       *singleStatus.CreatedBy.DisplayName,
+			LastUpdatedAt: extractLastUpdateTimeFromCommitStatus(singleStatus),
 		})
 	}
 	return results, err
+}
+
+func extractLastUpdateTimeFromCommitStatus(rawStatus git.GitStatus) time.Time {
+	if rawStatus.UpdatedDate == nil {
+		// Fallback to creation time
+		lastUpdateTime, err := time.Parse(time.RFC3339, rawStatus.CreationDate.String())
+		if err != nil {
+			return time.Time{}
+		}
+		return lastUpdateTime
+	}
+	lastUpdateTime, err := time.Parse(time.RFC3339, rawStatus.UpdatedDate.String())
+	if err != nil {
+		return time.Time{}
+	}
+	return lastUpdateTime
 }
 
 // NewAzureReposClient create a new AzureReposClient

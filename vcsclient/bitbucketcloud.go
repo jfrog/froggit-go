@@ -33,31 +33,13 @@ func (client *BitbucketCloudClient) GetCommitStatus(ctx context.Context, owner, 
 		RepoSlug: repository,
 		Revision: ref,
 	}
-	results := make([]CommitStatus, 0)
 	rawStatuses, err := bitbucketClient.Repositories.Commits.GetCommitStatuses(commitOptions)
 	if err != nil {
 		return nil, err
 	}
-	statuses := struct {
-		Statuses []struct {
-			Title       string `mapstructure:"key"`
-			Url         string `mapstructure:"url"`
-			State       string `mapstructure:"state"`
-			Description string `mapstructure:"description"`
-			Creator     string `mapstructure:"name"`
-		} `mapstructure:"values"`
-	}{}
-	err = mapstructure.Decode(rawStatuses, &statuses)
+	results, err := BitbucketParseCommitStatuses(rawStatuses)
 	if err != nil {
 		return nil, err
-	}
-	for _, commitStatus := range statuses.Statuses {
-		results = append(results, CommitStatus{
-			State:       CommitStatusAsStringToStatus(commitStatus.State),
-			Description: commitStatus.Description,
-			DetailsUrl:  commitStatus.Url,
-			Creator:     commitStatus.Creator,
-		})
 	}
 	return results, err
 }

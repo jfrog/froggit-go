@@ -67,15 +67,17 @@ type RepositoryEnvironmentInfo struct {
 }
 
 // CommitStatus status which is then reflected in pull requests involving those commits
-// State        - One of success, pending, failure, or error
-// Description  - Description of the commit status
-// DetailsUrl   - The URL for component status link
-// Creator      - The creator of the status
+// State         - One of success, pending, failure, or error
+// Description   - Description of the commit status
+// DetailsUrl    - The URL for component status link
+// Creator       - The creator of the status
+// LastUpdatedAt - Last update timestamp fallback is creation time.
 type CommitStatus struct {
-	State       CommitStatusState
-	Description string
-	DetailsUrl  string
-	Creator     string
+	State         CommitStatusState
+	Description   string
+	DetailsUrl    string
+	Creator       string
+	LastUpdatedAt time.Time
 }
 
 // VcsClient is a base class of all Vcs clients - GitHub, GitLab, Bitbucket server and cloud clients

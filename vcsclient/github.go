@@ -25,7 +25,7 @@ type GitHubClient struct {
 	logger  Log
 }
 
-// GetCommitStatus gets commit statuses
+// GetCommitStatus on GitHub
 func (client *GitHubClient) GetCommitStatus(ctx context.Context, owner, repository, ref string) (status []CommitStatus, err error) {
 	ghClient, err := client.buildGithubClient(ctx)
 	if err != nil {
@@ -38,10 +38,11 @@ func (client *GitHubClient) GetCommitStatus(ctx context.Context, owner, reposito
 	results := make([]CommitStatus, 0)
 	for _, singleStatus := range statuses.Statuses {
 		results = append(results, CommitStatus{
-			State:       CommitStatusAsStringToStatus(*singleStatus.State),
-			Description: singleStatus.GetDescription(),
-			DetailsUrl:  singleStatus.GetTargetURL(),
-			Creator:     singleStatus.GetCreator().GetName(),
+			State:         CommitStatusAsStringToStatus(*singleStatus.State),
+			Description:   singleStatus.GetDescription(),
+			DetailsUrl:    singleStatus.GetTargetURL(),
+			Creator:       singleStatus.GetCreator().GetName(),
+			LastUpdatedAt: singleStatus.GetUpdatedAt(),
 		})
 	}
 	return results, err
