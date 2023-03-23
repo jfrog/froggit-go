@@ -453,7 +453,7 @@ func TestBitbucketCloudClient_GetModifiedFiles(t *testing.T) {
 		assert.NoError(t, err)
 
 		client, cleanUp := createServerAndClientReturningStatus(t, vcsutils.BitbucketCloud, true, response,
-			fmt.Sprintf("/repositories/%s/%s/diffstat/sha-1..sha-2?page=1", owner, repo1), http.StatusOK,
+			fmt.Sprintf("/repositories/%s/%s/diffstat/sha-2..sha-1?page=1", owner, repo1), http.StatusOK,
 			createBitbucketCloudHandler)
 		defer cleanUp()
 
@@ -480,7 +480,7 @@ func TestBitbucketCloudClient_GetModifiedFiles(t *testing.T) {
 			vcsutils.BitbucketCloud,
 			true,
 			nil,
-			fmt.Sprintf("/repositories/%s/%s/diffstat/sha-1..sha-2?page=1", owner, repo1),
+			fmt.Sprintf("/repositories/%s/%s/diffstat/sha-2..sha-1?page=1", owner, repo1),
 			http.StatusInternalServerError,
 			createBitbucketCloudHandler,
 		)

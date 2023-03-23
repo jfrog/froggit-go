@@ -509,8 +509,8 @@ func (client *BitbucketCloudClient) GetModifiedFiles(ctx context.Context, owner,
 		RepoSlug: repository,
 		// We use 2 dots for spec because of the case described at the page:
 		// https://developer.atlassian.com/cloud/bitbucket/rest/api-group-commits/#two-commit-spec
-		// As there is no `topic` set it will be treated as `refBefore...refAfter` actually.
-		Spec:    refBefore + ".." + refAfter,
+		// As there is no `topic` set it will be treated as `refAfter...refBefore` actually.
+		Spec:    refAfter + ".." + refBefore,
 		Renames: true,
 		Merge:   true,
 	}
