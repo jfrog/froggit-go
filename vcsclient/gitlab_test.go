@@ -633,11 +633,11 @@ func TestGitLabClient_TestGetCommitStatus(t *testing.T) {
 
 	t.Run("empty response", func(t *testing.T) {
 		ref := "5fbf81b31ff7a3b06bd362d1891e2f01bdb2be69"
-		client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, []CommitStatus{},
+		client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, []CommitStatusInfo{},
 			fmt.Sprintf("/api/v4/projects/%s/repository/commits/%s/statuses", repo1, ref),
 			createGitLabHandler)
 		defer cleanUp()
-		_, err := client.GetCommitStatus(ctx, owner, repo1, ref)
+		_, err := client.GetCommitStatuses(ctx, owner, repo1, ref)
 		assert.NoError(t, err)
 	})
 
@@ -649,7 +649,7 @@ func TestGitLabClient_TestGetCommitStatus(t *testing.T) {
 			fmt.Sprintf("/api/v4/projects/%s/repository/commits/%s/statuses", repo1, ref),
 			createGitLabHandler)
 		defer cleanUp()
-		commitStatuses, err := client.GetCommitStatus(ctx, owner, repo1, ref)
+		commitStatuses, err := client.GetCommitStatuses(ctx, owner, repo1, ref)
 		assert.True(t, len(commitStatuses) == 3)
 		assert.True(t, commitStatuses[0].State == Pass)
 		assert.True(t, commitStatuses[1].State == InProgress)
@@ -665,7 +665,7 @@ func TestGitLabClient_TestGetCommitStatus(t *testing.T) {
 			fmt.Sprintf("/api/v4/projects/%s/repository/commits/%s/statuses", repo1, ref),
 			createGitLabHandler)
 		defer cleanUp()
-		_, err = client.GetCommitStatus(ctx, owner, repo1, ref)
+		_, err = client.GetCommitStatuses(ctx, owner, repo1, ref)
 		assert.Error(t, err)
 	})
 }

@@ -173,7 +173,7 @@ func (client *GitHubClient) DeleteWebhook(ctx context.Context, owner, repository
 }
 
 // SetCommitStatus on GitHub
-func (client *GitHubClient) SetCommitStatus(ctx context.Context, commitStatus CommitStatusState, owner, repository, ref,
+func (client *GitHubClient) SetCommitStatus(ctx context.Context, commitStatus CommitStatus, owner, repository, ref,
 	title, description, detailsURL string) error {
 	ghClient, err := client.buildGithubClient(ctx)
 	if err != nil {
@@ -190,8 +190,8 @@ func (client *GitHubClient) SetCommitStatus(ctx context.Context, commitStatus Co
 	return err
 }
 
-// GetCommitStatus on GitHub
-func (client *GitHubClient) GetCommitStatus(ctx context.Context, owner, repository, ref string) (status []CommitStatus, err error) {
+// GetCommitStatuses on GitHub
+func (client *GitHubClient) GetCommitStatuses(ctx context.Context, owner, repository, ref string) (status []CommitStatusInfo, err error) {
 	ghClient, err := client.buildGithubClient(ctx)
 	if err != nil {
 		return nil, err
@@ -200,9 +200,9 @@ func (client *GitHubClient) GetCommitStatus(ctx context.Context, owner, reposito
 	if err != nil {
 		return nil, err
 	}
-	results := make([]CommitStatus, 0)
+	results := make([]CommitStatusInfo, 0)
 	for _, singleStatus := range statuses.Statuses {
-		results = append(results, CommitStatus{
+		results = append(results, CommitStatusInfo{
 			State:         CommitStatusAsStringToStatus(*singleStatus.State),
 			Description:   singleStatus.GetDescription(),
 			DetailsUrl:    singleStatus.GetTargetURL(),
@@ -682,7 +682,7 @@ func getGitHubRepositoryVisibility(repo *github.Repository) RepositoryVisibility
 	}
 }
 
-func getGitHubCommitState(commitState CommitStatusState) string {
+func getGitHubCommitState(commitState CommitStatus) string {
 	switch commitState {
 	case Pass:
 		return "success"

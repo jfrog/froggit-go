@@ -34,10 +34,11 @@ Currently supported providers are: [GitHub](#github), [Bitbucket Server](#bitbuc
       - [Update Webhook](#update-webhook)
       - [Delete Webhook](#delete-webhook)
       - [Set Commit Status](#set-commit-status)
-        - [Create Pull Request](#create-pull-request)
+      - [Get Commit Status](#get-commit-status)
+      - [Create Pull Request](#create-pull-request)
       - [List Open Pull Requests](#list-open-pull-requests)
-        - [Add Pull Request Comment](#add-pull-request-comment)
-        - [List Pull Request Comments](#list-pull-request-comments)
+      - [Add Pull Request Comment](#add-pull-request-comment)
+      - [List Pull Request Comments](#list-pull-request-comments)
       - [Get Latest Commit](#get-latest-commit)
       - [Get Commit By SHA](#get-commit-by-sha)
       - [Get List of Modified Files](#get-list-of-modified-files)
@@ -289,6 +290,20 @@ description := "Run JFrog Xray scan"
 detailsURL := "https://acme.jfrog.io/ui/xray-scan-results-url"
 
 err := client.SetCommitStatus(ctx, commitStatus, owner, repository, ref, title, description, detailsURL)
+```
+
+#### Get Commit Status
+
+```go
+// Go context
+ctx := context.Background()
+// Organization or username
+owner := "jfrog"
+// VCS repository
+repository := "jfrog-cli"
+// Commit tag on GitHub and GitLab, commit on Bitbucket
+ref := "5c05522fecf8d93a11752ff255c99fcb0f0557cd"
+commitStatuses, err := client.GetCommitStatus(ctx, owner, repository, ref)
 ```
 
 ##### Create Pull Request

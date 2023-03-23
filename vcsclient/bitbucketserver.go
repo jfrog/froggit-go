@@ -241,7 +241,7 @@ func (client *BitbucketServerClient) DeleteWebhook(ctx context.Context, owner, r
 }
 
 // SetCommitStatus on Bitbucket server
-func (client *BitbucketServerClient) SetCommitStatus(ctx context.Context, commitStatus CommitStatusState, _, _, ref, title,
+func (client *BitbucketServerClient) SetCommitStatus(ctx context.Context, commitStatus CommitStatus, _, _, ref, title,
 	description, detailsURL string) error {
 	bitbucketClient, err := client.buildBitbucketClient(ctx)
 	if err != nil {
@@ -256,8 +256,8 @@ func (client *BitbucketServerClient) SetCommitStatus(ctx context.Context, commit
 	return err
 }
 
-// GetCommitStatus on Bitbucket server
-func (client *BitbucketServerClient) GetCommitStatus(ctx context.Context, owner, repository, ref string) (status []CommitStatus, err error) {
+// GetCommitStatuses on Bitbucket server
+func (client *BitbucketServerClient) GetCommitStatuses(ctx context.Context, owner, repository, ref string) (status []CommitStatusInfo, err error) {
 	bitbucketClient, err := client.buildBitbucketClient(ctx)
 	if err != nil {
 		return nil, err
@@ -719,10 +719,10 @@ func getBitbucketServerRepositoryVisibility(public bool) RepositoryVisibility {
 	return Private
 }
 
-// BitbucketParseCommitStatuses parse raw response into CommitStatus slice
+// BitbucketParseCommitStatuses parse raw response into CommitStatusInfo slice
 // The response is the same from cloud to server
-func BitbucketParseCommitStatuses(rawStatuses interface{}) ([]CommitStatus, error) {
-	results := make([]CommitStatus, 0)
+func BitbucketParseCommitStatuses(rawStatuses interface{}) ([]CommitStatusInfo, error) {
+	results := make([]CommitStatusInfo, 0)
 	statuses := struct {
 		Statuses []struct {
 			Title         string `mapstructure:"key"`
@@ -740,9 +740,9 @@ func BitbucketParseCommitStatuses(rawStatuses interface{}) ([]CommitStatus, erro
 	for _, commitStatus := range statuses.Statuses {
 		lastUpdatedAt, err := time.Parse(time.RFC3339, commitStatus.LastUpdatedAt)
 		if err != nil {
-			lastUpdatedAt = time.Time{}
+			return nil, err
 		}
-		results = append(results, CommitStatus{
+		results = append(results, CommitStatusInfo{
 			State:         CommitStatusAsStringToStatus(commitStatus.State),
 			Description:   commitStatus.Description,
 			DetailsUrl:    commitStatus.Url,

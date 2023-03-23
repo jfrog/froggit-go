@@ -665,13 +665,6 @@ func createBitbucketServerWithBodyHandler(t *testing.T, expectedURI string, resp
 		assert.NoError(t, err)
 	}
 }
-
-func createBadBitbucketServerClient(t *testing.T) VcsClient {
-	client, err := NewClientBuilder(vcsutils.BitbucketServer).ApiEndpoint("https://bad^endpoint").Build()
-	require.NoError(t, err)
-	return client
-}
-
 func TestBitbucketServer_TestGetCommitStatus(t *testing.T) {
 	ctx := context.Background()
 
@@ -680,7 +673,7 @@ func TestBitbucketServer_TestGetCommitStatus(t *testing.T) {
 		client, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, false, nil,
 			fmt.Sprintf("/rest/build-status/1.0/commits/%s", ref), createBitbucketServerHandler)
 		defer cleanUp()
-		_, err := client.GetCommitStatus(ctx, owner, repo1, ref)
+		_, err := client.GetCommitStatuses(ctx, owner, repo1, ref)
 		assert.NoError(t, err)
 	})
 
@@ -691,7 +684,7 @@ func TestBitbucketServer_TestGetCommitStatus(t *testing.T) {
 		client, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, false, response,
 			fmt.Sprintf("/rest/build-status/1.0/commits/%s", ref), createBitbucketServerHandler)
 		defer cleanUp()
-		commitStatuses, err := client.GetCommitStatus(ctx, owner, repo1, ref)
+		commitStatuses, err := client.GetCommitStatuses(ctx, owner, repo1, ref)
 		assert.NoError(t, err)
 		assert.True(t, len(commitStatuses) == 3)
 		assert.True(t, commitStatuses[0].State == InProgress)
@@ -706,9 +699,9 @@ func TestBitbucketServer_TestGetCommitStatus(t *testing.T) {
 		client, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, false, response,
 			fmt.Sprintf("/rest/build-status/1.0/commits/%s", ref), createBitbucketServerHandler)
 		defer cleanUp()
-		_, err = client.GetCommitStatus(ctx, owner, repo1, ref)
+		_, err = client.GetCommitStatuses(ctx, owner, repo1, ref)
 		assert.Error(t, err)
-		_, err = createBadBitbucketServerClient(t).GetCommitStatus(ctx, owner, repo1, ref)
+		_, err = createBadBitbucketServerClient(t).GetCommitStatuses(ctx, owner, repo1, ref)
 		assert.Error(t, err)
 	})
 
@@ -719,7 +712,13 @@ func TestBitbucketServer_TestGetCommitStatus(t *testing.T) {
 		client, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, false, response,
 			fmt.Sprintf("/rest/build-status/1.0/commits/%s", ref), createBitbucketServerHandler)
 		defer cleanUp()
-		_, err = client.GetCommitStatus(ctx, owner, repo1, ref)
+		_, err = client.GetCommitStatuses(ctx, owner, repo1, ref)
 		assert.Error(t, err)
 	})
+}
+
+func createBadBitbucketServerClient(t *testing.T) VcsClient {
+	client, err := NewClientBuilder(vcsutils.BitbucketServer).ApiEndpoint("https://bad^endpoint").Build()
+	require.NoError(t, err)
+	return client
 }

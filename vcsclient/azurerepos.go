@@ -24,7 +24,7 @@ type AzureReposClient struct {
 	logger            Log
 }
 
-func (client *AzureReposClient) GetCommitStatus(ctx context.Context, owner, repository, ref string) (status []CommitStatus, err error) {
+func (client *AzureReposClient) GetCommitStatuses(ctx context.Context, owner, repository, ref string) (status []CommitStatusInfo, err error) {
 	azureReposGitClient, err := client.buildAzureReposClient(ctx)
 	if err != nil {
 		return nil, err
@@ -38,9 +38,9 @@ func (client *AzureReposClient) GetCommitStatus(ctx context.Context, owner, repo
 	if err != nil {
 		return nil, err
 	}
-	results := make([]CommitStatus, 0)
+	results := make([]CommitStatusInfo, 0)
 	for _, singleStatus := range *resGitStatus {
-		results = append(results, CommitStatus{
+		results = append(results, CommitStatusInfo{
 			State:         CommitStatusAsStringToStatus(string(*singleStatus.State)),
 			Description:   *singleStatus.Description,
 			DetailsUrl:    *singleStatus.TargetUrl,
@@ -52,19 +52,13 @@ func (client *AzureReposClient) GetCommitStatus(ctx context.Context, owner, repo
 }
 
 func extractLastUpdateTimeFromCommitStatus(rawStatus git.GitStatus) time.Time {
-	if rawStatus.UpdatedDate == nil {
-		// Fallback to creation time
-		lastUpdateTime, err := time.Parse(time.RFC3339, rawStatus.CreationDate.String())
-		if err != nil {
-			return time.Time{}
-		}
-		return lastUpdateTime
+	if rawStatus.UpdatedDate != nil {
+		return rawStatus.UpdatedDate.Time.UTC()
 	}
-	lastUpdateTime, err := time.Parse(time.RFC3339, rawStatus.UpdatedDate.String())
-	if err != nil {
-		return time.Time{}
+	if rawStatus.CreationDate != nil {
+		return rawStatus.CreationDate.Time.UTC()
 	}
-	return lastUpdateTime
+	return time.Time{}
 }
 
 // NewAzureReposClient create a new AzureReposClient
@@ -400,23 +394,13 @@ func (client *AzureReposClient) DeleteWebhook(ctx context.Context, owner, reposi
 	return getUnsupportedInAzureError("delete webhook")
 }
 
-func CommitStatusToStringStatus(state CommitStatusState) string {
-	conversionMap := map[CommitStatusState]string{
-		0: "success",
-		1: "fail",
-		2: "error",
-		3: "pending",
-	}
-	return conversionMap[state]
-}
-
 // SetCommitStatus on Azure Repos
-func (client *AzureReposClient) SetCommitStatus(ctx context.Context, commitStatus CommitStatusState, owner, repository, ref, title, description, detailsURL string) error {
+func (client *AzureReposClient) SetCommitStatus(ctx context.Context, commitStatus CommitStatus, owner, repository, ref, title, description, detailsURL string) error {
 	azureReposGitClient, err := client.buildAzureReposClient(ctx)
 	if err != nil {
 		return err
 	}
-	statusState := git.GitStatusState(CommitStatusToStringStatus(commitStatus))
+	statusState := git.GitStatusState(mapStatusToString(commitStatus))
 	commitStatusArgs := git.CreateCommitStatusArgs{
 		GitCommitStatusToCreate: &git.GitStatus{
 			Description: &description,
@@ -524,4 +508,15 @@ func remapFields[T any](src any, tagName string) (T, error) {
 		return dst, err
 	}
 	return dst, nil
+}
+
+// mapStatusToString - Maps commit status enum to string, specific for azure.
+func mapStatusToString(status CommitStatus) string {
+	conversionMap := map[CommitStatus]string{
+		Pass:       "Succeeded",
+		Fail:       "Failed",
+		Error:      "Error",
+		InProgress: "Pending",
+	}
+	return conversionMap[status]
 }

@@ -25,8 +25,8 @@ type BitbucketCloudClient struct {
 	logger  Log
 }
 
-// GetCommitStatus for a specific branch, NOTE: currently does not support pagination !
-func (client *BitbucketCloudClient) GetCommitStatus(ctx context.Context, owner, repository, ref string) (status []CommitStatus, err error) {
+// GetCommitStatuses on Bitbucket cloud
+func (client *BitbucketCloudClient) GetCommitStatuses(ctx context.Context, owner, repository, ref string) (status []CommitStatusInfo, err error) {
 	bitbucketClient := client.buildBitbucketCloudClient(ctx)
 	commitOptions := &bitbucket.CommitsOptions{
 		Owner:    owner,
@@ -216,7 +216,7 @@ func (client *BitbucketCloudClient) DeleteWebhook(ctx context.Context, owner, re
 }
 
 // SetCommitStatus on Bitbucket cloud
-func (client *BitbucketCloudClient) SetCommitStatus(ctx context.Context, commitStatus CommitStatusState, owner, repository,
+func (client *BitbucketCloudClient) SetCommitStatus(ctx context.Context, commitStatus CommitStatus, owner, repository,
 	ref, title, description, detailsURL string) error {
 	bitbucketClient := client.buildBitbucketCloudClient(ctx)
 	commitOptions := &bitbucket.CommitsOptions{

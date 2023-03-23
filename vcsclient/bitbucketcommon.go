@@ -10,7 +10,7 @@ var errBitbucketCodeScanningNotSupported = errors.New("code scanning is not supp
 var errBitbucketDownloadFileFromRepoNotSupported = errors.New("download file from repo is currently not supported on Bitbucket")
 var errBitbucketGetRepoEnvironmentInfoNotSupported = errors.New("get repository environment info is currently not supported on Bitbucket")
 
-func getBitbucketCommitState(commitState CommitStatusState) string {
+func getBitbucketCommitState(commitState CommitStatus) string {
 	switch commitState {
 	case Pass:
 		return "SUCCESSFUL"

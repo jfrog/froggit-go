@@ -489,15 +489,14 @@ func createBadAzureReposClient(t *testing.T, response []byte) (VcsClient, func()
 
 func TestAzureReposClient_GetCommitStatus(t *testing.T) {
 	ctx := context.Background()
-
+	commitHash := "86d6919952702f9ab03bc95b45687f145a663de0"
+	expectedUri := "/_apis/ResourceAreas/commitStatus"
 	t.Run("full response", func(t *testing.T) {
-		commitHash := "86d6919952702f9ab03bc95b45687f145a663de0"
-		expectedUri := "/_apis/ResourceAreas/commitStatus"
 		response, err := os.ReadFile(filepath.Join("testdata", "azurerepos", "commits_statuses.json"))
 		assert.NoError(t, err)
 		client, cleanUp := createServerAndClient(t, vcsutils.AzureRepos, true, response, expectedUri, createAzureReposHandler)
 		defer cleanUp()
-		commitStatuses, err := client.GetCommitStatus(ctx, owner, repo1, commitHash)
+		commitStatuses, err := client.GetCommitStatuses(ctx, owner, repo1, commitHash)
 		assert.NoError(t, err)
 		assert.True(t, len(commitStatuses) == 3)
 		assert.True(t, commitStatuses[0].State == Pass)
@@ -505,11 +504,9 @@ func TestAzureReposClient_GetCommitStatus(t *testing.T) {
 		assert.True(t, commitStatuses[2].State == Fail)
 	})
 	t.Run("empty response", func(t *testing.T) {
-		commitHash := "86d6919952702f9ab03bc95b45687f145a663de0"
-		expectedUri := "/_apis/ResourceAreas/commitStatus"
 		client, cleanUp := createServerAndClient(t, vcsutils.AzureRepos, true, nil, expectedUri, createAzureReposHandler)
 		defer cleanUp()
-		_, err := client.GetCommitStatus(ctx, owner, repo1, commitHash)
+		_, err := client.GetCommitStatuses(ctx, owner, repo1, commitHash)
 		assert.NoError(t, err)
 	})
 }

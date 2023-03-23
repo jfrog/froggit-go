@@ -818,7 +818,7 @@ func TestGitHubClient_TestGetCommitStatus(t *testing.T) {
 	t.Run("empty response", func(t *testing.T) {
 		client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, nil, fmt.Sprintf("/repos/jfrog/%s/commits/%s/status", repo1, ref), createGitHubHandler)
 		defer cleanUp()
-		_, err := client.GetCommitStatus(ctx, owner, repo1, ref)
+		_, err := client.GetCommitStatuses(ctx, owner, repo1, ref)
 		assert.NoError(t, err)
 	})
 
@@ -830,7 +830,7 @@ func TestGitHubClient_TestGetCommitStatus(t *testing.T) {
 			fmt.Sprintf("/repos/jfrog/%s/commits/%s/status", repo1, ref),
 			createGitHubHandler)
 		defer cleanUp()
-		commitStatuses, err := client.GetCommitStatus(ctx, owner, repo1, ref)
+		commitStatuses, err := client.GetCommitStatuses(ctx, owner, repo1, ref)
 		assert.NoError(t, err)
 		assert.True(t, len(commitStatuses) == 4)
 		assert.True(t, commitStatuses[0].State == Pass)
@@ -847,10 +847,10 @@ func TestGitHubClient_TestGetCommitStatus(t *testing.T) {
 			fmt.Sprintf("/repos/jfrog/%s/commits/%s/status", repo1, ref),
 			createGitHubHandler)
 		defer cleanUp()
-		_, err = client.GetCommitStatus(ctx, owner, repo1, ref)
+		_, err = client.GetCommitStatuses(ctx, owner, repo1, ref)
 		assert.Error(t, err)
 
-		_, err = createBadGitHubClient(t).GetCommitStatus(ctx, owner, repo1, ref)
+		_, err = createBadGitHubClient(t).GetCommitStatuses(ctx, owner, repo1, ref)
 		assert.Error(t, err)
 	})
 }

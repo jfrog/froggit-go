@@ -1,15 +1,16 @@
-{ "values": [
+{
+  "values": [
     {
-    "uuid": "<string>",
-    "key": "<string>",
-    "refname": "<string>",
-    "url": "<string>",
-    "state": "INPROGRESS",
-    "name": "<string>",
-    "description": "this is pending",
-    "created_on": "<string>",
-    "updated_on": "<string>"
-  },
+      "uuid": "<string>",
+      "key": "<string>",
+      "refname": "<string>",
+      "url": "<string>",
+      "state": "INPROGRESS",
+      "name": "<string>",
+      "description": "this is pending",
+      "created_on": "2016-01-27T09:33:07Z",
+      "updated_on": "2016-01-27T09:33:07Z"
+    },
     {
       "uuid": "<string>",
       "key": "<string>",
@@ -18,8 +19,8 @@
       "state": "SUCCESSFUL",
       "name": "<string>",
       "description": "this is successful",
-      "created_on": "<string>",
-      "updated_on": "<string>"
+      "created_on": "2016-01-27T09:33:07Z",
+      "updated_on": "2016-01-27T09:33:07Z"
     },
     {
       "uuid": "<string>",
@@ -29,8 +30,8 @@
       "state": "FAILED",
       "name": "<string>",
       "description": "this is a failure",
-      "created_on": "<string>",
-      "updated_on": "<string>"
+      "created_on": "2016-01-27T09:33:07Z",
+      "updated_on": "2016-01-27T09:33:07Z"
     }
   ]
 }
