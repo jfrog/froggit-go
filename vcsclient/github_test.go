@@ -689,6 +689,49 @@ func TestGitHubClient_GetModifiedFiles(t *testing.T) {
 	})
 }
 
+func TestGitHubClient_TestGetCommitStatus(t *testing.T) {
+	ctx := context.Background()
+	ref := "5fbf81b31ff7a3b06bd362d1891e2f01bdb2be69"
+	t.Run("Empty response", func(t *testing.T) {
+		client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, nil, fmt.Sprintf("/repos/jfrog/%s/commits/%s/status", repo1, ref), createGitHubHandler)
+		defer cleanUp()
+		_, err := client.GetCommitStatuses(ctx, owner, repo1, ref)
+		assert.NoError(t, err)
+	})
+	t.Run("Full response", func(t *testing.T) {
+		response, err := os.ReadFile(filepath.Join("testdata", "github", "commits_statuses.json"))
+		assert.NoError(t, err)
+		client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, response,
+			fmt.Sprintf("/repos/jfrog/%s/commits/%s/status", repo1, ref),
+			createGitHubHandler)
+		defer cleanUp()
+		commitStatuses, err := client.GetCommitStatuses(ctx, owner, repo1, ref)
+		assert.NoError(t, err)
+		assert.True(t, len(commitStatuses) == 4)
+		assert.True(t, commitStatuses[0].State == Pass)
+		assert.True(t, commitStatuses[1].State == InProgress)
+		assert.True(t, commitStatuses[2].State == Fail)
+		assert.True(t, commitStatuses[3].State == Error)
+	})
+	t.Run("Bad response format", func(t *testing.T) {
+		response, err := os.ReadFile(filepath.Join("testdata", "github", "commits_statuses_bad_json.json"))
+		assert.NoError(t, err)
+		client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, response,
+			fmt.Sprintf("/repos/jfrog/%s/commits/%s/status", repo1, ref),
+			createGitHubHandler)
+		defer cleanUp()
+		_, err = client.GetCommitStatuses(ctx, owner, repo1, ref)
+		assert.Error(t, err)
+		_, err = createBadGitHubClient(t).GetCommitStatuses(ctx, owner, repo1, ref)
+		assert.Error(t, err)
+	})
+	t.Run("Bad client", func(t *testing.T) {
+		client := createBadGitHubClient(t)
+		_, err := client.GetCommitStatuses(ctx, owner, repo1, ref)
+		assert.Error(t, err)
+	})
+}
+
 func createBadGitHubClient(t *testing.T) VcsClient {
 	client, err := NewClientBuilder(vcsutils.GitHub).ApiEndpoint("https://bad^endpoint").Build()
 	require.NoError(t, err)
@@ -809,48 +852,4 @@ func createGitHubSarifUploadHandler(t *testing.T, _ string, _ []byte, _ int) htt
 			assert.Fail(t, "Unexpected Request URI", r.RequestURI)
 		}
 	}
-}
-
-func TestGitHubClient_TestGetCommitStatus(t *testing.T) {
-	ctx := context.Background()
-	ref := "5fbf81b31ff7a3b06bd362d1891e2f01bdb2be69"
-
-	t.Run("empty response", func(t *testing.T) {
-		client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, nil, fmt.Sprintf("/repos/jfrog/%s/commits/%s/status", repo1, ref), createGitHubHandler)
-		defer cleanUp()
-		_, err := client.GetCommitStatuses(ctx, owner, repo1, ref)
-		assert.NoError(t, err)
-	})
-
-	t.Run("not empty response", func(t *testing.T) {
-		ref := "5fbf81b31ff7a3b06bd362d1891e2f01bdb2be69"
-		response, err := os.ReadFile(filepath.Join("testdata", "github", "commits_statuses.json"))
-		assert.NoError(t, err)
-		client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, response,
-			fmt.Sprintf("/repos/jfrog/%s/commits/%s/status", repo1, ref),
-			createGitHubHandler)
-		defer cleanUp()
-		commitStatuses, err := client.GetCommitStatuses(ctx, owner, repo1, ref)
-		assert.NoError(t, err)
-		assert.True(t, len(commitStatuses) == 4)
-		assert.True(t, commitStatuses[0].State == Pass)
-		assert.True(t, commitStatuses[1].State == InProgress)
-		assert.True(t, commitStatuses[2].State == Fail)
-		assert.True(t, commitStatuses[3].State == Error)
-	})
-
-	t.Run("test failure cases", func(t *testing.T) {
-		ref := "5fbf81b31ff7a3b06bd362d1891e2f01bdb2be69"
-		response, err := os.ReadFile(filepath.Join("testdata", "github", "commits_statuses_bad_json.json"))
-		assert.NoError(t, err)
-		client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, response,
-			fmt.Sprintf("/repos/jfrog/%s/commits/%s/status", repo1, ref),
-			createGitHubHandler)
-		defer cleanUp()
-		_, err = client.GetCommitStatuses(ctx, owner, repo1, ref)
-		assert.Error(t, err)
-
-		_, err = createBadGitHubClient(t).GetCommitStatuses(ctx, owner, repo1, ref)
-		assert.Error(t, err)
-	})
 }

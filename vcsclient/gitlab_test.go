@@ -630,9 +630,8 @@ func createGitLabWithBodyHandler(t *testing.T, expectedURI string, response []by
 }
 func TestGitLabClient_TestGetCommitStatus(t *testing.T) {
 	ctx := context.Background()
-
-	t.Run("empty response", func(t *testing.T) {
-		ref := "5fbf81b31ff7a3b06bd362d1891e2f01bdb2be69"
+	ref := "5fbf81b31ff7a3b06bd362d1891e2f01bdb2be69"
+	t.Run("Empty response", func(t *testing.T) {
 		client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, []CommitStatusInfo{},
 			fmt.Sprintf("/api/v4/projects/%s/repository/commits/%s/statuses", repo1, ref),
 			createGitLabHandler)
@@ -640,9 +639,7 @@ func TestGitLabClient_TestGetCommitStatus(t *testing.T) {
 		_, err := client.GetCommitStatuses(ctx, owner, repo1, ref)
 		assert.NoError(t, err)
 	})
-
-	t.Run("not empty response", func(t *testing.T) {
-		ref := "5fbf81b31ff7a3b06bd362d1891e2f01bdb2be69"
+	t.Run("Valid response", func(t *testing.T) {
 		response, err := os.ReadFile(filepath.Join("testdata", "gitlab", "commits_statuses.json"))
 		assert.NoError(t, err)
 		client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, response,
@@ -656,9 +653,7 @@ func TestGitLabClient_TestGetCommitStatus(t *testing.T) {
 		assert.True(t, commitStatuses[2].State == Fail)
 		assert.NoError(t, err)
 	})
-
-	t.Run("crash response", func(t *testing.T) {
-		ref := "5fbf81b31ff7a3b06bd362d1891e2f01bdb2be69"
+	t.Run("Invalid response format", func(t *testing.T) {
 		response, err := os.ReadFile(filepath.Join("testdata", "github", "commits_statuses_bad_json.json"))
 		assert.NoError(t, err)
 		client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, response,
@@ -666,6 +661,11 @@ func TestGitLabClient_TestGetCommitStatus(t *testing.T) {
 			createGitLabHandler)
 		defer cleanUp()
 		_, err = client.GetCommitStatuses(ctx, owner, repo1, ref)
+		assert.Error(t, err)
+	})
+	t.Run("Bad client", func(t *testing.T) {
+		client := createBadGitHubClient(t)
+		_, err := client.GetCommitStatuses(ctx, owner, repo1, ref)
 		assert.Error(t, err)
 	})
 }

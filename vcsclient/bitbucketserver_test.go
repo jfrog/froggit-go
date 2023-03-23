@@ -667,18 +667,15 @@ func createBitbucketServerWithBodyHandler(t *testing.T, expectedURI string, resp
 }
 func TestBitbucketServer_TestGetCommitStatus(t *testing.T) {
 	ctx := context.Background()
-
-	t.Run("empty response", func(t *testing.T) {
-		ref := "9caf1c431fb783b669f0f909bd018b40f2ea3808"
+	ref := "9caf1c431fb783b669f0f909bd018b40f2ea3808"
+	t.Run("Empty response", func(t *testing.T) {
 		client, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, false, nil,
 			fmt.Sprintf("/rest/build-status/1.0/commits/%s", ref), createBitbucketServerHandler)
 		defer cleanUp()
 		_, err := client.GetCommitStatuses(ctx, owner, repo1, ref)
 		assert.NoError(t, err)
 	})
-
-	t.Run("full response", func(t *testing.T) {
-		ref := "9caf1c431fb783b669f0f909bd018b40f2ea3808"
+	t.Run("Valid response", func(t *testing.T) {
 		response, err := os.ReadFile(filepath.Join("testdata", "bitbucketserver", "commits_statuses.json"))
 		assert.NoError(t, err)
 		client, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, false, response,
@@ -691,28 +688,18 @@ func TestBitbucketServer_TestGetCommitStatus(t *testing.T) {
 		assert.True(t, commitStatuses[1].State == Pass)
 		assert.True(t, commitStatuses[2].State == Fail)
 	})
-
-	t.Run("failure tests", func(t *testing.T) {
-		ref := "9caf1c431fb783b669f0f909bd018b40f2ea3808"
-		response, err := os.ReadFile(filepath.Join("testdata", "github", "commits_statuses_bad_json.json"))
-		assert.NoError(t, err)
-		client, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, false, response,
-			fmt.Sprintf("/rest/build-status/1.0/commits/%s", ref), createBitbucketServerHandler)
-		defer cleanUp()
-		_, err = client.GetCommitStatuses(ctx, owner, repo1, ref)
-		assert.Error(t, err)
-		_, err = createBadBitbucketServerClient(t).GetCommitStatuses(ctx, owner, repo1, ref)
-		assert.Error(t, err)
-	})
-
-	t.Run("failure tests", func(t *testing.T) {
-		ref := "9caf1c431fb783b669f0f909bd018b40f2ea3808"
+	t.Run("Decode failure", func(t *testing.T) {
 		response, err := os.ReadFile(filepath.Join("testdata", "bitbucketserver", "commits_statuses_bad_decode.json"))
 		assert.NoError(t, err)
 		client, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, false, response,
 			fmt.Sprintf("/rest/build-status/1.0/commits/%s", ref), createBitbucketServerHandler)
 		defer cleanUp()
 		_, err = client.GetCommitStatuses(ctx, owner, repo1, ref)
+		assert.Error(t, err)
+	})
+	t.Run("bad client", func(t *testing.T) {
+		client := createBadBitbucketServerClient(t)
+		_, err := client.GetCommitStatuses(ctx, owner, repo1, ref)
 		assert.Error(t, err)
 	})
 }
