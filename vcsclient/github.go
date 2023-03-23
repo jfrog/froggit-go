@@ -208,6 +208,7 @@ func (client *GitHubClient) GetCommitStatuses(ctx context.Context, owner, reposi
 			DetailsUrl:    singleStatus.GetTargetURL(),
 			Creator:       singleStatus.GetCreator().GetName(),
 			LastUpdatedAt: singleStatus.GetUpdatedAt(),
+			CreatedAt:     singleStatus.GetCreatedAt(),
 		})
 	}
 	return results, err

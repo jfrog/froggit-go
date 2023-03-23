@@ -66,12 +66,14 @@ type RepositoryEnvironmentInfo struct {
 // Description   - Description of the commit status
 // DetailsUrl    - The URL for component status link
 // Creator       - The creator of the status
-// LastUpdatedAt - Last update timestamp fallback is creation time.
+// CreatedAt     - Date of status creation
+// LastUpdatedAt - Date of status last update time.
 type CommitStatusInfo struct {
 	State         CommitStatus
 	Description   string
 	DetailsUrl    string
 	Creator       string
+	CreatedAt     time.Time
 	LastUpdatedAt time.Time
 }
 

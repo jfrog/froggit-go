@@ -23,16 +23,11 @@ type GitLabClient struct {
 	logger   Log
 }
 
-// extractLastUpdateTime from gitlab commit status with fallback to creation time
-func extractLastUpdateTime(singleStatus *gitlab.CommitStatus) (lastUpdateTime time.Time) {
-	if singleStatus.FinishedAt != nil {
-		lastUpdateTime = singleStatus.FinishedAt.UTC()
-	} else if singleStatus.CreatedAt != nil {
-		lastUpdateTime = singleStatus.CreatedAt.UTC()
-	} else {
-		lastUpdateTime = time.Time{}
+func extractTimeWithFallback(timeObject *time.Time) time.Time {
+	if timeObject == nil {
+		return time.Time{}
 	}
-	return
+	return timeObject.UTC()
 }
 
 // NewGitLabClient create a new GitLabClient
@@ -189,7 +184,7 @@ func (client *GitLabClient) SetCommitStatus(ctx context.Context, commitStatus Co
 	return err
 }
 
-// GetCommitStatus on GitLab
+// GetCommitStatuses on GitLab
 func (client *GitLabClient) GetCommitStatuses(ctx context.Context, owner, repository, ref string) (status []CommitStatusInfo, err error) {
 	statuses, _, err := client.glClient.Commits.GetCommitStatuses(repository, ref, nil, gitlab.WithContext(ctx))
 	if err != nil {
@@ -202,7 +197,8 @@ func (client *GitLabClient) GetCommitStatuses(ctx context.Context, owner, reposi
 			Description:   singleStatus.Description,
 			DetailsUrl:    singleStatus.TargetURL,
 			Creator:       singleStatus.Author.Name,
-			LastUpdatedAt: extractLastUpdateTime(singleStatus),
+			LastUpdatedAt: extractTimeWithFallback(singleStatus.FinishedAt),
+			CreatedAt:     extractTimeWithFallback(singleStatus.CreatedAt),
 		})
 	}
 	return results, nil

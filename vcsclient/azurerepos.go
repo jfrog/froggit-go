@@ -45,20 +45,11 @@ func (client *AzureReposClient) GetCommitStatuses(ctx context.Context, owner, re
 			Description:   *singleStatus.Description,
 			DetailsUrl:    *singleStatus.TargetUrl,
 			Creator:       *singleStatus.CreatedBy.DisplayName,
-			LastUpdatedAt: extractLastUpdateTimeFromCommitStatus(singleStatus),
+			LastUpdatedAt: extractTimeFromAzuredevopsTime(singleStatus.UpdatedDate),
+			CreatedAt:     extractTimeFromAzuredevopsTime(singleStatus.CreationDate),
 		})
 	}
 	return results, err
-}
-
-func extractLastUpdateTimeFromCommitStatus(rawStatus git.GitStatus) time.Time {
-	if rawStatus.UpdatedDate != nil {
-		return rawStatus.UpdatedDate.Time.UTC()
-	}
-	if rawStatus.CreationDate != nil {
-		return rawStatus.CreationDate.Time.UTC()
-	}
-	return time.Time{}
 }
 
 // NewAzureReposClient create a new AzureReposClient
@@ -519,4 +510,10 @@ func mapStatusToString(status CommitStatus) string {
 		InProgress: "Pending",
 	}
 	return conversionMap[status]
+}
+func extractTimeFromAzuredevopsTime(rawStatus *azuredevops.Time) time.Time {
+	if rawStatus == nil {
+		return time.Time{}
+	}
+	return rawStatus.Time.UTC()
 }

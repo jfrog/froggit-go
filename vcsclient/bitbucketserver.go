@@ -720,7 +720,7 @@ func getBitbucketServerRepositoryVisibility(public bool) RepositoryVisibility {
 }
 
 // BitbucketParseCommitStatuses parse raw response into CommitStatusInfo slice
-// The response is the same from cloud to server
+// The response is the same for BitBucket cloud and server
 func BitbucketParseCommitStatuses(rawStatuses interface{}) ([]CommitStatusInfo, error) {
 	results := make([]CommitStatusInfo, 0)
 	statuses := struct {
@@ -731,6 +731,7 @@ func BitbucketParseCommitStatuses(rawStatuses interface{}) ([]CommitStatusInfo, 
 			Description   string `mapstructure:"description"`
 			Creator       string `mapstructure:"name"`
 			LastUpdatedAt string `mapstructure:"updated_on"`
+			CreatedAt     string `mapstructure:"created_at"`
 		} `mapstructure:"values"`
 	}{}
 	err := mapstructure.Decode(rawStatuses, &statuses)
@@ -742,12 +743,17 @@ func BitbucketParseCommitStatuses(rawStatuses interface{}) ([]CommitStatusInfo, 
 		if err != nil {
 			return nil, err
 		}
+		createdAt, err := time.Parse(time.RFC3339, commitStatus.LastUpdatedAt)
+		if err != nil {
+			return nil, err
+		}
 		results = append(results, CommitStatusInfo{
 			State:         CommitStatusAsStringToStatus(commitStatus.State),
 			Description:   commitStatus.Description,
 			DetailsUrl:    commitStatus.Url,
 			Creator:       commitStatus.Creator,
 			LastUpdatedAt: lastUpdatedAt,
+			CreatedAt:     createdAt,
 		})
 	}
 	return results, err
