@@ -303,6 +303,7 @@ owner := "jfrog"
 repository := "jfrog-cli"
 // Commit tag on GitHub and GitLab, commit on Bitbucket
 ref := "5c05522fecf8d93a11752ff255c99fcb0f0557cd"
+
 commitStatuses, err := client.GetCommitStatus(ctx, owner, repository, ref)
 ```
 

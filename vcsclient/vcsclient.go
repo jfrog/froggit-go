@@ -327,3 +327,10 @@ func CommitStatusAsStringToStatus(rawStatus string) CommitStatus {
 		return Error
 	}
 }
+
+func extractTimeWithFallback(timeObject *time.Time) time.Time {
+	if timeObject == nil {
+		return time.Time{}
+	}
+	return timeObject.UTC()
+}

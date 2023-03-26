@@ -266,11 +266,7 @@ func (client *BitbucketServerClient) GetCommitStatuses(ctx context.Context, owne
 	if err != nil {
 		return nil, err
 	}
-	results, err := BitbucketParseCommitStatuses(response.Values)
-	if err != nil {
-		return nil, err
-	}
-	return results, err
+	return bitbucketParseCommitStatuses(response.Values)
 }
 
 // DownloadRepository on Bitbucket server
@@ -717,44 +713,4 @@ func getBitbucketServerRepositoryVisibility(public bool) RepositoryVisibility {
 		return Public
 	}
 	return Private
-}
-
-// BitbucketParseCommitStatuses parse raw response into CommitStatusInfo slice
-// The response is the same for BitBucket cloud and server
-func BitbucketParseCommitStatuses(rawStatuses interface{}) ([]CommitStatusInfo, error) {
-	results := make([]CommitStatusInfo, 0)
-	statuses := struct {
-		Statuses []struct {
-			Title         string `mapstructure:"key"`
-			Url           string `mapstructure:"url"`
-			State         string `mapstructure:"state"`
-			Description   string `mapstructure:"description"`
-			Creator       string `mapstructure:"name"`
-			LastUpdatedAt string `mapstructure:"updated_on"`
-			CreatedAt     string `mapstructure:"created_at"`
-		} `mapstructure:"values"`
-	}{}
-	err := mapstructure.Decode(rawStatuses, &statuses)
-	if err != nil {
-		return nil, err
-	}
-	for _, commitStatus := range statuses.Statuses {
-		lastUpdatedAt, err := time.Parse(time.RFC3339, commitStatus.LastUpdatedAt)
-		if err != nil {
-			return nil, err
-		}
-		createdAt, err := time.Parse(time.RFC3339, commitStatus.LastUpdatedAt)
-		if err != nil {
-			return nil, err
-		}
-		results = append(results, CommitStatusInfo{
-			State:         CommitStatusAsStringToStatus(commitStatus.State),
-			Description:   commitStatus.Description,
-			DetailsUrl:    commitStatus.Url,
-			Creator:       commitStatus.Creator,
-			LastUpdatedAt: lastUpdatedAt,
-			CreatedAt:     createdAt,
-		})
-	}
-	return results, err
 }

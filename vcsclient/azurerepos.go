@@ -24,34 +24,6 @@ type AzureReposClient struct {
 	logger            Log
 }
 
-func (client *AzureReposClient) GetCommitStatuses(ctx context.Context, owner, repository, ref string) (status []CommitStatusInfo, err error) {
-	azureReposGitClient, err := client.buildAzureReposClient(ctx)
-	if err != nil {
-		return nil, err
-	}
-	commitStatusArgs := git.GetStatusesArgs{
-		CommitId:     &ref,
-		RepositoryId: &repository,
-		Project:      &repository,
-	}
-	resGitStatus, err := azureReposGitClient.GetStatuses(ctx, commitStatusArgs)
-	if err != nil {
-		return nil, err
-	}
-	results := make([]CommitStatusInfo, 0)
-	for _, singleStatus := range *resGitStatus {
-		results = append(results, CommitStatusInfo{
-			State:         CommitStatusAsStringToStatus(string(*singleStatus.State)),
-			Description:   *singleStatus.Description,
-			DetailsUrl:    *singleStatus.TargetUrl,
-			Creator:       *singleStatus.CreatedBy.DisplayName,
-			LastUpdatedAt: extractTimeFromAzuredevopsTime(singleStatus.UpdatedDate),
-			CreatedAt:     extractTimeFromAzuredevopsTime(singleStatus.CreationDate),
-		})
-	}
-	return results, err
-}
-
 // NewAzureReposClient create a new AzureReposClient
 func NewAzureReposClient(vcsInfo VcsInfo, logger Log) (*AzureReposClient, error) {
 	client := &AzureReposClient{vcsInfo: vcsInfo, logger: logger}
@@ -410,6 +382,35 @@ func (client *AzureReposClient) SetCommitStatus(ctx context.Context, commitStatu
 	return err
 }
 
+// GetCommitStatuses on Azure Repos
+func (client *AzureReposClient) GetCommitStatuses(ctx context.Context, owner, repository, ref string) (status []CommitStatusInfo, err error) {
+	azureReposGitClient, err := client.buildAzureReposClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+	commitStatusArgs := git.GetStatusesArgs{
+		CommitId:     &ref,
+		RepositoryId: &repository,
+		Project:      &repository,
+	}
+	resGitStatus, err := azureReposGitClient.GetStatuses(ctx, commitStatusArgs)
+	if err != nil {
+		return nil, err
+	}
+	results := make([]CommitStatusInfo, 0)
+	for _, singleStatus := range *resGitStatus {
+		results = append(results, CommitStatusInfo{
+			State:         CommitStatusAsStringToStatus(string(*singleStatus.State)),
+			Description:   *singleStatus.Description,
+			DetailsUrl:    *singleStatus.TargetUrl,
+			Creator:       *singleStatus.CreatedBy.DisplayName,
+			LastUpdatedAt: extractTimeFromAzuredevopsTime(singleStatus.UpdatedDate),
+			CreatedAt:     extractTimeFromAzuredevopsTime(singleStatus.CreationDate),
+		})
+	}
+	return results, err
+}
+
 // DownloadFileFromRepo on Azure Repos
 func (client *AzureReposClient) DownloadFileFromRepo(ctx context.Context, owner, repository, branch, path string) ([]byte, int, error) {
 	return nil, 0, getUnsupportedInAzureError("download file from repo")
@@ -501,7 +502,7 @@ func remapFields[T any](src any, tagName string) (T, error) {
 	return dst, nil
 }
 
-// mapStatusToString - Maps commit status enum to string, specific for azure.
+// mapStatusToString maps commit status enum to string, specific for azure.
 func mapStatusToString(status CommitStatus) string {
 	conversionMap := map[CommitStatus]string{
 		Pass:       "Succeeded",

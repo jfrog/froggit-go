@@ -13,7 +13,6 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"time"
 )
 
 // GitLabClient API version 4
@@ -21,13 +20,6 @@ type GitLabClient struct {
 	glClient *gitlab.Client
 	vcsInfo  VcsInfo
 	logger   Log
-}
-
-func extractTimeWithFallback(timeObject *time.Time) time.Time {
-	if timeObject == nil {
-		return time.Time{}
-	}
-	return timeObject.UTC()
 }
 
 // NewGitLabClient create a new GitLabClient
