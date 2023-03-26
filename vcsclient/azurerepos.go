@@ -512,9 +512,10 @@ func mapStatusToString(status CommitStatus) string {
 	}
 	return conversionMap[status]
 }
+
 func extractTimeFromAzuredevopsTime(rawStatus *azuredevops.Time) time.Time {
 	if rawStatus == nil {
 		return time.Time{}
 	}
-	return rawStatus.Time.UTC()
+	return extractTimeWithFallback(&rawStatus.Time)
 }
