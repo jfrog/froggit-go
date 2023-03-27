@@ -215,6 +215,25 @@ func (client *BitbucketCloudClient) SetCommitStatus(ctx context.Context, commitS
 	return err
 }
 
+// GetCommitStatuses on Bitbucket cloud
+func (client *BitbucketCloudClient) GetCommitStatuses(ctx context.Context, owner, repository, ref string) (status []CommitStatusInfo, err error) {
+	bitbucketClient := client.buildBitbucketCloudClient(ctx)
+	commitOptions := &bitbucket.CommitsOptions{
+		Owner:    owner,
+		RepoSlug: repository,
+		Revision: ref,
+	}
+	rawStatuses, err := bitbucketClient.Repositories.Commits.GetCommitStatuses(commitOptions)
+	if err != nil {
+		return nil, err
+	}
+	results, err := bitbucketParseCommitStatuses(rawStatuses)
+	if err != nil {
+		return nil, err
+	}
+	return results, err
+}
+
 // DownloadRepository on Bitbucket cloud
 func (client *BitbucketCloudClient) DownloadRepository(ctx context.Context, owner, repository, branch,
 	localPath string) error {

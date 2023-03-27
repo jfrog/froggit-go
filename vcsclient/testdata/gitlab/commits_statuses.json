@@ -1,0 +1,65 @@
+[
+   {
+      "status" : "success",
+      "created_at" : "2016-01-19T08:40:25.934Z",
+      "started_at" : null,
+      "name" : "bundler:audit",
+      "allow_failure" : true,
+      "author" : {
+         "username" : "janedoe",
+         "state" : "active",
+         "web_url" : "https://gitlab.example.com/janedoe",
+         "avatar_url" : "https://gitlab.example.com/uploads/user/avatar/28/jane-doe-400-400.png",
+         "id" : 28,
+         "name" : "Jane Doe"
+      },
+      "description" : "this is my description",
+      "sha" : "18f3e63d05582537db6d183d9d557be09e1f90c8",
+      "target_url" : "https://gitlab.example.com/janedoe/gitlab-foss/builds/91",
+      "finished_at" : null,
+      "id" : 91,
+      "ref" : "master"
+   },
+   {
+      "started_at" : null,
+      "name" : "test",
+      "allow_failure" : false,
+      "status" : "pending",
+      "created_at" : "2016-01-19T08:40:25.832Z",
+      "target_url" : "https://gitlab.example.com/janedoe/gitlab-foss/builds/90",
+      "id" : 90,
+      "finished_at" : null,
+      "ref" : "master",
+      "sha" : "18f3e63d05582537db6d183d9d557be09e1f90c8",
+      "author" : {
+         "id" : 28,
+         "name" : "Jane Doe",
+         "username" : "janedoe",
+         "web_url" : "https://gitlab.example.com/janedoe",
+         "state" : "active",
+         "avatar_url" : "https://gitlab.example.com/uploads/user/avatar/28/jane-doe-400-400.png"
+      },
+      "description" : null
+   },
+   {
+      "started_at" : null,
+      "name" : "test",
+      "allow_failure" : false,
+      "status" : "failure",
+      "created_at" : "2016-01-19T08:40:25.832Z",
+      "target_url" : "https://gitlab.example.com/janedoe/gitlab-foss/builds/90",
+      "id" : 90,
+      "finished_at" : null,
+      "ref" : "master",
+      "sha" : "18f3e63d05582537db6d183d9d557be09e1f90c8",
+      "author" : {
+         "id" : 28,
+         "name" : "Jane Doe",
+         "username" : "janedoe",
+         "web_url" : "https://gitlab.example.com/janedoe",
+         "state" : "active",
+         "avatar_url" : "https://gitlab.example.com/uploads/user/avatar/28/jane-doe-400-400.png"
+      },
+      "description" : null
+   }
+]

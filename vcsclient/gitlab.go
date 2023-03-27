@@ -6,14 +6,13 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"github.com/jfrog/froggit-go/vcsutils"
 	"github.com/jfrog/gofrog/datastructures"
+	"github.com/xanzy/go-gitlab"
 	"net/http"
 	"sort"
 	"strconv"
 	"strings"
-
-	"github.com/jfrog/froggit-go/vcsutils"
-	"github.com/xanzy/go-gitlab"
 )
 
 // GitLabClient API version 4
@@ -175,6 +174,26 @@ func (client *GitLabClient) SetCommitStatus(ctx context.Context, commitStatus Co
 	_, _, err := client.glClient.Commits.SetCommitStatus(getProjectID(owner, repository), ref, options,
 		gitlab.WithContext(ctx))
 	return err
+}
+
+// GetCommitStatuses on GitLab
+func (client *GitLabClient) GetCommitStatuses(ctx context.Context, owner, repository, ref string) (status []CommitStatusInfo, err error) {
+	statuses, _, err := client.glClient.Commits.GetCommitStatuses(repository, ref, nil, gitlab.WithContext(ctx))
+	if err != nil {
+		return nil, err
+	}
+	results := make([]CommitStatusInfo, 0)
+	for _, singleStatus := range statuses {
+		results = append(results, CommitStatusInfo{
+			State:         CommitStatusAsStringToStatus(singleStatus.Status),
+			Description:   singleStatus.Description,
+			DetailsUrl:    singleStatus.TargetURL,
+			Creator:       singleStatus.Author.Name,
+			LastUpdatedAt: extractTimeWithFallback(singleStatus.FinishedAt),
+			CreatedAt:     extractTimeWithFallback(singleStatus.CreatedAt),
+		})
+	}
+	return results, nil
 }
 
 // DownloadRepository on GitLab

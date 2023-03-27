@@ -1,0 +1,70 @@
+{
+  "values": [
+    {
+      "links": {
+        "self": {
+          "href": "<string>",
+          "name": "<string>"
+        },
+        "commit": {
+          "href": "<string>",
+          "name": "<string>"
+        }
+      },
+      "uuid": "<string>",
+      "key": "<string>",
+      "refname": "<string>",
+      "url": "<string>",
+      "state": "FAILED",
+      "name": "<string>",
+      "description": "<string>",
+      "created_on": "<string>",
+      "updated_on": "<string>"
+    },
+    {
+      "links": {
+        "self": {
+          "href": "<string>",
+          "name": "<string>"
+        },
+        "commit": {
+          "href": "<string>",
+          "name": "<string>"
+        }
+      },
+      "uuid": "<string>",
+      "key": "<string>",
+      "refname": "<string>",
+      "url": "<string>",
+      "state": "PENDING",
+      "name": "<string>",
+      "description": "<string>",
+      "created_on": "<string>",
+      "updated_on": "<string>"
+    },
+    {
+      "links": {
+        "self": {
+          "href": "<string>",
+          "name": "<string>"
+        },
+        "commit": {
+          "href": "<string>",
+          "name": "<string>"
+        }
+      },
+      "uuid": "<string>",
+      "key": "<string>",
+      "refname": "<string>",
+      "url": "<string>",
+      "state": "SUCCESS",
+      "name": "<string>",
+      "description": "<string>",
+      "created_on": "<string>",
+      "updated_on": "<string>"
+    }
+  ],
+  "page": 1,
+  "pagelen": 10,
+  "size": 2
+}

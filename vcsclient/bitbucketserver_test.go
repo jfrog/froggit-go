@@ -665,6 +665,44 @@ func createBitbucketServerWithBodyHandler(t *testing.T, expectedURI string, resp
 		assert.NoError(t, err)
 	}
 }
+func TestBitbucketServer_TestGetCommitStatus(t *testing.T) {
+	ctx := context.Background()
+	ref := "9caf1c431fb783b669f0f909bd018b40f2ea3808"
+	t.Run("Empty response", func(t *testing.T) {
+		client, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, false, nil,
+			fmt.Sprintf("/rest/build-status/1.0/commits/%s", ref), createBitbucketServerHandler)
+		defer cleanUp()
+		_, err := client.GetCommitStatuses(ctx, owner, repo1, ref)
+		assert.NoError(t, err)
+	})
+	t.Run("Valid response", func(t *testing.T) {
+		response, err := os.ReadFile(filepath.Join("testdata", "bitbucketserver", "commits_statuses.json"))
+		assert.NoError(t, err)
+		client, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, false, response,
+			fmt.Sprintf("/rest/build-status/1.0/commits/%s", ref), createBitbucketServerHandler)
+		defer cleanUp()
+		commitStatuses, err := client.GetCommitStatuses(ctx, owner, repo1, ref)
+		assert.NoError(t, err)
+		assert.True(t, len(commitStatuses) == 3)
+		assert.True(t, commitStatuses[0].State == InProgress)
+		assert.True(t, commitStatuses[1].State == Pass)
+		assert.True(t, commitStatuses[2].State == Fail)
+	})
+	t.Run("Decode failure", func(t *testing.T) {
+		response, err := os.ReadFile(filepath.Join("testdata", "bitbucketserver", "commits_statuses_bad_decode.json"))
+		assert.NoError(t, err)
+		client, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, false, response,
+			fmt.Sprintf("/rest/build-status/1.0/commits/%s", ref), createBitbucketServerHandler)
+		defer cleanUp()
+		_, err = client.GetCommitStatuses(ctx, owner, repo1, ref)
+		assert.Error(t, err)
+	})
+	t.Run("bad client", func(t *testing.T) {
+		client := createBadBitbucketServerClient(t)
+		_, err := client.GetCommitStatuses(ctx, owner, repo1, ref)
+		assert.Error(t, err)
+	})
+}
 
 func createBadBitbucketServerClient(t *testing.T) VcsClient {
 	client, err := NewClientBuilder(vcsutils.BitbucketServer).ApiEndpoint("https://bad^endpoint").Build()

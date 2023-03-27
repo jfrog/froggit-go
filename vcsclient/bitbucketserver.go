@@ -256,6 +256,19 @@ func (client *BitbucketServerClient) SetCommitStatus(ctx context.Context, commit
 	return err
 }
 
+// GetCommitStatuses on Bitbucket server
+func (client *BitbucketServerClient) GetCommitStatuses(ctx context.Context, owner, repository, ref string) (status []CommitStatusInfo, err error) {
+	bitbucketClient, err := client.buildBitbucketClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+	response, err := bitbucketClient.GetCommitStatus(ref)
+	if err != nil {
+		return nil, err
+	}
+	return bitbucketParseCommitStatuses(response.Values)
+}
+
 // DownloadRepository on Bitbucket server
 func (client *BitbucketServerClient) DownloadRepository(ctx context.Context, owner, repository, branch, localPath string) error {
 	bitbucketClient, err := client.buildBitbucketClient(ctx)

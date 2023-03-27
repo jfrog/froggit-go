@@ -4,18 +4,17 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/jfrog/froggit-go/vcsutils"
+	"github.com/jfrog/gofrog/datastructures"
+	"github.com/microsoft/azure-devops-go-api/azuredevops"
+	"github.com/microsoft/azure-devops-go-api/azuredevops/git"
+	"github.com/mitchellh/mapstructure"
 	"io"
 	"net/http"
 	"os"
 	"sort"
 	"strings"
-
-	"github.com/jfrog/gofrog/datastructures"
-	"github.com/microsoft/azure-devops-go-api/azuredevops"
-	"github.com/microsoft/azure-devops-go-api/azuredevops/git"
-	"github.com/mitchellh/mapstructure"
-
-	"github.com/jfrog/froggit-go/vcsutils"
+	"time"
 )
 
 // Azure Devops API version 6
@@ -360,7 +359,56 @@ func (client *AzureReposClient) DeleteWebhook(ctx context.Context, owner, reposi
 
 // SetCommitStatus on Azure Repos
 func (client *AzureReposClient) SetCommitStatus(ctx context.Context, commitStatus CommitStatus, owner, repository, ref, title, description, detailsURL string) error {
-	return getUnsupportedInAzureError("set commit status")
+	azureReposGitClient, err := client.buildAzureReposClient(ctx)
+	if err != nil {
+		return err
+	}
+	statusState := git.GitStatusState(mapStatusToString(commitStatus))
+	commitStatusArgs := git.CreateCommitStatusArgs{
+		GitCommitStatusToCreate: &git.GitStatus{
+			Description: &description,
+			State:       &statusState,
+			TargetUrl:   &detailsURL,
+			Context: &git.GitStatusContext{
+				Name:  &owner,
+				Genre: &title,
+			},
+		},
+		CommitId:     &ref,
+		RepositoryId: &repository,
+		Project:      &repository,
+	}
+	_, err = azureReposGitClient.CreateCommitStatus(ctx, commitStatusArgs)
+	return err
+}
+
+// GetCommitStatuses on Azure Repos
+func (client *AzureReposClient) GetCommitStatuses(ctx context.Context, owner, repository, ref string) (status []CommitStatusInfo, err error) {
+	azureReposGitClient, err := client.buildAzureReposClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+	commitStatusArgs := git.GetStatusesArgs{
+		CommitId:     &ref,
+		RepositoryId: &repository,
+		Project:      &repository,
+	}
+	resGitStatus, err := azureReposGitClient.GetStatuses(ctx, commitStatusArgs)
+	if err != nil {
+		return nil, err
+	}
+	results := make([]CommitStatusInfo, 0)
+	for _, singleStatus := range *resGitStatus {
+		results = append(results, CommitStatusInfo{
+			State:         CommitStatusAsStringToStatus(string(*singleStatus.State)),
+			Description:   *singleStatus.Description,
+			DetailsUrl:    *singleStatus.TargetUrl,
+			Creator:       *singleStatus.CreatedBy.DisplayName,
+			LastUpdatedAt: extractTimeFromAzuredevopsTime(singleStatus.UpdatedDate),
+			CreatedAt:     extractTimeFromAzuredevopsTime(singleStatus.CreationDate),
+		})
+	}
+	return results, err
 }
 
 // DownloadFileFromRepo on Azure Repos
@@ -452,4 +500,22 @@ func remapFields[T any](src any, tagName string) (T, error) {
 		return dst, err
 	}
 	return dst, nil
+}
+
+// mapStatusToString maps commit status enum to string, specific for azure.
+func mapStatusToString(status CommitStatus) string {
+	conversionMap := map[CommitStatus]string{
+		Pass:       "Succeeded",
+		Fail:       "Failed",
+		Error:      "Error",
+		InProgress: "Pending",
+	}
+	return conversionMap[status]
+}
+
+func extractTimeFromAzuredevopsTime(rawStatus *azuredevops.Time) time.Time {
+	if rawStatus == nil {
+		return time.Time{}
+	}
+	return extractTimeWithFallback(&rawStatus.Time)
 }

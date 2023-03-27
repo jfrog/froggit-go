@@ -61,6 +61,22 @@ type RepositoryEnvironmentInfo struct {
 	Reviewers []string
 }
 
+// CommitStatusInfo status which is then reflected in pull requests involving those commits
+// State         - One of success, pending, failure, or error
+// Description   - Description of the commit status
+// DetailsUrl    - The URL for component status link
+// Creator       - The creator of the status
+// CreatedAt     - Date of status creation
+// LastUpdatedAt - Date of status last update time.
+type CommitStatusInfo struct {
+	State         CommitStatus
+	Description   string
+	DetailsUrl    string
+	Creator       string
+	CreatedAt     time.Time
+	LastUpdatedAt time.Time
+}
+
 // VcsClient is a base class of all Vcs clients - GitHub, GitLab, Bitbucket server and cloud clients
 type VcsClient interface {
 	// TestConnection Returns nil if connection and authorization established successfully
@@ -108,6 +124,12 @@ type VcsClient interface {
 	// description  - Description of the commit status
 	// detailsUrl   - The URL for component status link
 	SetCommitStatus(ctx context.Context, commitStatus CommitStatus, owner, repository, ref, title, description, detailsURL string) error
+
+	// GetCommitStatuses Gets all statuses for a specific commit
+	// owner        - User or organization
+	// repository   - VCS repository name
+	// ref          - SHA, a branch name, or a tag name.
+	GetCommitStatuses(ctx context.Context, owner, repository, ref string) (status []CommitStatusInfo, err error)
 
 	// DownloadRepository Downloads and extracts a VCS repository
 	// owner      - User or organization
@@ -289,4 +311,26 @@ func validateParametersNotBlank(paramNameValueMap map[string]string) error {
 		return fmt.Errorf("validation failed: %s", strings.Join(errorMessages, ", "))
 	}
 	return nil
+}
+
+// CommitStatusAsStringToStatus maps status as string to CommitStatus
+// Handles all the different statuses for every VCS provider
+func CommitStatusAsStringToStatus(rawStatus string) CommitStatus {
+	switch strings.ToLower(rawStatus) {
+	case "success", "succeeded", "successful":
+		return Pass
+	case "fail", "failure", "failed":
+		return Fail
+	case "pending", "inprogress":
+		return InProgress
+	default:
+		return Error
+	}
+}
+
+func extractTimeWithFallback(timeObject *time.Time) time.Time {
+	if timeObject == nil {
+		return time.Time{}
+	}
+	return timeObject.UTC()
 }

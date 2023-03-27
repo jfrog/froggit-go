@@ -190,6 +190,30 @@ func (client *GitHubClient) SetCommitStatus(ctx context.Context, commitStatus Co
 	return err
 }
 
+// GetCommitStatuses on GitHub
+func (client *GitHubClient) GetCommitStatuses(ctx context.Context, owner, repository, ref string) (status []CommitStatusInfo, err error) {
+	ghClient, err := client.buildGithubClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+	statuses, _, err := ghClient.Repositories.GetCombinedStatus(ctx, owner, repository, ref, nil)
+	if err != nil {
+		return nil, err
+	}
+	results := make([]CommitStatusInfo, 0)
+	for _, singleStatus := range statuses.Statuses {
+		results = append(results, CommitStatusInfo{
+			State:         CommitStatusAsStringToStatus(*singleStatus.State),
+			Description:   singleStatus.GetDescription(),
+			DetailsUrl:    singleStatus.GetTargetURL(),
+			Creator:       singleStatus.GetCreator().GetName(),
+			LastUpdatedAt: singleStatus.GetUpdatedAt(),
+			CreatedAt:     singleStatus.GetCreatedAt(),
+		})
+	}
+	return results, err
+}
+
 // DownloadRepository on GitHub
 func (client *GitHubClient) DownloadRepository(ctx context.Context, owner, repository, branch, localPath string) error {
 	ghClient, err := client.buildGithubClient(ctx)
