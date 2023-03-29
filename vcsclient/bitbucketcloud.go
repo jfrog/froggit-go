@@ -313,11 +313,11 @@ func (client *BitbucketCloudClient) ListOpenPullRequests(ctx context.Context, ow
 	if err != nil {
 		return
 	}
-	parsedPullRequests, err := extractPullRequestsFromResponse(pullRequests)
+	parsedPullRequests, err := vcsutils.RemapFields[pullRequestsResponse](pullRequests, "json")
 	if err != nil {
 		return
 	}
-	return mapBitbucketCloudPullRequestToPullRequestInfo(parsedPullRequests), nil
+	return mapBitbucketCloudPullRequestToPullRequestInfo(&parsedPullRequests), nil
 }
 
 // AddPullRequestComment on Bitbucket cloud
@@ -353,11 +353,11 @@ func (client *BitbucketCloudClient) ListPullRequestComments(ctx context.Context,
 	if err != nil {
 		return
 	}
-	parsedComments, err := extractCommentsFromResponse(comments)
+	parsedComments, err := vcsutils.RemapFields[commentsResponse](comments, "json")
 	if err != nil {
 		return
 	}
-	return mapBitbucketCloudCommentToCommentInfo(parsedComments), nil
+	return mapBitbucketCloudCommentToCommentInfo(&parsedComments), nil
 }
 
 // GetLatestCommit on Bitbucket cloud
@@ -381,7 +381,7 @@ func (client *BitbucketCloudClient) GetLatestCommit(ctx context.Context, owner, 
 	if err != nil {
 		return CommitInfo{}, err
 	}
-	parsedCommits, err := extractCommitFromResponse(commits)
+	parsedCommits, err := vcsutils.RemapFields[commitResponse](commits, "json")
 	if err != nil {
 		return CommitInfo{}, err
 	}
@@ -450,7 +450,7 @@ func (client *BitbucketCloudClient) GetCommitBySha(ctx context.Context, owner, r
 	if err != nil {
 		return CommitInfo{}, err
 	}
-	parsedCommit, err := extractCommitDetailsFromResponse(commit)
+	parsedCommit, err := vcsutils.RemapFields[commitDetails](commit, "json")
 	if err != nil {
 		return CommitInfo{}, err
 	}
@@ -544,39 +544,6 @@ func (client *BitbucketCloudClient) GetModifiedFiles(ctx context.Context, owner,
 	fileNamesList := fileNamesSet.ToSlice()
 	sort.Strings(fileNamesList)
 	return fileNamesList, nil
-}
-
-func extractCommitFromResponse(commits interface{}) (*commitResponse, error) {
-	var res commitResponse
-	err := extractStructFromResponse(commits, &res)
-	return &res, err
-}
-
-func extractCommitDetailsFromResponse(commit interface{}) (commitDetails, error) {
-	var res commitDetails
-	err := extractStructFromResponse(commit, &res)
-	return res, err
-}
-
-func extractCommentsFromResponse(comments interface{}) (*commentsResponse, error) {
-	var res commentsResponse
-	err := extractStructFromResponse(comments, &res)
-	return &res, err
-}
-
-func extractPullRequestsFromResponse(pullRequests interface{}) (*pullRequestsResponse, error) {
-	var res pullRequestsResponse
-	err := extractStructFromResponse(pullRequests, &res)
-	return &res, err
-}
-
-func extractStructFromResponse(response, aStructPointer interface{}) error {
-	b, err := json.Marshal(response)
-	if err != nil {
-		return err
-	}
-	err = json.Unmarshal(b, aStructPointer)
-	return err
 }
 
 type pullRequestsResponse struct {

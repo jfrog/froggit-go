@@ -692,7 +692,7 @@ func (client *BitbucketServerClient) GetModifiedFiles(ctx context.Context, owner
 		return nil, err
 	}
 
-	dst, err := remapFields[diffPayload](resp.Values, "")
+	dst, err := vcsutils.RemapFields[diffPayload](resp.Values, "")
 	if err != nil {
 		return nil, err
 	}

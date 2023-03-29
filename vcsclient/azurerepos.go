@@ -8,7 +8,6 @@ import (
 	"github.com/jfrog/gofrog/datastructures"
 	"github.com/microsoft/azure-devops-go-api/azuredevops"
 	"github.com/microsoft/azure-devops-go-api/azuredevops/git"
-	"github.com/mitchellh/mapstructure"
 	"io"
 	"net/http"
 	"os"
@@ -461,12 +460,12 @@ func (client *AzureReposClient) GetModifiedFiles(ctx context.Context, _, reposit
 		}
 
 		for _, anyChange := range changes {
-			change, err := remapFields[git.GitChange](anyChange, "json")
+			change, err := vcsutils.RemapFields[git.GitChange](anyChange, "json")
 			if err != nil {
 				return nil, err
 			}
 
-			changedItem, err := remapFields[git.GitItem](change.Item, "json")
+			changedItem, err := vcsutils.RemapFields[git.GitItem](change.Item, "json")
 			if err != nil {
 				return nil, err
 			}
@@ -485,21 +484,6 @@ func (client *AzureReposClient) GetModifiedFiles(ctx context.Context, _, reposit
 	fileNamesList := fileNamesSet.ToSlice()
 	sort.Strings(fileNamesList)
 	return fileNamesList, nil
-}
-
-// remapFields creates an instance of the T type and copies data from src parameter to it
-// by mapping fields based on the tags with tagName (if not provided 'mapstructure' tag is used).
-func remapFields[T any](src any, tagName string) (T, error) {
-	var dst T
-	if changeDecoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
-		TagName: tagName,
-		Result:  &dst,
-	}); err != nil {
-		return dst, err
-	} else if err := changeDecoder.Decode(src); err != nil {
-		return dst, err
-	}
-	return dst, nil
 }
 
 // mapStatusToString maps commit status enum to string, specific for azure.
