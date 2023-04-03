@@ -148,6 +148,29 @@ func (webhook *gitLabWebhookParser) parsePrEvents(event *gitlab.MergeEvent) (*We
 		TargetBranch:            event.ObjectAttributes.TargetBranch,
 		Timestamp:               eventTime.UTC().Unix(),
 		Event:                   webhookEvent,
+		PullRequest: &WebhookInfoPullRequest{
+			ID:         event.ObjectAttributes.IID,
+			Title:      event.ObjectAttributes.Title,
+			CompareUrl: event.ObjectAttributes.URL,
+			Timestamp:  eventTime.Unix(),
+			Author: WebHookInfoUser{
+				Login:       event.User.Username,
+				DisplayName: event.User.Name,
+				Email:       event.User.Email,
+				AvatarUrl:   event.User.AvatarURL,
+			},
+			TriggeredBy: WebHookInfoUser{
+				Login: event.User.Username,
+				Email: event.ObjectAttributes.LastCommit.Author.Email,
+			},
+			SkipDecryption:   true,
+			TargetRepository: webhook.parseRepoDetails(event.ObjectAttributes.Target.PathWithNamespace),
+			TargetBranch:     event.ObjectAttributes.TargetBranch,
+			TargetHash:       "",
+			SourceRepository: webhook.parseRepoDetails(event.ObjectAttributes.Source.PathWithNamespace),
+			SourceBranch:     event.ObjectAttributes.SourceBranch,
+			SourceHash:       event.ObjectAttributes.LastCommit.ID,
+		},
 	}, nil
 }
 
