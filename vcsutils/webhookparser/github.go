@@ -137,20 +137,46 @@ func (webhook *gitHubWebhookParser) parsePrEvents(event *github.PullRequestEvent
 		// Action is not supported
 		return nil
 	}
+	pullRequest := event.GetPullRequest()
+	targetRepository := WebHookInfoRepoDetails{
+		Name:  pullRequest.GetBase().GetRepo().GetName(),
+		Owner: pullRequest.GetBase().GetRepo().GetOwner().GetLogin(),
+	}
+	sourceRepository := WebHookInfoRepoDetails{
+		Name:  pullRequest.GetHead().GetRepo().GetName(),
+		Owner: pullRequest.GetHead().GetRepo().GetOwner().GetLogin(),
+	}
 	return &WebhookInfo{
-		PullRequestId: event.GetPullRequest().GetNumber(),
-		TargetRepositoryDetails: WebHookInfoRepoDetails{
-			Name:  *event.GetPullRequest().GetBase().GetRepo().Name,
-			Owner: *event.GetPullRequest().GetBase().GetRepo().Owner.Login,
+		PullRequestId:           pullRequest.GetNumber(),
+		TargetRepositoryDetails: targetRepository,
+		TargetBranch:            pullRequest.GetBase().GetRef(),
+		SourceRepositoryDetails: sourceRepository,
+		SourceBranch:            pullRequest.GetHead().GetRef(),
+		Timestamp:               pullRequest.GetUpdatedAt().UTC().Unix(),
+		Event:                   webhookEvent,
+
+		PullRequest: &WebhookInfoPullRequest{
+			ID:         pullRequest.GetNumber(),
+			Title:      pullRequest.GetTitle(),
+			CompareUrl: pullRequest.GetHTMLURL() + "/files",
+			Timestamp:  pullRequest.GetUpdatedAt().Unix(),
+			Author: WebHookInfoUser{
+				Login:       pullRequest.GetUser().GetLogin(),
+				DisplayName: pullRequest.GetUser().GetName(),
+				Email:       pullRequest.GetUser().GetEmail(),
+				AvatarUrl:   pullRequest.GetUser().GetAvatarURL(),
+			},
+			TriggeredBy: WebHookInfoUser{
+				Login:     event.GetSender().GetLogin(),
+				AvatarUrl: event.GetSender().GetAvatarURL(),
+			},
+			TargetRepository: targetRepository,
+			TargetBranch:     pullRequest.GetBase().GetRef(),
+			TargetHash:       pullRequest.GetBase().GetSHA(),
+			SourceRepository: sourceRepository,
+			SourceBranch:     pullRequest.GetHead().GetRef(),
+			SourceHash:       pullRequest.GetHead().GetSHA(),
 		},
-		TargetBranch: event.GetPullRequest().GetBase().GetRef(),
-		SourceRepositoryDetails: WebHookInfoRepoDetails{
-			Name:  *event.GetPullRequest().GetHead().GetRepo().Name,
-			Owner: *event.GetPullRequest().GetHead().GetRepo().Owner.Login,
-		},
-		SourceBranch: event.GetPullRequest().GetHead().GetRef(),
-		Timestamp:    event.GetPullRequest().GetUpdatedAt().UTC().Unix(),
-		Event:        webhookEvent,
 	}
 }
 

@@ -45,6 +45,38 @@ type WebhookInfo struct {
 	Author WebHookInfoUser `json:"author,omitempty"`
 	// CompareUrl is HTML URL to see git comparison between commits (Push event only)
 	CompareUrl string `json:"compare_url,omitempty"`
+	// PullRequest encapsulates information of the pull request.
+	PullRequest *WebhookInfoPullRequest `json:"pull_request,omitempty"`
+}
+
+// WebhookInfoPullRequest contains information about a pull request event received via a webhook.
+type WebhookInfoPullRequest struct {
+	// ID is a unique identifier of the pull request.
+	ID int `json:"id,omitempty"`
+	// Title is a title(name) of the pull request.
+	Title string `json:"title,omitempty"`
+	// CompareUrl is a hyperlink to the pull request.
+	CompareUrl string `json:"url,omitempty"`
+	// Timestamp of the last update (Unix timestamp).
+	Timestamp int64 `json:"timestamp,omitempty"`
+	// Author is an info about pull request author.
+	Author WebHookInfoUser `json:"author,omitempty"`
+	// TriggeredBy
+	TriggeredBy WebHookInfoUser `json:"triggered_by,omitempty"`
+	// SkipDecryption
+	SkipDecryption bool `json:"skip_decryption,omitempty"`
+	// TargetRepository contains details about target repository (destination of the changes).
+	TargetRepository WebHookInfoRepoDetails `json:"target_repository,omitempty"`
+	// TargetBranch is a name of the branch of the TargetRepository.
+	TargetBranch string `json:"target_branch,omitempty"`
+	// TargetHash is a commit SHA of the target branch.
+	TargetHash string `json:"target_hash,omitempty"`
+	// SourceRepository contains details about source repository.
+	SourceRepository WebHookInfoRepoDetails `json:"source_repository,omitempty"`
+	// SourceBranch is a name of the branch of the SourceRepository.
+	SourceBranch string `json:"source_branch,omitempty"`
+	// SourceHash is a commit SHA of the source branch.
+	SourceHash string `json:"source_hash,omitempty"`
 }
 
 // WebHookInfoRepoDetails represents repository info of an incoming webhook

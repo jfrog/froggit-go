@@ -10,11 +10,13 @@ import (
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/config"
 	"github.com/google/uuid"
+	"github.com/mitchellh/mapstructure"
 	"io"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 const RemoteName = "origin"
@@ -294,4 +296,21 @@ func CreateDotGitFolderWithRemote(path, remoteName, remoteUrl string) error {
 
 func GetGenericGitRemoteUrl(apiEndpoint, owner, repo string) string {
 	return fmt.Sprintf("%s/%s/%s.git", strings.TrimSuffix(apiEndpoint, "/"), owner, repo)
+}
+
+// RemapFields creates an instance of the T type and copies data from src parameter to it
+// by mapping fields based on the tags with tagName (if not provided 'mapstructure' tag is used)
+// using 'mapstructure' library.
+func RemapFields[T any](src any, tagName string) (T, error) {
+	var dst T
+	if changeDecoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
+		TagName:    tagName,
+		Result:     &dst,
+		DecodeHook: mapstructure.StringToTimeHookFunc(time.RFC3339),
+	}); err != nil {
+		return dst, err
+	} else if err := changeDecoder.Decode(src); err != nil {
+		return dst, err
+	}
+	return dst, nil
 }

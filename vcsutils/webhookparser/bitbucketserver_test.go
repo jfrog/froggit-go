@@ -78,13 +78,28 @@ func TestBitbucketServerParseIncomingPushWebhook(t *testing.T) {
 }
 
 func TestBitbucketServerParseIncomingPrWebhook(t *testing.T) {
+	author := WebHookInfoUser{
+		Login:       "yahavi",
+		DisplayName: "Yahav Itzhak",
+		Email:       "yahavi@jfrog.com",
+		AvatarUrl:   "https://git.acme.info/users/yahavi",
+	}
+
+	repository := WebHookInfoRepoDetails{
+		Name:  "hello-world",
+		Owner: "~YAHAVI",
+	}
+
+	const title = "Update README.md"
+	const href = "https://git.acme.info/users/yahavi/repos/hello-world/pull-requests/3"
 	tests := []struct {
-		name              string
-		payloadFilename   string
-		eventHeader       string
-		payloadSha        string
-		expectedTime      int64
-		expectedEventType vcsutils.WebhookEvent
+		name                    string
+		payloadFilename         string
+		eventHeader             string
+		payloadSha              string
+		expectedTime            int64
+		expectedEventType       vcsutils.WebhookEvent
+		expectedPullRequestInfo *WebhookInfoPullRequest
 	}{
 		{
 			name:              "create",
@@ -93,6 +108,23 @@ func TestBitbucketServerParseIncomingPrWebhook(t *testing.T) {
 			payloadSha:        bitbucketServerPrCreatedSha256,
 			expectedTime:      bitbucketServerPrCreateExpectedTime,
 			expectedEventType: vcsutils.PrOpened,
+			expectedPullRequestInfo: &WebhookInfoPullRequest{
+				ID:         bitbucketServerExpectedPrID,
+				Title:      title,
+				CompareUrl: href + "/diff",
+				Timestamp:  1631178661307,
+				Author:     author,
+				TriggeredBy: WebHookInfoUser{
+					Login: "yahavi",
+				},
+				SkipDecryption:   true,
+				TargetRepository: repository,
+				TargetBranch:     "main",
+				TargetHash:       "929d3054cf60e11a38672966f948bb5d95f48f0e",
+				SourceRepository: repository,
+				SourceBranch:     "dev",
+				SourceHash:       "b3fc2f0a02761b443fca72022a2ac897cc2ceb3a",
+			},
 		},
 		{
 			name:              "update",
@@ -101,6 +133,23 @@ func TestBitbucketServerParseIncomingPrWebhook(t *testing.T) {
 			payloadSha:        bitbucketServerPrUpdatedSha256,
 			expectedTime:      bitbucketServerPrUpdateExpectedTime,
 			expectedEventType: vcsutils.PrEdited,
+			expectedPullRequestInfo: &WebhookInfoPullRequest{
+				ID:         bitbucketServerExpectedPrID,
+				Title:      title,
+				CompareUrl: href + "/diff",
+				Timestamp:  1631180185186,
+				Author:     author,
+				TriggeredBy: WebHookInfoUser{
+					Login: "yahavi",
+				},
+				SkipDecryption:   true,
+				TargetRepository: repository,
+				TargetBranch:     "main",
+				TargetHash:       "929d3054cf60e11a38672966f948bb5d95f48f0e",
+				SourceRepository: repository,
+				SourceBranch:     "dev",
+				SourceHash:       "4116e7fd0dffeff395c4697653912ad4c19e1c5b",
+			},
 		},
 		{
 			name:              "merge",
@@ -109,6 +158,23 @@ func TestBitbucketServerParseIncomingPrWebhook(t *testing.T) {
 			payloadSha:        bitbucketServerPrMergedSha256,
 			expectedTime:      bitbucketServerPrMergeExpectedTime,
 			expectedEventType: vcsutils.PrMerged,
+			expectedPullRequestInfo: &WebhookInfoPullRequest{
+				ID:         bitbucketServerExpectedPrID,
+				Title:      title,
+				CompareUrl: href + "/diff",
+				Timestamp:  1638794461247,
+				Author:     author,
+				TriggeredBy: WebHookInfoUser{
+					Login: "yahavi",
+				},
+				SkipDecryption:   true,
+				TargetRepository: repository,
+				TargetBranch:     "main",
+				TargetHash:       "929d3054cf60e11a38672966f948bb5d95f48f0e",
+				SourceRepository: repository,
+				SourceBranch:     "dev",
+				SourceHash:       "b3fc2f0a02761b443fca72022a2ac897cc2ceb3a",
+			},
 		},
 		{
 			name:              "decline",
@@ -117,6 +183,23 @@ func TestBitbucketServerParseIncomingPrWebhook(t *testing.T) {
 			payloadSha:        bitbucketServerPrDeclinedSha256,
 			expectedTime:      bitbucketServerPrDeclineExpectedTime,
 			expectedEventType: vcsutils.PrRejected,
+			expectedPullRequestInfo: &WebhookInfoPullRequest{
+				ID:         bitbucketServerExpectedPrID,
+				Title:      title,
+				CompareUrl: href + "/diff",
+				Timestamp:  1638794521247,
+				Author:     author,
+				TriggeredBy: WebHookInfoUser{
+					Login: "yahavi",
+				},
+				SkipDecryption:   true,
+				TargetRepository: repository,
+				TargetBranch:     "main",
+				TargetHash:       "929d3054cf60e11a38672966f948bb5d95f48f0e",
+				SourceRepository: repository,
+				SourceBranch:     "dev",
+				SourceHash:       "b3fc2f0a02761b443fca72022a2ac897cc2ceb3a",
+			},
 		},
 		{
 			name:              "delete",
@@ -125,6 +208,23 @@ func TestBitbucketServerParseIncomingPrWebhook(t *testing.T) {
 			payloadSha:        bitbucketServerPrDeletedSha256,
 			expectedTime:      bitbucketServerPrDeleteExpectedTime,
 			expectedEventType: vcsutils.PrRejected,
+			expectedPullRequestInfo: &WebhookInfoPullRequest{
+				ID:         bitbucketServerExpectedPrID,
+				Title:      title,
+				CompareUrl: href + "/diff",
+				Timestamp:  1638794581247,
+				Author:     author,
+				TriggeredBy: WebHookInfoUser{
+					Login: "yahavi",
+				},
+				SkipDecryption:   true,
+				TargetRepository: repository,
+				TargetBranch:     "main",
+				TargetHash:       "929d3054cf60e11a38672966f948bb5d95f48f0e",
+				SourceRepository: repository,
+				SourceBranch:     "dev",
+				SourceHash:       "b3fc2f0a02761b443fca72022a2ac897cc2ceb3a",
+			},
 		},
 	}
 	for _, tt := range tests {
@@ -158,6 +258,7 @@ func TestBitbucketServerParseIncomingPrWebhook(t *testing.T) {
 			assert.Equal(t, formatOwnerForBitbucketServer(expectedOwner), actual.SourceRepositoryDetails.Owner)
 			assert.Equal(t, expectedSourceBranch, actual.SourceBranch)
 			assert.Equal(t, tt.expectedEventType, actual.Event)
+			assert.Equal(t, tt.expectedPullRequestInfo, actual.PullRequest)
 		})
 	}
 }

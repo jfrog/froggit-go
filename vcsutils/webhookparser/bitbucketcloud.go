@@ -128,14 +128,36 @@ func (webhook *bitbucketCloudWebhookParser) email(lastCommit bitbucketCommit) st
 }
 
 func (webhook *bitbucketCloudWebhookParser) parsePrEvents(bitbucketCloudWebHook *bitbucketCloudWebHook, event vcsutils.WebhookEvent) *WebhookInfo {
+	pullRequest := bitbucketCloudWebHook.PullRequest
 	return &WebhookInfo{
-		PullRequestId:           bitbucketCloudWebHook.PullRequest.ID,
-		TargetRepositoryDetails: webhook.parseRepoFullName(bitbucketCloudWebHook.PullRequest.Destination.Repository.FullName),
-		TargetBranch:            bitbucketCloudWebHook.PullRequest.Destination.Branch.Name,
-		SourceRepositoryDetails: webhook.parseRepoFullName(bitbucketCloudWebHook.PullRequest.Source.Repository.FullName),
-		SourceBranch:            bitbucketCloudWebHook.PullRequest.Source.Branch.Name,
-		Timestamp:               bitbucketCloudWebHook.PullRequest.UpdatedOn.UTC().Unix(),
+		PullRequestId:           pullRequest.ID,
+		TargetRepositoryDetails: webhook.parseRepoFullName(pullRequest.Destination.Repository.FullName),
+		TargetBranch:            pullRequest.Destination.Branch.Name,
+		SourceRepositoryDetails: webhook.parseRepoFullName(pullRequest.Source.Repository.FullName),
+		SourceBranch:            pullRequest.Source.Branch.Name,
+		Timestamp:               pullRequest.UpdatedOn.UTC().Unix(),
 		Event:                   event,
+		PullRequest: &WebhookInfoPullRequest{
+			ID:         pullRequest.ID,
+			Title:      pullRequest.Title,
+			CompareUrl: pullRequest.Links.Html.Href,
+			Timestamp:  pullRequest.UpdatedOn.UTC().Unix(),
+			Author: WebHookInfoUser{
+				Login:       pullRequest.Author.Nickname,
+				DisplayName: pullRequest.Author.DisplayName,
+				AvatarUrl:   pullRequest.Author.Links.Avatar.Href,
+			},
+			TriggeredBy: WebHookInfoUser{
+				Login: bitbucketCloudWebHook.Actor.Nickname,
+			},
+			SkipDecryption:   true,
+			TargetRepository: webhook.parseRepoFullName(pullRequest.Destination.Repository.FullName),
+			TargetBranch:     pullRequest.Destination.Branch.Name,
+			TargetHash:       pullRequest.Destination.Commit.Hash,
+			SourceRepository: webhook.parseRepoFullName(pullRequest.Source.Repository.FullName),
+			SourceBranch:     pullRequest.Source.Branch.Name,
+			SourceHash:       pullRequest.Source.Commit.Hash,
+		},
 	}
 }
 
@@ -184,6 +206,21 @@ type bitbucketPullRequest struct {
 	Source      bitbucketCloudPrRepository `json:"source,omitempty"`
 	Destination bitbucketCloudPrRepository `json:"destination,omitempty"`
 	UpdatedOn   time.Time                  `json:"updated_on,omitempty"`
+	Title       string                     `json:"title"`
+	Author      struct {
+		Nickname    string `json:"nickname"`
+		DisplayName string `json:"display_name"`
+		Links       struct {
+			Avatar struct {
+				Href string `json:"href"`
+			} `json:"avatar"`
+		} `json:"links"`
+	} `json:"author"`
+	Links struct {
+		Html struct {
+			Href string `json:"href"`
+		} `json:"html"`
+	} `json:"links"`
 }
 
 type bitbucketPush struct {
@@ -231,4 +268,7 @@ type bitbucketCloudPrRepository struct {
 	Branch     struct {
 		Name string `json:"name,omitempty"` // Branch name
 	} `json:"branch,omitempty"`
+	Commit struct {
+		Hash string `json:"hash"`
+	} `json:"commit"`
 }

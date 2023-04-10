@@ -86,11 +86,12 @@ func TestGitHubParseIncomingPushWebhook(t *testing.T) {
 
 func TestGithubParseIncomingPrWebhook(t *testing.T) {
 	tests := []struct {
-		name              string
-		payloadFilename   string
-		payloadSha        string
-		expectedTime      int64
-		expectedEventType vcsutils.WebhookEvent
+		name                    string
+		payloadFilename         string
+		payloadSha              string
+		expectedTime            int64
+		expectedEventType       vcsutils.WebhookEvent
+		expectedPullRequestInfo *WebhookInfoPullRequest
 	}{
 		{
 			name:              "open",
@@ -98,6 +99,32 @@ func TestGithubParseIncomingPrWebhook(t *testing.T) {
 			payloadSha:        githubPrOpenSha256,
 			expectedTime:      githubPrOpenExpectedTime,
 			expectedEventType: vcsutils.PrOpened,
+			expectedPullRequestInfo: &WebhookInfoPullRequest{
+				ID:         2,
+				Title:      "Update README.md",
+				CompareUrl: "https://github.com/yahavi/hello-world/pull/2/files",
+				Timestamp:  1630666350,
+				Author: WebHookInfoUser{
+					Login:     "yahavi",
+					AvatarUrl: "https://avatars.githubusercontent.com/u/11367982?v=4",
+				},
+				TriggeredBy: WebHookInfoUser{
+					Login:     "yahavi",
+					AvatarUrl: "https://avatars.githubusercontent.com/u/11367982?v=4",
+				},
+				TargetRepository: WebHookInfoRepoDetails{
+					Name:  "hello-world",
+					Owner: "yahavi",
+				},
+				TargetBranch: "main",
+				TargetHash:   "9d497bd67a395a8063774f200338769ccbcee916",
+				SourceRepository: WebHookInfoRepoDetails{
+					Name:  "hello-world",
+					Owner: "yahavi",
+				},
+				SourceBranch: "dev",
+				SourceHash:   "c0e22e5ac1277cc24575882e4ca2407f739ae886",
+			},
 		},
 		{
 			name:              "reopen",
@@ -105,6 +132,32 @@ func TestGithubParseIncomingPrWebhook(t *testing.T) {
 			payloadSha:        githubPrReopenSha256,
 			expectedTime:      githubPrReopenExpectedTime,
 			expectedEventType: vcsutils.PrOpened,
+			expectedPullRequestInfo: &WebhookInfoPullRequest{
+				ID:         2,
+				Title:      "Update+README.md+now",
+				CompareUrl: "https://github.com/yahavi/hello-world/pull/2/files",
+				Timestamp:  1638805321,
+				Author: WebHookInfoUser{
+					Login:     "yahavi",
+					AvatarUrl: "https://avatars.githubusercontent.com/u/11367982?v=4",
+				},
+				TriggeredBy: WebHookInfoUser{
+					Login:     "yahavi",
+					AvatarUrl: "https://avatars.githubusercontent.com/u/11367982?v=4",
+				},
+				TargetRepository: WebHookInfoRepoDetails{
+					Name:  "hello-world",
+					Owner: "yahavi",
+				},
+				TargetBranch: "main",
+				TargetHash:   "9d497bd67a395a8063774f200338769ccbcee916",
+				SourceRepository: WebHookInfoRepoDetails{
+					Name:  "hello-world",
+					Owner: "yahavi",
+				},
+				SourceBranch: "dev",
+				SourceHash:   "92e9b0a232117eccf28c2ef4c0021bd33f2fb2a4",
+			},
 		},
 		{
 			name:              "synchronize",
@@ -112,6 +165,32 @@ func TestGithubParseIncomingPrWebhook(t *testing.T) {
 			payloadSha:        githubPrSyncSha256,
 			expectedTime:      githubPrSyncExpectedTime,
 			expectedEventType: vcsutils.PrEdited,
+			expectedPullRequestInfo: &WebhookInfoPullRequest{
+				ID:         2,
+				Title:      "Update README.md",
+				CompareUrl: "https://github.com/yahavi/hello-world/pull/2/files",
+				Timestamp:  1630666481,
+				Author: WebHookInfoUser{
+					Login:     "yahavi",
+					AvatarUrl: "https://avatars.githubusercontent.com/u/11367982?v=4",
+				},
+				TriggeredBy: WebHookInfoUser{
+					Login:     "yahavi",
+					AvatarUrl: "https://avatars.githubusercontent.com/u/11367982?v=4",
+				},
+				TargetRepository: WebHookInfoRepoDetails{
+					Name:  "hello-world",
+					Owner: "yahavi",
+				},
+				TargetBranch: "main",
+				TargetHash:   "9d497bd67a395a8063774f200338769ccbcee916",
+				SourceRepository: WebHookInfoRepoDetails{
+					Name:  "hello-world",
+					Owner: "yahavi",
+				},
+				SourceBranch: "dev",
+				SourceHash:   "92e9b0a232117eccf28c2ef4c0021bd33f2fb2a4",
+			},
 		},
 		{
 			name:              "edit",
@@ -119,6 +198,32 @@ func TestGithubParseIncomingPrWebhook(t *testing.T) {
 			payloadSha:        githubPrEditSha256,
 			expectedTime:      githubPrEditExpectedTime,
 			expectedEventType: vcsutils.PrEdited,
+			expectedPullRequestInfo: &WebhookInfoPullRequest{
+				ID:         2,
+				Title:      "Update+README.md+now",
+				CompareUrl: "https://github.com/yahavi/hello-world/pull/2/files",
+				Timestamp:  1638802767,
+				Author: WebHookInfoUser{
+					Login:     "yahavi",
+					AvatarUrl: "https://avatars.githubusercontent.com/u/11367982?v=4",
+				},
+				TriggeredBy: WebHookInfoUser{
+					Login:     "yahavi",
+					AvatarUrl: "https://avatars.githubusercontent.com/u/11367982?v=4",
+				},
+				TargetRepository: WebHookInfoRepoDetails{
+					Name:  "hello-world",
+					Owner: "yahavi",
+				},
+				TargetBranch: "main",
+				TargetHash:   "9d497bd67a395a8063774f200338769ccbcee916",
+				SourceRepository: WebHookInfoRepoDetails{
+					Name:  "hello-world",
+					Owner: "yahavi",
+				},
+				SourceBranch: "dev",
+				SourceHash:   "92e9b0a232117eccf28c2ef4c0021bd33f2fb2a4",
+			},
 		},
 		{
 			name:              "close",
@@ -126,6 +231,32 @@ func TestGithubParseIncomingPrWebhook(t *testing.T) {
 			payloadSha:        githubPrCloseSha256,
 			expectedTime:      githubPrCloseExpectedTime,
 			expectedEventType: vcsutils.PrRejected,
+			expectedPullRequestInfo: &WebhookInfoPullRequest{
+				ID:         2,
+				Title:      "Update+README.md+now",
+				CompareUrl: "https://github.com/yahavi/hello-world/pull/2/files",
+				Timestamp:  1638804604,
+				Author: WebHookInfoUser{
+					Login:     "yahavi",
+					AvatarUrl: "https://avatars.githubusercontent.com/u/11367982?v=4",
+				},
+				TriggeredBy: WebHookInfoUser{
+					Login:     "yahavi",
+					AvatarUrl: "https://avatars.githubusercontent.com/u/11367982?v=4",
+				},
+				TargetRepository: WebHookInfoRepoDetails{
+					Name:  "hello-world",
+					Owner: "yahavi",
+				},
+				TargetBranch: "main",
+				TargetHash:   "9d497bd67a395a8063774f200338769ccbcee916",
+				SourceRepository: WebHookInfoRepoDetails{
+					Name:  "hello-world",
+					Owner: "yahavi",
+				},
+				SourceBranch: "dev",
+				SourceHash:   "92e9b0a232117eccf28c2ef4c0021bd33f2fb2a4",
+			},
 		},
 		{
 			name:              "merge",
@@ -133,6 +264,32 @@ func TestGithubParseIncomingPrWebhook(t *testing.T) {
 			payloadSha:        githubPrMergeSha256,
 			expectedTime:      githubPrMergeExpectedTime,
 			expectedEventType: vcsutils.PrMerged,
+			expectedPullRequestInfo: &WebhookInfoPullRequest{
+				ID:         2,
+				Title:      "Update+README.md+now",
+				CompareUrl: "https://github.com/yahavi/hello-world/pull/2/files",
+				Timestamp:  1638805994,
+				Author: WebHookInfoUser{
+					Login:     "yahavi",
+					AvatarUrl: "https://avatars.githubusercontent.com/u/11367982?v=4",
+				},
+				TriggeredBy: WebHookInfoUser{
+					Login:     "yahavi",
+					AvatarUrl: "https://avatars.githubusercontent.com/u/11367982?v=4",
+				},
+				TargetRepository: WebHookInfoRepoDetails{
+					Name:  "hello-world",
+					Owner: "yahavi",
+				},
+				TargetBranch: "main",
+				TargetHash:   "9d497bd67a395a8063774f200338769ccbcee916",
+				SourceRepository: WebHookInfoRepoDetails{
+					Name:  "hello-world",
+					Owner: "yahavi",
+				},
+				SourceBranch: "dev",
+				SourceHash:   "92e9b0a232117eccf28c2ef4c0021bd33f2fb2a4",
+			},
 		},
 	}
 	for _, tt := range tests {
@@ -166,6 +323,7 @@ func TestGithubParseIncomingPrWebhook(t *testing.T) {
 			assert.Equal(t, expectedOwner, actual.SourceRepositoryDetails.Owner)
 			assert.Equal(t, expectedSourceBranch, actual.SourceBranch)
 			assert.Equal(t, tt.expectedEventType, actual.Event)
+			assert.Equal(t, tt.expectedPullRequestInfo, actual.PullRequest)
 		})
 	}
 }

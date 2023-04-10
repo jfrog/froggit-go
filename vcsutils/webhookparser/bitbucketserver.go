@@ -133,15 +133,46 @@ func (webhook *bitbucketServerWebhookParser) parsePrEvents(bitbucketCloudWebHook
 	if err != nil {
 		return nil, err
 	}
+
+	pullRequest := bitbucketCloudWebHook.PullRequest
 	return &WebhookInfo{
-		PullRequestId:           bitbucketCloudWebHook.PullRequest.ID,
-		TargetRepositoryDetails: webhook.getRepositoryDetails(bitbucketCloudWebHook.PullRequest.ToRef.Repository),
-		TargetBranch:            strings.TrimPrefix(bitbucketCloudWebHook.PullRequest.ToRef.ID, "refs/heads/"),
-		SourceRepositoryDetails: webhook.getRepositoryDetails(bitbucketCloudWebHook.PullRequest.FromRef.Repository),
-		SourceBranch:            strings.TrimPrefix(bitbucketCloudWebHook.PullRequest.FromRef.ID, "refs/heads/"),
+		PullRequestId:           pullRequest.ID,
+		TargetRepositoryDetails: webhook.getRepositoryDetails(pullRequest.ToRef.Repository),
+		TargetBranch:            strings.TrimPrefix(pullRequest.ToRef.ID, "refs/heads/"),
+		SourceRepositoryDetails: webhook.getRepositoryDetails(pullRequest.FromRef.Repository),
+		SourceBranch:            strings.TrimPrefix(pullRequest.FromRef.ID, "refs/heads/"),
 		Timestamp:               eventTime.UTC().Unix(),
 		Event:                   event,
+		PullRequest: &WebhookInfoPullRequest{
+			ID:         pullRequest.ID,
+			Title:      pullRequest.Title,
+			CompareUrl: webhook.getFirstHrefFromLinks(pullRequest.Links) + "/diff",
+			Timestamp:  pullRequest.UpdatedDate,
+			Author: WebHookInfoUser{
+				Login:       pullRequest.Author.User.Slug,
+				DisplayName: pullRequest.Author.User.DisplayName,
+				Email:       pullRequest.Author.User.EmailAddress,
+				AvatarUrl:   webhook.getFirstHrefFromLinks(pullRequest.Author.User.Links),
+			},
+			TriggeredBy: WebHookInfoUser{
+				Login: pullRequest.Author.User.Name,
+			},
+			SkipDecryption:   true,
+			TargetRepository: webhook.getRepositoryDetails(pullRequest.ToRef.Repository),
+			TargetBranch:     strings.TrimPrefix(pullRequest.ToRef.ID, "refs/heads/"),
+			TargetHash:       pullRequest.ToRef.LatestCommit,
+			SourceRepository: webhook.getRepositoryDetails(pullRequest.FromRef.Repository),
+			SourceBranch:     strings.TrimPrefix(pullRequest.FromRef.ID, "refs/heads/"),
+			SourceHash:       pullRequest.FromRef.LatestCommit,
+		},
 	}, nil
+}
+
+func (webhook *bitbucketServerWebhookParser) getFirstHrefFromLinks(links bitbucketv1.Links) string {
+	if len(links.Self) > 0 {
+		return links.Self[0].Href
+	}
+	return ""
 }
 
 func (webhook *bitbucketServerWebhookParser) branchStatus(to string, from string) WebHookInfoBranchStatus {

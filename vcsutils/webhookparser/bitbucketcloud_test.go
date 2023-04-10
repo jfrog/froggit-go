@@ -65,12 +65,14 @@ func TestBitbucketCloudParseIncomingPushWebhook(t *testing.T) {
 }
 
 func TestBitbucketCloudParseIncomingPrWebhook(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
-		name              string
-		payloadFilename   string
-		eventHeader       string
-		expectedTime      int64
-		expectedEventType vcsutils.WebhookEvent
+		name                string
+		payloadFilename     string
+		eventHeader         string
+		expectedTime        int64
+		expectedEventType   vcsutils.WebhookEvent
+		expectedPullRequest *WebhookInfoPullRequest
 	}{
 		{
 			name:              "create",
@@ -78,6 +80,34 @@ func TestBitbucketCloudParseIncomingPrWebhook(t *testing.T) {
 			eventHeader:       "pullrequest:created",
 			expectedTime:      bitbucketCloudPrCreateExpectedTime,
 			expectedEventType: vcsutils.PrOpened,
+			expectedPullRequest: &WebhookInfoPullRequest{
+				ID:         bitbucketCloudExpectedPrID,
+				Title:      "Dev",
+				CompareUrl: "https://bitbucket.org/yahavi/hello-world/pull-requests/2",
+				Timestamp:  1630831665,
+				Author: WebHookInfoUser{
+					Login:       "yahavi",
+					DisplayName: "Yahav Itzhak",
+					AvatarUrl: "https://secure.gravatar.com/avatar/9680da1674e22a1de17acb19bb233ebf?d=https%3A%2F%2F" +
+						"avatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FYI-5.png",
+				},
+				TriggeredBy: WebHookInfoUser{
+					Login: "yahavi",
+				},
+				SkipDecryption: true,
+				TargetRepository: WebHookInfoRepoDetails{
+					Name:  "hello-world",
+					Owner: "yahavi",
+				},
+				TargetBranch: "main",
+				TargetHash:   "fa8c303777d0",
+				SourceRepository: WebHookInfoRepoDetails{
+					Name:  "hello-world",
+					Owner: "yahavi",
+				},
+				SourceBranch: "dev",
+				SourceHash:   "363994ee7c2e",
+			},
 		},
 		{
 			name:              "update",
@@ -85,6 +115,34 @@ func TestBitbucketCloudParseIncomingPrWebhook(t *testing.T) {
 			eventHeader:       "pullrequest:updated",
 			expectedTime:      bitbucketCloudPrUpdateExpectedTime,
 			expectedEventType: vcsutils.PrEdited,
+			expectedPullRequest: &WebhookInfoPullRequest{
+				ID:         bitbucketCloudExpectedPrID,
+				Title:      "Dev",
+				CompareUrl: "https://bitbucket.org/yahavi/hello-world/pull-requests/2",
+				Timestamp:  1630844170,
+				Author: WebHookInfoUser{
+					Login:       "yahavi",
+					DisplayName: "Yahav Itzhak",
+					AvatarUrl: "https://secure.gravatar.com/avatar/9680da1674e22a1de17acb19bb233ebf?d=https%3A%2F%2F" +
+						"avatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FYI-5.png",
+				},
+				TriggeredBy: WebHookInfoUser{
+					Login: "yahavi",
+				},
+				SkipDecryption: true,
+				TargetRepository: WebHookInfoRepoDetails{
+					Name:  "hello-world",
+					Owner: "yahavi",
+				},
+				TargetBranch: "main",
+				TargetHash:   "78c315141e83",
+				SourceRepository: WebHookInfoRepoDetails{
+					Name:  "hello-world",
+					Owner: "yahavi",
+				},
+				SourceBranch: "dev",
+				SourceHash:   "1147000c51dc",
+			},
 		},
 		{
 			name:              "merge",
@@ -92,6 +150,34 @@ func TestBitbucketCloudParseIncomingPrWebhook(t *testing.T) {
 			eventHeader:       "pullrequest:fulfilled",
 			expectedTime:      bitbucketCloudPrMergeExpectedTime,
 			expectedEventType: vcsutils.PrMerged,
+			expectedPullRequest: &WebhookInfoPullRequest{
+				ID:         bitbucketCloudExpectedPrID,
+				Title:      "Dev",
+				CompareUrl: "https://bitbucket.org/yahavi/hello-world/pull-requests/2",
+				Timestamp:  1638783257,
+				Author: WebHookInfoUser{
+					Login:       "yahavi",
+					DisplayName: "Yahav Itzhak",
+					AvatarUrl: "https://secure.gravatar.com/avatar/9680da1674e22a1de17acb19bb233ebf?d=https%3A%2F%2F" +
+						"avatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FYI-5.png",
+				},
+				TriggeredBy: WebHookInfoUser{
+					Login: "yahavi",
+				},
+				SkipDecryption: true,
+				TargetRepository: WebHookInfoRepoDetails{
+					Name:  "hello-world",
+					Owner: "yahavi",
+				},
+				TargetBranch: "main",
+				TargetHash:   "78c315141e83",
+				SourceRepository: WebHookInfoRepoDetails{
+					Name:  "hello-world",
+					Owner: "yahavi",
+				},
+				SourceBranch: "dev",
+				SourceHash:   "1147000c51dc",
+			},
 		},
 		{
 			name:              "close",
@@ -99,6 +185,34 @@ func TestBitbucketCloudParseIncomingPrWebhook(t *testing.T) {
 			eventHeader:       "pullrequest:rejected",
 			expectedTime:      bitbucketCloudPrCloseExpectedTime,
 			expectedEventType: vcsutils.PrRejected,
+			expectedPullRequest: &WebhookInfoPullRequest{
+				ID:         bitbucketCloudExpectedPrID,
+				Title:      "Dev",
+				CompareUrl: "https://bitbucket.org/yahavi/hello-world/pull-requests/2",
+				Timestamp:  1638784487,
+				Author: WebHookInfoUser{
+					Login:       "yahavi",
+					DisplayName: "Yahav Itzhak",
+					AvatarUrl: "https://secure.gravatar.com/avatar/9680da1674e22a1de17acb19bb233ebf?d=https%3A%2F%2F" +
+						"avatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FYI-5.png",
+				},
+				TriggeredBy: WebHookInfoUser{
+					Login: "yahavi",
+				},
+				SkipDecryption: true,
+				TargetRepository: WebHookInfoRepoDetails{
+					Name:  "hello-world",
+					Owner: "yahavi",
+				},
+				TargetBranch: "main",
+				TargetHash:   "78c315141e83",
+				SourceRepository: WebHookInfoRepoDetails{
+					Name:  "hello-world",
+					Owner: "yahavi",
+				},
+				SourceBranch: "dev",
+				SourceHash:   "1147000c51dc",
+			},
 		},
 	}
 	for _, tt := range tests {
@@ -131,6 +245,7 @@ func TestBitbucketCloudParseIncomingPrWebhook(t *testing.T) {
 			assert.Equal(t, expectedOwner, actual.SourceRepositoryDetails.Owner)
 			assert.Equal(t, expectedSourceBranch, actual.SourceBranch)
 			assert.Equal(t, tt.expectedEventType, actual.Event)
+			assert.Equal(t, tt.expectedPullRequest, actual.PullRequest)
 		})
 	}
 }

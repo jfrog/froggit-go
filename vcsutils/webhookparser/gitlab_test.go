@@ -70,40 +70,186 @@ func TestGitLabParseIncomingPushWebhook(t *testing.T) {
 
 func TestGitLabParseIncomingPrWebhook(t *testing.T) {
 	tests := []struct {
-		name              string
-		payloadFilename   string
-		expectedTime      int64
-		expectedEventType vcsutils.WebhookEvent
+		name                    string
+		payloadFilename         string
+		expectedTime            int64
+		expectedEventType       vcsutils.WebhookEvent
+		expectedPullRequestInfo *WebhookInfoPullRequest
 	}{
 		{
 			name:              "open",
 			payloadFilename:   "propenpayload.json",
 			expectedTime:      gitlabPrOpenExpectedTime,
 			expectedEventType: vcsutils.PrOpened,
+			expectedPullRequestInfo: &WebhookInfoPullRequest{
+				ID:         1,
+				Title:      "Update README.md",
+				CompareUrl: "https://gitlab.com/yahavi/hello-world/-/merge_requests/1",
+				Timestamp:  1631202047,
+				Author: WebHookInfoUser{
+					Login:       "yahavi",
+					DisplayName: "Yahav Itzhak",
+					Email:       "yahavitz@gmail.com",
+					AvatarUrl:   "https://secure.gravatar.com/avatar/9680da1674e22a1de17acb19bb233ebf?s=80&d=identicon",
+				},
+				TriggeredBy: WebHookInfoUser{
+					Login: "yahavi",
+					Email: "yahavitz@gmail.com",
+				},
+				SkipDecryption: true,
+				TargetRepository: WebHookInfoRepoDetails{
+					Name:  "hello-world",
+					Owner: "yahavi",
+				},
+				TargetBranch: "main",
+				TargetHash:   "",
+				SourceRepository: WebHookInfoRepoDetails{
+					Name:  "hello-world",
+					Owner: "yahavi",
+				},
+				SourceBranch: "dev",
+				SourceHash:   "72108853aa0eac9d1b72fe34710aeed256d193d5",
+			},
 		},
 		{
 			name:              "reopen",
 			payloadFilename:   "prreopenpayload.json",
 			expectedTime:      gitlabPrReopenExpectedTime,
 			expectedEventType: vcsutils.PrOpened,
+			expectedPullRequestInfo: &WebhookInfoPullRequest{
+				ID:         1,
+				Title:      "Update README.md",
+				CompareUrl: "https://gitlab.com/yahavi/hello-world/-/merge_requests/1",
+				Timestamp:  1638865856,
+				Author: WebHookInfoUser{
+					Login:       "yahavi",
+					DisplayName: "Yahav Itzhak",
+					Email:       "yahavitz@gmail.com",
+					AvatarUrl:   "https://secure.gravatar.com/avatar/9680da1674e22a1de17acb19bb233ebf?s=80&d=identicon",
+				},
+				TriggeredBy: WebHookInfoUser{
+					Login: "yahavi",
+					Email: "yahavitz@gmail.com",
+				},
+				SkipDecryption: true,
+				TargetRepository: WebHookInfoRepoDetails{
+					Name:  "hello-world",
+					Owner: "yahavi",
+				},
+				TargetBranch: "main",
+				TargetHash:   "",
+				SourceRepository: WebHookInfoRepoDetails{
+					Name:  "hello-world",
+					Owner: "yahavi",
+				},
+				SourceBranch: "dev",
+				SourceHash:   "3fcd302505fb3df664143df4ddcb6cfc50ff2ea8",
+			},
 		},
 		{
 			name:              "update",
 			payloadFilename:   "prupdatepayload.json",
 			expectedTime:      gitlabPrUpdateExpectedTime,
 			expectedEventType: vcsutils.PrEdited,
+			expectedPullRequestInfo: &WebhookInfoPullRequest{
+				ID:         1,
+				Title:      "Update README.md",
+				CompareUrl: "https://gitlab.com/yahavi/hello-world/-/merge_requests/1",
+				Timestamp:  1631202266,
+				Author: WebHookInfoUser{
+					Login:       "yahavi",
+					DisplayName: "Yahav Itzhak",
+					Email:       "yahavitz@gmail.com",
+					AvatarUrl:   "https://secure.gravatar.com/avatar/9680da1674e22a1de17acb19bb233ebf?s=80&d=identicon",
+				},
+				TriggeredBy: WebHookInfoUser{
+					Login: "yahavi",
+					Email: "yahavitz@gmail.com",
+				},
+				SkipDecryption: true,
+				TargetRepository: WebHookInfoRepoDetails{
+					Name:  "hello-world",
+					Owner: "yahavi",
+				},
+				TargetBranch: "main",
+				TargetHash:   "",
+				SourceRepository: WebHookInfoRepoDetails{
+					Name:  "hello-world",
+					Owner: "yahavi",
+				},
+				SourceBranch: "dev",
+				SourceHash:   "3fcd302505fb3df664143df4ddcb6cfc50ff2ea8",
+			},
 		},
 		{
 			name:              "close",
 			payloadFilename:   "prclosepayload.json",
 			expectedTime:      gitlabPrCloseExpectedTime,
 			expectedEventType: vcsutils.PrRejected,
+			expectedPullRequestInfo: &WebhookInfoPullRequest{
+				ID:         1,
+				Title:      "Update README.md",
+				CompareUrl: "https://gitlab.com/yahavi/hello-world/-/merge_requests/1",
+				Timestamp:  1638864453,
+				Author: WebHookInfoUser{
+					Login:       "yahavi",
+					DisplayName: "Yahav Itzhak",
+					Email:       "yahavitz@gmail.com",
+					AvatarUrl:   "https://secure.gravatar.com/avatar/9680da1674e22a1de17acb19bb233ebf?s=80&d=identicon",
+				},
+				TriggeredBy: WebHookInfoUser{
+					Login: "yahavi",
+					Email: "yahavitz@gmail.com",
+				},
+				SkipDecryption: true,
+				TargetRepository: WebHookInfoRepoDetails{
+					Name:  "hello-world",
+					Owner: "yahavi",
+				},
+				TargetBranch: "main",
+				TargetHash:   "",
+				SourceRepository: WebHookInfoRepoDetails{
+					Name:  "hello-world",
+					Owner: "yahavi",
+				},
+				SourceBranch: "dev",
+				SourceHash:   "3fcd302505fb3df664143df4ddcb6cfc50ff2ea8",
+			},
 		},
 		{
 			name:              "merge",
 			payloadFilename:   "prmergepayload.json",
 			expectedTime:      gitlabPrMergeExpectedTime,
 			expectedEventType: vcsutils.PrMerged,
+			expectedPullRequestInfo: &WebhookInfoPullRequest{
+				ID:         1,
+				Title:      "Update README.md",
+				CompareUrl: "https://gitlab.com/yahavi/hello-world/-/merge_requests/1",
+				Timestamp:  1638866119,
+				Author: WebHookInfoUser{
+					Login:       "yahavi",
+					DisplayName: "Yahav Itzhak",
+					Email:       "yahavitz@gmail.com",
+					AvatarUrl:   "https://secure.gravatar.com/avatar/9680da1674e22a1de17acb19bb233ebf?s=80&d=identicon",
+				},
+				TriggeredBy: WebHookInfoUser{
+					Login: "yahavi",
+					Email: "yahavitz@gmail.com",
+				},
+				SkipDecryption: true,
+				TargetRepository: WebHookInfoRepoDetails{
+					Name:  "hello-world",
+					Owner: "yahavi",
+				},
+				TargetBranch: "main",
+				TargetHash:   "",
+				SourceRepository: WebHookInfoRepoDetails{
+					Name:  "hello-world",
+					Owner: "yahavi",
+				},
+				SourceBranch: "dev",
+				SourceHash:   "3fcd302505fb3df664143df4ddcb6cfc50ff2ea8",
+			},
 		},
 	}
 	for _, tt := range tests {
@@ -136,6 +282,7 @@ func TestGitLabParseIncomingPrWebhook(t *testing.T) {
 			assert.Equal(t, expectedOwner, actual.SourceRepositoryDetails.Owner)
 			assert.Equal(t, expectedSourceBranch, actual.SourceBranch)
 			assert.Equal(t, tt.expectedEventType, actual.Event)
+			assert.Equal(t, tt.expectedPullRequestInfo, actual.PullRequest)
 		})
 	}
 }

@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -259,4 +260,18 @@ func TestGetGenericGitRemoteUrl(t *testing.T) {
 			assert.Equal(t, tc.expectedResult, GetGenericGitRemoteUrl(tc.apiEndpoint, tc.owner, tc.repo))
 		})
 	}
+}
+
+func TestRemapFields(t *testing.T) {
+	type destination struct {
+		Name      string    `some:"n_ame"`
+		Birthdate time.Time `some:"B_day"`
+		High      int       `json:"high"`
+	}
+
+	date := time.Date(2020, 10, 9, 8, 7, 6, 0, time.UTC)
+	src := map[string]any{"n_ame": "John", "B_day": date.Format(time.RFC3339)}
+	result, err := RemapFields[destination](src, "some")
+	require.NoError(t, err)
+	require.Equal(t, destination{Name: "John", Birthdate: date}, result)
 }
