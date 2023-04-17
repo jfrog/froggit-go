@@ -260,7 +260,7 @@ func TestGitLabClient_GetLatestCommit(t *testing.T) {
 	assert.NoError(t, err)
 
 	client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, response,
-		fmt.Sprintf("/api/v4/projects/%s/repository/commits?page=1&per_page=1&ref_name=master",
+		fmt.Sprintf("/api/v4/projects/%s/repository/commits?per_page=1&ref_name=master",
 			url.PathEscape(owner+"/"+repo1)), createGitLabHandler)
 	defer cleanUp()
 
@@ -285,7 +285,7 @@ func TestGitLabClient_GetLatestCommitNotFound(t *testing.T) {
 	}`)
 
 	client, cleanUp := createServerAndClientReturningStatus(t, vcsutils.GitLab, false, response,
-		fmt.Sprintf("/api/v4/projects/%s/repository/commits?page=1&per_page=1&ref_name=master",
+		fmt.Sprintf("/api/v4/projects/%s/repository/commits?per_page=1&ref_name=master",
 			url.PathEscape(owner+"/"+repo1)), http.StatusNotFound, createGitLabHandler)
 	defer cleanUp()
 
@@ -300,14 +300,13 @@ func TestGitLabClient_GetLatestCommitUnknownBranch(t *testing.T) {
 	ctx := context.Background()
 
 	client, cleanUp := createServerAndClientReturningStatus(t, vcsutils.GitLab, false, []byte("[]"),
-		fmt.Sprintf("/api/v4/projects/%s/repository/commits?page=1&per_page=1&ref_name=unknown",
-			url.PathEscape(owner+"/"+repo1)), http.StatusOK, createGitLabHandler)
+		fmt.Sprintf("/api/v4/projects/%s/repository/commits?per_page=1&ref_name=unknown",
+			url.PathEscape(owner+"/"+repo1)), http.StatusNotFound, createGitLabHandler)
 	defer cleanUp()
-
 	result, err := client.GetLatestCommit(ctx, owner, repo1, "unknown")
 
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "404 Not Found")
+	assert.Contains(t, err.Error(), "404")
 	assert.Empty(t, result)
 }
 

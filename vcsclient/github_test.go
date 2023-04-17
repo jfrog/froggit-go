@@ -271,7 +271,7 @@ func TestGitHubClient_GetLatestCommit(t *testing.T) {
 	assert.NoError(t, err)
 
 	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, response,
-		fmt.Sprintf("/repos/%s/%s/commits?page=1&per_page=1&sha=master", owner, repo1), createGitHubHandler)
+		fmt.Sprintf("/repos/%s/%s/commits?per_page=1&sha=master", owner, repo1), createGitHubHandler)
 	defer cleanUp()
 
 	result, err := client.GetLatestCommit(ctx, owner, repo1, "master")
@@ -299,7 +299,7 @@ func TestGitHubClient_GetLatestCommitNotFound(t *testing.T) {
 	}`)
 
 	client, cleanUp := createServerAndClientReturningStatus(t, vcsutils.GitHub, false, response,
-		fmt.Sprintf("/repos/%s/%s/commits?page=1&per_page=1&sha=master", owner, "unknown"), http.StatusNotFound,
+		fmt.Sprintf("/repos/%s/%s/commits?per_page=1&sha=master", owner, "unknown"), http.StatusNotFound,
 		createGitHubHandler)
 	defer cleanUp()
 
@@ -318,7 +318,7 @@ func TestGitHubClient_GetLatestCommitUnknownBranch(t *testing.T) {
 	}`)
 
 	client, cleanUp := createServerAndClientReturningStatus(t, vcsutils.GitHub, false, response,
-		fmt.Sprintf("/repos/%s/%s/commits?page=1&per_page=1&sha=unknown", owner, repo1), http.StatusNotFound,
+		fmt.Sprintf("/repos/%s/%s/commits?per_page=1&sha=unknown", owner, repo1), http.StatusNotFound,
 		createGitHubHandler)
 	defer cleanUp()
 
@@ -573,7 +573,7 @@ func TestGitHubClient_UploadScanningAnalysis(t *testing.T) {
 	assert.NoError(t, err)
 	expectedUploadSarifID := "b16b0368-01b9-11ed-90a3-cabff0b8ad31"
 	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, response,
-		fmt.Sprintf("/repos/%s/%s/commits?page=1&per_page=1&sha=master", owner, repo1), createGitHubSarifUploadHandler)
+		fmt.Sprintf("/repos/%s/%s/commits?per_page=1&sha=master", owner, repo1), createGitHubSarifUploadHandler)
 	defer cleanUp()
 
 	sarifID, err := client.UploadCodeScanning(ctx, owner, repo1, "master", scan)
@@ -872,7 +872,7 @@ func createGitHubSarifUploadHandler(t *testing.T, _ string, _ []byte, _ int) htt
 	resultSHA := "66d9a06b02a9f3f5fb47bb026a6fa5577647d96e"
 	return func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, "Bearer "+token, r.Header.Get("Authorization"))
-		if r.RequestURI == "/repos/jfrog/repo-1/commits?page=1&per_page=1&sha=master" {
+		if r.RequestURI == "/repos/jfrog/repo-1/commits?per_page=1&sha=master" {
 			w.WriteHeader(200)
 			repositoryCommits := []*github.RepositoryCommit{
 				{
