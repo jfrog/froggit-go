@@ -732,6 +732,51 @@ func TestGitHubClient_TestGetCommitStatus(t *testing.T) {
 	})
 }
 
+func TestGitHubClient_GetAllCommits(t *testing.T) {
+	ctx := context.Background()
+	response, err := os.ReadFile(filepath.Join("testdata", "github", "commit_list_response.json"))
+	assert.NoError(t, err)
+
+	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, response,
+		fmt.Sprintf("/repos/%s/%s/commits?per_page=5&sha=branch-1", owner, repo1), createGitHubHandler)
+	defer cleanUp()
+
+	commits, err := client.ListCommits(ctx, owner, repo1, branch1, 5)
+	assert.NoError(t, err)
+	assert.Len(t, commits, 3)
+
+	assert.Equal(t, CommitInfo{
+		Hash:          "6dcb09b5b57875f334f61aebed695e2e4193db5e",
+		AuthorName:    "Monalisa Octocat",
+		CommitterName: "Joconde Octocat",
+		Url:           "https://api.github.com/repos/octocat/Hello-World/commits/6dcb09b5b57875f334f61aebed695e2e4193db5e",
+		Timestamp:     1302796850,
+		Message:       "Fix all the bugs",
+		ParentHashes:  []string{"6dcb09b5b57875f334f61aebed695e2e4193db5e"},
+	}, commits[0])
+	assert.Equal(t, CommitInfo{
+		Hash:          "6dcb09b5b57875f334f61aebed695e2e4193db5d",
+		AuthorName:    "Van Gogh",
+		CommitterName: "Van Gogh",
+		Url:           "https://api.github.com/repos/octocat/Hello-World/commits/6dcb09b5b57875f334f61aebed695e2e4193db5e",
+		Timestamp:     1302796850,
+		Message:       "Fix all the bugs2",
+		ParentHashes:  []string{"6dcb09b5b57875f334f61aebed695e2e4193db5e"},
+	}, commits[1])
+	assert.Equal(t, CommitInfo{
+		Hash:          "6dcb09b5b57875f334f61aebed695e2e4193db5f",
+		AuthorName:    "Pablo Picasso",
+		CommitterName: "Pablo Picasso",
+		Url:           "https://api.github.com/repos/octocat/Hello-World/commits/6dcb09b5b57875f334f61aebed695e2e4193db5e",
+		Timestamp:     1302796850,
+		Message:       "Fix all the bugs3",
+		ParentHashes:  []string{"6dcb09b5b57875f334f61aebed695e2e4193db5e"},
+	}, commits[2])
+
+	_, err = createBadGitHubClient(t).ListCommits(ctx, owner, repo1, "master", 0)
+	assert.Error(t, err)
+}
+
 func createBadGitHubClient(t *testing.T) VcsClient {
 	client, err := NewClientBuilder(vcsutils.GitHub).ApiEndpoint("https://bad^endpoint").Build()
 	require.NoError(t, err)

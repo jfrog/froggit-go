@@ -204,6 +204,15 @@ func TestBitbucketCloud_ListPullRequestComments(t *testing.T) {
 	}, result[0])
 }
 
+func TestBitbucketCloud_ListCommits(t *testing.T) {
+	ctx := context.Background()
+	client, err := NewClientBuilder(vcsutils.BitbucketCloud).Build()
+	assert.NoError(t, err)
+
+	_, err = client.ListCommits(ctx, owner, repo1, branch1, 5)
+	assert.ErrorIs(t, err, errBitbucketListCommitNotSupported)
+}
+
 func TestBitbucketCloud_GetLatestCommit(t *testing.T) {
 	ctx := context.Background()
 	response, err := os.ReadFile(filepath.Join("testdata", "bitbucketcloud", "commit_list_response.json"))

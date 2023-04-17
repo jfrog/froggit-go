@@ -221,6 +221,39 @@ func TestGitLabClient_ListOpenPullRequests(t *testing.T) {
 	}, result[0]))
 }
 
+func TestGitLabClient_ListCommits(t *testing.T) {
+	ctx := context.Background()
+	response, err := os.ReadFile(filepath.Join("testdata", "gitlab", "commit_list_response.json"))
+	assert.NoError(t, err)
+
+	client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, response,
+		fmt.Sprintf("/api/v4/projects/%s/repository/commits?per_page=3&ref_name=master",
+			url.PathEscape(owner+"/"+repo1)), createGitLabHandler)
+	defer cleanUp()
+
+	result, err := client.ListCommits(ctx, owner, repo1, "master", 3)
+	require.NoError(t, err)
+	assert.Len(t, result, 2)
+	assert.Equal(t, CommitInfo{
+		Hash:          "ed899a2f4b50b4370feeea94676502b42383c746",
+		AuthorName:    "Example User",
+		CommitterName: "Administrator",
+		Url:           "https://gitlab.example.com/thedude/gitlab-foss/-/commit/ed899a2f4b50b4370feeea94676502b42383c746",
+		Timestamp:     1348131022,
+		Message:       "Replace sanitize with escape once",
+		ParentHashes:  []string{"6104942438c14ec7bd21c6cd5bd995272b3faff6"},
+	}, result[0])
+	assert.Equal(t, CommitInfo{
+		Hash:          "6104942438c14ec7bd21c6cd5bd995272b3faff6",
+		AuthorName:    "randx",
+		CommitterName: "ExampleName",
+		Url:           "https://gitlab.example.com/thedude/gitlab-foss/-/commit/ed899a2f4b50b4370feeea94676502b42383c746",
+		Timestamp:     1348131022,
+		Message:       "Sanitize for network graph",
+		ParentHashes:  []string{"ae1d9fb46aa2b07ee9836d49862ec4e2c46fbbba"},
+	}, result[1])
+}
+
 func TestGitLabClient_GetLatestCommit(t *testing.T) {
 	ctx := context.Background()
 	response, err := os.ReadFile(filepath.Join("testdata", "gitlab", "commit_list_response.json"))
@@ -541,8 +574,8 @@ func createGitLabHandler(t *testing.T, expectedURI string, response []byte, expe
 		assert.Equal(t, token, r.Header.Get("Private-Token"))
 	}
 }
-func createGitLabWithPaginationHandler(t *testing.T, _ string, response []byte, _ []byte, expectedStatusCode int, expectedHttpMethod string) http.HandlerFunc {
 
+func createGitLabWithPaginationHandler(t *testing.T, _ string, response []byte, _ []byte, expectedStatusCode int, expectedHttpMethod string) http.HandlerFunc {
 	var repos []gitlab.Project
 	err := json.Unmarshal(response, &repos)
 	assert.NoError(t, err)

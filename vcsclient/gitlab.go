@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/base64"
-	"errors"
 	"fmt"
 	"github.com/jfrog/froggit-go/vcsutils"
 	"github.com/jfrog/gofrog/datastructures"
@@ -279,34 +278,50 @@ func (client *GitLabClient) ListPullRequestComments(ctx context.Context, owner, 
 	return mapGitLabNotesToCommentInfoList(commentsList), nil
 }
 
-// GetLatestCommit on GitLab
-func (client *GitLabClient) GetLatestCommit(ctx context.Context, owner, repository, branch string) (CommitInfo, error) {
+// ListCommits on GitLab
+func (client *GitLabClient) ListCommits(ctx context.Context, owner, repository, branch string, numOfCommits int) ([]CommitInfo, error) {
 	err := validateParametersNotBlank(map[string]string{
 		"owner":      owner,
 		"repository": repository,
 		"branch":     branch,
 	})
 	if err != nil {
-		return CommitInfo{}, err
+		return nil, err
 	}
 
 	listOptions := &gitlab.ListCommitsOptions{
 		RefName: &branch,
 		ListOptions: gitlab.ListOptions{
-			Page:    1,
-			PerPage: 1,
+			PerPage: numOfCommits,
 		},
 	}
 
+	if numOfCommits == 0 {
+		numOfCommits = vcsutils.DefaultNumOfCommits
+	}
 	commits, _, err := client.glClient.Commits.ListCommits(getProjectID(owner, repository), listOptions, gitlab.WithContext(ctx))
+	if err != nil {
+		return nil, err
+	}
+
+	var commitInfoList []CommitInfo
+	for _, commit := range commits {
+		commitInfoList = append(commitInfoList, mapGitLabCommitToCommitInfo(commit))
+	}
+	return commitInfoList, nil
+}
+
+// GetLatestCommit on GitLab
+func (client *GitLabClient) GetLatestCommit(ctx context.Context, owner, repository, branch string) (CommitInfo, error) {
+	commits, err := client.ListCommits(ctx, owner, repository, branch, 1)
 	if err != nil {
 		return CommitInfo{}, err
 	}
+	var latestCommit CommitInfo
 	if len(commits) > 0 {
-		latestCommit := commits[0]
-		return mapGitLabCommitToCommitInfo(latestCommit), nil
+		latestCommit = commits[0]
 	}
-	return CommitInfo{}, errors.New(`{"message":"404 Not Found"}`)
+	return latestCommit, nil
 }
 
 // GetRepositoryInfo on GitLab

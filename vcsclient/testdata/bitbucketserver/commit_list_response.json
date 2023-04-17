@@ -27,9 +27,34 @@
           "displayId": "abcdef0"
         }
       ]
+    },
+    {
+      "id": "def0123abcdef4567abcdef8987abcdef6543dde",
+      "displayId": "def0123abcd",
+      "author": {
+        "name": "fred",
+        "emailAddress": "fred@example.com"
+      },
+      "authorTimestamp": 1548720847609,
+      "committer": {
+        "name": "mark",
+        "emailAddress": "mark@example.com"
+      },
+      "committerTimestamp": 1548720847610,
+      "message": "More work on feature 2",
+      "parents": [
+        {
+          "id": "abcdef0123abcdef4567abcdef8987abcdef6543",
+          "displayId": "abcdef0"
+        },
+        {
+          "id": "qwerty0123abcdef4567abcdef8987abcdef6543",
+          "displayId": "abcdef0"
+        }
+      ]
     }
   ],
   "start": 0,
-  "authorCount": 1,
-  "totalCount": 1
+  "authorCount": 2,
+  "totalCount": 2
 }

@@ -1,6 +1,9 @@
 package vcsutils
 
-const branchPrefix = "refs/heads/"
+const (
+	branchPrefix        = "refs/heads/"
+	DefaultNumOfCommits = 10
+)
 
 // VcsProvider is an enum represents the VCS provider type
 type VcsProvider int

@@ -8,7 +8,7 @@ import (
 
 var errLabelsNotSupported = errors.New("labels are not supported on Bitbucket")
 var errBitbucketCodeScanningNotSupported = errors.New("code scanning is not supported on Bitbucket")
-
+var errBitbucketListCommitNotSupported = errors.New("list commits are not supported on Bitbucket Cloud")
 var errBitbucketDownloadFileFromRepoNotSupported = errors.New("download file from repo is currently not supported on Bitbucket")
 var errBitbucketGetRepoEnvironmentInfoNotSupported = errors.New("get repository environment info is currently not supported on Bitbucket")
 

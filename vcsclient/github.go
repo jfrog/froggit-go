@@ -317,37 +317,50 @@ func (client *GitHubClient) ListPullRequestComments(ctx context.Context, owner, 
 	return mapGitHubCommentToCommentInfoList(commentsList)
 }
 
-// GetLatestCommit on GitHub
-func (client *GitHubClient) GetLatestCommit(ctx context.Context, owner, repository, branch string) (CommitInfo, error) {
-	err := validateParametersNotBlank(map[string]string{
-		"owner":      owner,
-		"repository": repository,
-		"branch":     branch,
-	})
+// ListCommits on GitHub
+func (client *GitHubClient) ListCommits(ctx context.Context, owner, repository, branch string, numOfCommits int) ([]CommitInfo, error) {
+	err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository, "branch": branch})
 	if err != nil {
-		return CommitInfo{}, err
+		return []CommitInfo{}, err
 	}
-
 	ghClient, err := client.buildGithubClient(ctx)
 	if err != nil {
-		return CommitInfo{}, err
+		return []CommitInfo{}, err
+	}
+
+	if numOfCommits == 0 {
+		numOfCommits = vcsutils.DefaultNumOfCommits
 	}
 	listOptions := &github.CommitsListOptions{
 		SHA: branch,
 		ListOptions: github.ListOptions{
-			Page:    1,
-			PerPage: 1,
+			PerPage: numOfCommits,
 		},
 	}
 	commits, _, err := ghClient.Repositories.ListCommits(ctx, owner, repository, listOptions)
 	if err != nil {
+		return []CommitInfo{}, err
+	}
+
+	var commitInfoList []CommitInfo
+	for _, commit := range commits {
+		commitInfoList = append(commitInfoList, mapGitHubCommitToCommitInfo(commit))
+	}
+	return commitInfoList, nil
+}
+
+// GetLatestCommit on GitHub
+func (client *GitHubClient) GetLatestCommit(ctx context.Context, owner, repository, branch string) (CommitInfo, error) {
+	commits, err := client.ListCommits(ctx, owner, repository, branch, 1)
+	if err != nil {
 		return CommitInfo{}, err
 	}
+
+	var latestCommit CommitInfo
 	if len(commits) > 0 {
-		latestCommit := commits[0]
-		return mapGitHubCommitToCommitInfo(latestCommit), nil
+		latestCommit = commits[0]
 	}
-	return CommitInfo{}, nil
+	return latestCommit, nil
 }
 
 // GetRepositoryInfo on GitHub

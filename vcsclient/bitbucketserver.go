@@ -414,39 +414,57 @@ type projectsResponse struct {
 	} `json:"values,omitempty"`
 }
 
-// GetLatestCommit on Bitbucket server
-func (client *BitbucketServerClient) GetLatestCommit(ctx context.Context, owner, repository, branch string) (CommitInfo, error) {
+// ListCommits on Bitbucket server
+func (client *BitbucketServerClient) ListCommits(ctx context.Context, owner, repository, branch string, numOfCommits int) ([]CommitInfo, error) {
 	err := validateParametersNotBlank(map[string]string{
 		"owner":      owner,
 		"repository": repository,
 		"branch":     branch,
 	})
 	if err != nil {
-		return CommitInfo{}, err
+		return nil, err
 	}
 
+	if numOfCommits == 0 {
+		numOfCommits = vcsutils.DefaultNumOfCommits
+	}
 	options := map[string]interface{}{
-		"limit": 1,
+		"limit": numOfCommits,
 		"until": branch,
 	}
 	bitbucketClient, err := client.buildBitbucketClient(ctx)
 	if err != nil {
-		return CommitInfo{}, err
+		return nil, err
 	}
 
 	apiResponse, err := bitbucketClient.GetCommits(owner, repository, options)
 	if err != nil {
-		return CommitInfo{}, err
+		return nil, err
 	}
 	commits, err := bitbucketv1.GetCommitsResponse(apiResponse)
 	if err != nil {
+		return nil, err
+	}
+
+	var commitInfoList []CommitInfo
+	for _, commit := range commits {
+		commitInfoList = append(commitInfoList, client.mapBitbucketServerCommitToCommitInfo(commit, owner, repository))
+	}
+	return commitInfoList, nil
+}
+
+// GetLatestCommit on Bitbucket server
+func (client *BitbucketServerClient) GetLatestCommit(ctx context.Context, owner, repository, branch string) (CommitInfo, error) {
+	commits, err := client.ListCommits(ctx, owner, repository, branch, 1)
+	if err != nil {
 		return CommitInfo{}, err
 	}
+
+	var latestCommit CommitInfo
 	if len(commits) > 0 {
-		latestCommit := commits[0]
-		return client.mapBitbucketServerCommitToCommitInfo(latestCommit, owner, repository), nil
+		latestCommit = commits[0]
 	}
-	return CommitInfo{}, nil
+	return latestCommit, nil
 }
 
 // GetRepositoryInfo on Bitbucket server
@@ -493,7 +511,7 @@ func (client *BitbucketServerClient) GetRepositoryInfo(ctx context.Context, owne
 }
 
 // GetCommitBySha on Bitbucket server
-func (client BitbucketServerClient) GetCommitBySha(ctx context.Context, owner, repository, sha string) (CommitInfo, error) {
+func (client *BitbucketServerClient) GetCommitBySha(ctx context.Context, owner, repository, sha string) (CommitInfo, error) {
 	err := validateParametersNotBlank(map[string]string{
 		"owner":      owner,
 		"repository": repository,
@@ -521,7 +539,7 @@ func (client BitbucketServerClient) GetCommitBySha(ctx context.Context, owner, r
 }
 
 // CreateLabel on Bitbucket server
-func (client BitbucketServerClient) CreateLabel(ctx context.Context, owner, repository string, labelInfo LabelInfo) error {
+func (client *BitbucketServerClient) CreateLabel(ctx context.Context, owner, repository string, labelInfo LabelInfo) error {
 	return errLabelsNotSupported
 }
 

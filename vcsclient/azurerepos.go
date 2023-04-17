@@ -266,35 +266,50 @@ func (client *AzureReposClient) ListOpenPullRequests(ctx context.Context, _, rep
 	return pullRequestsInfo, nil
 }
 
+// ListCommits on Azure Repos
+func (client *AzureReposClient) ListCommits(ctx context.Context, _, repository, branch string, numOfCommits int) ([]CommitInfo, error) {
+	azureReposGitClient, err := client.buildAzureReposClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if numOfCommits == 0 {
+		numOfCommits = vcsutils.DefaultNumOfCommits
+	}
+	commits, err := azureReposGitClient.GetCommits(ctx, git.GetCommitsArgs{
+		RepositoryId: &repository,
+		Project:      &client.vcsInfo.Project,
+		SearchCriteria: &git.GitQueryCommitsCriteria{
+			ItemVersion: &git.GitVersionDescriptor{
+				Version:     &branch,
+				VersionType: &git.GitVersionTypeValues.Branch,
+			},
+			Top: &numOfCommits,
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	var commitInfoList []CommitInfo
+	for _, commit := range *commits {
+		commitInfoList = append(commitInfoList, mapAzureReposCommitToCommitInfo(commit))
+	}
+	return commitInfoList, nil
+}
+
 // GetLatestCommit on Azure Repos
 func (client *AzureReposClient) GetLatestCommit(ctx context.Context, _, repository, branch string) (CommitInfo, error) {
-	azureReposGitClient, err := client.buildAzureReposClient(ctx)
+	commits, err := client.ListCommits(ctx, "", repository, branch, 1)
 	if err != nil {
 		return CommitInfo{}, err
 	}
-	latestCommitInfo := CommitInfo{}
-	commits, err := azureReposGitClient.GetCommits(ctx, git.GetCommitsArgs{
-		RepositoryId:   &repository,
-		Project:        &client.vcsInfo.Project,
-		SearchCriteria: &git.GitQueryCommitsCriteria{ItemVersion: &git.GitVersionDescriptor{Version: &branch, VersionType: &git.GitVersionTypeValues.Branch}},
-	})
-	if err != nil {
-		return latestCommitInfo, err
+
+	var latestCommit CommitInfo
+	if len(commits) > 0 {
+		latestCommit = commits[0]
 	}
-	if len(*commits) > 0 {
-		// The latest commit is the first in the list
-		latestCommit := (*commits)[0]
-		latestCommitInfo = CommitInfo{
-			Hash:          vcsutils.DefaultIfNotNil(latestCommit.CommitId),
-			AuthorName:    vcsutils.DefaultIfNotNil(latestCommit.Author.Name),
-			CommitterName: vcsutils.DefaultIfNotNil(latestCommit.Committer.Name),
-			Url:           vcsutils.DefaultIfNotNil(latestCommit.Url),
-			Timestamp:     latestCommit.Committer.Date.Time.Unix(),
-			Message:       vcsutils.DefaultIfNotNil(latestCommit.Comment),
-			ParentHashes:  vcsutils.DefaultIfNotNil(latestCommit.Parents),
-		}
-	}
-	return latestCommitInfo, nil
+	return latestCommit, nil
 }
 
 func getUnsupportedInAzureError(functionName string) error {
@@ -382,7 +397,7 @@ func (client *AzureReposClient) SetCommitStatus(ctx context.Context, commitStatu
 }
 
 // GetCommitStatuses on Azure Repos
-func (client *AzureReposClient) GetCommitStatuses(ctx context.Context, owner, repository, ref string) (status []CommitStatusInfo, err error) {
+func (client *AzureReposClient) GetCommitStatuses(ctx context.Context, _, repository, ref string) (status []CommitStatusInfo, err error) {
 	azureReposGitClient, err := client.buildAzureReposClient(ctx)
 	if err != nil {
 		return nil, err
@@ -403,20 +418,20 @@ func (client *AzureReposClient) GetCommitStatuses(ctx context.Context, owner, re
 			Description:   *singleStatus.Description,
 			DetailsUrl:    *singleStatus.TargetUrl,
 			Creator:       *singleStatus.CreatedBy.DisplayName,
-			LastUpdatedAt: extractTimeFromAzuredevopsTime(singleStatus.UpdatedDate),
-			CreatedAt:     extractTimeFromAzuredevopsTime(singleStatus.CreationDate),
+			LastUpdatedAt: extractTimeFromAzureDevopsTime(singleStatus.UpdatedDate),
+			CreatedAt:     extractTimeFromAzureDevopsTime(singleStatus.CreationDate),
 		})
 	}
 	return results, err
 }
 
 // DownloadFileFromRepo on Azure Repos
-func (client *AzureReposClient) DownloadFileFromRepo(ctx context.Context, owner, repository, branch, path string) ([]byte, int, error) {
+func (client *AzureReposClient) DownloadFileFromRepo(_ context.Context, _, _, _, _ string) ([]byte, int, error) {
 	return nil, 0, getUnsupportedInAzureError("download file from repo")
 }
 
 // GetRepositoryEnvironmentInfo on GitLab
-func (client *AzureReposClient) GetRepositoryEnvironmentInfo(ctx context.Context, owner, repository, name string) (RepositoryEnvironmentInfo, error) {
+func (client *AzureReposClient) GetRepositoryEnvironmentInfo(_ context.Context, _, _, _ string) (RepositoryEnvironmentInfo, error) {
 	return RepositoryEnvironmentInfo{}, getUnsupportedInAzureError("get repository environment info")
 }
 
@@ -497,9 +512,21 @@ func mapStatusToString(status CommitStatus) string {
 	return conversionMap[status]
 }
 
-func extractTimeFromAzuredevopsTime(rawStatus *azuredevops.Time) time.Time {
+func extractTimeFromAzureDevopsTime(rawStatus *azuredevops.Time) time.Time {
 	if rawStatus == nil {
 		return time.Time{}
 	}
 	return extractTimeWithFallback(&rawStatus.Time)
+}
+
+func mapAzureReposCommitToCommitInfo(commit git.GitCommitRef) CommitInfo {
+	return CommitInfo{
+		Hash:          vcsutils.DefaultIfNotNil(commit.CommitId),
+		AuthorName:    vcsutils.DefaultIfNotNil(commit.Author.Name),
+		CommitterName: vcsutils.DefaultIfNotNil(commit.Committer.Name),
+		Url:           vcsutils.DefaultIfNotNil(commit.Url),
+		Timestamp:     commit.Committer.Date.Time.Unix(),
+		Message:       vcsutils.DefaultIfNotNil(commit.Comment),
+		ParentHashes:  vcsutils.DefaultIfNotNil(commit.Parents),
+	}
 }

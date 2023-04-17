@@ -360,6 +360,11 @@ func (client *BitbucketCloudClient) ListPullRequestComments(ctx context.Context,
 	return mapBitbucketCloudCommentToCommentInfo(&parsedComments), nil
 }
 
+// ListCommits on Bitbucket cloud
+func (client *BitbucketCloudClient) ListCommits(_ context.Context, _, _, _ string, _ int) ([]CommitInfo, error) {
+	return nil, errBitbucketListCommitNotSupported
+}
+
 // GetLatestCommit on Bitbucket cloud
 func (client *BitbucketCloudClient) GetLatestCommit(ctx context.Context, owner, repository, branch string) (CommitInfo, error) {
 	err := validateParametersNotBlank(map[string]string{

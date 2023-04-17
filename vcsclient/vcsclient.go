@@ -184,6 +184,13 @@ type VcsClient interface {
 	// repository - VCS repository name
 	GetRepositoryInfo(ctx context.Context, owner, repository string) (RepositoryInfo, error)
 
+	// ListCommits returns a list of commits in the given branch of the repository, as a list of CommitInfo objects
+	// owner           - User or organization
+	// repository      - VCS repository name
+	// branch          - The name of the branch
+	// numOfCommits    - The number of the latest commits that will be fetched from the repository, by default: 10.
+	ListCommits(ctx context.Context, owner, repository, branch string, numOfCommits int) ([]CommitInfo, error)
+
 	// GetCommitBySha Gets the commit by its SHA
 	// owner      - User or organization
 	// repository - VCS repository name

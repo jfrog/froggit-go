@@ -236,6 +236,47 @@ func TestBitbucketServer_ListPullRequestComments(t *testing.T) {
 	}, result[0])
 }
 
+func TestBitbucketServer_ListCommits(t *testing.T) {
+	ctx := context.Background()
+	response, err := os.ReadFile(filepath.Join("testdata", "bitbucketserver", "commit_list_response.json"))
+	assert.NoError(t, err)
+
+	client, serverUrl, cleanUp := createServerWithUrlAndClientReturningStatus(t, vcsutils.BitbucketServer, false,
+		response,
+		fmt.Sprintf("/rest/api/1.0/projects/%s/repos/%s/commits?limit=10&limit=10&until=master", owner, repo1),
+		http.StatusOK, createBitbucketServerHandler)
+	defer cleanUp()
+
+	result, err := client.ListCommits(ctx, owner, repo1, "master", 10)
+
+	require.NoError(t, err)
+	assert.Len(t, result, 2)
+	expectedUrl1 := fmt.Sprintf("%s/rest/api/1.0/projects/jfrog/repos/repo-1"+
+		"/commits/def0123abcdef4567abcdef8987abcdef6543abc", serverUrl)
+	assert.Equal(t, CommitInfo{
+		Hash:          "def0123abcdef4567abcdef8987abcdef6543abc",
+		AuthorName:    "charlie",
+		CommitterName: "mark",
+		Url:           expectedUrl1,
+		Timestamp:     1548720847610,
+		Message:       "More work on feature 1",
+		ParentHashes:  []string{"abcdef0123abcdef4567abcdef8987abcdef6543", "qwerty0123abcdef4567abcdef8987abcdef6543"},
+	}, result[0])
+	expectedUrl2 := fmt.Sprintf("%s/rest/api/1.0/projects/jfrog/repos/repo-1/commits/def0123abcdef4567abcdef8987abcdef6543dde", serverUrl)
+	assert.Equal(t, CommitInfo{
+		Hash:          "def0123abcdef4567abcdef8987abcdef6543dde",
+		AuthorName:    "fred",
+		CommitterName: "mark",
+		Url:           expectedUrl2,
+		Timestamp:     1548720847610,
+		Message:       "More work on feature 2",
+		ParentHashes:  []string{"abcdef0123abcdef4567abcdef8987abcdef6543", "qwerty0123abcdef4567abcdef8987abcdef6543"},
+	}, result[1])
+
+	_, err = createBadBitbucketServerClient(t).GetLatestCommit(ctx, owner, repo1, "master")
+	assert.Error(t, err)
+}
+
 func TestBitbucketServer_GetLatestCommit(t *testing.T) {
 	ctx := context.Background()
 	response, err := os.ReadFile(filepath.Join("testdata", "bitbucketserver", "commit_list_response.json"))
