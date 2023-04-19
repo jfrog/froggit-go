@@ -47,6 +47,8 @@ type WebhookInfo struct {
 	CompareUrl string `json:"compare_url,omitempty"`
 	// PullRequest encapsulates information of the pull request.
 	PullRequest *WebhookInfoPullRequest `json:"pull_request,omitempty"`
+	// Tag encapsulates information about the tag event.
+	Tag *WebhookInfoTag `json:"tag,omitempty"`
 }
 
 // WebhookInfoPullRequest contains information about a pull request event received via a webhook.
@@ -83,6 +85,22 @@ type WebhookInfoPullRequest struct {
 type WebHookInfoRepoDetails struct {
 	Name  string `json:"name,omitempty"`
 	Owner string `json:"owner,omitempty"`
+}
+
+// WebhookInfoTag contains information about a tag event received via a webhook.
+type WebhookInfoTag struct {
+	// Name is a name of the tag.
+	Name string `json:"name,omitempty"`
+	// Hash is a SHA of the tag.
+	Hash string `json:"hash,omitempty"`
+	// TargetHash is a SHA of the commit the tag points to.
+	TargetHash string `json:"target_hash,omitempty"`
+	// Message is a message used during tag creation if any.
+	Message string `json:"message,omitempty"`
+	// Repository contains details about repository.
+	Repository WebHookInfoRepoDetails `json:"repository,omitempty"`
+	// Author
+	Author WebHookInfoUser `json:"author,omitempty"`
 }
 
 // WebHookInfoCommit represents a commit info of an incoming webhook

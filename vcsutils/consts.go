@@ -1,6 +1,9 @@
 package vcsutils
 
-const branchPrefix = "refs/heads/"
+const (
+	branchPrefix = "refs/heads/"
+	TagPrefix    = "refs/tags/"
+)
 
 // VcsProvider is an enum represents the VCS provider type
 type VcsProvider int
@@ -50,4 +53,8 @@ const (
 	PrOpened WebhookEvent = "PrOpened"
 	// Push a commit is pushed to the source branch
 	Push WebhookEvent = "Push"
+	// TagPushed a new tag is pushed
+	TagPushed WebhookEvent = "TagPushed"
+	// TagRemoved a tag is removed
+	TagRemoved WebhookEvent = "TagRemoved"
 )

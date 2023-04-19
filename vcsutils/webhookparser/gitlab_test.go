@@ -287,6 +287,78 @@ func TestGitLabParseIncomingPrWebhook(t *testing.T) {
 	}
 }
 
+func TestGitLabParseIncomingWebhookTagEvents(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name              string
+		payloadFilename   string
+		expectedEventType vcsutils.WebhookEvent
+		expectedTagInfo   *WebhookInfoTag
+	}{
+		{
+			name:              "created",
+			payloadFilename:   "tagcreatepayload.json",
+			expectedEventType: vcsutils.TagPushed,
+			expectedTagInfo: &WebhookInfoTag{
+				Name:       "first_tag",
+				Hash:       "45abefa4485f0e03fa5db86a998d16a0a1df07b7",
+				TargetHash: "0497394e95db76bd27a177955694e06987da47e7",
+				Message:    "This is a first tag",
+				Repository: WebHookInfoRepoDetails{
+					Name:  "webhooktest",
+					Owner: "grobinov",
+				},
+				Author: WebHookInfoUser{
+					Login:       "robinov",
+					DisplayName: "Rob Ivanov",
+					AvatarUrl:   "https://secure.gravatar.com/avatar/a47aec620663eaa2bfeaa0540e580fd5?s=80&d=identicon",
+				},
+			},
+		},
+		{
+			name:              "deleted",
+			payloadFilename:   "tagdeletepayload.json",
+			expectedEventType: vcsutils.TagRemoved,
+			expectedTagInfo: &WebhookInfoTag{
+				Name: "first_tag",
+				Hash: "45abefa4485f0e03fa5db86a998d16a0a1df07b7",
+				Repository: WebHookInfoRepoDetails{
+					Name:  "webhooktest",
+					Owner: "grobinov",
+				},
+				Author: WebHookInfoUser{
+					Login:       "robinov",
+					DisplayName: "Rob Ivanov",
+					AvatarUrl:   "https://secure.gravatar.com/avatar/a47aec620663eaa2bfeaa0540e580fd5?s=80&d=identicon",
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			reader, err := os.Open(filepath.Join("testdata", "gitlab", tt.payloadFilename))
+			require.NoError(t, err)
+			defer close(reader)
+
+			request := httptest.NewRequest("POST", "https://127.0.0.1", reader)
+			request.Header.Add(gitLabKeyHeader, string(token))
+			request.Header.Add(gitLabEventHeader, string(gitlab.EventTypeTagPush))
+
+			actual, err := ParseIncomingWebhook(
+				context.Background(),
+				vcsclient.EmptyLogger{},
+				WebhookOrigin{
+					VcsProvider: vcsutils.GitLab,
+					Token:       token,
+				},
+				request,
+			)
+			require.NoError(t, err)
+			assert.Equal(t, &WebhookInfo{Event: tt.expectedEventType, Tag: tt.expectedTagInfo}, actual)
+		})
+	}
+}
+
 func TestGitLabParseIncomingWebhookError(t *testing.T) {
 	request := &http.Request{}
 	_, err := ParseIncomingWebhook(context.Background(),
