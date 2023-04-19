@@ -266,7 +266,7 @@ func (client *BitbucketServerClient) GetCommitStatuses(ctx context.Context, owne
 	if err != nil {
 		return nil, err
 	}
-	return bitbucketParseCommitStatuses(response.Values)
+	return bitbucketParseCommitStatuses(response.Values, vcsutils.BitbucketServer)
 }
 
 // DownloadRepository on Bitbucket server
@@ -493,7 +493,7 @@ func (client *BitbucketServerClient) GetRepositoryInfo(ctx context.Context, owne
 }
 
 // GetCommitBySha on Bitbucket server
-func (client BitbucketServerClient) GetCommitBySha(ctx context.Context, owner, repository, sha string) (CommitInfo, error) {
+func (client *BitbucketServerClient) GetCommitBySha(ctx context.Context, owner, repository, sha string) (CommitInfo, error) {
 	err := validateParametersNotBlank(map[string]string{
 		"owner":      owner,
 		"repository": repository,
@@ -521,7 +521,7 @@ func (client BitbucketServerClient) GetCommitBySha(ctx context.Context, owner, r
 }
 
 // CreateLabel on Bitbucket server
-func (client BitbucketServerClient) CreateLabel(ctx context.Context, owner, repository string, labelInfo LabelInfo) error {
+func (client *BitbucketServerClient) CreateLabel(ctx context.Context, owner, repository string, labelInfo LabelInfo) error {
 	return errLabelsNotSupported
 }
 
