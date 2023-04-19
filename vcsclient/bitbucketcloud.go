@@ -227,7 +227,7 @@ func (client *BitbucketCloudClient) GetCommitStatuses(ctx context.Context, owner
 	if err != nil {
 		return nil, err
 	}
-	results, err := bitbucketParseCommitStatuses(rawStatuses)
+	results, err := bitbucketParseCommitStatuses(rawStatuses, vcsutils.BitbucketCloud)
 	if err != nil {
 		return nil, err
 	}

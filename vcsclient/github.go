@@ -203,7 +203,7 @@ func (client *GitHubClient) GetCommitStatuses(ctx context.Context, owner, reposi
 	results := make([]CommitStatusInfo, 0)
 	for _, singleStatus := range statuses.Statuses {
 		results = append(results, CommitStatusInfo{
-			State:         CommitStatusAsStringToStatus(*singleStatus.State),
+			State:         commitStatusAsStringToStatus(*singleStatus.State),
 			Description:   singleStatus.GetDescription(),
 			DetailsUrl:    singleStatus.GetTargetURL(),
 			Creator:       singleStatus.GetCreator().GetName(),

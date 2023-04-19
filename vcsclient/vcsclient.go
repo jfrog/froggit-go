@@ -313,9 +313,9 @@ func validateParametersNotBlank(paramNameValueMap map[string]string) error {
 	return nil
 }
 
-// CommitStatusAsStringToStatus maps status as string to CommitStatus
+// commitStatusAsStringToStatus maps status as string to CommitStatus
 // Handles all the different statuses for every VCS provider
-func CommitStatusAsStringToStatus(rawStatus string) CommitStatus {
+func commitStatusAsStringToStatus(rawStatus string) CommitStatus {
 	switch strings.ToLower(rawStatus) {
 	case "success", "succeeded", "successful":
 		return Pass

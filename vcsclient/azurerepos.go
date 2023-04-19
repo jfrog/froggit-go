@@ -399,7 +399,7 @@ func (client *AzureReposClient) GetCommitStatuses(ctx context.Context, owner, re
 	results := make([]CommitStatusInfo, 0)
 	for _, singleStatus := range *resGitStatus {
 		results = append(results, CommitStatusInfo{
-			State:         CommitStatusAsStringToStatus(string(*singleStatus.State)),
+			State:         commitStatusAsStringToStatus(string(*singleStatus.State)),
 			Description:   *singleStatus.Description,
 			DetailsUrl:    *singleStatus.TargetUrl,
 			Creator:       *singleStatus.CreatedBy.DisplayName,

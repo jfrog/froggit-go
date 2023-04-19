@@ -185,7 +185,7 @@ func (client *GitLabClient) GetCommitStatuses(ctx context.Context, owner, reposi
 	results := make([]CommitStatusInfo, 0)
 	for _, singleStatus := range statuses {
 		results = append(results, CommitStatusInfo{
-			State:         CommitStatusAsStringToStatus(singleStatus.Status),
+			State:         commitStatusAsStringToStatus(singleStatus.Status),
 			Description:   singleStatus.Description,
 			DetailsUrl:    singleStatus.TargetURL,
 			Creator:       singleStatus.Author.Name,
