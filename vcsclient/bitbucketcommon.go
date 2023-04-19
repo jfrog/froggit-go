@@ -48,8 +48,8 @@ func bitbucketParseCommitStatuses(rawStatuses interface{}, provider vcsutils.Vcs
 	}
 
 	var results []CommitStatusInfo
-	for _, commitStatus := range statuses.Statuses {
-		commitInfo, err := getCommitStatusInfoByBitbucketProvider(&commitStatus, provider)
+	for i := range statuses.Statuses {
+		commitInfo, err := getCommitStatusInfoByBitbucketProvider(&statuses.Statuses[i], provider)
 		if err != nil {
 			return nil, err
 		}
