@@ -62,7 +62,7 @@ func (webhook *bitbucketServerWebhookParser) parseIncomingWebhook(_ context.Cont
 	event := request.Header.Get(bitbucketServerEventHeader)
 	switch event {
 	case "repo:refs_changed":
-		return webhook.parsePushEvent(bitbucketServerWebHook)
+		return webhook.parseRefChange(bitbucketServerWebHook)
 	case "pr:opened":
 		return webhook.parsePrEvents(bitbucketServerWebHook, vcsutils.PrOpened)
 	case "pr:from_ref_updated":
@@ -119,6 +119,47 @@ func (webhook *bitbucketServerWebhookParser) parsePushEvent(bitbucketCloudWebHoo
 			DisplayName: bitbucketCloudWebHook.Actor.DisplayName,
 		},
 	}, nil
+}
+
+func (webhook *bitbucketServerWebhookParser) parseRefChange(bitbucketCloudWebHook *bitbucketServerWebHook) (*WebhookInfo, error) {
+	for _, change := range bitbucketCloudWebHook.Changes {
+		if change.Ref.Type == "BRANCH" {
+			return webhook.parsePushEvent(bitbucketCloudWebHook)
+		}
+
+		if change.Ref.Type == "TAG" {
+			return webhook.parseTagEvent(bitbucketCloudWebHook, change), nil
+		}
+	}
+	return nil, nil
+}
+
+func (webhook *bitbucketServerWebhookParser) parseTagEvent(hook *bitbucketServerWebHook, change bitbucketServerWebHookChanges) *WebhookInfo {
+	webhookInfo := &WebhookInfo{
+		Tag: &WebhookInfoTag{
+			Name:       change.Ref.DisplayId,
+			Repository: webhook.getRepositoryDetails(hook.Repository),
+			Author: WebHookInfoUser{
+				Login:       hook.Actor.Name,
+				DisplayName: hook.Actor.DisplayName,
+				AvatarUrl:   webhook.getFirstHrefFromLinks(hook.Actor.Links),
+				Email:       hook.Actor.EmailAddress,
+			},
+		},
+	}
+
+	switch change.Type {
+	case "ADD":
+		webhookInfo.Event = vcsutils.TagPushed
+		webhookInfo.Tag.Hash = change.ToHash
+	case "DELETE":
+		webhookInfo.Event = vcsutils.TagRemoved
+		webhookInfo.Tag.Hash = change.FromHash
+	default:
+		return nil
+	}
+
+	return webhookInfo
 }
 
 func (webhook *bitbucketServerWebhookParser) getRepositoryDetails(repository bitbucketv1.Repository) WebHookInfoRepoDetails {
@@ -191,13 +232,19 @@ type bitbucketServerWebHook struct {
 }
 
 type bitbucketServerWebHookChanges struct {
+	Ref struct {
+		DisplayId string `json:"displayId"`
+		Type      string `json:"type"`
+	}
 	RefID    string `json:"refId,omitempty"`
 	ToHash   string `json:"toHash,omitempty"`
 	FromHash string `json:"fromHash,omitempty"`
+	Type     string `json:"type"`
 }
 
 type bitbucketServerWebHookActor struct {
-	Name         string `json:"name,omitempty"`
-	EmailAddress string `json:"emailAddress,omitempty"`
-	DisplayName  string `json:"displayName,omitempty"`
+	Name         string            `json:"name,omitempty"`
+	EmailAddress string            `json:"emailAddress,omitempty"`
+	DisplayName  string            `json:"displayName,omitempty"`
+	Links        bitbucketv1.Links `json:"links"`
 }

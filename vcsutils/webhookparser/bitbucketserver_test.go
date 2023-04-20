@@ -38,6 +38,9 @@ const (
 	bitbucketServerPrDeleteExpectedTime = int64(1638794581)
 	bitbucketServerPrDeletedSha256      = "b0ccbd0f97ca030aa469cfa559f7051732c33fc63e7e3a8b5b8e2d157af71806"
 
+	bitbucketServerTagPushedSha256  = "f55f6b6317b24cd19c21876db1832460978b5c6376ba6ce740b8649c1bcd41e0"
+	bitbucketServerTagRemovedSha256 = "0c951396d86b353de850d49bd76556f2b2336c3ff4f437086113f44be5421bb9"
+
 	bitbucketServerExpectedPrID = 3
 )
 
@@ -259,6 +262,79 @@ func TestBitbucketServerParseIncomingPrWebhook(t *testing.T) {
 			assert.Equal(t, expectedSourceBranch, actual.SourceBranch)
 			assert.Equal(t, tt.expectedEventType, actual.Event)
 			assert.Equal(t, tt.expectedPullRequestInfo, actual.PullRequest)
+		})
+	}
+}
+func TestBitbucketServerParseIncomingWebhookTagEvents(t *testing.T) {
+	t.Parallel()
+	author := WebHookInfoUser{
+		Login:       "pavlos",
+		DisplayName: "Pavlo Strokov[EXT]",
+		Email:       "pavlos@jfrog.com",
+		AvatarUrl:   "https://git.jfrog.info/users/pavlos",
+	}
+
+	repository := WebHookInfoRepoDetails{
+		Name:  "integration-test",
+		Owner: "~PAVLOS",
+	}
+
+	tests := []struct {
+		name              string
+		payloadFilename   string
+		eventHeader       string
+		payloadSha        string
+		expectedEventType vcsutils.WebhookEvent
+		expectedTagInfo   *WebhookInfoTag
+	}{
+		{
+			name:              "created",
+			payloadFilename:   "tagcreatepayload.json",
+			eventHeader:       "repo:refs_changed",
+			payloadSha:        bitbucketServerTagPushedSha256,
+			expectedEventType: vcsutils.TagPushed,
+			expectedTagInfo: &WebhookInfoTag{
+				Name:       "tag_intg",
+				Hash:       "32e1a97a1a09a735ab77b4f0fb26cb5550cc2713",
+				Repository: repository,
+				Author:     author,
+			},
+		},
+		{
+			name:              "deleted",
+			payloadFilename:   "tagdeletepayload.json",
+			eventHeader:       "repo:refs_changed",
+			payloadSha:        bitbucketServerTagRemovedSha256,
+			expectedEventType: vcsutils.TagRemoved,
+			expectedTagInfo: &WebhookInfoTag{
+				Name:       "tag_intg",
+				Hash:       "32e1a97a1a09a735ab77b4f0fb26cb5550cc2713",
+				Repository: repository,
+				Author:     author,
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			reader, err := os.Open(filepath.Join("testdata", "bitbucketserver", tt.payloadFilename))
+			require.NoError(t, err)
+			defer close(reader)
+
+			request := httptest.NewRequest("POST", "https://127.0.0.1", reader)
+			request.Header.Add(EventHeaderKey, tt.eventHeader)
+			request.Header.Add(sha256Signature, "sha256="+tt.payloadSha)
+
+			actual, err := ParseIncomingWebhook(
+				context.Background(),
+				vcsclient.EmptyLogger{},
+				WebhookOrigin{
+					VcsProvider: vcsutils.BitbucketServer,
+					Token:       token,
+				},
+				request,
+			)
+			require.NoError(t, err)
+			assert.Equal(t, &WebhookInfo{Event: tt.expectedEventType, Tag: tt.expectedTagInfo}, actual)
 		})
 	}
 }
