@@ -250,6 +250,70 @@ func TestBitbucketCloudParseIncomingPrWebhook(t *testing.T) {
 	}
 }
 
+func TestBitbucketCloudParseIncomingWebhookTagEvents(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name              string
+		payloadFilename   string
+		eventHeader       string
+		expectedEventType vcsutils.WebhookEvent
+		expectedTagInfo   *WebhookInfoTag
+	}{
+		{
+			name:              "created",
+			payloadFilename:   "tagcreatepayload.json",
+			eventHeader:       "repo:push",
+			expectedEventType: vcsutils.TagPushed,
+			expectedTagInfo: &WebhookInfoTag{
+				Name:       "tag_intg",
+				TargetHash: "a0649fd18af888f98aace00db6aec703e95121ce",
+				Message:    "test webhook event\n",
+				Repository: WebHookInfoRepoDetails{
+					Name:  "rest-api-test",
+					Owner: "avadakedabra",
+				},
+			},
+		},
+		{
+			name:              "deleted",
+			payloadFilename:   "tagdeletepayload.json",
+			eventHeader:       "repo:push",
+			expectedEventType: vcsutils.TagRemoved,
+			expectedTagInfo: &WebhookInfoTag{
+				Name:       "tag_intg",
+				TargetHash: "a0649fd18af888f98aace00db6aec703e95121ce",
+				Message:    "test webhook event\n",
+				Repository: WebHookInfoRepoDetails{
+					Name:  "rest-api-test",
+					Owner: "avadakedabra",
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			reader, err := os.Open(filepath.Join("testdata", "bitbucketcloud", tt.payloadFilename))
+			require.NoError(t, err)
+			defer close(reader)
+
+			request := httptest.NewRequest("POST", "https://127.0.0.1?token="+string(token), reader)
+			request.Header.Add(EventHeaderKey, tt.eventHeader)
+
+			actual, err := ParseIncomingWebhook(
+				context.Background(),
+				vcsclient.EmptyLogger{},
+				WebhookOrigin{
+					VcsProvider: vcsutils.BitbucketCloud,
+					Token:       token,
+				},
+				request,
+			)
+			require.NoError(t, err)
+			assert.Equal(t, &WebhookInfo{Event: tt.expectedEventType, Tag: tt.expectedTagInfo}, actual)
+		})
+	}
+}
+
 func TestBitbucketCloudParseIncomingWebhookError(t *testing.T) {
 	request := &http.Request{URL: &url.URL{RawQuery: "token=a"}}
 	_, err := ParseIncomingWebhook(context.Background(),
