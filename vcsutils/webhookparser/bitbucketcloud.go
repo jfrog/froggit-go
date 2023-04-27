@@ -65,36 +65,17 @@ func (webhook *bitbucketCloudWebhookParser) parseIncomingWebhook(_ context.Conte
 }
 
 func (webhook *bitbucketCloudWebhookParser) parsePushEvent(bitbucketCloudWebHook *bitbucketCloudWebHook) *WebhookInfo {
-	// In Push events, the hook provides a list of changes. Only the first one is relevant in our point of view.
-	firstChange := bitbucketCloudWebHook.Push.Changes[0]
-	lastCommit := firstChange.New.Target
-	beforeCommitHash := webhook.parentOfLastCommit(lastCommit)
-	return &WebhookInfo{
-		TargetRepositoryDetails: webhook.parseRepoFullName(bitbucketCloudWebHook.Repository.FullName),
-		TargetBranch:            webhook.branchName(firstChange),
-		Timestamp:               lastCommit.Date.UTC().Unix(),
-		Event:                   vcsutils.Push,
-		Commit: WebHookInfoCommit{
-			Hash:    lastCommit.Hash,
-			Message: lastCommit.Message,
-			Url:     lastCommit.Links.Html.Ref,
-		},
-		BeforeCommit: WebHookInfoCommit{
-			Hash: beforeCommitHash,
-		},
-		BranchStatus: webhook.branchStatus(firstChange),
-		TriggeredBy: WebHookInfoUser{
-			Login: bitbucketCloudWebHook.Actor.Nickname,
-		},
-		Committer: WebHookInfoUser{
-			Login: webhook.login(bitbucketCloudWebHook, lastCommit),
-		},
-		Author: WebHookInfoUser{
-			Login: webhook.login(bitbucketCloudWebHook, lastCommit),
-			Email: webhook.email(lastCommit),
-		},
-		CompareUrl: webhook.compareURL(bitbucketCloudWebHook, lastCommit, beforeCommitHash),
+	for i, change := range bitbucketCloudWebHook.Push.Changes {
+		if change.New.Type == "branch" || change.Old.Type == "branch" {
+			return webhook.parseBranchChangeEvent(bitbucketCloudWebHook, i)
+		}
+
+		if change.New.Type == "tag" || change.Old.Type == "tag" {
+			return webhook.parseTagEvent(bitbucketCloudWebHook, i)
+		}
 	}
+
+	return nil
 }
 
 // compareURL generates the HTML URL for the comparison between commits before and after push
@@ -192,6 +173,63 @@ func (webhook *bitbucketCloudWebhookParser) branchStatus(change bitbucketChange)
 	return branchStatus(existedBefore, existsAfter)
 }
 
+func (webhook *bitbucketCloudWebhookParser) parseBranchChangeEvent(hook *bitbucketCloudWebHook, changeIdx int) *WebhookInfo {
+	change := hook.Push.Changes[changeIdx]
+	lastCommit := change.New.Target
+	beforeCommitHash := webhook.parentOfLastCommit(lastCommit)
+	return &WebhookInfo{
+		TargetRepositoryDetails: webhook.parseRepoFullName(hook.Repository.FullName),
+		TargetBranch:            webhook.branchName(change),
+		Timestamp:               lastCommit.Date.UTC().Unix(),
+		Event:                   vcsutils.Push,
+		Commit: WebHookInfoCommit{
+			Hash:    lastCommit.Hash,
+			Message: lastCommit.Message,
+			Url:     lastCommit.Links.Html.Ref,
+		},
+		BeforeCommit: WebHookInfoCommit{
+			Hash: beforeCommitHash,
+		},
+		BranchStatus: webhook.branchStatus(change),
+		TriggeredBy: WebHookInfoUser{
+			Login: hook.Actor.Nickname,
+		},
+		Committer: WebHookInfoUser{
+			Login: webhook.login(hook, lastCommit),
+		},
+		Author: WebHookInfoUser{
+			Login: webhook.login(hook, lastCommit),
+			Email: webhook.email(lastCommit),
+		},
+		CompareUrl: webhook.compareURL(hook, lastCommit, beforeCommitHash),
+	}
+}
+
+func (webhook *bitbucketCloudWebhookParser) parseTagEvent(hook *bitbucketCloudWebHook, changeIdx int) *WebhookInfo {
+	change := hook.Push.Changes[changeIdx]
+	if change.New.Name != "" {
+		return &WebhookInfo{
+			Event: vcsutils.TagPushed,
+			Tag: &WebhookInfoTag{
+				Name:       change.New.Name,
+				TargetHash: change.New.Target.Hash,
+				Message:    change.New.Message,
+				Repository: webhook.parseRepoFullName(hook.Repository.FullName),
+			},
+		}
+	}
+
+	return &WebhookInfo{
+		Event: vcsutils.TagRemoved,
+		Tag: &WebhookInfoTag{
+			Name:       change.Old.Name,
+			TargetHash: change.Old.Target.Hash,
+			Message:    change.Old.Message,
+			Repository: webhook.parseRepoFullName(hook.Repository.FullName),
+		},
+	}
+}
+
 type bitbucketCloudWebHook struct {
 	Push        bitbucketPush            `json:"push,omitempty"`
 	PullRequest bitbucketPullRequest     `json:"pullrequest,omitempty"`
@@ -228,15 +266,21 @@ type bitbucketPush struct {
 }
 
 type bitbucketChange struct {
-	New struct {
-		// Name is the new branch name
-		Name   string          `json:"name,omitempty"`
-		Target bitbucketCommit `json:"target,omitempty"`
-	} `json:"new,omitempty"`
-	Old struct {
-		// Name is the old branch name
-		Name string `json:"name,omitempty"`
-	} `json:"old,omitempty"`
+	// New is a newly created resource.
+	New bitbucketResourceChange `json:"new,omitempty"`
+	// Old is an existing resource.
+	Old bitbucketResourceChange `json:"old,omitempty"`
+}
+
+type bitbucketResourceChange struct {
+	// Name of the resource.
+	Name string `json:"name,omitempty"`
+	// Target is a target resource.
+	Target bitbucketCommit `json:"target,omitempty"`
+	// Type is a type of the resource.
+	Type string `json:"type"`
+	// Message used for resource creation.
+	Message string `json:"message"`
 }
 
 type bitbucketCommit struct {

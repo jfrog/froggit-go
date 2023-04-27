@@ -40,6 +40,8 @@ const (
 	// Pull request merge event
 	githubPrMergeSha256       = "f94088bf7c34740ed9f9c3752f30e786527fbe5f5c9726d4526d9c92b5a7c208"
 	githubPrMergeExpectedTime = int64(1638805994)
+	githubTagPushSha256       = "38e8a96afe9fce748694cb2e634566243fb9c6e086c2eafe9c35f0b5bafea1b4"
+	githubTagDeleteSha256     = "dceff78c506536b305a3088a888db7d89323f05ead7d7b7f0348054de7fd7ec1"
 	gitHubExpectedPrID        = 2
 )
 
@@ -324,6 +326,78 @@ func TestGithubParseIncomingPrWebhook(t *testing.T) {
 			assert.Equal(t, expectedSourceBranch, actual.SourceBranch)
 			assert.Equal(t, tt.expectedEventType, actual.Event)
 			assert.Equal(t, tt.expectedPullRequestInfo, actual.PullRequest)
+		})
+	}
+}
+
+func TestGitHubParseIncomingWebhookTagEvents(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name              string
+		payloadSha        string
+		payloadFilename   string
+		expectedEventType vcsutils.WebhookEvent
+		expectedTagInfo   *WebhookInfoTag
+	}{
+		{
+			name:              "created",
+			payloadSha:        githubTagPushSha256,
+			payloadFilename:   "tagcreatepayload.json",
+			expectedEventType: vcsutils.TagPushed,
+			expectedTagInfo: &WebhookInfoTag{
+				Name: "tag_intg",
+				Hash: "63195a41b6bc6089d02fab94915bdddae5ee09a7",
+				Repository: WebHookInfoRepoDetails{
+					Name:  "go-mockhttp",
+					Owner: "pavelmemory",
+				},
+				Author: WebHookInfoUser{
+					DisplayName: "pavelmemory",
+					Email:       "strokovpavelsergeevich@gmail.com",
+				},
+			},
+		},
+		{
+			name:              "deleted",
+			payloadSha:        githubTagDeleteSha256,
+			payloadFilename:   "tagdeletepayload.json",
+			expectedEventType: vcsutils.TagRemoved,
+			expectedTagInfo: &WebhookInfoTag{
+				Name: "tag_intg",
+				Hash: "63195a41b6bc6089d02fab94915bdddae5ee09a7",
+				Repository: WebHookInfoRepoDetails{
+					Name:  "go-mockhttp",
+					Owner: "pavelmemory",
+				},
+				Author: WebHookInfoUser{
+					DisplayName: "pavelmemory",
+					Email:       "strokovpavelsergeevich@gmail.com",
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			reader, err := os.Open(filepath.Join("testdata", "github", tt.payloadFilename))
+			require.NoError(t, err)
+			defer close(reader)
+
+			request := httptest.NewRequest("POST", "https://127.0.0.1", reader)
+			request.Header.Add("content-type", "application/x-www-form-urlencoded")
+			request.Header.Add(githubSha256Header, "sha256="+tt.payloadSha)
+			request.Header.Add(githubEventHeader, "push")
+
+			actual, err := ParseIncomingWebhook(
+				context.Background(),
+				vcsclient.EmptyLogger{},
+				WebhookOrigin{
+					VcsProvider: vcsutils.GitHub,
+					Token:       token,
+				},
+				request,
+			)
+			require.NoError(t, err)
+			assert.Equal(t, &WebhookInfo{Event: tt.expectedEventType, Tag: tt.expectedTagInfo}, actual)
 		})
 	}
 }

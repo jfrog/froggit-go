@@ -52,6 +52,8 @@ func (webhook *gitLabWebhookParser) parseIncomingWebhook(_ context.Context, requ
 		return webhook.parsePushEvent(event), nil
 	case *gitlab.MergeEvent:
 		return webhook.parsePrEvents(event)
+	case *gitlab.TagEvent:
+		return webhook.parseTagEvents(event)
 	}
 	return nil, nil
 }
@@ -178,4 +180,29 @@ func (webhook *gitLabWebhookParser) branchStatus(event *gitlab.PushEvent) WebHoo
 	existsAfter := event.After != gitNilHash
 	existedBefore := event.Before != gitNilHash
 	return branchStatus(existedBefore, existsAfter)
+}
+
+func (webhook *gitLabWebhookParser) parseTagEvents(event *gitlab.TagEvent) (*WebhookInfo, error) {
+	info := &WebhookInfo{
+		Tag: &WebhookInfoTag{
+			Name:       strings.TrimPrefix(event.Ref, vcsutils.TagPrefix),
+			Message:    event.Message,
+			Repository: webhook.parseRepoDetails(event.Project.PathWithNamespace),
+			Author: WebHookInfoUser{
+				Login:       event.UserUsername,
+				DisplayName: event.UserName,
+				Email:       event.UserEmail,
+				AvatarUrl:   event.UserAvatar,
+			},
+		},
+	}
+	if event.CheckoutSHA != "" {
+		info.Event = vcsutils.TagPushed
+		info.Tag.Hash = event.After
+		info.Tag.TargetHash = event.CheckoutSHA
+	} else {
+		info.Event = vcsutils.TagRemoved
+		info.Tag.Hash = event.Before
+	}
+	return info, nil
 }

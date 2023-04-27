@@ -58,14 +58,38 @@ func (webhook *gitHubWebhookParser) parseIncomingWebhook(_ context.Context, requ
 	}
 	switch event := event.(type) {
 	case *github.PushEvent:
-		return webhook.parsePushEvent(event), nil
+		if webhook.isTagEvent(event) {
+			return webhook.parseTagEvent(event), nil
+		}
+		return webhook.parseChangeEvent(event), nil
 	case *github.PullRequestEvent:
 		return webhook.parsePrEvents(event), nil
 	}
 	return nil, nil
 }
 
-func (webhook *gitHubWebhookParser) parsePushEvent(event *github.PushEvent) *WebhookInfo {
+func (webhook *gitHubWebhookParser) parseTagEvent(event *github.PushEvent) *WebhookInfo {
+	info := &WebhookInfo{
+		Tag: &WebhookInfoTag{
+			Name: strings.TrimPrefix(event.GetRef(), "refs/tags/"),
+			Repository: WebHookInfoRepoDetails{
+				Name:  vcsutils.DefaultIfNotNil(vcsutils.DefaultIfNotNil(event.GetRepo()).Name),
+				Owner: vcsutils.DefaultIfNotNil(vcsutils.DefaultIfNotNil(vcsutils.DefaultIfNotNil(event.GetRepo()).Owner).Login),
+			},
+			Author: webhook.user(event.Pusher),
+		},
+	}
+	if event.GetCreated() {
+		info.Event = vcsutils.TagPushed
+		info.Tag.Hash = event.GetAfter()
+	} else if event.GetDeleted() {
+		info.Event = vcsutils.TagRemoved
+		info.Tag.Hash = event.GetBefore()
+	}
+	return info
+}
+
+func (webhook *gitHubWebhookParser) parseChangeEvent(event *github.PushEvent) *WebhookInfo {
 	repoDetails := WebHookInfoRepoDetails{
 		Name:  vcsutils.DefaultIfNotNil(vcsutils.DefaultIfNotNil(event.GetRepo()).Name),
 		Owner: vcsutils.DefaultIfNotNil(vcsutils.DefaultIfNotNil(vcsutils.DefaultIfNotNil(event.GetRepo()).Owner).Login),
@@ -191,4 +215,8 @@ func (webhook *gitHubWebhookParser) branchStatus(event *github.PushEvent) WebHoo
 	existsAfter := event.GetAfter() != gitNilHash
 	existedBefore := event.GetBefore() != gitNilHash
 	return branchStatus(existedBefore, existsAfter)
+}
+
+func (webhook *gitHubWebhookParser) isTagEvent(event *github.PushEvent) bool {
+	return strings.HasPrefix(event.GetRef(), "refs/tags/")
 }
