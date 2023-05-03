@@ -629,7 +629,7 @@ func getBitbucketServerWebhookEvents(webhookEvents ...vcsutils.WebhookEvent) []s
 			events = append(events, "pr:merged")
 		case vcsutils.PrRejected:
 			events = append(events, "pr:declined", "pr:deleted")
-		case vcsutils.Push:
+		case vcsutils.Push, vcsutils.TagPushed, vcsutils.TagRemoved:
 			events = append(events, "repo:refs_changed")
 		}
 	}

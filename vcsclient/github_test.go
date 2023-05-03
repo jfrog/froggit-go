@@ -143,7 +143,7 @@ func TestGitHubClient_UpdateWebhook(t *testing.T) {
 	defer cleanUp()
 
 	err := client.UpdateWebhook(ctx, owner, repo1, branch1, "https://jfrog.com", token, strconv.FormatInt(id, 10),
-		vcsutils.PrOpened, vcsutils.PrEdited, vcsutils.PrMerged, vcsutils.PrRejected)
+		vcsutils.PrOpened, vcsutils.PrEdited, vcsutils.PrMerged, vcsutils.PrRejected, vcsutils.TagPushed, vcsutils.TagRemoved)
 	assert.NoError(t, err)
 
 	err = createBadGitHubClient(t).UpdateWebhook(ctx, owner, repo1, branch1, "https://jfrog.com", token, strconv.FormatInt(id, 10),

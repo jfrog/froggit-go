@@ -625,22 +625,22 @@ func getBitbucketCloudWebhookID(r interface{}) (string, error) {
 
 // Get varargs of webhook events and return a slice of Bitbucket cloud webhook events
 func getBitbucketCloudWebhookEvents(webhookEvents ...vcsutils.WebhookEvent) []string {
-	events := make([]string, 0, len(webhookEvents))
+	events := datastructures.MakeSet[string]()
 	for _, event := range webhookEvents {
 		switch event {
 		case vcsutils.PrOpened:
-			events = append(events, "pullrequest:created")
+			events.Add("pullrequest:created")
 		case vcsutils.PrEdited:
-			events = append(events, "pullrequest:updated")
+			events.Add("pullrequest:updated")
 		case vcsutils.PrRejected:
-			events = append(events, "pullrequest:rejected")
+			events.Add("pullrequest:rejected")
 		case vcsutils.PrMerged:
-			events = append(events, "pullrequest:fulfilled")
-		case vcsutils.Push:
-			events = append(events, "repo:push")
+			events.Add("pullrequest:fulfilled")
+		case vcsutils.Push, vcsutils.TagPushed, vcsutils.TagRemoved:
+			events.Add("repo:push")
 		}
 	}
-	return events
+	return events.ToSlice()
 }
 
 // The get repository request returns HTTP link to the repository - extract the link from the response.

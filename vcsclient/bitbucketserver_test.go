@@ -114,7 +114,7 @@ func TestBitbucketServer_UpdateWebhook(t *testing.T) {
 	defer cleanUp()
 
 	err := client.UpdateWebhook(ctx, owner, repo1, branch1, "https://httpbin.org/anything", token, stringID,
-		vcsutils.PrOpened, vcsutils.PrEdited, vcsutils.PrMerged, vcsutils.PrRejected)
+		vcsutils.PrOpened, vcsutils.PrEdited, vcsutils.PrMerged, vcsutils.PrRejected, vcsutils.TagPushed, vcsutils.TagRemoved)
 	assert.NoError(t, err)
 
 	err = createBadBitbucketServerClient(t).UpdateWebhook(ctx, owner, repo1, branch1, "https://httpbin.org/anything", token, stringID, vcsutils.PrOpened, vcsutils.PrEdited, vcsutils.PrMerged, vcsutils.PrRejected)
