@@ -375,7 +375,7 @@ func (client *AzureReposClient) SetCommitStatus(ctx context.Context, commitStatu
 		},
 		CommitId:     &ref,
 		RepositoryId: &repository,
-		Project:      &repository,
+		Project:      &client.vcsInfo.Project,
 	}
 	_, err = azureReposGitClient.CreateCommitStatus(ctx, commitStatusArgs)
 	return err
@@ -390,7 +390,7 @@ func (client *AzureReposClient) GetCommitStatuses(ctx context.Context, owner, re
 	commitStatusArgs := git.GetStatusesArgs{
 		CommitId:     &ref,
 		RepositoryId: &repository,
-		Project:      &repository,
+		Project:      &client.vcsInfo.Project,
 	}
 	resGitStatus, err := azureReposGitClient.GetStatuses(ctx, commitStatusArgs)
 	if err != nil {
