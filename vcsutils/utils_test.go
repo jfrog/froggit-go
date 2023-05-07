@@ -226,20 +226,6 @@ func TestGetGenericGitRemoteUrl(t *testing.T) {
 			expectedResult: "https://bitbucket.example.com/scm/my-org/my-repo.git",
 		},
 		{
-			name:           "GitHub Cloud",
-			apiEndpoint:    "https://api.github.com",
-			owner:          "my-org",
-			repo:           "my-repo",
-			expectedResult: "https://api.github.com/my-org/my-repo.git",
-		},
-		{
-			name:           "GitHub On-Premises",
-			apiEndpoint:    "https://github.example.com/api/v3",
-			owner:          "my-org",
-			repo:           "my-repo",
-			expectedResult: "https://github.example.com/api/v3/my-org/my-repo.git",
-		},
-		{
 			name:           "GitLab",
 			apiEndpoint:    "https://gitlab.com/",
 			owner:          "my-org",
@@ -254,7 +240,6 @@ func TestGetGenericGitRemoteUrl(t *testing.T) {
 			expectedResult: "https://gitlab.example.com/api/v4/my-org/my-repo.git",
 		},
 	}
-
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			assert.Equal(t, tc.expectedResult, GetGenericGitRemoteUrl(tc.apiEndpoint, tc.owner, tc.repo))

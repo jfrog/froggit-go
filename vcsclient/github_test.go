@@ -754,6 +754,38 @@ func createGitHubWithBodyHandler(t *testing.T, expectedURI string, response []by
 		assert.NoError(t, err)
 	}
 }
+func TestGitHubClient_GetGenericGitRemoteUrl(t *testing.T) {
+	testCases := []struct {
+		name           string
+		apiEndpoint    string
+		owner          string
+		repo           string
+		expectedResult string
+	}{
+		{
+			name:           "GitHub Cloud",
+			apiEndpoint:    "https://api.github.com",
+			owner:          "my-org",
+			repo:           "my-repo",
+			expectedResult: "https://github.com/my-org/my-repo.git",
+		},
+		{
+			name:           "GitHub On-Premises",
+			apiEndpoint:    "https://github.example.com/api/v3",
+			owner:          "my-org",
+			repo:           "my-repo",
+			expectedResult: "https://github.example.com/api/v3/my-org/my-repo.git",
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			info := VcsInfo{APIEndpoint: tc.apiEndpoint}
+			client, err := NewGitHubClient(info, nil)
+			assert.NoError(t, err)
+			assert.Equal(t, tc.expectedResult, getGitHubGitRemoteUrl(client, tc.owner, tc.repo))
+		})
+	}
+}
 
 func createGitHubWithPaginationHandler(t *testing.T, _ string, response []byte, _ []byte, expectedStatusCode int, expectedHttpMethod string) http.HandlerFunc {
 	var repos []github.Repository

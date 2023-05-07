@@ -19,6 +19,11 @@ import (
 	"golang.org/x/oauth2"
 )
 
+const (
+	GitHubCloudApiEndpoint = "https://api.github.com"
+	GitHubCloneUrl         = "https://github.com"
+)
+
 // GitHubClient API version 3
 type GitHubClient struct {
 	vcsInfo VcsInfo
@@ -246,7 +251,7 @@ func (client *GitHubClient) DownloadRepository(ctx context.Context, owner, repos
 	}
 
 	client.logger.Info(successfulRepoExtraction)
-	return vcsutils.CreateDotGitFolderWithRemote(localPath, vcsutils.RemoteName, vcsutils.GetGenericGitRemoteUrl(client.vcsInfo.APIEndpoint, owner, repository))
+	return vcsutils.CreateDotGitFolderWithRemote(localPath, vcsutils.RemoteName, getGitHubGitRemoteUrl(client, owner, repository))
 }
 
 // CreatePullRequest on GitHub
@@ -749,6 +754,15 @@ func packScanningResult(data string) (string, error) {
 	}
 
 	return compressedScan, err
+}
+
+func getGitHubGitRemoteUrl(client *GitHubClient, owner, repo string) string {
+	// Remotes URLs are different from the REST Api endpoint
+	// In case of on-perm, the URLs are the same.
+	if client.vcsInfo.APIEndpoint == GitHubCloudApiEndpoint {
+		client.vcsInfo.APIEndpoint = GitHubCloneUrl
+	}
+	return fmt.Sprintf("%s/%s/%s.git", strings.TrimSuffix(client.vcsInfo.APIEndpoint, "/"), owner, repo)
 }
 
 type repositoryEnvironmentReviewer struct {
