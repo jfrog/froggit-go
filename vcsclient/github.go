@@ -757,12 +757,10 @@ func packScanningResult(data string) (string, error) {
 }
 
 func getGitHubGitRemoteUrl(client *GitHubClient, owner, repo string) string {
-	// Remotes URLs are different from the REST Api endpoint
-	// In case of on-perm, the URLs are the same.
 	if client.vcsInfo.APIEndpoint == GitHubCloudApiEndpoint {
-		client.vcsInfo.APIEndpoint = GitHubCloneUrl
+		return fmt.Sprintf("%s/%s/%s.git", GitHubCloneUrl, owner, repo)
 	}
-	return fmt.Sprintf("%s/%s/%s.git", strings.TrimSuffix(client.vcsInfo.APIEndpoint, "/"), owner, repo)
+	return fmt.Sprintf("%s/%s/%s.git", client.vcsInfo.APIEndpoint, owner, repo)
 }
 
 type repositoryEnvironmentReviewer struct {
