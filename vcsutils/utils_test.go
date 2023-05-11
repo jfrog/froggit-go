@@ -240,6 +240,7 @@ func TestGetGenericGitRemoteUrl(t *testing.T) {
 			expectedResult: "https://gitlab.example.com/api/v4/my-org/my-repo.git",
 		},
 	}
+
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			assert.Equal(t, tc.expectedResult, GetGenericGitRemoteUrl(tc.apiEndpoint, tc.owner, tc.repo))

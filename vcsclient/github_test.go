@@ -732,29 +732,7 @@ func TestGitHubClient_TestGetCommitStatus(t *testing.T) {
 	})
 }
 
-func createBadGitHubClient(t *testing.T) VcsClient {
-	client, err := NewClientBuilder(vcsutils.GitHub).ApiEndpoint("https://bad^endpoint").Build()
-	require.NoError(t, err)
-	return client
-}
-
-func createGitHubWithBodyHandler(t *testing.T, expectedURI string, response []byte, expectedRequestBody []byte,
-	expectedStatusCode int, expectedHttpMethod string) http.HandlerFunc {
-	return func(writer http.ResponseWriter, request *http.Request) {
-		assert.Equal(t, expectedHttpMethod, request.Method)
-		assert.Equal(t, expectedURI, request.RequestURI)
-		assert.Equal(t, "Bearer "+token, request.Header.Get("Authorization"))
-
-		b, err := io.ReadAll(request.Body)
-		require.NoError(t, err)
-		assert.Equal(t, expectedRequestBody, b)
-
-		writer.WriteHeader(expectedStatusCode)
-		_, err = writer.Write(response)
-		assert.NoError(t, err)
-	}
-}
-func TestGitHubClient_GetGenericGitRemoteUrl(t *testing.T) {
+func TestGitHubClient_getGitHubGitRemoteUrl(t *testing.T) {
 	testCases := []struct {
 		name           string
 		apiEndpoint    string
@@ -784,6 +762,29 @@ func TestGitHubClient_GetGenericGitRemoteUrl(t *testing.T) {
 			assert.NoError(t, err)
 			assert.Equal(t, tc.expectedResult, getGitHubGitRemoteUrl(client, tc.owner, tc.repo))
 		})
+	}
+}
+
+func createBadGitHubClient(t *testing.T) VcsClient {
+	client, err := NewClientBuilder(vcsutils.GitHub).ApiEndpoint("https://bad^endpoint").Build()
+	require.NoError(t, err)
+	return client
+}
+
+func createGitHubWithBodyHandler(t *testing.T, expectedURI string, response []byte, expectedRequestBody []byte,
+	expectedStatusCode int, expectedHttpMethod string) http.HandlerFunc {
+	return func(writer http.ResponseWriter, request *http.Request) {
+		assert.Equal(t, expectedHttpMethod, request.Method)
+		assert.Equal(t, expectedURI, request.RequestURI)
+		assert.Equal(t, "Bearer "+token, request.Header.Get("Authorization"))
+
+		b, err := io.ReadAll(request.Body)
+		require.NoError(t, err)
+		assert.Equal(t, expectedRequestBody, b)
+
+		writer.WriteHeader(expectedStatusCode)
+		_, err = writer.Write(response)
+		assert.NoError(t, err)
 	}
 }
 
