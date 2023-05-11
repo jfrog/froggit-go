@@ -580,11 +580,16 @@ func (client *BitbucketServerClient) DownloadFileFromRepo(ctx context.Context, o
 	if err != nil {
 		return nil, 0, err
 	}
+
+	var statusCode int
 	resp, err := bitbucketClient.GetContent_11(owner, repository, path, map[string]interface{}{"at": branch})
-	if err != nil {
-		return nil, 0, err
+	if resp != nil {
+		statusCode = resp.StatusCode
 	}
-	return resp.Payload, resp.StatusCode, err
+	if err != nil {
+		return nil, statusCode, err
+	}
+	return resp.Payload, statusCode, err
 }
 
 func createPaginationOptions(nextPageStart int) map[string]interface{} {
