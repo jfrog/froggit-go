@@ -1,6 +1,7 @@
 package vcsclient
 
 import (
+	"bufio"
 	"context"
 	"errors"
 	"fmt"
@@ -412,7 +413,38 @@ func (client *AzureReposClient) GetCommitStatuses(ctx context.Context, owner, re
 
 // DownloadFileFromRepo on Azure Repos
 func (client *AzureReposClient) DownloadFileFromRepo(ctx context.Context, owner, repository, branch, path string) ([]byte, int, error) {
-	return nil, 0, getUnsupportedInAzureError("download file from repo")
+	if err := validateParametersNotBlank(map[string]string{
+		"owner":      owner,
+		"repository": repository,
+		"path":       path,
+	}); err != nil {
+		return nil, 0, err
+	}
+
+	azureReposGitClient, err := client.buildAzureReposClient(ctx)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	trueVal := true
+	output, err := azureReposGitClient.GetItemContent(ctx, git.GetItemContentArgs{
+		RepositoryId:      &repository,
+		Path:              &path,
+		Project:           &client.vcsInfo.Project,
+		VersionDescriptor: &git.GitVersionDescriptor{Version: &branch, VersionType: &git.GitVersionTypeValues.Branch},
+		IncludeContent:    &trueVal,
+	})
+	if err != nil {
+		return nil, http.StatusNotFound, err
+	}
+
+	reader := bufio.NewReader(output)
+	// read the contents of the ReadCloser into a byte slice
+	contents, err := io.ReadAll(reader)
+	if err != nil {
+		return nil, 0, err
+	}
+	return contents, http.StatusOK, nil
 }
 
 // GetRepositoryEnvironmentInfo on GitLab
