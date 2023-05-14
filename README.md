@@ -581,7 +581,7 @@ sarifID, err := client.UploadCodeScanning(ctx, owner, repo, branch, scanResults)
 
 #### Download a File From a Repository
 
-Notice - Currently unsupported on Bitbucket Cloud.
+Note - This API is currently not supported for Bitbucket Cloud.
 
 ```go
 // Go context
