@@ -581,7 +581,7 @@ sarifID, err := client.UploadCodeScanning(ctx, owner, repo, branch, scanResults)
 
 #### Download a File From a Repository
 
-Notice - Currently supported on GitHub and GitLab.
+Notice - Currently unsupported on Bitbucket Cloud.
 
 ```go
 // Go context
