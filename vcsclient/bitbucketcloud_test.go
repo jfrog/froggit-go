@@ -104,7 +104,7 @@ func TestBitbucketCloud_UpdateWebhook(t *testing.T) {
 	defer cleanUp()
 
 	err = client.UpdateWebhook(ctx, owner, repo1, branch1, "https://httpbin.org/anything", token, id.String(),
-		vcsutils.PrOpened, vcsutils.PrEdited, vcsutils.PrRejected, vcsutils.PrMerged)
+		vcsutils.PrOpened, vcsutils.PrEdited, vcsutils.PrRejected, vcsutils.PrMerged, vcsutils.TagPushed, vcsutils.TagRemoved)
 	assert.NoError(t, err)
 }
 

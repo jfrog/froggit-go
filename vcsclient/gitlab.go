@@ -121,6 +121,7 @@ func (client *GitLabClient) CreateWebhook(ctx context.Context, owner, repository
 		MergeRequestsEvents:    &projectHook.MergeRequestsEvents,
 		PushEvents:             &projectHook.PushEvents,
 		PushEventsBranchFilter: &projectHook.PushEventsBranchFilter,
+		TagPushEvents:          &projectHook.TagPushEvents,
 	}
 	response, _, err := client.glClient.Projects.AddProjectHook(getProjectID(owner, repository), options,
 		gitlab.WithContext(ctx))
@@ -140,6 +141,7 @@ func (client *GitLabClient) UpdateWebhook(ctx context.Context, owner, repository
 		MergeRequestsEvents:    &projectHook.MergeRequestsEvents,
 		PushEvents:             &projectHook.PushEvents,
 		PushEventsBranchFilter: &projectHook.PushEventsBranchFilter,
+		TagPushEvents:          &projectHook.TagPushEvents,
 	}
 	intWebhook, err := strconv.Atoi(webhookID)
 	if err != nil {
@@ -482,6 +484,8 @@ func createProjectHook(branch string, payloadURL string, webhookEvents ...vcsuti
 		case vcsutils.Push:
 			options.PushEvents = true
 			options.PushEventsBranchFilter = branch
+		case vcsutils.TagPushed, vcsutils.TagRemoved:
+			options.TagPushEvents = true
 		}
 	}
 	return options

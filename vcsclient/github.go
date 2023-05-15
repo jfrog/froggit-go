@@ -665,16 +665,16 @@ func createGitHubHook(token, payloadURL string, webhookEvents ...vcsutils.Webhoo
 
 // Get varargs of webhook events and return a slice of GitHub webhook events
 func getGitHubWebhookEvents(webhookEvents ...vcsutils.WebhookEvent) []string {
-	events := make([]string, 0, len(webhookEvents))
+	events := datastructures.MakeSet[string]()
 	for _, event := range webhookEvents {
 		switch event {
 		case vcsutils.PrOpened, vcsutils.PrEdited, vcsutils.PrMerged, vcsutils.PrRejected:
-			events = append(events, "pull_request")
-		case vcsutils.Push:
-			events = append(events, "push")
+			events.Add("pull_request")
+		case vcsutils.Push, vcsutils.TagPushed, vcsutils.TagRemoved:
+			events.Add("push")
 		}
 	}
-	return events
+	return events.ToSlice()
 }
 
 func getGitHubRepositoryVisibility(repo *github.Repository) RepositoryVisibility {
