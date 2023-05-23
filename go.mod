@@ -1,6 +1,6 @@
 module github.com/jfrog/froggit-go
 
-go 1.19
+go 1.20
 
 require (
 	github.com/gfleury/go-bitbucket-v1 v0.0.0-20220418082332-711d7d5e805f
