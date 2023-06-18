@@ -322,6 +322,30 @@ func (client *GitHubClient) ListPullRequestComments(ctx context.Context, owner, 
 	return mapGitHubCommentToCommentInfoList(commentsList)
 }
 
+func (client *GitHubClient) GetPullRequestInfoById(ctx context.Context, owner, repository string, pullRequestId int) (PullRequestInfo, error) {
+	ghClient, err := client.buildGithubClient(ctx)
+	if err != nil {
+		return PullRequestInfo{}, err
+	}
+	client.logger.Debug(fetchingPullRequestById, repository)
+	pullRequest, _, err := ghClient.PullRequests.Get(ctx, owner, repository, pullRequestId)
+	if err != nil {
+		return PullRequestInfo{}, err
+	}
+	prInfo := PullRequestInfo{
+		ID: int64(pullRequestId),
+		Source: BranchInfo{
+			Name:       *pullRequest.Head.Label,
+			Repository: *pullRequest.Head.Repo.Name,
+		},
+		Target: BranchInfo{
+			Name:       *pullRequest.Base.Label,
+			Repository: *pullRequest.Base.Repo.Name,
+		},
+	}
+	return prInfo, nil
+}
+
 // GetLatestCommit on GitHub
 func (client *GitHubClient) GetLatestCommit(ctx context.Context, owner, repository, branch string) (CommitInfo, error) {
 	err := validateParametersNotBlank(map[string]string{

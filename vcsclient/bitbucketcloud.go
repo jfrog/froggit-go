@@ -320,6 +320,44 @@ func (client *BitbucketCloudClient) ListOpenPullRequests(ctx context.Context, ow
 	return mapBitbucketCloudPullRequestToPullRequestInfo(&parsedPullRequests), nil
 }
 
+func (client *BitbucketCloudClient) GetPullRequestInfoById(ctx context.Context, owner, repository string, pullRequestId int) (pullRequestInfo PullRequestInfo, err error) {
+	err = validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository})
+	if err != nil {
+		return
+	}
+	bitbucketClient := client.buildBitbucketCloudClient(ctx)
+	client.logger.Debug(fetchingPullRequestById, repository)
+	options := &bitbucket.PullRequestsOptions{
+		Owner:    owner,
+		RepoSlug: repository,
+		ID:       string(rune(pullRequestId)),
+	}
+	pullRequestRaw, err := bitbucketClient.Repositories.PullRequests.Get(options)
+	if err != nil {
+		return
+	}
+	parsedPullRequest, err := vcsutils.RemapFields[pullRequestsResponse](pullRequestRaw, "json")
+	if err != nil {
+		return
+	}
+	pullRequestDetails := parsedPullRequest.Values[0]
+	pullRequestInfo = PullRequestInfo{
+		ID: pullRequestDetails.ID,
+		Source: BranchInfo{
+			Name:       pullRequestDetails.Source.Name.Str,
+			Repository: pullRequestDetails.Source.Repository.Name,
+		},
+		Target: BranchInfo{
+			Name:       pullRequestDetails.Target.Name.Str,
+			Repository: pullRequestDetails.Target.Repository.Name,
+		},
+	}
+	if err != nil {
+		return
+	}
+	return
+}
+
 // AddPullRequestComment on Bitbucket cloud
 func (client *BitbucketCloudClient) AddPullRequestComment(ctx context.Context, owner, repository, content string, pullRequestID int) error {
 	err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository, "content": content})

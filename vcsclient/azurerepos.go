@@ -249,22 +249,27 @@ func (client *AzureReposClient) ListOpenPullRequests(ctx context.Context, _, rep
 	}
 	var pullRequestsInfo []PullRequestInfo
 	for _, pullRequest := range *pullRequests {
-		// Trim the branches prefix and get the actual branches name
-		shortSourceName := (*pullRequest.SourceRefName)[strings.LastIndex(*pullRequest.SourceRefName, "/")+1:]
-		shortTargetName := (*pullRequest.TargetRefName)[strings.LastIndex(*pullRequest.TargetRefName, "/")+1:]
-		pullRequestsInfo = append(pullRequestsInfo, PullRequestInfo{
-			ID: int64(*pullRequest.PullRequestId),
-			Source: BranchInfo{
-				Name:       shortSourceName,
-				Repository: repository,
-			},
-			Target: BranchInfo{
-				Name:       shortTargetName,
-				Repository: repository,
-			},
-		})
+		pullRequestDetails := parsePullRequestDetails(pullRequest, repository)
+		pullRequestsInfo = append(pullRequestsInfo, pullRequestDetails)
 	}
 	return pullRequestsInfo, nil
+}
+
+func (client *AzureReposClient) GetPullRequestInfoById(ctx context.Context, owner, repository string, pullRequestId int) (pullRequestInfo PullRequestInfo, err error) {
+	azureReposGitClient, err := client.buildAzureReposClient(ctx)
+	if err != nil {
+		return
+	}
+	client.logger.Debug(fetchingPullRequestById, repository)
+	pullRequest, err := azureReposGitClient.GetPullRequestById(ctx, git.GetPullRequestByIdArgs{
+		PullRequestId: &pullRequestId,
+		Project:       &client.vcsInfo.Project,
+	})
+	if err != nil {
+		return
+	}
+	pullRequestInfo = parsePullRequestDetails(*pullRequest, repository)
+	return
 }
 
 // GetLatestCommit on Azure Repos
@@ -516,6 +521,23 @@ func (client *AzureReposClient) GetModifiedFiles(ctx context.Context, _, reposit
 	fileNamesList := fileNamesSet.ToSlice()
 	sort.Strings(fileNamesList)
 	return fileNamesList, nil
+}
+
+func parsePullRequestDetails(pullRequest git.GitPullRequest, repository string) PullRequestInfo {
+	// Trim the branches prefix and get the actual branches name
+	shortSourceName := (*pullRequest.SourceRefName)[strings.LastIndex(*pullRequest.SourceRefName, "/")+1:]
+	shortTargetName := (*pullRequest.TargetRefName)[strings.LastIndex(*pullRequest.TargetRefName, "/")+1:]
+	return PullRequestInfo{
+		ID: int64(*pullRequest.PullRequestId),
+		Source: BranchInfo{
+			Name:       shortSourceName,
+			Repository: repository,
+		},
+		Target: BranchInfo{
+			Name:       shortTargetName,
+			Repository: repository,
+		},
+	}
 }
 
 // mapStatusToString maps commit status enum to string, specific for azure.
