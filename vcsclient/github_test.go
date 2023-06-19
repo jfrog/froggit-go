@@ -531,6 +531,28 @@ func TestGitHubClient_ListOpenPullRequests(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestGitHubClient_GetPullRequestInfoById(t *testing.T) {
+	ctx := context.Background()
+	pullRequestId := 1
+	repoName := "Hello-World"
+	response, err := os.ReadFile(filepath.Join("testdata", "github", "pull_request_info_response.json"))
+	assert.NoError(t, err)
+	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, response,
+		fmt.Sprintf("/repos/%s/%s/pulls/%d", owner, repoName, pullRequestId), createGitHubHandler)
+	defer cleanUp()
+
+	result, err := client.GetPullRequestInfoById(ctx, owner, repoName, pullRequestId)
+	require.NoError(t, err)
+	assert.True(t, reflect.DeepEqual(PullRequestInfo{
+		ID:     1,
+		Source: BranchInfo{Name: "new-topic", Repository: "Hello-World"},
+		Target: BranchInfo{Name: "master", Repository: "Hello-World"},
+	}, result))
+
+	_, err = createBadGitHubClient(t).ListPullRequestComments(ctx, owner, repoName, 1)
+	assert.Error(t, err)
+}
+
 func TestGitHubClient_ListPullRequestComments(t *testing.T) {
 	ctx := context.Background()
 	response, err := os.ReadFile(filepath.Join("testdata", "github", "pull_request_comments_list_response.json"))

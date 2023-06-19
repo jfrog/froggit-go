@@ -3,6 +3,7 @@ package vcsclient
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/jfrog/gofrog/datastructures"
 	"io"
@@ -288,6 +289,47 @@ func (client *GitHubClient) ListOpenPullRequests(ctx context.Context, owner, rep
 	return mapGitHubPullRequestToPullRequestInfoList(pullRequests)
 }
 
+func (client *GitHubClient) GetPullRequestInfoById(ctx context.Context, owner, repository string, pullRequestId int) (PullRequestInfo, error) {
+	ghClient, err := client.buildGithubClient(ctx)
+	if err != nil {
+		return PullRequestInfo{}, err
+	}
+	client.logger.Debug(fetchingPullRequestById, repository)
+	pullRequest, _, err := ghClient.PullRequests.Get(ctx, owner, repository, pullRequestId)
+	if err != nil {
+		return PullRequestInfo{}, err
+	}
+
+	sourceBranch, err1 := extractBranchFromLabel(*pullRequest.Head.Label)
+	targetBranch, err2 := extractBranchFromLabel(*pullRequest.Base.Label)
+	badLabelErrors := errors.Join(err1, err2)
+	if badLabelErrors != nil {
+		return PullRequestInfo{}, err
+	}
+
+	prInfo := PullRequestInfo{
+		ID: int64(pullRequestId),
+		Source: BranchInfo{
+			Name:       sourceBranch,
+			Repository: *pullRequest.Head.Repo.Name,
+		},
+		Target: BranchInfo{
+			Name:       targetBranch,
+			Repository: *pullRequest.Base.Repo.Name,
+		},
+	}
+	return prInfo, nil
+}
+
+// Extracts branch name from the following expected label format repo:branch
+func extractBranchFromLabel(label string) (string, error) {
+	split := strings.Split(label, ":")
+	if len(split) < 1 {
+		return "", fmt.Errorf("bad label format %s", label)
+	}
+	return split[1], nil
+}
+
 // AddPullRequestComment on GitHub
 func (client *GitHubClient) AddPullRequestComment(ctx context.Context, owner, repository, content string, pullRequestID int) error {
 	err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository, "content": content})
@@ -320,30 +362,6 @@ func (client *GitHubClient) ListPullRequestComments(ctx context.Context, owner, 
 		return []CommentInfo{}, err
 	}
 	return mapGitHubCommentToCommentInfoList(commentsList)
-}
-
-func (client *GitHubClient) GetPullRequestInfoById(ctx context.Context, owner, repository string, pullRequestId int) (PullRequestInfo, error) {
-	ghClient, err := client.buildGithubClient(ctx)
-	if err != nil {
-		return PullRequestInfo{}, err
-	}
-	client.logger.Debug(fetchingPullRequestById, repository)
-	pullRequest, _, err := ghClient.PullRequests.Get(ctx, owner, repository, pullRequestId)
-	if err != nil {
-		return PullRequestInfo{}, err
-	}
-	prInfo := PullRequestInfo{
-		ID: int64(pullRequestId),
-		Source: BranchInfo{
-			Name:       *pullRequest.Head.Label,
-			Repository: *pullRequest.Head.Repo.Name,
-		},
-		Target: BranchInfo{
-			Name:       *pullRequest.Base.Label,
-			Repository: *pullRequest.Base.Repo.Name,
-		},
-	}
-	return prInfo, nil
 }
 
 // GetLatestCommit on GitHub
