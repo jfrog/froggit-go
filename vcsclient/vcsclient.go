@@ -165,11 +165,11 @@ type VcsClient interface {
 	// repository     - VCS repository name
 	ListOpenPullRequests(ctx context.Context, owner, repository string) ([]PullRequestInfo, error)
 
-	// GetPullRequestInfoById Gets specific pull request info.
+	// GetPullRequest Gets specific pull request info.
 	// owner          - User or organization
 	// repository     - VCS repository name
 	// pullRequestId  - ID of the pull request
-	GetPullRequestInfoById(ctx context.Context, owner, repository string, pullRequestId int) (PullRequestInfo, error)
+	GetPullRequest(ctx context.Context, owner, repository string, pullRequestId int) (PullRequestInfo, error)
 
 	// GetLatestCommit Gets the most recent commit of a branch
 	// owner      - User or organization

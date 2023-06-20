@@ -255,7 +255,7 @@ func (client *AzureReposClient) ListOpenPullRequests(ctx context.Context, _, rep
 	return pullRequestsInfo, nil
 }
 
-func (client *AzureReposClient) GetPullRequestInfoById(ctx context.Context, owner, repository string, pullRequestId int) (pullRequestInfo PullRequestInfo, err error) {
+func (client *AzureReposClient) GetPullRequest(ctx context.Context, owner, repository string, pullRequestId int) (pullRequestInfo PullRequestInfo, err error) {
 	azureReposGitClient, err := client.buildAzureReposClient(ctx)
 	if err != nil {
 		return

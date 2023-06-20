@@ -541,7 +541,7 @@ func TestGitHubClient_GetPullRequestInfoById(t *testing.T) {
 		fmt.Sprintf("/repos/%s/%s/pulls/%d", owner, repoName, pullRequestId), createGitHubHandler)
 	defer cleanUp()
 
-	result, err := client.GetPullRequestInfoById(ctx, owner, repoName, pullRequestId)
+	result, err := client.GetPullRequest(ctx, owner, repoName, pullRequestId)
 	require.NoError(t, err)
 	assert.True(t, reflect.DeepEqual(PullRequestInfo{
 		ID:     1,

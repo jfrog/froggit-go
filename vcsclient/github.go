@@ -289,7 +289,7 @@ func (client *GitHubClient) ListOpenPullRequests(ctx context.Context, owner, rep
 	return mapGitHubPullRequestToPullRequestInfoList(pullRequests)
 }
 
-func (client *GitHubClient) GetPullRequestInfoById(ctx context.Context, owner, repository string, pullRequestId int) (PullRequestInfo, error) {
+func (client *GitHubClient) GetPullRequest(ctx context.Context, owner, repository string, pullRequestId int) (PullRequestInfo, error) {
 	ghClient, err := client.buildGithubClient(ctx)
 	if err != nil {
 		return PullRequestInfo{}, err

@@ -232,7 +232,7 @@ func TestGitLabClient_GetPullRequestInfoById(t *testing.T) {
 		fmt.Sprintf("/api/v4/projects/%s/merge_requests/%d", url.PathEscape(owner+"/"+repoName), pullRequestId), createGitLabHandler)
 	defer cleanUp()
 
-	result, err := client.GetPullRequestInfoById(ctx, owner, repoName, pullRequestId)
+	result, err := client.GetPullRequest(ctx, owner, repoName, pullRequestId)
 	require.NoError(t, err)
 	assert.True(t, reflect.DeepEqual(PullRequestInfo{
 		ID:     1,
