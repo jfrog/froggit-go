@@ -221,6 +221,26 @@ func TestGitLabClient_ListOpenPullRequests(t *testing.T) {
 	}, result[0]))
 }
 
+func TestGitLabClient_GetPullRequestInfoById(t *testing.T) {
+	ctx := context.Background()
+	repoName := "repo"
+	pullRequestId := 1
+	response, err := os.ReadFile(filepath.Join("testdata", "gitlab", "get_merge_request_response.json"))
+	assert.NoError(t, err)
+
+	client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, response,
+		fmt.Sprintf("/api/v4/projects/%s/merge_requests/%d", url.PathEscape(owner+"/"+repoName), pullRequestId), createGitLabHandler)
+	defer cleanUp()
+
+	result, err := client.GetPullRequestInfoById(ctx, owner, repoName, pullRequestId)
+	require.NoError(t, err)
+	assert.True(t, reflect.DeepEqual(PullRequestInfo{
+		ID:     1,
+		Source: BranchInfo{Name: "manual-job-rules", Repository: ""},
+		Target: BranchInfo{Name: "master", Repository: ""},
+	}, result))
+}
+
 func TestGitLabClient_GetLatestCommit(t *testing.T) {
 	ctx := context.Background()
 	response, err := os.ReadFile(filepath.Join("testdata", "gitlab", "commit_list_response.json"))
