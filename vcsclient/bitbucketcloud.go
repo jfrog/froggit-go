@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -327,20 +328,20 @@ func (client *BitbucketCloudClient) GetPullRequest(ctx context.Context, owner, r
 	}
 	bitbucketClient := client.buildBitbucketCloudClient(ctx)
 	client.logger.Debug(fetchingPullRequestById, repository)
+	prIdStr := strconv.Itoa(pullRequestId)
 	options := &bitbucket.PullRequestsOptions{
 		Owner:    owner,
 		RepoSlug: repository,
-		ID:       string(rune(pullRequestId)),
+		ID:       prIdStr,
 	}
 	pullRequestRaw, err := bitbucketClient.Repositories.PullRequests.Get(options)
 	if err != nil {
 		return
 	}
-	parsedPullRequest, err := vcsutils.RemapFields[pullRequestsResponse](pullRequestRaw, "json")
+	pullRequestDetails, err := vcsutils.RemapFields[pullRequestsDetails](pullRequestRaw, "json")
 	if err != nil {
 		return
 	}
-	pullRequestDetails := parsedPullRequest.Values[0]
 	pullRequestInfo = PullRequestInfo{
 		ID: pullRequestDetails.ID,
 		Source: BranchInfo{
