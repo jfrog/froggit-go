@@ -237,7 +237,7 @@ func (client *GitLabClient) CreatePullRequest(ctx context.Context, owner, reposi
 
 // ListOpenPullRequests on GitLab
 func (client *GitLabClient) ListOpenPullRequests(ctx context.Context, _, repository string) ([]PullRequestInfo, error) {
-	openState := "open"
+	openState := "opened"
 	allScope := "all"
 	options := &gitlab.ListMergeRequestsOptions{
 		State: &openState,
