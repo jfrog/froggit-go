@@ -215,7 +215,7 @@ func TestAzureReposClient_GetPullRequest(t *testing.T) {
 
 	badClient, cleanUp := createBadAzureReposClient(t, []byte{})
 	defer cleanUp()
-	_, err = badClient.ListOpenPullRequests(ctx, "", repo1)
+	_, err = badClient.GetPullRequest(ctx, "", repo1, pullRequestId)
 	assert.Error(t, err)
 }
 

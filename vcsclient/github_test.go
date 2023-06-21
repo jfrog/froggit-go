@@ -531,7 +531,7 @@ func TestGitHubClient_ListOpenPullRequests(t *testing.T) {
 	assert.Error(t, err)
 }
 
-func TestGitHubClient_GetPullRequestInfoById(t *testing.T) {
+func TestGitHubClient_GetPullRequest(t *testing.T) {
 	ctx := context.Background()
 	pullRequestId := 1
 	repoName := "Hello-World"
@@ -549,7 +549,7 @@ func TestGitHubClient_GetPullRequestInfoById(t *testing.T) {
 		Target: BranchInfo{Name: "master", Repository: "Hello-World"},
 	}, result))
 
-	_, err = createBadGitHubClient(t).ListPullRequestComments(ctx, owner, repoName, 1)
+	_, err = createBadGitHubClient(t).GetPullRequest(ctx, owner, repoName, 1)
 	assert.Error(t, err)
 }
 

@@ -235,6 +235,9 @@ func TestBitbucketServerClient_GetPullRequest(t *testing.T) {
 		Source: BranchInfo{Name: "refs/heads/new_vul_2", Repository: "repoName"},
 		Target: BranchInfo{Name: "refs/heads/master", Repository: "repoName"},
 	}, result))
+
+	_, err = createBadBitbucketServerClient(t).GetPullRequest(ctx, owner, repo1, pullRequestId)
+	assert.Error(t, err)
 }
 
 func TestBitbucketServer_ListPullRequestComments(t *testing.T) {
