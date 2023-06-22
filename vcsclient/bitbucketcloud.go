@@ -353,9 +353,6 @@ func (client *BitbucketCloudClient) GetPullRequest(ctx context.Context, owner, r
 			Repository: pullRequestDetails.Target.Repository.Name,
 		},
 	}
-	if err != nil {
-		return
-	}
 	return
 }
 

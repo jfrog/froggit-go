@@ -223,12 +223,11 @@ func TestBitbucketServerClient_GetPullRequest(t *testing.T) {
 	assert.NoError(t, err)
 	pullRequestId := 6
 
+	// Successful
 	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, true, response,
 		fmt.Sprintf("/rest/api/1.0/projects/%s/repos/%s/pull-requests/%d", owner, repo1, pullRequestId), createBitbucketServerHandler)
 	defer cleanUp()
-
 	result, err := client.GetPullRequest(ctx, owner, repo1, pullRequestId)
-
 	require.NoError(t, err)
 	assert.True(t, reflect.DeepEqual(PullRequestInfo{
 		ID:     6,
@@ -236,6 +235,14 @@ func TestBitbucketServerClient_GetPullRequest(t *testing.T) {
 		Target: BranchInfo{Name: "refs/heads/master", Repository: "repoName"},
 	}, result))
 
+	// Bad response
+	badClient, badClientCleanUp := createServerAndClient(t, vcsutils.BitbucketServer, true, "{",
+		fmt.Sprintf("/rest/api/1.0/projects/%s/repos/%s/pull-requests/%d", owner, repo1, pullRequestId), createBitbucketServerHandler)
+	defer badClientCleanUp()
+	_, err2 := badClient.GetPullRequest(ctx, owner, repo1, pullRequestId)
+	require.Error(t, err2)
+
+	// Bad Client
 	_, err = createBadBitbucketServerClient(t).GetPullRequest(ctx, owner, repo1, pullRequestId)
 	assert.Error(t, err)
 }
