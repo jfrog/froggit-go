@@ -255,7 +255,7 @@ func (client *GitLabClient) ListOpenPullRequests(ctx context.Context, _, reposit
 // GetPullRequestInfoById on GitLab
 func (client *GitLabClient) GetPullRequest(ctx context.Context, owner, repository string, pullRequestId int) (pullRequestInfo PullRequestInfo, err error) {
 	client.logger.Debug("fetching merge requests by ID in", repository)
-	mergeRequest, _, err := client.glClient.MergeRequests.GetMergeRequest(getProjectID(owner, repository), pullRequestId, nil, gitlab.WithContext(ctx))
+	mergeRequest, _, err := client.glClient.MergeRequests.GetMergeRequest(getProjectID(owner, repository), pullRequestId, nil)
 	if err != nil {
 		return
 	}
