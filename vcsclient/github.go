@@ -302,8 +302,8 @@ func (client *GitHubClient) GetPullRequest(ctx context.Context, owner, repositor
 
 	sourceBranch, err1 := extractBranchFromLabel(*pullRequest.Head.Label)
 	targetBranch, err2 := extractBranchFromLabel(*pullRequest.Base.Label)
-	badLabelErrors := errors.Join(err1, err2)
-	if badLabelErrors != nil {
+	err = errors.Join(err1, err2)
+	if err != nil {
 		return PullRequestInfo{}, err
 	}
 
@@ -324,7 +324,7 @@ func (client *GitHubClient) GetPullRequest(ctx context.Context, owner, repositor
 // Extracts branch name from the following expected label format repo:branch
 func extractBranchFromLabel(label string) (string, error) {
 	split := strings.Split(label, ":")
-	if len(split) < 1 {
+	if len(split) <= 1 {
 		return "", fmt.Errorf("bad label format %s", label)
 	}
 	return split[1], nil

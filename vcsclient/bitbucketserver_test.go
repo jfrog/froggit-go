@@ -230,7 +230,7 @@ func TestBitbucketServerClient_GetPullRequest(t *testing.T) {
 	result, err := client.GetPullRequest(ctx, owner, repo1, pullRequestId)
 	require.NoError(t, err)
 	assert.True(t, reflect.DeepEqual(PullRequestInfo{
-		ID:     6,
+		ID:     int64(pullRequestId),
 		Source: BranchInfo{Name: "refs/heads/new_vul_2", Repository: "repoName"},
 		Target: BranchInfo{Name: "refs/heads/master", Repository: "repoName"},
 	}, result))

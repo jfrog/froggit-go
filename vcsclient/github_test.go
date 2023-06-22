@@ -535,22 +535,41 @@ func TestGitHubClient_GetPullRequest(t *testing.T) {
 	ctx := context.Background()
 	pullRequestId := 1
 	repoName := "Hello-World"
+
+	// Successful response
 	response, err := os.ReadFile(filepath.Join("testdata", "github", "pull_request_info_response.json"))
 	assert.NoError(t, err)
 	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, response,
 		fmt.Sprintf("/repos/%s/%s/pulls/%d", owner, repoName, pullRequestId), createGitHubHandler)
 	defer cleanUp()
-
 	result, err := client.GetPullRequest(ctx, owner, repoName, pullRequestId)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	assert.True(t, reflect.DeepEqual(PullRequestInfo{
-		ID:     1,
+		ID:     int64(pullRequestId),
 		Source: BranchInfo{Name: "new-topic", Repository: "Hello-World"},
 		Target: BranchInfo{Name: "master", Repository: "Hello-World"},
 	}, result))
 
-	_, err = createBadGitHubClient(t).GetPullRequest(ctx, owner, repoName, 1)
+	// Bad Labels
+	badLabels, err := os.ReadFile(filepath.Join("testdata", "github", "pull_request_info_response_bad_labels.json"))
+	assert.NoError(t, err)
+	badLabelsClient, badLabelClientCleanUp := createServerAndClient(t, vcsutils.GitHub, false, badLabels,
+		fmt.Sprintf("/repos/%s/%s/pulls/%d", owner, repoName, pullRequestId), createGitHubHandler)
+	defer badLabelClientCleanUp()
+	_, err = badLabelsClient.GetPullRequest(ctx, owner, repoName, pullRequestId)
 	assert.Error(t, err)
+
+	// Bad client
+	_, err = createBadGitHubClient(t).GetPullRequest(ctx, owner, repoName, pullRequestId)
+	assert.Error(t, err)
+
+	// Bad Response
+	badResponseClient, badResponseCleanUp := createServerAndClient(t, vcsutils.GitHub, false, "{",
+		fmt.Sprintf("/repos/%s/%s/pulls/%d", owner, repoName, pullRequestId), createGitHubHandler)
+	defer badResponseCleanUp()
+	_, err = badResponseClient.GetPullRequest(ctx, owner, repoName, pullRequestId)
+	assert.Error(t, err)
+
 }
 
 func TestGitHubClient_ListPullRequestComments(t *testing.T) {
