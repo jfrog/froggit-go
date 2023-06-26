@@ -4,6 +4,7 @@ const (
 	successfulRepoDownload   = "repository downloaded successfully. Starting with repository extraction..."
 	successfulRepoExtraction = "Extracted repository successfully"
 	creatingPullRequest      = "Creating new pull request:"
+	updatingPullRequest      = "Updating pull request ID:"
 	fetchingOpenPullRequests = "Fetching open pull requests in"
 	uploadingCodeScanning    = "Uploading code scanning for:"
 )

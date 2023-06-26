@@ -37,6 +37,16 @@ type VcsClient interface {
 	// webhookEvents - The event type
 	UpdateWebhook(ctx context.Context, owner, repository, branch, payloadURL, token, webhookID string, webhookEvents ...vcsutils.WebhookEvent) error
 
+	// UpdatePullRequest Updates pull requests metadata
+	// owner        		    - User or organization
+	// repository    		    - VCS repository name
+	// title         	        - Pull request title
+	// body                     - Pull request body or description
+	// targetBranchName         - Name of the pull request target branch name
+	// prId				        - Pull request ID
+	// state				    - Pull request state
+	UpdatePullRequest(ctx context.Context, owner, repository, title, body, targetBranchName string, prId int, state *vcsutils.PullRequestState) error
+
 	// DeleteWebhook Deletes a webhook
 	// owner        - User or organization
 	// repository   - VCS repository name

@@ -189,6 +189,25 @@ type VcsInfo struct {
 	// Project name is relevant for Azure Repos
 	Project string
 }
+type PullRequestState string
+
+const (
+	Open   PullRequestState = "open"
+	Closed PullRequestState = "closed"
+)
+
+func MapPullRequestState(state *PullRequestState) *string {
+	var stateStringValue string
+	switch *state {
+	case Open:
+		stateStringValue = "open"
+	case Closed:
+		stateStringValue = "closed"
+	default:
+		return nil
+	}
+	return &stateStringValue
+}
 
 func ValidateParametersNotBlank(paramNameValueMap map[string]string) error {
 	var errorMessages []string
