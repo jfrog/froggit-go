@@ -26,20 +26,20 @@ type BitbucketCommitInfo struct {
 	DateAdded   float64 `mapstructure:"DateAdded"`
 }
 
-func getBitbucketCommitState(commitState CommitStatus) string {
+func getBitbucketCommitState(commitState vcsutils.CommitStatus) string {
 	switch commitState {
-	case Pass:
+	case vcsutils.Pass:
 		return "SUCCESSFUL"
-	case Fail, Error:
+	case vcsutils.Fail, vcsutils.Error:
 		return "FAILED"
-	case InProgress:
+	case vcsutils.InProgress:
 		return "INPROGRESS"
 	}
 	return ""
 }
 
 // bitbucketParseCommitStatuses parse raw response into CommitStatusInfo slice
-func bitbucketParseCommitStatuses(rawStatuses interface{}, provider vcsutils.VcsProvider) ([]CommitStatusInfo, error) {
+func bitbucketParseCommitStatuses(rawStatuses interface{}, provider vcsutils.VcsProvider) ([]vcsutils.CommitStatusInfo, error) {
 	statuses := struct {
 		Statuses []BitbucketCommitInfo `mapstructure:"values"`
 	}{}
@@ -47,7 +47,7 @@ func bitbucketParseCommitStatuses(rawStatuses interface{}, provider vcsutils.Vcs
 		return nil, err
 	}
 
-	var results []CommitStatusInfo
+	var results []vcsutils.CommitStatusInfo
 	for i := range statuses.Statuses {
 		commitInfo, err := getCommitStatusInfoByBitbucketProvider(&statuses.Statuses[i], provider)
 		if err != nil {
@@ -58,7 +58,7 @@ func bitbucketParseCommitStatuses(rawStatuses interface{}, provider vcsutils.Vcs
 	return results, nil
 }
 
-func getCommitStatusInfoByBitbucketProvider(commitStatus *BitbucketCommitInfo, provider vcsutils.VcsProvider) (result CommitStatusInfo, err error) {
+func getCommitStatusInfoByBitbucketProvider(commitStatus *BitbucketCommitInfo, provider vcsutils.VcsProvider) (result vcsutils.CommitStatusInfo, err error) {
 	switch provider {
 	case vcsutils.BitbucketServer:
 		return getBitbucketServerCommitStatusInfo(commitStatus), nil
@@ -67,14 +67,14 @@ func getCommitStatusInfoByBitbucketProvider(commitStatus *BitbucketCommitInfo, p
 	}
 }
 
-func getBitbucketServerCommitStatusInfo(commitStatus *BitbucketCommitInfo) CommitStatusInfo {
+func getBitbucketServerCommitStatusInfo(commitStatus *BitbucketCommitInfo) vcsutils.CommitStatusInfo {
 	// 1. Divide the Unix millisecond timestamp by 1000 to get the Unix time in seconds
 	timeInSec := int64(commitStatus.DateAdded) / int64(time.Microsecond)
 	// 2. Calculate the nanoseconds value by subtracting the seconds value multiplied by 1000 from the original Unix millisecond timestamp
 	//    Finally, multiply the result by 1000000 to get the nanoseconds value
 	timeInNanoSec := (int64(commitStatus.DateAdded) - (timeInSec * int64(time.Microsecond))) * int64(time.Millisecond)
-	return CommitStatusInfo{
-		State:       commitStatusAsStringToStatus(commitStatus.State),
+	return vcsutils.CommitStatusInfo{
+		State:       vcsutils.CommitStatusAsStringToStatus(commitStatus.State),
 		Description: commitStatus.Description,
 		DetailsUrl:  commitStatus.Url,
 		Creator:     commitStatus.Title,
@@ -82,25 +82,25 @@ func getBitbucketServerCommitStatusInfo(commitStatus *BitbucketCommitInfo) Commi
 	}
 }
 
-func getBitbucketCloudCommitStatusInfo(commitStatus *BitbucketCommitInfo) (CommitStatusInfo, error) {
+func getBitbucketCloudCommitStatusInfo(commitStatus *BitbucketCommitInfo) (vcsutils.CommitStatusInfo, error) {
 	var createdOn, updatedOn time.Time
 	var err error
 
 	if commitStatus.CreatedOn != "" {
 		createdOn, err = time.Parse(time.RFC3339, commitStatus.CreatedOn)
 		if err != nil {
-			return CommitStatusInfo{}, fmt.Errorf("error parsing commit status created_on date: %v", err)
+			return vcsutils.CommitStatusInfo{}, fmt.Errorf("error parsing commit status created_on date: %v", err)
 		}
 	}
 	if commitStatus.UpdatedOn != "" {
 		updatedOn, err = time.Parse(time.RFC3339, commitStatus.UpdatedOn)
 		if err != nil {
-			return CommitStatusInfo{}, fmt.Errorf("error parsing commit status updated_on date: %v", err)
+			return vcsutils.CommitStatusInfo{}, fmt.Errorf("error parsing commit status updated_on date: %v", err)
 		}
 	}
 
-	return CommitStatusInfo{
-		State:         commitStatusAsStringToStatus(commitStatus.State),
+	return vcsutils.CommitStatusInfo{
+		State:         vcsutils.CommitStatusAsStringToStatus(commitStatus.State),
 		Description:   commitStatus.Description,
 		DetailsUrl:    commitStatus.Url,
 		Creator:       commitStatus.Creator,

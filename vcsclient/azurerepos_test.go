@@ -186,7 +186,7 @@ func TestAzureRepos_TestListOpenPullRequests(t *testing.T) {
 	defer cleanUp()
 	pullRequestsInfo, err := client.ListOpenPullRequests(ctx, "", repo1)
 	assert.NoError(t, err)
-	assert.True(t, reflect.DeepEqual(pullRequestsInfo, []PullRequestInfo{{ID: 1, Source: BranchInfo{Name: branch1, Repository: repo1}, Target: BranchInfo{Name: branch2, Repository: repo1}}}))
+	assert.True(t, reflect.DeepEqual(pullRequestsInfo, []vcsutils.PullRequestInfo{{ID: 1, Source: vcsutils.BranchInfo{Name: branch1, Repository: repo1}, Target: vcsutils.BranchInfo{Name: branch2, Repository: repo1}}}))
 
 	badClient, cleanUp := createBadAzureReposClient(t, []byte{})
 	defer cleanUp()
@@ -248,7 +248,7 @@ func TestAzureRepos_TestGetLatestCommit(t *testing.T) {
 	defer cleanUp()
 
 	commit, err := client.GetLatestCommit(ctx, "", repo1, branch1)
-	assert.Equal(t, commit, CommitInfo{
+	assert.Equal(t, commit, vcsutils.CommitInfo{
 		Hash:          "86d6919952702f9ab03bc95b45687f145a663de0",
 		AuthorName:    "Test User",
 		CommitterName: "Test User",
@@ -275,7 +275,7 @@ func TestAzureReposClient_CreateLabel(t *testing.T) {
 	ctx := context.Background()
 	client, cleanUp := createServerAndClient(t, vcsutils.AzureRepos, true, "", "unsupportedTest", createAzureReposHandler)
 	defer cleanUp()
-	assert.Error(t, client.CreateLabel(ctx, owner, repo1, LabelInfo{}))
+	assert.Error(t, client.CreateLabel(ctx, owner, repo1, vcsutils.LabelInfo{}))
 }
 
 func TestAzureReposClient_GetRepositoryInfo(t *testing.T) {
@@ -473,9 +473,9 @@ func TestAzureReposClient_GetCommitStatus(t *testing.T) {
 		commitStatuses, err := client.GetCommitStatuses(ctx, owner, repo1, commitHash)
 		assert.NoError(t, err)
 		assert.True(t, len(commitStatuses) == 3)
-		assert.True(t, commitStatuses[0].State == Pass)
-		assert.True(t, commitStatuses[1].State == InProgress)
-		assert.True(t, commitStatuses[2].State == Fail)
+		assert.True(t, commitStatuses[0].State == vcsutils.Pass)
+		assert.True(t, commitStatuses[1].State == vcsutils.InProgress)
+		assert.True(t, commitStatuses[2].State == vcsutils.Fail)
 	})
 	t.Run("Empty response", func(t *testing.T) {
 		client, cleanUp := createServerAndClient(t, vcsutils.AzureRepos, true, nil, expectedUri, createAzureReposHandler)

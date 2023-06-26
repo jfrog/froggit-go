@@ -22,12 +22,12 @@ import (
 
 // BitbucketServerClient API version 1.0
 type BitbucketServerClient struct {
-	vcsInfo VcsInfo
+	vcsInfo vcsutils.VcsInfo
 	logger  Log
 }
 
 // NewBitbucketServerClient create a new BitbucketServerClient
-func NewBitbucketServerClient(vcsInfo VcsInfo, logger Log) (*BitbucketServerClient, error) {
+func NewBitbucketServerClient(vcsInfo vcsutils.VcsInfo, logger Log) (*BitbucketServerClient, error) {
 	bitbucketServerClient := &BitbucketServerClient{
 		vcsInfo: vcsInfo,
 		logger:  logger,
@@ -128,9 +128,9 @@ func (client *BitbucketServerClient) ListBranches(ctx context.Context, owner, re
 }
 
 // AddSshKeyToRepository on Bitbucket server
-func (client *BitbucketServerClient) AddSshKeyToRepository(ctx context.Context, owner, repository, keyName, publicKey string, permission Permission) error {
+func (client *BitbucketServerClient) AddSshKeyToRepository(ctx context.Context, owner, repository, keyName, publicKey string, permission vcsutils.Permission) error {
 	// https://docs.atlassian.com/bitbucket-server/rest/5.16.0/bitbucket-ssh-rest.html
-	err := validateParametersNotBlank(map[string]string{
+	err := vcsutils.ValidateParametersNotBlank(map[string]string{
 		"owner":      owner,
 		"repository": repository,
 		"key name":   keyName,
@@ -141,7 +141,7 @@ func (client *BitbucketServerClient) AddSshKeyToRepository(ctx context.Context, 
 	}
 
 	accessPermission := "REPO_READ"
-	if permission == ReadWrite {
+	if permission == vcsutils.ReadWrite {
 		accessPermission = "REPO_WRITE"
 	}
 
@@ -241,7 +241,7 @@ func (client *BitbucketServerClient) DeleteWebhook(ctx context.Context, owner, r
 }
 
 // SetCommitStatus on Bitbucket server
-func (client *BitbucketServerClient) SetCommitStatus(ctx context.Context, commitStatus CommitStatus, _, _, ref, title,
+func (client *BitbucketServerClient) SetCommitStatus(ctx context.Context, commitStatus vcsutils.CommitStatus, _, _, ref, title,
 	description, detailsURL string) error {
 	bitbucketClient, err := client.buildBitbucketClient(ctx)
 	if err != nil {
@@ -257,7 +257,7 @@ func (client *BitbucketServerClient) SetCommitStatus(ctx context.Context, commit
 }
 
 // GetCommitStatuses on Bitbucket server
-func (client *BitbucketServerClient) GetCommitStatuses(ctx context.Context, owner, repository, ref string) (status []CommitStatusInfo, err error) {
+func (client *BitbucketServerClient) GetCommitStatuses(ctx context.Context, owner, repository, ref string) (status []vcsutils.CommitStatusInfo, err error) {
 	bitbucketClient, err := client.buildBitbucketClient(ctx)
 	if err != nil {
 		return nil, err
@@ -327,12 +327,12 @@ func (client *BitbucketServerClient) CreatePullRequest(ctx context.Context, owne
 }
 
 // ListOpenPullRequests on Bitbucket server
-func (client *BitbucketServerClient) ListOpenPullRequests(ctx context.Context, owner, repository string) ([]PullRequestInfo, error) {
+func (client *BitbucketServerClient) ListOpenPullRequests(ctx context.Context, owner, repository string) ([]vcsutils.PullRequestInfo, error) {
 	bitbucketClient, err := client.buildBitbucketClient(ctx)
 	if err != nil {
 		return nil, err
 	}
-	var results []PullRequestInfo
+	var results []vcsutils.PullRequestInfo
 	var apiResponse *bitbucketv1.APIResponse
 	for isLastPage, nextPageStart := true, 0; isLastPage; isLastPage, nextPageStart = bitbucketv1.HasNextPage(apiResponse) {
 		apiResponse, err = bitbucketClient.GetPullRequestsPage(owner, repository, createPaginationOptions(nextPageStart))
@@ -345,12 +345,12 @@ func (client *BitbucketServerClient) ListOpenPullRequests(ctx context.Context, o
 		}
 		for _, pullRequest := range pullRequests {
 			if pullRequest.Open {
-				results = append(results, PullRequestInfo{
+				results = append(results, vcsutils.PullRequestInfo{
 					ID: int64(pullRequest.ID),
-					Source: BranchInfo{
+					Source: vcsutils.BranchInfo{
 						Name:       pullRequest.FromRef.ID,
 						Repository: pullRequest.FromRef.Repository.Slug},
-					Target: BranchInfo{
+					Target: vcsutils.BranchInfo{
 						Name:       pullRequest.ToRef.ID,
 						Repository: pullRequest.ToRef.Repository.Slug},
 				})
@@ -362,7 +362,7 @@ func (client *BitbucketServerClient) ListOpenPullRequests(ctx context.Context, o
 
 // AddPullRequestComment on Bitbucket server
 func (client *BitbucketServerClient) AddPullRequestComment(ctx context.Context, owner, repository, content string, pullRequestID int) error {
-	err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository, "content": content})
+	err := vcsutils.ValidateParametersNotBlank(map[string]string{"owner": owner, "repository": repository, "content": content})
 	if err != nil {
 		return err
 	}
@@ -378,12 +378,12 @@ func (client *BitbucketServerClient) AddPullRequestComment(ctx context.Context, 
 }
 
 // ListPullRequestComments on Bitbucket server
-func (client *BitbucketServerClient) ListPullRequestComments(ctx context.Context, owner, repository string, pullRequestID int) ([]CommentInfo, error) {
+func (client *BitbucketServerClient) ListPullRequestComments(ctx context.Context, owner, repository string, pullRequestID int) ([]vcsutils.CommentInfo, error) {
 	bitbucketClient, err := client.buildBitbucketClient(ctx)
 	if err != nil {
 		return nil, err
 	}
-	var results []CommentInfo
+	var results []vcsutils.CommentInfo
 	var apiResponse *bitbucketv1.APIResponse
 	for isLastPage, nextPageStart := true, 0; isLastPage; isLastPage, nextPageStart = bitbucketv1.HasNextPage(apiResponse) {
 		apiResponse, err = bitbucketClient.GetActivities(owner, repository, int64(pullRequestID), createPaginationOptions(nextPageStart))
@@ -397,7 +397,7 @@ func (client *BitbucketServerClient) ListPullRequestComments(ctx context.Context
 		for _, activity := range activities.Values {
 			// Add activity only if from type new comment.
 			if activity.Action == "COMMENTED" && activity.CommentAction == "ADDED" {
-				results = append(results, CommentInfo{
+				results = append(results, vcsutils.CommentInfo{
 					ID:      int64(activity.Comment.ID),
 					Created: time.Unix(activity.Comment.CreatedDate, 0),
 					Content: activity.Comment.Text,
@@ -415,14 +415,14 @@ type projectsResponse struct {
 }
 
 // GetLatestCommit on Bitbucket server
-func (client *BitbucketServerClient) GetLatestCommit(ctx context.Context, owner, repository, branch string) (CommitInfo, error) {
-	err := validateParametersNotBlank(map[string]string{
+func (client *BitbucketServerClient) GetLatestCommit(ctx context.Context, owner, repository, branch string) (vcsutils.CommitInfo, error) {
+	err := vcsutils.ValidateParametersNotBlank(map[string]string{
 		"owner":      owner,
 		"repository": repository,
 		"branch":     branch,
 	})
 	if err != nil {
-		return CommitInfo{}, err
+		return vcsutils.CommitInfo{}, err
 	}
 
 	options := map[string]interface{}{
@@ -431,38 +431,38 @@ func (client *BitbucketServerClient) GetLatestCommit(ctx context.Context, owner,
 	}
 	bitbucketClient, err := client.buildBitbucketClient(ctx)
 	if err != nil {
-		return CommitInfo{}, err
+		return vcsutils.CommitInfo{}, err
 	}
 
 	apiResponse, err := bitbucketClient.GetCommits(owner, repository, options)
 	if err != nil {
-		return CommitInfo{}, err
+		return vcsutils.CommitInfo{}, err
 	}
 	commits, err := bitbucketv1.GetCommitsResponse(apiResponse)
 	if err != nil {
-		return CommitInfo{}, err
+		return vcsutils.CommitInfo{}, err
 	}
 	if len(commits) > 0 {
 		latestCommit := commits[0]
 		return client.mapBitbucketServerCommitToCommitInfo(latestCommit, owner, repository), nil
 	}
-	return CommitInfo{}, nil
+	return vcsutils.CommitInfo{}, nil
 }
 
 // GetRepositoryInfo on Bitbucket server
-func (client *BitbucketServerClient) GetRepositoryInfo(ctx context.Context, owner, repository string) (RepositoryInfo, error) {
-	if err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository}); err != nil {
-		return RepositoryInfo{}, err
+func (client *BitbucketServerClient) GetRepositoryInfo(ctx context.Context, owner, repository string) (vcsutils.RepositoryInfo, error) {
+	if err := vcsutils.ValidateParametersNotBlank(map[string]string{"owner": owner, "repository": repository}); err != nil {
+		return vcsutils.RepositoryInfo{}, err
 	}
 
 	bitbucketClient, err := client.buildBitbucketClient(ctx)
 	if err != nil {
-		return RepositoryInfo{}, err
+		return vcsutils.RepositoryInfo{}, err
 	}
 
 	repo, err := bitbucketClient.GetRepository(owner, repository)
 	if err != nil {
-		return RepositoryInfo{}, err
+		return vcsutils.RepositoryInfo{}, err
 	}
 
 	holder := struct {
@@ -476,10 +476,10 @@ func (client *BitbucketServerClient) GetRepositoryInfo(ctx context.Context, owne
 	}{}
 
 	if err := mapstructure.Decode(repo.Values, &holder); err != nil {
-		return RepositoryInfo{}, err
+		return vcsutils.RepositoryInfo{}, err
 	}
 
-	var info CloneInfo
+	var info vcsutils.CloneInfo
 	for _, cloneLink := range holder.Links.Clone {
 		switch cloneLink.Name {
 		case "http":
@@ -489,44 +489,44 @@ func (client *BitbucketServerClient) GetRepositoryInfo(ctx context.Context, owne
 		}
 	}
 
-	return RepositoryInfo{RepositoryVisibility: getBitbucketServerRepositoryVisibility(holder.Public), CloneInfo: info}, nil
+	return vcsutils.RepositoryInfo{RepositoryVisibility: getBitbucketServerRepositoryVisibility(holder.Public), CloneInfo: info}, nil
 }
 
 // GetCommitBySha on Bitbucket server
-func (client *BitbucketServerClient) GetCommitBySha(ctx context.Context, owner, repository, sha string) (CommitInfo, error) {
-	err := validateParametersNotBlank(map[string]string{
+func (client *BitbucketServerClient) GetCommitBySha(ctx context.Context, owner, repository, sha string) (vcsutils.CommitInfo, error) {
+	err := vcsutils.ValidateParametersNotBlank(map[string]string{
 		"owner":      owner,
 		"repository": repository,
 		"sha":        sha,
 	})
 	if err != nil {
-		return CommitInfo{}, err
+		return vcsutils.CommitInfo{}, err
 	}
 
 	bitbucketClient, err := client.buildBitbucketClient(ctx)
 	if err != nil {
-		return CommitInfo{}, err
+		return vcsutils.CommitInfo{}, err
 	}
 
 	apiResponse, err := bitbucketClient.GetCommit(owner, repository, sha, nil)
 	if err != nil {
-		return CommitInfo{}, err
+		return vcsutils.CommitInfo{}, err
 	}
 	commit := bitbucketv1.Commit{}
 	err = unmarshalAPIResponseValues(apiResponse, &commit)
 	if err != nil {
-		return CommitInfo{}, err
+		return vcsutils.CommitInfo{}, err
 	}
 	return client.mapBitbucketServerCommitToCommitInfo(commit, owner, repository), nil
 }
 
 // CreateLabel on Bitbucket server
-func (client *BitbucketServerClient) CreateLabel(ctx context.Context, owner, repository string, labelInfo LabelInfo) error {
+func (client *BitbucketServerClient) CreateLabel(ctx context.Context, owner, repository string, labelInfo vcsutils.LabelInfo) error {
 	return errLabelsNotSupported
 }
 
 // GetLabel on Bitbucket server
-func (client *BitbucketServerClient) GetLabel(ctx context.Context, owner, repository, name string) (*LabelInfo, error) {
+func (client *BitbucketServerClient) GetLabel(ctx context.Context, owner, repository, name string) (*vcsutils.LabelInfo, error) {
 	return nil, errLabelsNotSupported
 }
 
@@ -541,8 +541,8 @@ func (client *BitbucketServerClient) UnlabelPullRequest(ctx context.Context, own
 }
 
 // GetRepositoryEnvironmentInfo on Bitbucket server
-func (client *BitbucketServerClient) GetRepositoryEnvironmentInfo(ctx context.Context, owner, repository, name string) (RepositoryEnvironmentInfo, error) {
-	return RepositoryEnvironmentInfo{}, errBitbucketGetRepoEnvironmentInfoNotSupported
+func (client *BitbucketServerClient) GetRepositoryEnvironmentInfo(ctx context.Context, owner, repository, name string) (vcsutils.RepositoryEnvironmentInfo, error) {
+	return vcsutils.RepositoryEnvironmentInfo{}, errBitbucketGetRepoEnvironmentInfoNotSupported
 }
 
 // Get all projects for which the authenticated user has the PROJECT_VIEW permission
@@ -642,14 +642,14 @@ func getBitbucketServerWebhookEvents(webhookEvents ...vcsutils.WebhookEvent) []s
 }
 
 func (client *BitbucketServerClient) mapBitbucketServerCommitToCommitInfo(commit bitbucketv1.Commit,
-	owner, repo string) CommitInfo {
+	owner, repo string) vcsutils.CommitInfo {
 	parents := make([]string, len(commit.Parents))
 	for i, p := range commit.Parents {
 		parents[i] = p.ID
 	}
 	url := fmt.Sprintf("%s/api/1.0/projects/%s/repos/%s/commits/%s",
 		client.vcsInfo.APIEndpoint, owner, repo, commit.ID)
-	return CommitInfo{
+	return vcsutils.CommitInfo{
 		Hash:          commit.ID,
 		AuthorName:    commit.Author.Name,
 		CommitterName: commit.Committer.Name,
@@ -676,7 +676,7 @@ type diffPayload struct {
 }
 
 func (client *BitbucketServerClient) GetModifiedFiles(ctx context.Context, owner, repository, refBefore, refAfter string) ([]string, error) {
-	err := validateParametersNotBlank(map[string]string{
+	err := vcsutils.ValidateParametersNotBlank(map[string]string{
 		"owner":      owner,
 		"repository": repository,
 		"refBefore":  refBefore,
@@ -713,9 +713,9 @@ func (client *BitbucketServerClient) GetModifiedFiles(ctx context.Context, owner
 	return fileNamesList, nil
 }
 
-func getBitbucketServerRepositoryVisibility(public bool) RepositoryVisibility {
+func getBitbucketServerRepositoryVisibility(public bool) vcsutils.RepositoryVisibility {
 	if public {
-		return Public
+		return vcsutils.Public
 	}
-	return Private
+	return vcsutils.Private
 }

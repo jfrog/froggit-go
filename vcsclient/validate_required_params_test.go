@@ -30,7 +30,7 @@ func TestRequiredParams_AddSshKeyInvalidPayload(t *testing.T) {
 		for _, tt := range tests {
 			t.Run(p.String()+" "+tt.name, func(t *testing.T) {
 				ctx, client := createClientAndContext(t, p)
-				err := client.AddSshKeyToRepository(ctx, tt.owner, tt.repo, tt.keyName, tt.publicKey, Read)
+				err := client.AddSshKeyToRepository(ctx, tt.owner, tt.repo, tt.keyName, tt.publicKey, vcsutils.Read)
 				assertMissingParam(t, err, tt.missingParams...)
 			})
 		}
@@ -143,13 +143,13 @@ func TestRequiredParams_CreateLabel(t *testing.T) {
 		name          string
 		owner         string
 		repo          string
-		labelInfo     LabelInfo
+		labelInfo     vcsutils.LabelInfo
 		missingParams []string
 	}{
-		{name: "all empty", labelInfo: LabelInfo{}, missingParams: []string{"owner", "repository", "LabelInfo.name"}},
-		{name: "empty owner", repo: "repo", labelInfo: LabelInfo{Name: "name"}, missingParams: []string{"owner"}},
-		{name: "empty repo", owner: "owner", labelInfo: LabelInfo{Name: "name"}, missingParams: []string{"repository"}},
-		{name: "empty LabelInfo.name", owner: "owner", repo: "repo", labelInfo: LabelInfo{}, missingParams: []string{"LabelInfo.name"}},
+		{name: "all empty", labelInfo: vcsutils.LabelInfo{}, missingParams: []string{"owner", "repository", "LabelInfo.name"}},
+		{name: "empty owner", repo: "repo", labelInfo: vcsutils.LabelInfo{Name: "name"}, missingParams: []string{"owner"}},
+		{name: "empty repo", owner: "owner", labelInfo: vcsutils.LabelInfo{Name: "name"}, missingParams: []string{"repository"}},
+		{name: "empty LabelInfo.name", owner: "owner", repo: "repo", labelInfo: vcsutils.LabelInfo{}, missingParams: []string{"LabelInfo.name"}},
 	}
 
 	for _, p := range getNonBitbucketProviders() {

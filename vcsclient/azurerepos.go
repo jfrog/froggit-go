@@ -19,13 +19,13 @@ import (
 
 // Azure Devops API version 6
 type AzureReposClient struct {
-	vcsInfo           VcsInfo
+	vcsInfo           vcsutils.VcsInfo
 	connectionDetails *azuredevops.Connection
 	logger            Log
 }
 
 // NewAzureReposClient create a new AzureReposClient
-func NewAzureReposClient(vcsInfo VcsInfo, logger Log) (*AzureReposClient, error) {
+func NewAzureReposClient(vcsInfo vcsutils.VcsInfo, logger Log) (*AzureReposClient, error) {
 	client := &AzureReposClient{vcsInfo: vcsInfo, logger: logger}
 	baseUrl := strings.TrimSuffix(client.vcsInfo.APIEndpoint, "/")
 	client.connectionDetails = azuredevops.NewPatConnection(baseUrl, client.vcsInfo.Token)
@@ -197,7 +197,7 @@ func (client *AzureReposClient) AddPullRequestComment(ctx context.Context, _, re
 }
 
 // ListPullRequestComments returns all the pull request threads with their comments.
-func (client *AzureReposClient) ListPullRequestComments(ctx context.Context, _, repository string, pullRequestID int) ([]CommentInfo, error) {
+func (client *AzureReposClient) ListPullRequestComments(ctx context.Context, _, repository string, pullRequestID int) ([]vcsutils.CommentInfo, error) {
 	azureReposGitClient, err := client.buildAzureReposClient(ctx)
 	if err != nil {
 		return nil, err
@@ -210,7 +210,7 @@ func (client *AzureReposClient) ListPullRequestComments(ctx context.Context, _, 
 	if err != nil {
 		return nil, err
 	}
-	var commentInfo []CommentInfo
+	var commentInfo []vcsutils.CommentInfo
 	for _, thread := range *threads {
 		var commentsAggregator strings.Builder
 		for _, comment := range *thread.Comments {
@@ -223,7 +223,7 @@ func (client *AzureReposClient) ListPullRequestComments(ctx context.Context, _, 
 				return nil, err
 			}
 		}
-		commentInfo = append(commentInfo, CommentInfo{
+		commentInfo = append(commentInfo, vcsutils.CommentInfo{
 			ID:      int64(*thread.Id),
 			Created: thread.PublishedDate.Time,
 			Content: commentsAggregator.String(),
@@ -233,7 +233,7 @@ func (client *AzureReposClient) ListPullRequestComments(ctx context.Context, _, 
 }
 
 // ListOpenPullRequests on Azure Repos
-func (client *AzureReposClient) ListOpenPullRequests(ctx context.Context, _, repository string) ([]PullRequestInfo, error) {
+func (client *AzureReposClient) ListOpenPullRequests(ctx context.Context, _, repository string) ([]vcsutils.PullRequestInfo, error) {
 	azureReposGitClient, err := client.buildAzureReposClient(ctx)
 	if err != nil {
 		return nil, err
@@ -247,18 +247,18 @@ func (client *AzureReposClient) ListOpenPullRequests(ctx context.Context, _, rep
 	if err != nil {
 		return nil, err
 	}
-	var pullRequestsInfo []PullRequestInfo
+	var pullRequestsInfo []vcsutils.PullRequestInfo
 	for _, pullRequest := range *pullRequests {
 		// Trim the branches prefix and get the actual branches name
 		shortSourceName := (*pullRequest.SourceRefName)[strings.LastIndex(*pullRequest.SourceRefName, "/")+1:]
 		shortTargetName := (*pullRequest.TargetRefName)[strings.LastIndex(*pullRequest.TargetRefName, "/")+1:]
-		pullRequestsInfo = append(pullRequestsInfo, PullRequestInfo{
+		pullRequestsInfo = append(pullRequestsInfo, vcsutils.PullRequestInfo{
 			ID: int64(*pullRequest.PullRequestId),
-			Source: BranchInfo{
+			Source: vcsutils.BranchInfo{
 				Name:       shortSourceName,
 				Repository: repository,
 			},
-			Target: BranchInfo{
+			Target: vcsutils.BranchInfo{
 				Name:       shortTargetName,
 				Repository: repository,
 			},
@@ -268,12 +268,12 @@ func (client *AzureReposClient) ListOpenPullRequests(ctx context.Context, _, rep
 }
 
 // GetLatestCommit on Azure Repos
-func (client *AzureReposClient) GetLatestCommit(ctx context.Context, _, repository, branch string) (CommitInfo, error) {
+func (client *AzureReposClient) GetLatestCommit(ctx context.Context, _, repository, branch string) (vcsutils.CommitInfo, error) {
 	azureReposGitClient, err := client.buildAzureReposClient(ctx)
 	if err != nil {
-		return CommitInfo{}, err
+		return vcsutils.CommitInfo{}, err
 	}
-	latestCommitInfo := CommitInfo{}
+	latestCommitInfo := vcsutils.CommitInfo{}
 	commits, err := azureReposGitClient.GetCommits(ctx, git.GetCommitsArgs{
 		RepositoryId:   &repository,
 		Project:        &client.vcsInfo.Project,
@@ -285,7 +285,7 @@ func (client *AzureReposClient) GetLatestCommit(ctx context.Context, _, reposito
 	if len(*commits) > 0 {
 		// The latest commit is the first in the list
 		latestCommit := (*commits)[0]
-		latestCommitInfo = CommitInfo{
+		latestCommitInfo = vcsutils.CommitInfo{
 			Hash:          vcsutils.DefaultIfNotNil(latestCommit.CommitId),
 			AuthorName:    vcsutils.DefaultIfNotNil(latestCommit.Author.Name),
 			CommitterName: vcsutils.DefaultIfNotNil(latestCommit.Committer.Name),
@@ -303,27 +303,27 @@ func getUnsupportedInAzureError(functionName string) error {
 }
 
 // AddSshKeyToRepository on Azure Repos
-func (client *AzureReposClient) AddSshKeyToRepository(ctx context.Context, owner, repository, keyName, publicKey string, permission Permission) error {
+func (client *AzureReposClient) AddSshKeyToRepository(ctx context.Context, owner, repository, keyName, publicKey string, permission vcsutils.Permission) error {
 	return getUnsupportedInAzureError("add ssh key to repository")
 }
 
 // GetRepositoryInfo on Azure Repos
-func (client *AzureReposClient) GetRepositoryInfo(ctx context.Context, owner, repository string) (RepositoryInfo, error) {
-	return RepositoryInfo{}, getUnsupportedInAzureError("get repository info")
+func (client *AzureReposClient) GetRepositoryInfo(ctx context.Context, owner, repository string) (vcsutils.RepositoryInfo, error) {
+	return vcsutils.RepositoryInfo{}, getUnsupportedInAzureError("get repository info")
 }
 
 // GetCommitBySha on Azure Repos
-func (client *AzureReposClient) GetCommitBySha(ctx context.Context, owner, repository, sha string) (CommitInfo, error) {
-	return CommitInfo{}, getUnsupportedInAzureError("get commit by sha")
+func (client *AzureReposClient) GetCommitBySha(ctx context.Context, owner, repository, sha string) (vcsutils.CommitInfo, error) {
+	return vcsutils.CommitInfo{}, getUnsupportedInAzureError("get commit by sha")
 }
 
 // CreateLabel on Azure Repos
-func (client *AzureReposClient) CreateLabel(ctx context.Context, owner, repository string, labelInfo LabelInfo) error {
+func (client *AzureReposClient) CreateLabel(ctx context.Context, owner, repository string, labelInfo vcsutils.LabelInfo) error {
 	return getUnsupportedInAzureError("create label")
 }
 
 // GetLabel on Azure Repos
-func (client *AzureReposClient) GetLabel(ctx context.Context, owner, repository, name string) (*LabelInfo, error) {
+func (client *AzureReposClient) GetLabel(ctx context.Context, owner, repository, name string) (*vcsutils.LabelInfo, error) {
 	return nil, getUnsupportedInAzureError("get label")
 }
 
@@ -358,7 +358,7 @@ func (client *AzureReposClient) DeleteWebhook(ctx context.Context, owner, reposi
 }
 
 // SetCommitStatus on Azure Repos
-func (client *AzureReposClient) SetCommitStatus(ctx context.Context, commitStatus CommitStatus, owner, repository, ref, title, description, detailsURL string) error {
+func (client *AzureReposClient) SetCommitStatus(ctx context.Context, commitStatus vcsutils.CommitStatus, owner, repository, ref, title, description, detailsURL string) error {
 	azureReposGitClient, err := client.buildAzureReposClient(ctx)
 	if err != nil {
 		return err
@@ -383,7 +383,7 @@ func (client *AzureReposClient) SetCommitStatus(ctx context.Context, commitStatu
 }
 
 // GetCommitStatuses on Azure Repos
-func (client *AzureReposClient) GetCommitStatuses(ctx context.Context, owner, repository, ref string) (status []CommitStatusInfo, err error) {
+func (client *AzureReposClient) GetCommitStatuses(ctx context.Context, owner, repository, ref string) (status []vcsutils.CommitStatusInfo, err error) {
 	azureReposGitClient, err := client.buildAzureReposClient(ctx)
 	if err != nil {
 		return nil, err
@@ -397,10 +397,10 @@ func (client *AzureReposClient) GetCommitStatuses(ctx context.Context, owner, re
 	if err != nil {
 		return nil, err
 	}
-	results := make([]CommitStatusInfo, 0)
+	results := make([]vcsutils.CommitStatusInfo, 0)
 	for _, singleStatus := range *resGitStatus {
-		results = append(results, CommitStatusInfo{
-			State:         commitStatusAsStringToStatus(string(*singleStatus.State)),
+		results = append(results, vcsutils.CommitStatusInfo{
+			State:         vcsutils.CommitStatusAsStringToStatus(string(*singleStatus.State)),
 			Description:   *singleStatus.Description,
 			DetailsUrl:    *singleStatus.TargetUrl,
 			Creator:       *singleStatus.CreatedBy.DisplayName,
@@ -413,7 +413,7 @@ func (client *AzureReposClient) GetCommitStatuses(ctx context.Context, owner, re
 
 // DownloadFileFromRepo on Azure Repos
 func (client *AzureReposClient) DownloadFileFromRepo(ctx context.Context, owner, repository, branch, path string) ([]byte, int, error) {
-	if err := validateParametersNotBlank(map[string]string{
+	if err := vcsutils.ValidateParametersNotBlank(map[string]string{
 		"owner":      owner,
 		"repository": repository,
 		"path":       path,
@@ -448,12 +448,12 @@ func (client *AzureReposClient) DownloadFileFromRepo(ctx context.Context, owner,
 }
 
 // GetRepositoryEnvironmentInfo on GitLab
-func (client *AzureReposClient) GetRepositoryEnvironmentInfo(ctx context.Context, owner, repository, name string) (RepositoryEnvironmentInfo, error) {
-	return RepositoryEnvironmentInfo{}, getUnsupportedInAzureError("get repository environment info")
+func (client *AzureReposClient) GetRepositoryEnvironmentInfo(ctx context.Context, owner, repository, name string) (vcsutils.RepositoryEnvironmentInfo, error) {
+	return vcsutils.RepositoryEnvironmentInfo{}, getUnsupportedInAzureError("get repository environment info")
 }
 
 func (client *AzureReposClient) GetModifiedFiles(ctx context.Context, _, repository, refBefore, refAfter string) ([]string, error) {
-	if err := validateParametersNotBlank(map[string]string{
+	if err := vcsutils.ValidateParametersNotBlank(map[string]string{
 		"repository": repository,
 		"refBefore":  refBefore,
 		"refAfter":   refAfter,
@@ -519,12 +519,12 @@ func (client *AzureReposClient) GetModifiedFiles(ctx context.Context, _, reposit
 }
 
 // mapStatusToString maps commit status enum to string, specific for azure.
-func mapStatusToString(status CommitStatus) string {
-	conversionMap := map[CommitStatus]string{
-		Pass:       "Succeeded",
-		Fail:       "Failed",
-		Error:      "Error",
-		InProgress: "Pending",
+func mapStatusToString(status vcsutils.CommitStatus) string {
+	conversionMap := map[vcsutils.CommitStatus]string{
+		vcsutils.Pass:       "Succeeded",
+		vcsutils.Fail:       "Failed",
+		vcsutils.Error:      "Error",
+		vcsutils.InProgress: "Pending",
 	}
 	return conversionMap[status]
 }
@@ -533,5 +533,5 @@ func extractTimeFromAzuredevopsTime(rawStatus *azuredevops.Time) time.Time {
 	if rawStatus == nil {
 		return time.Time{}
 	}
-	return extractTimeWithFallback(&rawStatus.Time)
+	return vcsutils.ExtractTimeWithFallback(&rawStatus.Time)
 }

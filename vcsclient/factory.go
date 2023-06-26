@@ -7,7 +7,7 @@ import (
 // ClientBuilder builds VcsClient
 type ClientBuilder struct {
 	vcsProvider vcsutils.VcsProvider
-	vcsInfo     VcsInfo
+	vcsInfo     vcsutils.VcsInfo
 	logger      Log
 }
 

@@ -170,29 +170,29 @@ func TestGitHubClient_CreateCommitStatus(t *testing.T) {
 	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, github.RepoStatus{}, fmt.Sprintf("/repos/jfrog/%s/statuses/%s", repo1, ref), createGitHubHandler)
 	defer cleanUp()
 
-	err := client.SetCommitStatus(ctx, Error, owner, repo1, ref, "Commit status title", "Commit status description",
+	err := client.SetCommitStatus(ctx, vcsutils.Error, owner, repo1, ref, "Commit status title", "Commit status description",
 		"https://httpbin.org/anything")
 	assert.NoError(t, err)
 
-	err = createBadGitHubClient(t).SetCommitStatus(ctx, Error, owner, repo1, ref, "Commit status title", "Commit status description",
+	err = createBadGitHubClient(t).SetCommitStatus(ctx, vcsutils.Error, owner, repo1, ref, "Commit status title", "Commit status description",
 		"https://httpbin.org/anything")
 	assert.Error(t, err)
 }
 
 func TestGitHubClient_getRepositoryVisibility(t *testing.T) {
 	visibility := "public"
-	assert.Equal(t, Public, getGitHubRepositoryVisibility(&github.Repository{Visibility: &visibility}))
+	assert.Equal(t, vcsutils.Public, getGitHubRepositoryVisibility(&github.Repository{Visibility: &visibility}))
 	visibility = "internal"
-	assert.Equal(t, Internal, getGitHubRepositoryVisibility(&github.Repository{Visibility: &visibility}))
+	assert.Equal(t, vcsutils.Internal, getGitHubRepositoryVisibility(&github.Repository{Visibility: &visibility}))
 	visibility = "private"
-	assert.Equal(t, Private, getGitHubRepositoryVisibility(&github.Repository{Visibility: &visibility}))
+	assert.Equal(t, vcsutils.Private, getGitHubRepositoryVisibility(&github.Repository{Visibility: &visibility}))
 }
 
 func TestGitHubClient_getGitHubCommitState(t *testing.T) {
-	assert.Equal(t, "success", getGitHubCommitState(Pass))
-	assert.Equal(t, "failure", getGitHubCommitState(Fail))
-	assert.Equal(t, "error", getGitHubCommitState(Error))
-	assert.Equal(t, "pending", getGitHubCommitState(InProgress))
+	assert.Equal(t, "success", getGitHubCommitState(vcsutils.Pass))
+	assert.Equal(t, "failure", getGitHubCommitState(vcsutils.Fail))
+	assert.Equal(t, "error", getGitHubCommitState(vcsutils.Error))
+	assert.Equal(t, "pending", getGitHubCommitState(vcsutils.InProgress))
 	assert.Equal(t, "", getGitHubCommitState(5))
 }
 
@@ -277,7 +277,7 @@ func TestGitHubClient_GetLatestCommit(t *testing.T) {
 	result, err := client.GetLatestCommit(ctx, owner, repo1, "master")
 
 	require.NoError(t, err)
-	assert.Equal(t, CommitInfo{
+	assert.Equal(t, vcsutils.CommitInfo{
 		Hash:          "6dcb09b5b57875f334f61aebed695e2e4193db5e",
 		AuthorName:    "Monalisa Octocat",
 		CommitterName: "Joconde Octocat",
@@ -348,10 +348,10 @@ func TestGitHubClient_AddSshKeyToRepository(t *testing.T) {
 		createGitHubWithBodyHandler)
 	defer closeServer()
 
-	err := client.AddSshKeyToRepository(ctx, owner, repo1, "My deploy key", "ssh-rsa AAAA...", Read)
+	err := client.AddSshKeyToRepository(ctx, owner, repo1, "My deploy key", "ssh-rsa AAAA...", vcsutils.Read)
 	require.NoError(t, err)
 
-	err = createBadGitHubClient(t).AddSshKeyToRepository(ctx, owner, repo1, "My deploy key", "ssh-rsa AAAA...", Read)
+	err = createBadGitHubClient(t).AddSshKeyToRepository(ctx, owner, repo1, "My deploy key", "ssh-rsa AAAA...", vcsutils.Read)
 	assert.Error(t, err)
 }
 
@@ -374,7 +374,7 @@ func TestGitHubClient_AddSshKeyToRepositoryReadWrite(t *testing.T) {
 		createGitHubWithBodyHandler)
 	defer closeServer()
 
-	err := client.AddSshKeyToRepository(ctx, owner, repo1, "My deploy key", "ssh-rsa AAAA...", ReadWrite)
+	err := client.AddSshKeyToRepository(ctx, owner, repo1, "My deploy key", "ssh-rsa AAAA...", vcsutils.ReadWrite)
 
 	require.NoError(t, err)
 }
@@ -392,7 +392,7 @@ func TestGitHubClient_GetCommitBySha(t *testing.T) {
 	result, err := client.GetCommitBySha(ctx, owner, repo1, sha)
 
 	require.NoError(t, err)
-	assert.Equal(t, CommitInfo{
+	assert.Equal(t, vcsutils.CommitInfo{
 		Hash:          sha,
 		AuthorName:    "Monalisa Octocat",
 		CommitterName: "Joconde Octocat",
@@ -435,9 +435,9 @@ func TestGitHubClient_GetRepositoryInfo(t *testing.T) {
 	info, err := client.GetRepositoryInfo(ctx, "octocat", "Hello-World")
 	require.NoError(t, err)
 	require.Equal(t,
-		RepositoryInfo{
-			RepositoryVisibility: Public,
-			CloneInfo:            CloneInfo{HTTP: "https://github.com/octocat/Hello-World.git", SSH: "git@github.com:octocat/Hello-World.git"},
+		vcsutils.RepositoryInfo{
+			RepositoryVisibility: vcsutils.Public,
+			CloneInfo:            vcsutils.CloneInfo{HTTP: "https://github.com/octocat/Hello-World.git", SSH: "git@github.com:octocat/Hello-World.git"},
 		},
 		info,
 	)
@@ -451,14 +451,14 @@ func TestGitHubClient_CreateLabel(t *testing.T) {
 	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, github.Label{}, fmt.Sprintf("/repos/jfrog/%s/labels", repo1), createGitHubHandler)
 	defer cleanUp()
 
-	err := client.CreateLabel(ctx, owner, repo1, LabelInfo{
+	err := client.CreateLabel(ctx, owner, repo1, vcsutils.LabelInfo{
 		Name:        labelName,
 		Description: "label-description",
 		Color:       "001122",
 	})
 	assert.NoError(t, err)
 
-	err = createBadGitHubClient(t).CreateLabel(ctx, owner, repo1, LabelInfo{
+	err = createBadGitHubClient(t).CreateLabel(ctx, owner, repo1, vcsutils.LabelInfo{
 		Name:        labelName,
 		Description: "label-description",
 		Color:       "001122",
@@ -469,7 +469,7 @@ func TestGitHubClient_CreateLabel(t *testing.T) {
 func TestGitHubClient_GetLabel(t *testing.T) {
 	ctx := context.Background()
 
-	expectedLabel := &LabelInfo{Name: labelName, Description: "label-description", Color: "001122"}
+	expectedLabel := &vcsutils.LabelInfo{Name: labelName, Description: "label-description", Color: "001122"}
 	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false,
 		github.Label{Name: &expectedLabel.Name, Description: &expectedLabel.Description, Color: &expectedLabel.Color},
 		fmt.Sprintf("/repos/jfrog/%s/labels/%s", repo1, url.PathEscape(expectedLabel.Name)), createGitHubHandler)
@@ -521,10 +521,10 @@ func TestGitHubClient_ListOpenPullRequests(t *testing.T) {
 	require.NoError(t, err)
 	assert.Len(t, result, 1)
 	assert.NoError(t, err)
-	assert.True(t, reflect.DeepEqual(PullRequestInfo{
+	assert.True(t, reflect.DeepEqual(vcsutils.PullRequestInfo{
 		ID:     1,
-		Source: BranchInfo{Name: "new-topic", Repository: "Hello-World"},
-		Target: BranchInfo{Name: "master", Repository: "Hello-World"},
+		Source: vcsutils.BranchInfo{Name: "new-topic", Repository: "Hello-World"},
+		Target: vcsutils.BranchInfo{Name: "master", Repository: "Hello-World"},
 	}, result[0]))
 
 	_, err = createBadGitHubClient(t).ListPullRequestComments(ctx, owner, repo1, 1)
@@ -544,7 +544,7 @@ func TestGitHubClient_ListPullRequestComments(t *testing.T) {
 	assert.Len(t, result, 2)
 	expectedCreated, err := time.Parse(time.RFC3339, "2011-04-14T16:00:49Z")
 	assert.NoError(t, err)
-	assert.Equal(t, CommentInfo{
+	assert.Equal(t, vcsutils.CommentInfo{
 		ID:      10,
 		Content: "Great stuff!",
 		Created: expectedCreated,
@@ -708,10 +708,10 @@ func TestGitHubClient_TestGetCommitStatus(t *testing.T) {
 		commitStatuses, err := client.GetCommitStatuses(ctx, owner, repo1, ref)
 		assert.NoError(t, err)
 		assert.True(t, len(commitStatuses) == 4)
-		assert.True(t, commitStatuses[0].State == Pass)
-		assert.True(t, commitStatuses[1].State == InProgress)
-		assert.True(t, commitStatuses[2].State == Fail)
-		assert.True(t, commitStatuses[3].State == Error)
+		assert.True(t, commitStatuses[0].State == vcsutils.Pass)
+		assert.True(t, commitStatuses[1].State == vcsutils.InProgress)
+		assert.True(t, commitStatuses[2].State == vcsutils.Fail)
+		assert.True(t, commitStatuses[3].State == vcsutils.Error)
 	})
 	t.Run("Bad response format", func(t *testing.T) {
 		response, err := os.ReadFile(filepath.Join("testdata", "github", "commits_statuses_bad_json.json"))
@@ -757,7 +757,7 @@ func TestGitHubClient_getGitHubGitRemoteUrl(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			info := VcsInfo{APIEndpoint: tc.apiEndpoint}
+			info := vcsutils.VcsInfo{APIEndpoint: tc.apiEndpoint}
 			client, err := NewGitHubClient(info, nil)
 			assert.NoError(t, err)
 			assert.Equal(t, tc.expectedResult, getGitHubGitRemoteUrl(client, tc.owner, tc.repo))

@@ -126,7 +126,7 @@ func TestBitbucketCloud_SetCommitStatus(t *testing.T) {
 	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketCloud, true, nil, fmt.Sprintf("/repositories/jfrog/repo-1/commit/%s/statuses/build", ref), createBitbucketCloudHandler)
 	defer cleanUp()
 
-	err := client.SetCommitStatus(ctx, Pass, owner, repo1, ref, "Commit status title", "Commit status description",
+	err := client.SetCommitStatus(ctx, vcsutils.Pass, owner, repo1, ref, "Commit status title", "Commit status description",
 		"https://httpbin.org/anything")
 	assert.NoError(t, err)
 }
@@ -167,10 +167,10 @@ func TestBitbucketCloud_ListOpenPullRequests(t *testing.T) {
 
 	require.NoError(t, err)
 	assert.Len(t, result, 3)
-	assert.True(t, reflect.DeepEqual(PullRequestInfo{
+	assert.True(t, reflect.DeepEqual(vcsutils.PullRequestInfo{
 		ID:     3,
-		Source: BranchInfo{Name: "test-2", Repository: "user17/test"},
-		Target: BranchInfo{Name: "master", Repository: "user17/test"},
+		Source: vcsutils.BranchInfo{Name: "test-2", Repository: "user17/test"},
+		Target: vcsutils.BranchInfo{Name: "master", Repository: "user17/test"},
 	}, result[0]))
 }
 
@@ -197,7 +197,7 @@ func TestBitbucketCloud_ListPullRequestComments(t *testing.T) {
 	expectedCreated, err := time.Parse(time.RFC3339, "2022-05-16T11:04:07.075827+00:00")
 	assert.NoError(t, err)
 	assert.Len(t, result, 2)
-	assert.Equal(t, CommentInfo{
+	assert.Equal(t, vcsutils.CommentInfo{
 		ID:      301545835,
 		Content: "I’m a comment ",
 		Created: expectedCreated,
@@ -216,7 +216,7 @@ func TestBitbucketCloud_GetLatestCommit(t *testing.T) {
 	result, err := client.GetLatestCommit(ctx, owner, repo1, "master")
 
 	require.NoError(t, err)
-	assert.Equal(t, CommitInfo{
+	assert.Equal(t, vcsutils.CommitInfo{
 		Hash:          "ec05bacb91d757b4b6b2a11a0676471020e89fb5",
 		AuthorName:    "user",
 		CommitterName: "",
@@ -283,7 +283,7 @@ func TestBitbucketCloud_AddSshKeyToRepository(t *testing.T) {
 		createBitbucketCloudWithBodyHandler)
 	defer closeServer()
 
-	err = client.AddSshKeyToRepository(ctx, owner, repo1, "My deploy key", "ssh-rsa AAAA...", Read)
+	err = client.AddSshKeyToRepository(ctx, owner, repo1, "My deploy key", "ssh-rsa AAAA...", vcsutils.Read)
 
 	require.NoError(t, err)
 }
@@ -300,7 +300,7 @@ func TestBitbucketCloud_AddSshKeyToRepositoryNotFound(t *testing.T) {
 		createBitbucketCloudWithBodyHandler)
 	defer closeServer()
 
-	err := client.AddSshKeyToRepository(ctx, owner, repo1, "My deploy key", "ssh-rsa AAAA...", Read)
+	err := client.AddSshKeyToRepository(ctx, owner, repo1, "My deploy key", "ssh-rsa AAAA...", vcsutils.Read)
 
 	require.EqualError(t, err, "404 Not Found")
 }
@@ -318,7 +318,7 @@ func TestBitbucketCloud_GetCommitBySha(t *testing.T) {
 	result, err := client.GetCommitBySha(ctx, owner, repo1, sha)
 
 	require.NoError(t, err)
-	assert.Equal(t, CommitInfo{
+	assert.Equal(t, vcsutils.CommitInfo{
 		Hash:          sha,
 		AuthorName:    "user",
 		CommitterName: "",
@@ -375,9 +375,9 @@ func TestBitbucketCloud_GetRepositoryInfo(t *testing.T) {
 	res, err := client.GetRepositoryInfo(ctx, owner, repo1)
 	require.NoError(t, err)
 	require.Equal(t,
-		RepositoryInfo{
-			RepositoryVisibility: Public,
-			CloneInfo: CloneInfo{
+		vcsutils.RepositoryInfo{
+			RepositoryVisibility: vcsutils.Public,
+			CloneInfo: vcsutils.CloneInfo{
 				HTTP: "https://bitbucket.org/jfrog/jfrog-setup-cli.git",
 				SSH:  "git@bitbucket.org:jfrog/jfrog-setup-cli.git",
 			},
@@ -391,7 +391,7 @@ func TestBitbucketCloud_CreateLabel(t *testing.T) {
 	client, err := NewClientBuilder(vcsutils.BitbucketCloud).Build()
 	assert.NoError(t, err)
 
-	err = client.CreateLabel(ctx, owner, repo1, LabelInfo{})
+	err = client.CreateLabel(ctx, owner, repo1, vcsutils.LabelInfo{})
 	assert.ErrorIs(t, err, errLabelsNotSupported)
 }
 
@@ -441,8 +441,8 @@ func TestBitbucketCloud_GetRepositoryEnvironmentInfo(t *testing.T) {
 }
 
 func TestBitbucketCloud_getRepositoryVisibility(t *testing.T) {
-	assert.Equal(t, Private, getBitbucketCloudRepositoryVisibility(&bitbucket.Repository{Is_private: true}))
-	assert.Equal(t, Public, getBitbucketCloudRepositoryVisibility(&bitbucket.Repository{Is_private: false}))
+	assert.Equal(t, vcsutils.Private, getBitbucketCloudRepositoryVisibility(&bitbucket.Repository{Is_private: true}))
+	assert.Equal(t, vcsutils.Public, getBitbucketCloudRepositoryVisibility(&bitbucket.Repository{Is_private: false}))
 }
 
 func TestBitbucketCloudClient_GetModifiedFiles(t *testing.T) {
@@ -507,9 +507,9 @@ func TestBitbucketCloudClient_GetCommitStatus(t *testing.T) {
 		commitStatuses, err := client.GetCommitStatuses(ctx, "owner", "repo", "ref")
 		assert.NoError(t, err)
 		assert.True(t, len(commitStatuses) == 3)
-		assert.True(t, commitStatuses[0].State == InProgress)
-		assert.True(t, commitStatuses[1].State == Pass)
-		assert.True(t, commitStatuses[2].State == Fail)
+		assert.True(t, commitStatuses[0].State == vcsutils.InProgress)
+		assert.True(t, commitStatuses[1].State == vcsutils.Pass)
+		assert.True(t, commitStatuses[2].State == vcsutils.Fail)
 	})
 }
 

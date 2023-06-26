@@ -18,12 +18,12 @@ import (
 // GitLabClient API version 4
 type GitLabClient struct {
 	glClient *gitlab.Client
-	vcsInfo  VcsInfo
+	vcsInfo  vcsutils.VcsInfo
 	logger   Log
 }
 
 // NewGitLabClient create a new GitLabClient
-func NewGitLabClient(vcsInfo VcsInfo, logger Log) (*GitLabClient, error) {
+func NewGitLabClient(vcsInfo vcsutils.VcsInfo, logger Log) (*GitLabClient, error) {
 	var client *gitlab.Client
 	var err error
 	if vcsInfo.APIEndpoint != "" {
@@ -86,8 +86,8 @@ func (client *GitLabClient) ListBranches(ctx context.Context, owner, repository 
 }
 
 // AddSshKeyToRepository on GitLab
-func (client *GitLabClient) AddSshKeyToRepository(ctx context.Context, owner, repository, keyName, publicKey string, permission Permission) error {
-	err := validateParametersNotBlank(map[string]string{
+func (client *GitLabClient) AddSshKeyToRepository(ctx context.Context, owner, repository, keyName, publicKey string, permission vcsutils.Permission) error {
+	err := vcsutils.ValidateParametersNotBlank(map[string]string{
 		"owner":      owner,
 		"repository": repository,
 		"key name":   keyName,
@@ -98,7 +98,7 @@ func (client *GitLabClient) AddSshKeyToRepository(ctx context.Context, owner, re
 	}
 
 	canPush := false
-	if permission == ReadWrite {
+	if permission == vcsutils.ReadWrite {
 		canPush = true
 	}
 	options := &gitlab.AddDeployKeyOptions{
@@ -164,7 +164,7 @@ func (client *GitLabClient) DeleteWebhook(ctx context.Context, owner, repository
 }
 
 // SetCommitStatus on GitLab
-func (client *GitLabClient) SetCommitStatus(ctx context.Context, commitStatus CommitStatus, owner, repository, ref,
+func (client *GitLabClient) SetCommitStatus(ctx context.Context, commitStatus vcsutils.CommitStatus, owner, repository, ref,
 	title, description, detailsURL string) error {
 	options := &gitlab.SetCommitStatusOptions{
 		State:       gitlab.BuildStateValue(getGitLabCommitState(commitStatus)),
@@ -179,20 +179,20 @@ func (client *GitLabClient) SetCommitStatus(ctx context.Context, commitStatus Co
 }
 
 // GetCommitStatuses on GitLab
-func (client *GitLabClient) GetCommitStatuses(ctx context.Context, owner, repository, ref string) (status []CommitStatusInfo, err error) {
+func (client *GitLabClient) GetCommitStatuses(ctx context.Context, owner, repository, ref string) (status []vcsutils.CommitStatusInfo, err error) {
 	statuses, _, err := client.glClient.Commits.GetCommitStatuses(repository, ref, nil, gitlab.WithContext(ctx))
 	if err != nil {
 		return nil, err
 	}
-	results := make([]CommitStatusInfo, 0)
+	results := make([]vcsutils.CommitStatusInfo, 0)
 	for _, singleStatus := range statuses {
-		results = append(results, CommitStatusInfo{
-			State:         commitStatusAsStringToStatus(singleStatus.Status),
+		results = append(results, vcsutils.CommitStatusInfo{
+			State:         vcsutils.CommitStatusAsStringToStatus(singleStatus.Status),
 			Description:   singleStatus.Description,
 			DetailsUrl:    singleStatus.TargetURL,
 			Creator:       singleStatus.Author.Name,
-			LastUpdatedAt: extractTimeWithFallback(singleStatus.FinishedAt),
-			CreatedAt:     extractTimeWithFallback(singleStatus.CreatedAt),
+			LastUpdatedAt: vcsutils.ExtractTimeWithFallback(singleStatus.FinishedAt),
+			CreatedAt:     vcsutils.ExtractTimeWithFallback(singleStatus.CreatedAt),
 		})
 	}
 	return results, nil
@@ -236,7 +236,7 @@ func (client *GitLabClient) CreatePullRequest(ctx context.Context, owner, reposi
 }
 
 // ListOpenPullRequests on GitLab
-func (client *GitLabClient) ListOpenPullRequests(ctx context.Context, _, repository string) ([]PullRequestInfo, error) {
+func (client *GitLabClient) ListOpenPullRequests(ctx context.Context, _, repository string) ([]vcsutils.PullRequestInfo, error) {
 	openState := "opened"
 	allScope := "all"
 	options := &gitlab.ListMergeRequestsOptions{
@@ -247,14 +247,14 @@ func (client *GitLabClient) ListOpenPullRequests(ctx context.Context, _, reposit
 	mergeRequests, _, err := client.glClient.MergeRequests.ListMergeRequests(options,
 		gitlab.WithContext(ctx))
 	if err != nil {
-		return []PullRequestInfo{}, err
+		return []vcsutils.PullRequestInfo{}, err
 	}
 	return mapGitLabMergeRequestToPullRequestInfoList(mergeRequests), nil
 }
 
 // AddPullRequestComment on GitLab
 func (client *GitLabClient) AddPullRequestComment(ctx context.Context, owner, repository, content string, pullRequestID int) error {
-	err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository, "content": content})
+	err := vcsutils.ValidateParametersNotBlank(map[string]string{"owner": owner, "repository": repository, "content": content})
 	if err != nil {
 		return err
 	}
@@ -268,28 +268,28 @@ func (client *GitLabClient) AddPullRequestComment(ctx context.Context, owner, re
 }
 
 // ListPullRequestComments on GitLab
-func (client *GitLabClient) ListPullRequestComments(ctx context.Context, owner, repository string, pullRequestID int) ([]CommentInfo, error) {
-	err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository})
+func (client *GitLabClient) ListPullRequestComments(ctx context.Context, owner, repository string, pullRequestID int) ([]vcsutils.CommentInfo, error) {
+	err := vcsutils.ValidateParametersNotBlank(map[string]string{"owner": owner, "repository": repository})
 	if err != nil {
-		return []CommentInfo{}, err
+		return []vcsutils.CommentInfo{}, err
 	}
 	commentsList, _, err := client.glClient.Notes.ListMergeRequestNotes(getProjectID(owner, repository), pullRequestID, &gitlab.ListMergeRequestNotesOptions{},
 		gitlab.WithContext(ctx))
 	if err != nil {
-		return []CommentInfo{}, err
+		return []vcsutils.CommentInfo{}, err
 	}
 	return mapGitLabNotesToCommentInfoList(commentsList), nil
 }
 
 // GetLatestCommit on GitLab
-func (client *GitLabClient) GetLatestCommit(ctx context.Context, owner, repository, branch string) (CommitInfo, error) {
-	err := validateParametersNotBlank(map[string]string{
+func (client *GitLabClient) GetLatestCommit(ctx context.Context, owner, repository, branch string) (vcsutils.CommitInfo, error) {
+	err := vcsutils.ValidateParametersNotBlank(map[string]string{
 		"owner":      owner,
 		"repository": repository,
 		"branch":     branch,
 	})
 	if err != nil {
-		return CommitInfo{}, err
+		return vcsutils.CommitInfo{}, err
 	}
 
 	listOptions := &gitlab.ListCommitsOptions{
@@ -302,51 +302,51 @@ func (client *GitLabClient) GetLatestCommit(ctx context.Context, owner, reposito
 
 	commits, _, err := client.glClient.Commits.ListCommits(getProjectID(owner, repository), listOptions, gitlab.WithContext(ctx))
 	if err != nil {
-		return CommitInfo{}, err
+		return vcsutils.CommitInfo{}, err
 	}
 	if len(commits) > 0 {
 		latestCommit := commits[0]
 		return mapGitLabCommitToCommitInfo(latestCommit), nil
 	}
-	return CommitInfo{}, errors.New(`{"message":"404 Not Found"}`)
+	return vcsutils.CommitInfo{}, errors.New(`{"message":"404 Not Found"}`)
 }
 
 // GetRepositoryInfo on GitLab
-func (client *GitLabClient) GetRepositoryInfo(ctx context.Context, owner, repository string) (RepositoryInfo, error) {
-	err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository})
+func (client *GitLabClient) GetRepositoryInfo(ctx context.Context, owner, repository string) (vcsutils.RepositoryInfo, error) {
+	err := vcsutils.ValidateParametersNotBlank(map[string]string{"owner": owner, "repository": repository})
 	if err != nil {
-		return RepositoryInfo{}, err
+		return vcsutils.RepositoryInfo{}, err
 	}
 
 	project, _, err := client.glClient.Projects.GetProject(getProjectID(owner, repository), nil, gitlab.WithContext(ctx))
 	if err != nil {
-		return RepositoryInfo{}, err
+		return vcsutils.RepositoryInfo{}, err
 	}
 
-	return RepositoryInfo{RepositoryVisibility: getGitLabProjectVisibility(project), CloneInfo: CloneInfo{HTTP: project.HTTPURLToRepo, SSH: project.SSHURLToRepo}}, nil
+	return vcsutils.RepositoryInfo{RepositoryVisibility: getGitLabProjectVisibility(project), CloneInfo: vcsutils.CloneInfo{HTTP: project.HTTPURLToRepo, SSH: project.SSHURLToRepo}}, nil
 }
 
 // GetCommitBySha on GitLab
-func (client *GitLabClient) GetCommitBySha(ctx context.Context, owner, repository, sha string) (CommitInfo, error) {
-	err := validateParametersNotBlank(map[string]string{
+func (client *GitLabClient) GetCommitBySha(ctx context.Context, owner, repository, sha string) (vcsutils.CommitInfo, error) {
+	err := vcsutils.ValidateParametersNotBlank(map[string]string{
 		"owner":      owner,
 		"repository": repository,
 		"sha":        sha,
 	})
 	if err != nil {
-		return CommitInfo{}, err
+		return vcsutils.CommitInfo{}, err
 	}
 
 	commit, _, err := client.glClient.Commits.GetCommit(getProjectID(owner, repository), sha, gitlab.WithContext(ctx))
 	if err != nil {
-		return CommitInfo{}, err
+		return vcsutils.CommitInfo{}, err
 	}
 	return mapGitLabCommitToCommitInfo(commit), nil
 }
 
 // CreateLabel on GitLab
-func (client *GitLabClient) CreateLabel(ctx context.Context, owner, repository string, labelInfo LabelInfo) error {
-	err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository, "LabelInfo.name": labelInfo.Name})
+func (client *GitLabClient) CreateLabel(ctx context.Context, owner, repository string, labelInfo vcsutils.LabelInfo) error {
+	err := vcsutils.ValidateParametersNotBlank(map[string]string{"owner": owner, "repository": repository, "LabelInfo.name": labelInfo.Name})
 	if err != nil {
 		return err
 	}
@@ -361,8 +361,8 @@ func (client *GitLabClient) CreateLabel(ctx context.Context, owner, repository s
 }
 
 // GetLabel on GitLub
-func (client *GitLabClient) GetLabel(ctx context.Context, owner, repository, name string) (*LabelInfo, error) {
-	err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository, "name": name})
+func (client *GitLabClient) GetLabel(ctx context.Context, owner, repository, name string) (*vcsutils.LabelInfo, error) {
+	err := vcsutils.ValidateParametersNotBlank(map[string]string{"owner": owner, "repository": repository, "name": name})
 	if err != nil {
 		return nil, err
 	}
@@ -374,7 +374,7 @@ func (client *GitLabClient) GetLabel(ctx context.Context, owner, repository, nam
 
 	for _, label := range labels {
 		if label.Name == name {
-			return &LabelInfo{
+			return &vcsutils.LabelInfo{
 				Name:        label.Name,
 				Description: label.Description,
 				Color:       strings.TrimPrefix(label.Color, "#"),
@@ -387,7 +387,7 @@ func (client *GitLabClient) GetLabel(ctx context.Context, owner, repository, nam
 
 // ListPullRequestLabels on GitLab
 func (client *GitLabClient) ListPullRequestLabels(ctx context.Context, owner, repository string, pullRequestID int) ([]string, error) {
-	err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository})
+	err := vcsutils.ValidateParametersNotBlank(map[string]string{"owner": owner, "repository": repository})
 	if err != nil {
 		return []string{}, err
 	}
@@ -402,7 +402,7 @@ func (client *GitLabClient) ListPullRequestLabels(ctx context.Context, owner, re
 
 // UnlabelPullRequest on GitLab
 func (client *GitLabClient) UnlabelPullRequest(ctx context.Context, owner, repository, name string, pullRequestID int) error {
-	err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository})
+	err := vcsutils.ValidateParametersNotBlank(map[string]string{"owner": owner, "repository": repository})
 	if err != nil {
 		return err
 	}
@@ -418,8 +418,8 @@ func (client *GitLabClient) UploadCodeScanning(_ context.Context, _ string, _ st
 }
 
 // GetRepositoryEnvironmentInfo on GitLab
-func (client *GitLabClient) GetRepositoryEnvironmentInfo(_ context.Context, _, _, _ string) (RepositoryEnvironmentInfo, error) {
-	return RepositoryEnvironmentInfo{}, errGitLabGetRepoEnvironmentInfoNotSupported
+func (client *GitLabClient) GetRepositoryEnvironmentInfo(_ context.Context, _, _, _ string) (vcsutils.RepositoryEnvironmentInfo, error) {
+	return vcsutils.RepositoryEnvironmentInfo{}, errGitLabGetRepoEnvironmentInfoNotSupported
 }
 
 // DownloadFileFromRepo on GitLab
@@ -441,7 +441,7 @@ func (client *GitLabClient) DownloadFileFromRepo(_ context.Context, owner, repos
 }
 
 func (client *GitLabClient) GetModifiedFiles(_ context.Context, owner, repository, refBefore, refAfter string) ([]string, error) {
-	if err := validateParametersNotBlank(map[string]string{
+	if err := vcsutils.ValidateParametersNotBlank(map[string]string{
 		"owner":      owner,
 		"repository": repository,
 		"refBefore":  refBefore,
@@ -491,33 +491,33 @@ func createProjectHook(branch string, payloadURL string, webhookEvents ...vcsuti
 	return options
 }
 
-func getGitLabProjectVisibility(project *gitlab.Project) RepositoryVisibility {
+func getGitLabProjectVisibility(project *gitlab.Project) vcsutils.RepositoryVisibility {
 	switch project.Visibility {
 	case gitlab.PublicVisibility:
-		return Public
+		return vcsutils.Public
 	case gitlab.InternalVisibility:
-		return Internal
+		return vcsutils.Internal
 	default:
-		return Private
+		return vcsutils.Private
 	}
 }
 
-func getGitLabCommitState(commitState CommitStatus) string {
+func getGitLabCommitState(commitState vcsutils.CommitStatus) string {
 	switch commitState {
-	case Pass:
+	case vcsutils.Pass:
 		return "success"
-	case Fail:
+	case vcsutils.Fail:
 		return "failed"
-	case Error:
+	case vcsutils.Error:
 		return "failed"
-	case InProgress:
+	case vcsutils.InProgress:
 		return "running"
 	}
 	return ""
 }
 
-func mapGitLabCommitToCommitInfo(commit *gitlab.Commit) CommitInfo {
-	return CommitInfo{
+func mapGitLabCommitToCommitInfo(commit *gitlab.Commit) vcsutils.CommitInfo {
+	return vcsutils.CommitInfo{
 		Hash:          commit.ID,
 		AuthorName:    commit.AuthorName,
 		CommitterName: commit.CommitterName,
@@ -528,9 +528,9 @@ func mapGitLabCommitToCommitInfo(commit *gitlab.Commit) CommitInfo {
 	}
 }
 
-func mapGitLabNotesToCommentInfoList(notes []*gitlab.Note) (res []CommentInfo) {
+func mapGitLabNotesToCommentInfoList(notes []*gitlab.Note) (res []vcsutils.CommentInfo) {
 	for _, note := range notes {
-		res = append(res, CommentInfo{
+		res = append(res, vcsutils.CommentInfo{
 			ID:      int64(note.ID),
 			Content: note.Body,
 			Created: *note.CreatedAt,
@@ -539,12 +539,12 @@ func mapGitLabNotesToCommentInfoList(notes []*gitlab.Note) (res []CommentInfo) {
 	return
 }
 
-func mapGitLabMergeRequestToPullRequestInfoList(mergeRequests []*gitlab.MergeRequest) (res []PullRequestInfo) {
+func mapGitLabMergeRequestToPullRequestInfoList(mergeRequests []*gitlab.MergeRequest) (res []vcsutils.PullRequestInfo) {
 	for _, mergeRequest := range mergeRequests {
-		res = append(res, PullRequestInfo{
+		res = append(res, vcsutils.PullRequestInfo{
 			ID:     int64(mergeRequest.IID),
-			Source: BranchInfo{Name: mergeRequest.SourceBranch},
-			Target: BranchInfo{Name: mergeRequest.TargetBranch},
+			Source: vcsutils.BranchInfo{Name: mergeRequest.SourceBranch},
+			Target: vcsutils.BranchInfo{Name: mergeRequest.TargetBranch},
 		})
 	}
 	return

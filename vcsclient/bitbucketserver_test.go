@@ -142,11 +142,11 @@ func TestBitbucketServer_SetCommitStatus(t *testing.T) {
 	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, false, nil, fmt.Sprintf("/rest/build-status/1.0/commits/%s", ref), createBitbucketServerHandler)
 	defer cleanUp()
 
-	err := client.SetCommitStatus(ctx, Fail, owner, repo1, ref, "Commit status title", "Commit status description",
+	err := client.SetCommitStatus(ctx, vcsutils.Fail, owner, repo1, ref, "Commit status title", "Commit status description",
 		"https://httpbin.org/anything")
 	assert.NoError(t, err)
 
-	err = createBadBitbucketServerClient(t).SetCommitStatus(ctx, Fail, owner, repo1, ref, "Commit status title", "Commit status description",
+	err = createBadBitbucketServerClient(t).SetCommitStatus(ctx, vcsutils.Fail, owner, repo1, ref, "Commit status title", "Commit status description",
 		"https://httpbin.org/anything")
 	assert.Error(t, err)
 }
@@ -210,10 +210,10 @@ func TestBitbucketServer_ListOpenPullRequests(t *testing.T) {
 
 	require.NoError(t, err)
 	assert.Len(t, result, 1)
-	assert.True(t, reflect.DeepEqual(PullRequestInfo{
+	assert.True(t, reflect.DeepEqual(vcsutils.PullRequestInfo{
 		ID:     101,
-		Source: BranchInfo{Name: "refs/heads/feature-ABC-123", Repository: "my-repo"},
-		Target: BranchInfo{Name: "refs/heads/master", Repository: "my-repo"},
+		Source: vcsutils.BranchInfo{Name: "refs/heads/feature-ABC-123", Repository: "my-repo"},
+		Target: vcsutils.BranchInfo{Name: "refs/heads/master", Repository: "my-repo"},
 	}, result[0]))
 }
 
@@ -229,7 +229,7 @@ func TestBitbucketServer_ListPullRequestComments(t *testing.T) {
 
 	require.NoError(t, err)
 	assert.Len(t, result, 1)
-	assert.Equal(t, CommentInfo{
+	assert.Equal(t, vcsutils.CommentInfo{
 		ID:      1,
 		Content: "A measured reply.",
 		Created: time.Unix(1548720847370, 0),
@@ -253,7 +253,7 @@ func TestBitbucketServer_GetLatestCommit(t *testing.T) {
 	require.NoError(t, err)
 	expectedUrl := fmt.Sprintf("%s/rest/api/1.0/projects/jfrog/repos/repo-1"+
 		"/commits/def0123abcdef4567abcdef8987abcdef6543abc", serverUrl)
-	assert.Equal(t, CommitInfo{
+	assert.Equal(t, vcsutils.CommitInfo{
 		Hash:          "def0123abcdef4567abcdef8987abcdef6543abc",
 		AuthorName:    "charlie",
 		CommitterName: "mark",
@@ -326,10 +326,10 @@ func TestBitbucketServer_AddSshKeyToRepository(t *testing.T) {
 		createBitbucketServerWithBodyHandler)
 	defer closeServer()
 
-	err = client.AddSshKeyToRepository(ctx, owner, repo1, "My deploy key", "ssh-rsa AAAA...", Read)
+	err = client.AddSshKeyToRepository(ctx, owner, repo1, "My deploy key", "ssh-rsa AAAA...", vcsutils.Read)
 	require.NoError(t, err)
 
-	err = createBadBitbucketServerClient(t).AddSshKeyToRepository(ctx, owner, repo1, "My deploy key", "ssh-rsa AAAA...", Read)
+	err = createBadBitbucketServerClient(t).AddSshKeyToRepository(ctx, owner, repo1, "My deploy key", "ssh-rsa AAAA...", vcsutils.Read)
 	assert.Error(t, err)
 }
 
@@ -346,7 +346,7 @@ func TestBitbucketServer_AddSshKeyToRepositoryReadWrite(t *testing.T) {
 		createBitbucketServerWithBodyHandler)
 	defer closeServer()
 
-	err = client.AddSshKeyToRepository(ctx, owner, repo1, "My deploy key", "ssh-rsa AAAA...", ReadWrite)
+	err = client.AddSshKeyToRepository(ctx, owner, repo1, "My deploy key", "ssh-rsa AAAA...", vcsutils.ReadWrite)
 
 	require.NoError(t, err)
 }
@@ -371,7 +371,7 @@ func TestBitbucketServer_AddSshKeyToRepositoryNotFound(t *testing.T) {
 		createBitbucketServerWithBodyHandler)
 	defer closeServer()
 
-	err := client.AddSshKeyToRepository(ctx, "unknown", repo1, "My deploy key", "ssh-rsa AAAA...", Read)
+	err := client.AddSshKeyToRepository(ctx, "unknown", repo1, "My deploy key", "ssh-rsa AAAA...", vcsutils.Read)
 
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "status: 404 Not Found")
@@ -398,9 +398,9 @@ func TestBitbucketServer_GetRepositoryInfo(t *testing.T) {
 		res, err := client.GetRepositoryInfo(ctx, owner, repo1)
 		require.NoError(t, err)
 		require.Equal(t,
-			RepositoryInfo{
-				RepositoryVisibility: Public,
-				CloneInfo: CloneInfo{
+			vcsutils.RepositoryInfo{
+				RepositoryVisibility: vcsutils.Public,
+				CloneInfo: vcsutils.CloneInfo{
 					HTTP: "https://bitbucket.org/jfrog/repo-1.git",
 					SSH:  "ssh://git@bitbucket.org:jfrog/repo-1.git",
 				},
@@ -418,7 +418,7 @@ func TestBitbucketServer_CreateLabel(t *testing.T) {
 	client, err := NewClientBuilder(vcsutils.BitbucketServer).Build()
 	assert.NoError(t, err)
 
-	err = client.CreateLabel(ctx, owner, repo1, LabelInfo{})
+	err = client.CreateLabel(ctx, owner, repo1, vcsutils.LabelInfo{})
 	assert.ErrorIs(t, err, errLabelsNotSupported)
 }
 
@@ -474,7 +474,7 @@ func TestBitbucketServer_GetCommitBySha(t *testing.T) {
 	require.NoError(t, err)
 	expectedUrl := fmt.Sprintf("%s/rest/api/1.0/projects/jfrog/repos/repo-1"+
 		"/commits/abcdef0123abcdef4567abcdef8987abcdef6543", serverUrl)
-	assert.Equal(t, CommitInfo{
+	assert.Equal(t, vcsutils.CommitInfo{
 		Hash:          sha,
 		AuthorName:    "charlie",
 		CommitterName: "mark",
@@ -543,8 +543,8 @@ func TestBitbucketServer_DownloadFileFromRepo(t *testing.T) {
 }
 
 func TestBitbucketServer_getRepositoryVisibility(t *testing.T) {
-	assert.Equal(t, Public, getBitbucketServerRepositoryVisibility(true))
-	assert.Equal(t, Private, getBitbucketServerRepositoryVisibility(false))
+	assert.Equal(t, vcsutils.Public, getBitbucketServerRepositoryVisibility(true))
+	assert.Equal(t, vcsutils.Private, getBitbucketServerRepositoryVisibility(false))
 }
 
 func TestBitbucketServerClient_GetModifiedFiles(t *testing.T) {
@@ -684,9 +684,9 @@ func TestBitbucketServer_TestGetCommitStatus(t *testing.T) {
 		commitStatuses, err := client.GetCommitStatuses(ctx, owner, repo1, ref)
 		assert.NoError(t, err)
 		assert.True(t, len(commitStatuses) == 3)
-		assert.True(t, commitStatuses[0].State == InProgress)
-		assert.True(t, commitStatuses[1].State == Pass)
-		assert.True(t, commitStatuses[2].State == Fail)
+		assert.True(t, commitStatuses[0].State == vcsutils.InProgress)
+		assert.True(t, commitStatuses[1].State == vcsutils.Pass)
+		assert.True(t, commitStatuses[2].State == vcsutils.Fail)
 	})
 	t.Run("Decode failure", func(t *testing.T) {
 		response, err := os.ReadFile(filepath.Join("testdata", "bitbucketserver", "commits_statuses_bad_decode.json"))

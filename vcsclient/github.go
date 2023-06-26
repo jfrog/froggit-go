@@ -26,12 +26,12 @@ const (
 
 // GitHubClient API version 3
 type GitHubClient struct {
-	vcsInfo VcsInfo
+	vcsInfo vcsutils.VcsInfo
 	logger  Log
 }
 
 // NewGitHubClient create a new GitHubClient
-func NewGitHubClient(vcsInfo VcsInfo, logger Log) (*GitHubClient, error) {
+func NewGitHubClient(vcsInfo vcsutils.VcsInfo, logger Log) (*GitHubClient, error) {
 	return &GitHubClient{vcsInfo: vcsInfo, logger: logger}, nil
 }
 
@@ -62,8 +62,8 @@ func (client *GitHubClient) buildGithubClient(ctx context.Context) (*github.Clie
 }
 
 // AddSshKeyToRepository on GitHub
-func (client *GitHubClient) AddSshKeyToRepository(ctx context.Context, owner, repository, keyName, publicKey string, permission Permission) error {
-	err := validateParametersNotBlank(map[string]string{
+func (client *GitHubClient) AddSshKeyToRepository(ctx context.Context, owner, repository, keyName, publicKey string, permission vcsutils.Permission) error {
+	err := vcsutils.ValidateParametersNotBlank(map[string]string{
 		"owner":      owner,
 		"repository": repository,
 		"key name":   keyName,
@@ -78,7 +78,7 @@ func (client *GitHubClient) AddSshKeyToRepository(ctx context.Context, owner, re
 	}
 
 	readOnly := true
-	if permission == ReadWrite {
+	if permission == vcsutils.ReadWrite {
 		readOnly = false
 	}
 	key := github.Key{
@@ -178,7 +178,7 @@ func (client *GitHubClient) DeleteWebhook(ctx context.Context, owner, repository
 }
 
 // SetCommitStatus on GitHub
-func (client *GitHubClient) SetCommitStatus(ctx context.Context, commitStatus CommitStatus, owner, repository, ref,
+func (client *GitHubClient) SetCommitStatus(ctx context.Context, commitStatus vcsutils.CommitStatus, owner, repository, ref,
 	title, description, detailsURL string) error {
 	ghClient, err := client.buildGithubClient(ctx)
 	if err != nil {
@@ -196,7 +196,7 @@ func (client *GitHubClient) SetCommitStatus(ctx context.Context, commitStatus Co
 }
 
 // GetCommitStatuses on GitHub
-func (client *GitHubClient) GetCommitStatuses(ctx context.Context, owner, repository, ref string) (status []CommitStatusInfo, err error) {
+func (client *GitHubClient) GetCommitStatuses(ctx context.Context, owner, repository, ref string) (status []vcsutils.CommitStatusInfo, err error) {
 	ghClient, err := client.buildGithubClient(ctx)
 	if err != nil {
 		return nil, err
@@ -205,10 +205,10 @@ func (client *GitHubClient) GetCommitStatuses(ctx context.Context, owner, reposi
 	if err != nil {
 		return nil, err
 	}
-	results := make([]CommitStatusInfo, 0)
+	results := make([]vcsutils.CommitStatusInfo, 0)
 	for _, singleStatus := range statuses.Statuses {
-		results = append(results, CommitStatusInfo{
-			State:         commitStatusAsStringToStatus(*singleStatus.State),
+		results = append(results, vcsutils.CommitStatusInfo{
+			State:         vcsutils.CommitStatusAsStringToStatus(*singleStatus.State),
 			Description:   singleStatus.GetDescription(),
 			DetailsUrl:    singleStatus.GetTargetURL(),
 			Creator:       singleStatus.GetCreator().GetName(),
@@ -273,7 +273,7 @@ func (client *GitHubClient) CreatePullRequest(ctx context.Context, owner, reposi
 }
 
 // ListOpenPullRequests on GitHub
-func (client *GitHubClient) ListOpenPullRequests(ctx context.Context, owner, repository string) ([]PullRequestInfo, error) {
+func (client *GitHubClient) ListOpenPullRequests(ctx context.Context, owner, repository string) ([]vcsutils.PullRequestInfo, error) {
 	ghClient, err := client.buildGithubClient(ctx)
 	if err != nil {
 		return nil, err
@@ -283,14 +283,14 @@ func (client *GitHubClient) ListOpenPullRequests(ctx context.Context, owner, rep
 		State: "open",
 	})
 	if err != nil {
-		return []PullRequestInfo{}, err
+		return []vcsutils.PullRequestInfo{}, err
 	}
 	return mapGitHubPullRequestToPullRequestInfoList(pullRequests)
 }
 
 // AddPullRequestComment on GitHub
 func (client *GitHubClient) AddPullRequestComment(ctx context.Context, owner, repository, content string, pullRequestID int) error {
-	err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository, "content": content})
+	err := vcsutils.ValidateParametersNotBlank(map[string]string{"owner": owner, "repository": repository, "content": content})
 	if err != nil {
 		return err
 	}
@@ -306,36 +306,36 @@ func (client *GitHubClient) AddPullRequestComment(ctx context.Context, owner, re
 }
 
 // ListPullRequestComments on GitHub
-func (client *GitHubClient) ListPullRequestComments(ctx context.Context, owner, repository string, pullRequestID int) ([]CommentInfo, error) {
-	err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository})
+func (client *GitHubClient) ListPullRequestComments(ctx context.Context, owner, repository string, pullRequestID int) ([]vcsutils.CommentInfo, error) {
+	err := vcsutils.ValidateParametersNotBlank(map[string]string{"owner": owner, "repository": repository})
 	if err != nil {
-		return []CommentInfo{}, err
+		return []vcsutils.CommentInfo{}, err
 	}
 	ghClient, err := client.buildGithubClient(ctx)
 	if err != nil {
-		return []CommentInfo{}, err
+		return []vcsutils.CommentInfo{}, err
 	}
 	commentsList, _, err := ghClient.Issues.ListComments(ctx, owner, repository, pullRequestID, &github.IssueListCommentsOptions{})
 	if err != nil {
-		return []CommentInfo{}, err
+		return []vcsutils.CommentInfo{}, err
 	}
 	return mapGitHubCommentToCommentInfoList(commentsList)
 }
 
 // GetLatestCommit on GitHub
-func (client *GitHubClient) GetLatestCommit(ctx context.Context, owner, repository, branch string) (CommitInfo, error) {
-	err := validateParametersNotBlank(map[string]string{
+func (client *GitHubClient) GetLatestCommit(ctx context.Context, owner, repository, branch string) (vcsutils.CommitInfo, error) {
+	err := vcsutils.ValidateParametersNotBlank(map[string]string{
 		"owner":      owner,
 		"repository": repository,
 		"branch":     branch,
 	})
 	if err != nil {
-		return CommitInfo{}, err
+		return vcsutils.CommitInfo{}, err
 	}
 
 	ghClient, err := client.buildGithubClient(ctx)
 	if err != nil {
-		return CommitInfo{}, err
+		return vcsutils.CommitInfo{}, err
 	}
 	listOptions := &github.CommitsListOptions{
 		SHA: branch,
@@ -346,61 +346,61 @@ func (client *GitHubClient) GetLatestCommit(ctx context.Context, owner, reposito
 	}
 	commits, _, err := ghClient.Repositories.ListCommits(ctx, owner, repository, listOptions)
 	if err != nil {
-		return CommitInfo{}, err
+		return vcsutils.CommitInfo{}, err
 	}
 	if len(commits) > 0 {
 		latestCommit := commits[0]
 		return mapGitHubCommitToCommitInfo(latestCommit), nil
 	}
-	return CommitInfo{}, nil
+	return vcsutils.CommitInfo{}, nil
 }
 
 // GetRepositoryInfo on GitHub
-func (client *GitHubClient) GetRepositoryInfo(ctx context.Context, owner, repository string) (RepositoryInfo, error) {
-	err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository})
+func (client *GitHubClient) GetRepositoryInfo(ctx context.Context, owner, repository string) (vcsutils.RepositoryInfo, error) {
+	err := vcsutils.ValidateParametersNotBlank(map[string]string{"owner": owner, "repository": repository})
 	if err != nil {
-		return RepositoryInfo{}, err
+		return vcsutils.RepositoryInfo{}, err
 	}
 
 	ghClient, err := client.buildGithubClient(ctx)
 	if err != nil {
-		return RepositoryInfo{}, err
+		return vcsutils.RepositoryInfo{}, err
 	}
 
 	repo, _, err := ghClient.Repositories.Get(ctx, owner, repository)
 	if err != nil {
-		return RepositoryInfo{}, err
+		return vcsutils.RepositoryInfo{}, err
 	}
-	return RepositoryInfo{RepositoryVisibility: getGitHubRepositoryVisibility(repo), CloneInfo: CloneInfo{HTTP: repo.GetCloneURL(), SSH: repo.GetSSHURL()}}, nil
+	return vcsutils.RepositoryInfo{RepositoryVisibility: getGitHubRepositoryVisibility(repo), CloneInfo: vcsutils.CloneInfo{HTTP: repo.GetCloneURL(), SSH: repo.GetSSHURL()}}, nil
 }
 
 // GetCommitBySha on GitHub
-func (client *GitHubClient) GetCommitBySha(ctx context.Context, owner, repository, sha string) (CommitInfo, error) {
-	err := validateParametersNotBlank(map[string]string{
+func (client *GitHubClient) GetCommitBySha(ctx context.Context, owner, repository, sha string) (vcsutils.CommitInfo, error) {
+	err := vcsutils.ValidateParametersNotBlank(map[string]string{
 		"owner":      owner,
 		"repository": repository,
 		"sha":        sha,
 	})
 	if err != nil {
-		return CommitInfo{}, err
+		return vcsutils.CommitInfo{}, err
 	}
 
 	ghClient, err := client.buildGithubClient(ctx)
 	if err != nil {
-		return CommitInfo{}, err
+		return vcsutils.CommitInfo{}, err
 	}
 
 	commit, _, err := ghClient.Repositories.GetCommit(ctx, owner, repository, sha, nil)
 	if err != nil {
-		return CommitInfo{}, err
+		return vcsutils.CommitInfo{}, err
 	}
 
 	return mapGitHubCommitToCommitInfo(commit), nil
 }
 
 // CreateLabel on GitHub
-func (client *GitHubClient) CreateLabel(ctx context.Context, owner, repository string, labelInfo LabelInfo) error {
-	err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository, "LabelInfo.name": labelInfo.Name})
+func (client *GitHubClient) CreateLabel(ctx context.Context, owner, repository string, labelInfo vcsutils.LabelInfo) error {
+	err := vcsutils.ValidateParametersNotBlank(map[string]string{"owner": owner, "repository": repository, "LabelInfo.name": labelInfo.Name})
 	if err != nil {
 		return err
 	}
@@ -420,8 +420,8 @@ func (client *GitHubClient) CreateLabel(ctx context.Context, owner, repository s
 }
 
 // GetLabel on GitHub
-func (client *GitHubClient) GetLabel(ctx context.Context, owner, repository, name string) (*LabelInfo, error) {
-	err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository, "name": name})
+func (client *GitHubClient) GetLabel(ctx context.Context, owner, repository, name string) (*vcsutils.LabelInfo, error) {
+	err := vcsutils.ValidateParametersNotBlank(map[string]string{"owner": owner, "repository": repository, "name": name})
 	if err != nil {
 		return nil, err
 	}
@@ -439,7 +439,7 @@ func (client *GitHubClient) GetLabel(ctx context.Context, owner, repository, nam
 		return nil, err
 	}
 
-	return &LabelInfo{
+	return &vcsutils.LabelInfo{
 		Name:        *label.Name,
 		Description: *label.Description,
 		Color:       *label.Color,
@@ -448,7 +448,7 @@ func (client *GitHubClient) GetLabel(ctx context.Context, owner, repository, nam
 
 // ListPullRequestLabels on GitHub
 func (client *GitHubClient) ListPullRequestLabels(ctx context.Context, owner, repository string, pullRequestID int) ([]string, error) {
-	err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository})
+	err := vcsutils.ValidateParametersNotBlank(map[string]string{"owner": owner, "repository": repository})
 	if err != nil {
 		return nil, err
 	}
@@ -476,7 +476,7 @@ func (client *GitHubClient) ListPullRequestLabels(ctx context.Context, owner, re
 
 // UnlabelPullRequest on GitHub
 func (client *GitHubClient) UnlabelPullRequest(ctx context.Context, owner, repository, name string, pullRequestID int) error {
-	err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository})
+	err := vcsutils.ValidateParametersNotBlank(map[string]string{"owner": owner, "repository": repository})
 	if err != nil {
 		return err
 	}
@@ -564,30 +564,30 @@ func (client *GitHubClient) DownloadFileFromRepo(ctx context.Context, owner, rep
 }
 
 // GetRepositoryEnvironmentInfo on GitHub
-func (client *GitHubClient) GetRepositoryEnvironmentInfo(ctx context.Context, owner, repository, name string) (RepositoryEnvironmentInfo, error) {
-	err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository, "name": name})
+func (client *GitHubClient) GetRepositoryEnvironmentInfo(ctx context.Context, owner, repository, name string) (vcsutils.RepositoryEnvironmentInfo, error) {
+	err := vcsutils.ValidateParametersNotBlank(map[string]string{"owner": owner, "repository": repository, "name": name})
 	if err != nil {
-		return RepositoryEnvironmentInfo{}, err
+		return vcsutils.RepositoryEnvironmentInfo{}, err
 	}
 	ghClient, err := client.buildGithubClient(ctx)
 	if err != nil {
-		return RepositoryEnvironmentInfo{}, err
+		return vcsutils.RepositoryEnvironmentInfo{}, err
 	}
 
 	environment, resp, err := ghClient.Repositories.GetEnvironment(ctx, owner, repository, name)
 	if err != nil {
-		return RepositoryEnvironmentInfo{}, err
+		return vcsutils.RepositoryEnvironmentInfo{}, err
 	}
 	if err = vcsutils.CheckResponseStatusWithBody(resp.Response, http.StatusOK); err != nil {
-		return RepositoryEnvironmentInfo{}, err
+		return vcsutils.RepositoryEnvironmentInfo{}, err
 	}
 
 	reviewers, err := extractGitHubEnvironmentReviewers(environment)
 	if err != nil {
-		return RepositoryEnvironmentInfo{}, err
+		return vcsutils.RepositoryEnvironmentInfo{}, err
 	}
 
-	return RepositoryEnvironmentInfo{
+	return vcsutils.RepositoryEnvironmentInfo{
 		Name:      *environment.Name,
 		Url:       *environment.URL,
 		Reviewers: reviewers,
@@ -595,7 +595,7 @@ func (client *GitHubClient) GetRepositoryEnvironmentInfo(ctx context.Context, ow
 }
 
 func (client *GitHubClient) GetModifiedFiles(ctx context.Context, owner, repository, refBefore, refAfter string) ([]string, error) {
-	if err := validateParametersNotBlank(map[string]string{
+	if err := vcsutils.ValidateParametersNotBlank(map[string]string{
 		"owner":      owner,
 		"repository": repository,
 		"refBefore":  refBefore,
@@ -677,38 +677,38 @@ func getGitHubWebhookEvents(webhookEvents ...vcsutils.WebhookEvent) []string {
 	return events.ToSlice()
 }
 
-func getGitHubRepositoryVisibility(repo *github.Repository) RepositoryVisibility {
+func getGitHubRepositoryVisibility(repo *github.Repository) vcsutils.RepositoryVisibility {
 	switch *repo.Visibility {
 	case "public":
-		return Public
+		return vcsutils.Public
 	case "internal":
-		return Internal
+		return vcsutils.Internal
 	default:
-		return Private
+		return vcsutils.Private
 	}
 }
 
-func getGitHubCommitState(commitState CommitStatus) string {
+func getGitHubCommitState(commitState vcsutils.CommitStatus) string {
 	switch commitState {
-	case Pass:
+	case vcsutils.Pass:
 		return "success"
-	case Fail:
+	case vcsutils.Fail:
 		return "failure"
-	case Error:
+	case vcsutils.Error:
 		return "error"
-	case InProgress:
+	case vcsutils.InProgress:
 		return "pending"
 	}
 	return ""
 }
 
-func mapGitHubCommitToCommitInfo(commit *github.RepositoryCommit) CommitInfo {
+func mapGitHubCommitToCommitInfo(commit *github.RepositoryCommit) vcsutils.CommitInfo {
 	parents := make([]string, len(commit.Parents))
 	for i, c := range commit.Parents {
 		parents[i] = c.GetSHA()
 	}
 	details := commit.GetCommit()
-	return CommitInfo{
+	return vcsutils.CommitInfo{
 		Hash:          commit.GetSHA(),
 		AuthorName:    details.GetAuthor().GetName(),
 		CommitterName: details.GetCommitter().GetName(),
@@ -719,9 +719,9 @@ func mapGitHubCommitToCommitInfo(commit *github.RepositoryCommit) CommitInfo {
 	}
 }
 
-func mapGitHubCommentToCommentInfoList(commentsList []*github.IssueComment) (res []CommentInfo, err error) {
+func mapGitHubCommentToCommentInfoList(commentsList []*github.IssueComment) (res []vcsutils.CommentInfo, err error) {
 	for _, comment := range commentsList {
-		res = append(res, CommentInfo{
+		res = append(res, vcsutils.CommentInfo{
 			ID:      *comment.ID,
 			Content: *comment.Body,
 			Created: *comment.CreatedAt,
@@ -730,15 +730,15 @@ func mapGitHubCommentToCommentInfoList(commentsList []*github.IssueComment) (res
 	return
 }
 
-func mapGitHubPullRequestToPullRequestInfoList(pullRequestList []*github.PullRequest) (res []PullRequestInfo, err error) {
+func mapGitHubPullRequestToPullRequestInfoList(pullRequestList []*github.PullRequest) (res []vcsutils.PullRequestInfo, err error) {
 	for _, pullRequest := range pullRequestList {
-		res = append(res, PullRequestInfo{
+		res = append(res, vcsutils.PullRequestInfo{
 			ID: int64(*pullRequest.Number),
-			Source: BranchInfo{
+			Source: vcsutils.BranchInfo{
 				Name:       *pullRequest.Head.Ref,
 				Repository: *pullRequest.Head.Repo.Name,
 			},
-			Target: BranchInfo{
+			Target: vcsutils.BranchInfo{
 				Name:       *pullRequest.Base.Ref,
 				Repository: *pullRequest.Base.Repo.Name,
 			},

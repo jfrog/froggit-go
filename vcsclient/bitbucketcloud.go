@@ -20,13 +20,13 @@ import (
 
 // BitbucketCloudClient API version 2.0
 type BitbucketCloudClient struct {
-	vcsInfo VcsInfo
+	vcsInfo vcsutils.VcsInfo
 	url     *url.URL
 	logger  Log
 }
 
 // NewBitbucketCloudClient create a new BitbucketCloudClient
-func NewBitbucketCloudClient(vcsInfo VcsInfo, logger Log) (*BitbucketCloudClient, error) {
+func NewBitbucketCloudClient(vcsInfo vcsutils.VcsInfo, logger Log) (*BitbucketCloudClient, error) {
 	bitbucketClient := &BitbucketCloudClient{
 		vcsInfo: vcsInfo,
 		logger:  logger,
@@ -92,8 +92,8 @@ func (client *BitbucketCloudClient) ListBranches(ctx context.Context, owner, rep
 }
 
 // AddSshKeyToRepository on Bitbucket cloud, the deploy-key is always read-only.
-func (client *BitbucketCloudClient) AddSshKeyToRepository(ctx context.Context, owner, repository, keyName, publicKey string, _ Permission) error {
-	err := validateParametersNotBlank(map[string]string{
+func (client *BitbucketCloudClient) AddSshKeyToRepository(ctx context.Context, owner, repository, keyName, publicKey string, _ vcsutils.Permission) error {
+	err := vcsutils.ValidateParametersNotBlank(map[string]string{
 		"owner":      owner,
 		"repository": repository,
 		"key name":   keyName,
@@ -197,7 +197,7 @@ func (client *BitbucketCloudClient) DeleteWebhook(ctx context.Context, owner, re
 }
 
 // SetCommitStatus on Bitbucket cloud
-func (client *BitbucketCloudClient) SetCommitStatus(ctx context.Context, commitStatus CommitStatus, owner, repository,
+func (client *BitbucketCloudClient) SetCommitStatus(ctx context.Context, commitStatus vcsutils.CommitStatus, owner, repository,
 	ref, title, description, detailsURL string) error {
 	bitbucketClient := client.buildBitbucketCloudClient(ctx)
 	commitOptions := &bitbucket.CommitsOptions{
@@ -216,7 +216,7 @@ func (client *BitbucketCloudClient) SetCommitStatus(ctx context.Context, commitS
 }
 
 // GetCommitStatuses on Bitbucket cloud
-func (client *BitbucketCloudClient) GetCommitStatuses(ctx context.Context, owner, repository, ref string) (status []CommitStatusInfo, err error) {
+func (client *BitbucketCloudClient) GetCommitStatuses(ctx context.Context, owner, repository, ref string) (status []vcsutils.CommitStatusInfo, err error) {
 	bitbucketClient := client.buildBitbucketCloudClient(ctx)
 	commitOptions := &bitbucket.CommitsOptions{
 		Owner:    owner,
@@ -297,8 +297,8 @@ func (client *BitbucketCloudClient) CreatePullRequest(ctx context.Context, owner
 }
 
 // CreatePullRequest on Bitbucket cloud
-func (client *BitbucketCloudClient) ListOpenPullRequests(ctx context.Context, owner, repository string) (res []PullRequestInfo, err error) {
-	err = validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository})
+func (client *BitbucketCloudClient) ListOpenPullRequests(ctx context.Context, owner, repository string) (res []vcsutils.PullRequestInfo, err error) {
+	err = vcsutils.ValidateParametersNotBlank(map[string]string{"owner": owner, "repository": repository})
 	if err != nil {
 		return nil, err
 	}
@@ -322,7 +322,7 @@ func (client *BitbucketCloudClient) ListOpenPullRequests(ctx context.Context, ow
 
 // AddPullRequestComment on Bitbucket cloud
 func (client *BitbucketCloudClient) AddPullRequestComment(ctx context.Context, owner, repository, content string, pullRequestID int) error {
-	err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository, "content": content})
+	err := vcsutils.ValidateParametersNotBlank(map[string]string{"owner": owner, "repository": repository, "content": content})
 	if err != nil {
 		return err
 	}
@@ -338,8 +338,8 @@ func (client *BitbucketCloudClient) AddPullRequestComment(ctx context.Context, o
 }
 
 // ListPullRequestComments on Bitbucket cloud
-func (client *BitbucketCloudClient) ListPullRequestComments(ctx context.Context, owner, repository string, pullRequestID int) (res []CommentInfo, err error) {
-	err = validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository})
+func (client *BitbucketCloudClient) ListPullRequestComments(ctx context.Context, owner, repository string, pullRequestID int) (res []vcsutils.CommentInfo, err error) {
+	err = vcsutils.ValidateParametersNotBlank(map[string]string{"owner": owner, "repository": repository})
 	if err != nil {
 		return nil, err
 	}
@@ -361,14 +361,14 @@ func (client *BitbucketCloudClient) ListPullRequestComments(ctx context.Context,
 }
 
 // GetLatestCommit on Bitbucket cloud
-func (client *BitbucketCloudClient) GetLatestCommit(ctx context.Context, owner, repository, branch string) (CommitInfo, error) {
-	err := validateParametersNotBlank(map[string]string{
+func (client *BitbucketCloudClient) GetLatestCommit(ctx context.Context, owner, repository, branch string) (vcsutils.CommitInfo, error) {
+	err := vcsutils.ValidateParametersNotBlank(map[string]string{
 		"owner":      owner,
 		"repository": repository,
 		"branch":     branch,
 	})
 	if err != nil {
-		return CommitInfo{}, err
+		return vcsutils.CommitInfo{}, err
 	}
 	bitbucketClient := client.buildBitbucketCloudClient(ctx)
 	bitbucketClient.Pagelen = 1
@@ -379,23 +379,23 @@ func (client *BitbucketCloudClient) GetLatestCommit(ctx context.Context, owner, 
 	}
 	commits, err := bitbucketClient.Repositories.Commits.GetCommits(options)
 	if err != nil {
-		return CommitInfo{}, err
+		return vcsutils.CommitInfo{}, err
 	}
 	parsedCommits, err := vcsutils.RemapFields[commitResponse](commits, "json")
 	if err != nil {
-		return CommitInfo{}, err
+		return vcsutils.CommitInfo{}, err
 	}
 	if len(parsedCommits.Values) > 0 {
 		latestCommit := parsedCommits.Values[0]
 		return mapBitbucketCloudCommitToCommitInfo(latestCommit), nil
 	}
-	return CommitInfo{}, nil
+	return vcsutils.CommitInfo{}, nil
 }
 
 // GetRepositoryInfo on Bitbucket cloud
-func (client *BitbucketCloudClient) GetRepositoryInfo(ctx context.Context, owner, repository string) (RepositoryInfo, error) {
-	if err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository}); err != nil {
-		return RepositoryInfo{}, err
+func (client *BitbucketCloudClient) GetRepositoryInfo(ctx context.Context, owner, repository string) (vcsutils.RepositoryInfo, error) {
+	if err := vcsutils.ValidateParametersNotBlank(map[string]string{"owner": owner, "repository": repository}); err != nil {
+		return vcsutils.RepositoryInfo{}, err
 	}
 	bitbucketClient := client.buildBitbucketCloudClient(ctx)
 	repo, err := bitbucketClient.Repositories.Repository.Get(&bitbucket.RepositoryOptions{
@@ -403,7 +403,7 @@ func (client *BitbucketCloudClient) GetRepositoryInfo(ctx context.Context, owner
 		RepoSlug: repository,
 	})
 	if err != nil {
-		return RepositoryInfo{}, err
+		return vcsutils.RepositoryInfo{}, err
 	}
 
 	holder := struct {
@@ -414,10 +414,10 @@ func (client *BitbucketCloudClient) GetRepositoryInfo(ctx context.Context, owner
 	}{}
 
 	if err := mapstructure.Decode(repo.Links, &holder); err != nil {
-		return RepositoryInfo{}, err
+		return vcsutils.RepositoryInfo{}, err
 	}
 
-	var info CloneInfo
+	var info vcsutils.CloneInfo
 	for _, link := range holder.Clone {
 		switch strings.ToLower(link.Name) {
 		case "https":
@@ -426,18 +426,18 @@ func (client *BitbucketCloudClient) GetRepositoryInfo(ctx context.Context, owner
 			info.SSH = link.HRef
 		}
 	}
-	return RepositoryInfo{RepositoryVisibility: getBitbucketCloudRepositoryVisibility(repo), CloneInfo: info}, nil
+	return vcsutils.RepositoryInfo{RepositoryVisibility: getBitbucketCloudRepositoryVisibility(repo), CloneInfo: info}, nil
 }
 
 // GetCommitBySha on Bitbucket cloud
-func (client *BitbucketCloudClient) GetCommitBySha(ctx context.Context, owner, repository, sha string) (CommitInfo, error) {
-	err := validateParametersNotBlank(map[string]string{
+func (client *BitbucketCloudClient) GetCommitBySha(ctx context.Context, owner, repository, sha string) (vcsutils.CommitInfo, error) {
+	err := vcsutils.ValidateParametersNotBlank(map[string]string{
 		"owner":      owner,
 		"repository": repository,
 		"sha":        sha,
 	})
 	if err != nil {
-		return CommitInfo{}, err
+		return vcsutils.CommitInfo{}, err
 	}
 
 	bitbucketClient := client.buildBitbucketCloudClient(ctx)
@@ -448,22 +448,22 @@ func (client *BitbucketCloudClient) GetCommitBySha(ctx context.Context, owner, r
 	}
 	commit, err := bitbucketClient.Repositories.Commits.GetCommit(options)
 	if err != nil {
-		return CommitInfo{}, err
+		return vcsutils.CommitInfo{}, err
 	}
 	parsedCommit, err := vcsutils.RemapFields[commitDetails](commit, "json")
 	if err != nil {
-		return CommitInfo{}, err
+		return vcsutils.CommitInfo{}, err
 	}
 	return mapBitbucketCloudCommitToCommitInfo(parsedCommit), nil
 }
 
 // CreateLabel on Bitbucket cloud
-func (client *BitbucketCloudClient) CreateLabel(ctx context.Context, owner, repository string, labelInfo LabelInfo) error {
+func (client *BitbucketCloudClient) CreateLabel(ctx context.Context, owner, repository string, labelInfo vcsutils.LabelInfo) error {
 	return errLabelsNotSupported
 }
 
 // GetLabel on Bitbucket cloud
-func (client *BitbucketCloudClient) GetLabel(ctx context.Context, owner, repository, name string) (*LabelInfo, error) {
+func (client *BitbucketCloudClient) GetLabel(ctx context.Context, owner, repository, name string) (*vcsutils.LabelInfo, error) {
 	return nil, errLabelsNotSupported
 }
 
@@ -488,12 +488,12 @@ func (client *BitbucketCloudClient) DownloadFileFromRepo(ctx context.Context, ow
 }
 
 // GetRepositoryEnvironmentInfo on Bitbucket cloud
-func (client *BitbucketCloudClient) GetRepositoryEnvironmentInfo(ctx context.Context, owner, repository, name string) (RepositoryEnvironmentInfo, error) {
-	return RepositoryEnvironmentInfo{}, errBitbucketGetRepoEnvironmentInfoNotSupported
+func (client *BitbucketCloudClient) GetRepositoryEnvironmentInfo(ctx context.Context, owner, repository, name string) (vcsutils.RepositoryEnvironmentInfo, error) {
+	return vcsutils.RepositoryEnvironmentInfo{}, errBitbucketGetRepoEnvironmentInfoNotSupported
 }
 
 func (client *BitbucketCloudClient) GetModifiedFiles(ctx context.Context, owner, repository, refBefore, refAfter string) ([]string, error) {
-	err := validateParametersNotBlank(map[string]string{
+	err := vcsutils.ValidateParametersNotBlank(map[string]string{
 		"owner":      owner,
 		"repository": repository,
 		"refBefore":  refBefore,
@@ -661,12 +661,12 @@ func getDownloadLink(repo *bitbucket.Repository, branch string) (string, error) 
 	return htmlLink + "/get/" + branch + ".tar.gz", err
 }
 
-func mapBitbucketCloudCommitToCommitInfo(parsedCommit commitDetails) CommitInfo {
+func mapBitbucketCloudCommitToCommitInfo(parsedCommit commitDetails) vcsutils.CommitInfo {
 	parents := make([]string, len(parsedCommit.Parents))
 	for i, p := range parsedCommit.Parents {
 		parents[i] = p.Hash
 	}
-	return CommitInfo{
+	return vcsutils.CommitInfo{
 		Hash:          parsedCommit.Hash,
 		AuthorName:    parsedCommit.Author.User.DisplayName,
 		CommitterName: "", // not provided
@@ -677,10 +677,10 @@ func mapBitbucketCloudCommitToCommitInfo(parsedCommit commitDetails) CommitInfo 
 	}
 }
 
-func mapBitbucketCloudCommentToCommentInfo(parsedComments *commentsResponse) []CommentInfo {
-	comments := make([]CommentInfo, len(parsedComments.Values))
+func mapBitbucketCloudCommentToCommentInfo(parsedComments *commentsResponse) []vcsutils.CommentInfo {
+	comments := make([]vcsutils.CommentInfo, len(parsedComments.Values))
 	for i, comment := range parsedComments.Values {
-		comments[i] = CommentInfo{
+		comments[i] = vcsutils.CommentInfo{
 			ID:      comment.ID,
 			Content: comment.Content.Raw,
 			Created: comment.Created,
@@ -689,16 +689,16 @@ func mapBitbucketCloudCommentToCommentInfo(parsedComments *commentsResponse) []C
 	return comments
 }
 
-func mapBitbucketCloudPullRequestToPullRequestInfo(parsedPullRequests *pullRequestsResponse) []PullRequestInfo {
-	pullRequests := make([]PullRequestInfo, len(parsedPullRequests.Values))
+func mapBitbucketCloudPullRequestToPullRequestInfo(parsedPullRequests *pullRequestsResponse) []vcsutils.PullRequestInfo {
+	pullRequests := make([]vcsutils.PullRequestInfo, len(parsedPullRequests.Values))
 	for i, pullRequest := range parsedPullRequests.Values {
-		pullRequests[i] = PullRequestInfo{
+		pullRequests[i] = vcsutils.PullRequestInfo{
 			ID: pullRequest.ID,
-			Source: BranchInfo{
+			Source: vcsutils.BranchInfo{
 				Name:       pullRequest.Source.Name.Str,
 				Repository: pullRequest.Source.Repository.Name,
 			},
-			Target: BranchInfo{
+			Target: vcsutils.BranchInfo{
 				Name:       pullRequest.Target.Name.Str,
 				Repository: pullRequest.Target.Repository.Name,
 			},
@@ -707,9 +707,9 @@ func mapBitbucketCloudPullRequestToPullRequestInfo(parsedPullRequests *pullReque
 	return pullRequests
 }
 
-func getBitbucketCloudRepositoryVisibility(repo *bitbucket.Repository) RepositoryVisibility {
+func getBitbucketCloudRepositoryVisibility(repo *bitbucket.Repository) vcsutils.RepositoryVisibility {
 	if repo.Is_private {
-		return Private
+		return vcsutils.Private
 	}
-	return Public
+	return vcsutils.Public
 }

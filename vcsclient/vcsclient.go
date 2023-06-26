@@ -2,80 +2,8 @@ package vcsclient
 
 import (
 	"context"
-	"fmt"
-	"strings"
-	"time"
-
 	"github.com/jfrog/froggit-go/vcsutils"
 )
-
-// CommitStatus the status of the commit in the VCS
-type CommitStatus int
-
-const (
-	// Pass means that the commit passed the tests
-	Pass CommitStatus = iota
-	// Fail means that the commit failed the tests
-	Fail
-	// Error means that an unexpected error occurred
-	Error
-	// InProgress means than the status check is in progress
-	InProgress
-)
-
-// Permission the ssh key permission on the VCS repository
-type Permission int
-
-const (
-	// Read permission
-	Read Permission = iota
-	// ReadWrite is either read and write permission
-	ReadWrite
-)
-
-// RepositoryVisibility the visibility level of the repository
-type RepositoryVisibility int
-
-const (
-	// Open to public
-	Public RepositoryVisibility = iota
-	// Open to organization
-	Internal
-	// Open to user
-	Private
-)
-
-// VcsInfo is the connection details of the VcsClient to communicate with the server
-type VcsInfo struct {
-	APIEndpoint string
-	Username    string
-	Token       string
-	// Project name is relevant for Azure Repos
-	Project string
-}
-
-// RepositoryEnvironmentInfo is the environment details configured for a repository
-type RepositoryEnvironmentInfo struct {
-	Name      string
-	Url       string
-	Reviewers []string
-}
-
-// CommitStatusInfo status which is then reflected in pull requests involving those commits
-// State         - One of success, pending, failure, or error
-// Description   - Description of the commit status
-// DetailsUrl    - The URL for component status link
-// Creator       - The creator of the status
-// CreatedAt     - Date of status creation
-// LastUpdatedAt - Date of status last update time.
-type CommitStatusInfo struct {
-	State         CommitStatus
-	Description   string
-	DetailsUrl    string
-	Creator       string
-	CreatedAt     time.Time
-	LastUpdatedAt time.Time
-}
 
 // VcsClient is a base class of all Vcs clients - GitHub, GitLab, Bitbucket server and cloud clients
 type VcsClient interface {
@@ -123,13 +51,13 @@ type VcsClient interface {
 	// title        - Title of the commit status
 	// description  - Description of the commit status
 	// detailsUrl   - The URL for component status link
-	SetCommitStatus(ctx context.Context, commitStatus CommitStatus, owner, repository, ref, title, description, detailsURL string) error
+	SetCommitStatus(ctx context.Context, commitStatus vcsutils.CommitStatus, owner, repository, ref, title, description, detailsURL string) error
 
 	// GetCommitStatuses Gets all statuses for a specific commit
 	// owner        - User or organization
 	// repository   - VCS repository name
 	// ref          - SHA, a branch name, or a tag name.
-	GetCommitStatuses(ctx context.Context, owner, repository, ref string) (status []CommitStatusInfo, err error)
+	GetCommitStatuses(ctx context.Context, owner, repository, ref string) (status []vcsutils.CommitStatusInfo, err error)
 
 	// DownloadRepository Downloads and extracts a VCS repository
 	// owner      - User or organization
@@ -158,18 +86,18 @@ type VcsClient interface {
 	// owner          - User or organization
 	// repository     - VCS repository name
 	// pullRequestID  - Pull request ID
-	ListPullRequestComments(ctx context.Context, owner, repository string, pullRequestID int) ([]CommentInfo, error)
+	ListPullRequestComments(ctx context.Context, owner, repository string, pullRequestID int) ([]vcsutils.CommentInfo, error)
 
 	// ListOpenPullRequests Gets all open pull requests ids.
 	// owner          - User or organization
 	// repository     - VCS repository name
-	ListOpenPullRequests(ctx context.Context, owner, repository string) ([]PullRequestInfo, error)
+	ListOpenPullRequests(ctx context.Context, owner, repository string) ([]vcsutils.PullRequestInfo, error)
 
 	// GetLatestCommit Gets the most recent commit of a branch
 	// owner      - User or organization
 	// repository - VCS repository name
 	// branch     - The name of the branch
-	GetLatestCommit(ctx context.Context, owner, repository, branch string) (CommitInfo, error)
+	GetLatestCommit(ctx context.Context, owner, repository, branch string) (vcsutils.CommitInfo, error)
 
 	// AddSshKeyToRepository Adds a public ssh key to a repository
 	// owner      - User or organization
@@ -177,30 +105,30 @@ type VcsClient interface {
 	// keyName    - Name of the key
 	// publicKey  - SSH public key
 	// permission - Access permission of the key: read or readWrite
-	AddSshKeyToRepository(ctx context.Context, owner, repository, keyName, publicKey string, permission Permission) error
+	AddSshKeyToRepository(ctx context.Context, owner, repository, keyName, publicKey string, permission vcsutils.Permission) error
 
 	// GetRepositoryInfo Returns information about repository.
 	// owner      - User or organization
 	// repository - VCS repository name
-	GetRepositoryInfo(ctx context.Context, owner, repository string) (RepositoryInfo, error)
+	GetRepositoryInfo(ctx context.Context, owner, repository string) (vcsutils.RepositoryInfo, error)
 
 	// GetCommitBySha Gets the commit by its SHA
 	// owner      - User or organization
 	// repository - VCS repository name
 	// sha        - The commit hash
-	GetCommitBySha(ctx context.Context, owner, repository, sha string) (CommitInfo, error)
+	GetCommitBySha(ctx context.Context, owner, repository, sha string) (vcsutils.CommitInfo, error)
 
 	// CreateLabel Creates a label in repository
 	// owner      - User or organization
 	// repository - VCS repository name
 	// labelInfo  - The label info
-	CreateLabel(ctx context.Context, owner, repository string, labelInfo LabelInfo) error
+	CreateLabel(ctx context.Context, owner, repository string, labelInfo vcsutils.LabelInfo) error
 
 	// GetLabel Gets a label related to a repository. Returns (nil, nil) if label doesn't exist.
 	// owner      - User or organization
 	// repository - VCS repository name
 	// name       - Label name
-	GetLabel(ctx context.Context, owner, repository, name string) (*LabelInfo, error)
+	GetLabel(ctx context.Context, owner, repository, name string) (*vcsutils.LabelInfo, error)
 
 	// ListPullRequestLabels Gets all labels assigned to a pull request.
 	// owner         - User or organization
@@ -233,7 +161,7 @@ type VcsClient interface {
 	// owner         - User or organization
 	// repository    - VCS repository name
 	// name          - The environment name
-	GetRepositoryEnvironmentInfo(ctx context.Context, owner, repository, name string) (RepositoryEnvironmentInfo, error)
+	GetRepositoryEnvironmentInfo(ctx context.Context, owner, repository, name string) (vcsutils.RepositoryEnvironmentInfo, error)
 
 	// GetModifiedFiles returns list of file names modified between two VCS references
 	// owner         - User or organization
@@ -241,96 +169,4 @@ type VcsClient interface {
 	// refBefore     - A VCS reference: commit SHA, branch name, tag name
 	// refAfter      - A VCS reference: commit SHA, branch name, tag name
 	GetModifiedFiles(ctx context.Context, owner, repository, refBefore, refAfter string) ([]string, error)
-}
-
-// CommitInfo contains the details of a commit
-type CommitInfo struct {
-	// The SHA-1 hash of the commit
-	Hash string
-	// The author's name
-	AuthorName string
-	// The committer's name
-	CommitterName string
-	// The commit URL
-	Url string
-	// Seconds from epoch
-	Timestamp int64
-	// The commit message
-	Message string
-	// The SHA-1 hashes of the parent commits
-	ParentHashes []string
-}
-
-type CommentInfo struct {
-	ID      int64
-	Content string
-	Created time.Time
-}
-
-type PullRequestInfo struct {
-	ID     int64
-	Source BranchInfo
-	Target BranchInfo
-}
-
-type BranchInfo struct {
-	Name       string
-	Repository string
-}
-
-// RepositoryInfo contains general information about repository.
-type RepositoryInfo struct {
-	CloneInfo            CloneInfo
-	RepositoryVisibility RepositoryVisibility
-}
-
-// CloneInfo contains URLs that can be used to clone the repository.
-type CloneInfo struct {
-	// HTTP is a URL string to clone repository using HTTP(S)) protocol.
-	HTTP string
-	// SSH is a URL string to clone repository using SSH protocol.
-	SSH string
-}
-
-// LabelInfo contains a label information
-type LabelInfo struct {
-	Name        string
-	Description string
-	// Label color is a hexadecimal color code, for example: 4AB548
-	Color string
-}
-
-func validateParametersNotBlank(paramNameValueMap map[string]string) error {
-	var errorMessages []string
-	for k, v := range paramNameValueMap {
-		if strings.TrimSpace(v) == "" {
-			errorMessages = append(errorMessages, fmt.Sprintf("required parameter '%s' is missing", k))
-		}
-	}
-	if len(errorMessages) > 0 {
-		return fmt.Errorf("validation failed: %s", strings.Join(errorMessages, ", "))
-	}
-	return nil
-}
-
-// commitStatusAsStringToStatus maps status as string to CommitStatus
-// Handles all the different statuses for every VCS provider
-func commitStatusAsStringToStatus(rawStatus string) CommitStatus {
-	switch strings.ToLower(rawStatus) {
-	case "success", "succeeded", "successful":
-		return Pass
-	case "fail", "failure", "failed":
-		return Fail
-	case "pending", "inprogress":
-		return InProgress
-	default:
-		return Error
-	}
-}
-
-func extractTimeWithFallback(timeObject *time.Time) time.Time {
-	if timeObject == nil {
-		return time.Time{}
-	}
-	return timeObject.UTC()
 }

@@ -124,7 +124,7 @@ func TestGitLabClient_CreateCommitStatus(t *testing.T) {
 	client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, gitlab.CommitStatus{}, fmt.Sprintf("/api/v4/projects/%s/statuses/%s", url.PathEscape(owner+"/"+repo1), ref), createGitLabHandler)
 	defer cleanUp()
 
-	err := client.SetCommitStatus(ctx, InProgress, owner, repo1, ref, "Commit status title",
+	err := client.SetCommitStatus(ctx, vcsutils.InProgress, owner, repo1, ref, "Commit status title",
 		"Commit status description", "https://httpbin.org/anything")
 	assert.NoError(t, err)
 }
@@ -195,7 +195,7 @@ func TestGitLabClient_ListPullRequestComments(t *testing.T) {
 	expectedCreated, err := time.Parse(time.RFC3339, "2013-10-02T09:56:03Z")
 	assert.NoError(t, err)
 	assert.Len(t, result, 2)
-	assert.Equal(t, CommentInfo{
+	assert.Equal(t, vcsutils.CommentInfo{
 		ID:      305,
 		Content: "Text of the comment\r\n",
 		Created: expectedCreated,
@@ -214,10 +214,10 @@ func TestGitLabClient_ListOpenPullRequests(t *testing.T) {
 	result, err := client.ListOpenPullRequests(ctx, owner, repo1)
 	require.NoError(t, err)
 	assert.Len(t, result, 1)
-	assert.True(t, reflect.DeepEqual(PullRequestInfo{
+	assert.True(t, reflect.DeepEqual(vcsutils.PullRequestInfo{
 		ID:     302,
-		Source: BranchInfo{Name: "test1", Repository: ""},
-		Target: BranchInfo{Name: "master", Repository: ""},
+		Source: vcsutils.BranchInfo{Name: "test1", Repository: ""},
+		Target: vcsutils.BranchInfo{Name: "master", Repository: ""},
 	}, result[0]))
 }
 
@@ -234,7 +234,7 @@ func TestGitLabClient_GetLatestCommit(t *testing.T) {
 	result, err := client.GetLatestCommit(ctx, owner, repo1, "master")
 
 	require.NoError(t, err)
-	assert.Equal(t, CommitInfo{
+	assert.Equal(t, vcsutils.CommitInfo{
 		Hash:          "ed899a2f4b50b4370feeea94676502b42383c746",
 		AuthorName:    "Example User",
 		CommitterName: "Administrator",
@@ -295,7 +295,7 @@ func TestGitLabClient_AddSshKeyToRepository(t *testing.T) {
 		expectedBody, http.MethodPost, createGitLabWithBodyHandler)
 	defer closeServer()
 
-	err := client.AddSshKeyToRepository(ctx, owner, repo1, "My deploy key", "ssh-rsa AAAA...", Read)
+	err := client.AddSshKeyToRepository(ctx, owner, repo1, "My deploy key", "ssh-rsa AAAA...", vcsutils.Read)
 
 	require.NoError(t, err)
 }
@@ -317,7 +317,7 @@ func TestGitLabClient_AddSshKeyToRepositoryReadWrite(t *testing.T) {
 		expectedBody, http.MethodPost, createGitLabWithBodyHandler)
 	defer closeServer()
 
-	err := client.AddSshKeyToRepository(ctx, owner, repo1, "My deploy key", "ssh-rsa AAAA...", ReadWrite)
+	err := client.AddSshKeyToRepository(ctx, owner, repo1, "My deploy key", "ssh-rsa AAAA...", vcsutils.ReadWrite)
 
 	require.NoError(t, err)
 }
@@ -334,9 +334,9 @@ func TestGitLabClient_GetRepositoryInfo(t *testing.T) {
 	result, err := client.GetRepositoryInfo(ctx, "diaspora", "diaspora-project-site")
 	require.NoError(t, err)
 	require.Equal(t,
-		RepositoryInfo{
-			RepositoryVisibility: Private,
-			CloneInfo: CloneInfo{
+		vcsutils.RepositoryInfo{
+			RepositoryVisibility: vcsutils.Private,
+			CloneInfo: vcsutils.CloneInfo{
 				HTTP: "http://example.com/diaspora/diaspora-project-site.git",
 				SSH:  "git@example.com:diaspora/diaspora-project-site.git"},
 		},
@@ -358,7 +358,7 @@ func TestGitLabClient_GetCommitBySha(t *testing.T) {
 	result, err := client.GetCommitBySha(ctx, owner, repo1, sha)
 
 	require.NoError(t, err)
-	assert.Equal(t, CommitInfo{
+	assert.Equal(t, vcsutils.CommitInfo{
 		Hash:          sha,
 		AuthorName:    "Example User",
 		CommitterName: "Administrator",
@@ -389,16 +389,16 @@ func TestGitLabClient_GetCommitByShaNotFound(t *testing.T) {
 }
 
 func TestGitLabClient_getGitLabProjectVisibility(t *testing.T) {
-	assert.Equal(t, Public, getGitLabProjectVisibility(&gitlab.Project{Visibility: gitlab.PublicVisibility}))
-	assert.Equal(t, Internal, getGitLabProjectVisibility(&gitlab.Project{Visibility: gitlab.InternalVisibility}))
-	assert.Equal(t, Private, getGitLabProjectVisibility(&gitlab.Project{Visibility: gitlab.PrivateVisibility}))
+	assert.Equal(t, vcsutils.Public, getGitLabProjectVisibility(&gitlab.Project{Visibility: gitlab.PublicVisibility}))
+	assert.Equal(t, vcsutils.Internal, getGitLabProjectVisibility(&gitlab.Project{Visibility: gitlab.InternalVisibility}))
+	assert.Equal(t, vcsutils.Private, getGitLabProjectVisibility(&gitlab.Project{Visibility: gitlab.PrivateVisibility}))
 }
 
 func TestGitlabClient_getGitlabCommitState(t *testing.T) {
-	assert.Equal(t, "success", getGitLabCommitState(Pass))
-	assert.Equal(t, "failed", getGitLabCommitState(Fail))
-	assert.Equal(t, "failed", getGitLabCommitState(Error))
-	assert.Equal(t, "running", getGitLabCommitState(InProgress))
+	assert.Equal(t, "success", getGitLabCommitState(vcsutils.Pass))
+	assert.Equal(t, "failed", getGitLabCommitState(vcsutils.Fail))
+	assert.Equal(t, "failed", getGitLabCommitState(vcsutils.Error))
+	assert.Equal(t, "running", getGitLabCommitState(vcsutils.InProgress))
 	assert.Equal(t, "", getGitLabCommitState(5))
 }
 
@@ -408,7 +408,7 @@ func TestGitlabClient_CreateLabel(t *testing.T) {
 		fmt.Sprintf("/api/v4/projects/%s/labels", url.PathEscape(owner+"/"+repo1)), createGitLabHandler)
 	defer cleanUp()
 
-	err := client.CreateLabel(ctx, owner, repo1, LabelInfo{
+	err := client.CreateLabel(ctx, owner, repo1, vcsutils.LabelInfo{
 		Name:        labelName,
 		Description: "label-description",
 		Color:       "001122",
@@ -632,7 +632,7 @@ func TestGitLabClient_TestGetCommitStatus(t *testing.T) {
 	ctx := context.Background()
 	ref := "5fbf81b31ff7a3b06bd362d1891e2f01bdb2be69"
 	t.Run("Empty response", func(t *testing.T) {
-		client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, []CommitStatusInfo{},
+		client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, []vcsutils.CommitStatusInfo{},
 			fmt.Sprintf("/api/v4/projects/%s/repository/commits/%s/statuses", repo1, ref),
 			createGitLabHandler)
 		defer cleanUp()
@@ -648,9 +648,9 @@ func TestGitLabClient_TestGetCommitStatus(t *testing.T) {
 		defer cleanUp()
 		commitStatuses, err := client.GetCommitStatuses(ctx, owner, repo1, ref)
 		assert.True(t, len(commitStatuses) == 3)
-		assert.True(t, commitStatuses[0].State == Pass)
-		assert.True(t, commitStatuses[1].State == InProgress)
-		assert.True(t, commitStatuses[2].State == Fail)
+		assert.True(t, commitStatuses[0].State == vcsutils.Pass)
+		assert.True(t, commitStatuses[1].State == vcsutils.InProgress)
+		assert.True(t, commitStatuses[2].State == vcsutils.Fail)
 		assert.NoError(t, err)
 	})
 	t.Run("Invalid response format", func(t *testing.T) {

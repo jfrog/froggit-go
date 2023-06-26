@@ -10,10 +10,10 @@ import (
 )
 
 func TestBitbucketClient_getBitbucketCommitState(t *testing.T) {
-	assert.Equal(t, "SUCCESSFUL", getBitbucketCommitState(Pass))
-	assert.Equal(t, "FAILED", getBitbucketCommitState(Fail))
-	assert.Equal(t, "FAILED", getBitbucketCommitState(Error))
-	assert.Equal(t, "INPROGRESS", getBitbucketCommitState(InProgress))
+	assert.Equal(t, "SUCCESSFUL", getBitbucketCommitState(vcsutils.Pass))
+	assert.Equal(t, "FAILED", getBitbucketCommitState(vcsutils.Fail))
+	assert.Equal(t, "FAILED", getBitbucketCommitState(vcsutils.Error))
+	assert.Equal(t, "INPROGRESS", getBitbucketCommitState(vcsutils.InProgress))
 	assert.Equal(t, "", getBitbucketCommitState(5))
 }
 
@@ -38,16 +38,16 @@ func TestBitbucketParseCommitStatuses(t *testing.T) {
 	}
 
 	provider := vcsutils.BitbucketServer
-	expectedStatuses := []CommitStatusInfo{
+	expectedStatuses := []vcsutils.CommitStatusInfo{
 		{
-			State:       Pass,
+			State:       vcsutils.Pass,
 			Description: "Build successful",
 			DetailsUrl:  "http://example.com/build/1234",
 			Creator:     "jenkins",
 			CreatedAt:   time.Unix(1619189054, 828000000).UTC(),
 		},
 		{
-			State:       Fail,
+			State:       vcsutils.Fail,
 			Description: "Build failed",
 			DetailsUrl:  "http://example.com/build/5678",
 			Creator:     "jenkins",
@@ -69,8 +69,8 @@ func TestGetCommitStatusInfoByBitbucketProvider_BitbucketServer(t *testing.T) {
 		DateAdded:   1619189054828,
 	}
 
-	expectedStatus := CommitStatusInfo{
-		State:       Pass,
+	expectedStatus := vcsutils.CommitStatusInfo{
+		State:       vcsutils.Pass,
 		Description: "Build successful",
 		DetailsUrl:  "http://example.com/build/1234",
 		Creator:     "jenkins",
@@ -92,8 +92,8 @@ func TestGetCommitStatusInfoByBitbucketProvider_BitbucketCloud(t *testing.T) {
 		UpdatedOn:   "2022-01-02T23:45:01.234Z",
 	}
 
-	expectedResult := CommitStatusInfo{
-		State:         Pass,
+	expectedResult := vcsutils.CommitStatusInfo{
+		State:         vcsutils.Pass,
 		Description:   "Test commit",
 		DetailsUrl:    "https://example.com/commit",
 		Creator:       "John Doe",
