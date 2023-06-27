@@ -138,6 +138,32 @@ func TestAzureRepos_TestCreatePullRequest(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestAzureReposClient_UpdatePullRequest(t *testing.T) {
+	ctx := context.Background()
+	pullRequestId := 1
+	desc := "desc"
+	title := "title"
+	targetBranchName := "master"
+	state := vcsutils.Open
+	res := &git.GitPullRequest{
+		Description:   &desc,
+		PullRequestId: &pullRequestId,
+		Status:        azureMapPullRequestState(state),
+		TargetRefName: &targetBranchName,
+		Title:         &title,
+	}
+	jsonRes, err := json.Marshal(res)
+	client, cleanUp := createServerAndClient(t, vcsutils.AzureRepos, true, jsonRes, "updatePullRequest", createAzureReposHandler)
+	defer cleanUp()
+	err = client.UpdatePullRequest(ctx, "", repo1, "Hello World", "Hello World", "", 5, vcsutils.Open)
+	assert.NoError(t, err)
+
+	badClient, cleanUp := createBadAzureReposClient(t, []byte{})
+	defer cleanUp()
+	err = badClient.CreatePullRequest(ctx, "", repo1, branch1, branch2, "Hello World", "Hello World")
+	assert.Error(t, err)
+}
+
 func TestAzureRepos_TestAddPullRequestComment(t *testing.T) {
 	type AddPullRequestCommentResponse struct {
 		Value git.GitPullRequestCommentThread
