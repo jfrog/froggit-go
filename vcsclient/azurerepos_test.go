@@ -153,6 +153,7 @@ func TestAzureReposClient_UpdatePullRequest(t *testing.T) {
 		Title:         &title,
 	}
 	jsonRes, err := json.Marshal(res)
+	assert.NoError(t, err)
 	client, cleanUp := createServerAndClient(t, vcsutils.AzureRepos, true, jsonRes, "updatePullRequest", createAzureReposHandler)
 	defer cleanUp()
 	err = client.UpdatePullRequest(ctx, "", repo1, "Hello World", "Hello World", "", 5, vcsutils.Open)
