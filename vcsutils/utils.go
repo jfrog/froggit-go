@@ -314,3 +314,51 @@ func RemapFields[T any](src any, tagName string) (T, error) {
 	}
 	return dst, nil
 }
+
+func MapPullRequestState(state *PullRequestState) *string {
+	var stateStringValue string
+	switch *state {
+	case Open:
+		stateStringValue = "open"
+	case Closed:
+		stateStringValue = "closed"
+	default:
+		return nil
+	}
+	return &stateStringValue
+}
+
+func ValidateParametersNotBlank(paramNameValueMap map[string]string) error {
+	var errorMessages []string
+	for k, v := range paramNameValueMap {
+		if strings.TrimSpace(v) == "" {
+			errorMessages = append(errorMessages, fmt.Sprintf("required parameter '%s' is missing", k))
+		}
+	}
+	if len(errorMessages) > 0 {
+		return fmt.Errorf("validation failed: %s", strings.Join(errorMessages, ", "))
+	}
+	return nil
+}
+
+// commitStatusAsStringToStatus maps status as string to CommitStatus
+// Handles all the different statuses for every VCS provider
+func CommitStatusAsStringToStatus(rawStatus string) CommitStatus {
+	switch strings.ToLower(rawStatus) {
+	case "success", "succeeded", "successful":
+		return Pass
+	case "fail", "failure", "failed":
+		return Fail
+	case "pending", "inprogress":
+		return InProgress
+	default:
+		return Error
+	}
+}
+
+func ExtractTimeWithFallback(timeObject *time.Time) time.Time {
+	if timeObject == nil {
+		return time.Time{}
+	}
+	return timeObject.UTC()
+}

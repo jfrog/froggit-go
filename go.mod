@@ -3,7 +3,7 @@ module github.com/jfrog/froggit-go
 go 1.20
 
 require (
-	github.com/gfleury/go-bitbucket-v1 v0.0.0-20220418082332-711d7d5e805f
+	github.com/gfleury/go-bitbucket-v1 v0.0.0-20230626192437-8d7be5866751
 	github.com/go-git/go-git/v5 v5.5.2
 	github.com/google/go-github/v45 v45.2.0
 	github.com/google/uuid v1.3.0
@@ -53,5 +53,3 @@ require (
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
-
-replace github.com/gfleury/go-bitbucket-v1 v0.0.0-20220418082332-711d7d5e805f => ../go-bitbucket-v1

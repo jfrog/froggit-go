@@ -1,6 +1,8 @@
 package vcsutils
 
 import (
+	"errors"
+	"fmt"
 	"github.com/go-git/go-git/v5"
 	"github.com/stretchr/testify/require"
 	"io"
@@ -260,4 +262,77 @@ func TestRemapFields(t *testing.T) {
 	result, err := RemapFields[destination](src, "some")
 	require.NoError(t, err)
 	require.Equal(t, destination{Name: "John", Birthdate: date}, result)
+}
+
+func TestMapPullRequestState(t *testing.T) {
+	testCases := []struct {
+		state       PullRequestState
+		expected    string
+		gitProvider VcsProvider
+	}{
+		{state: Open, expected: "open", gitProvider: GitHub},
+		{state: Closed, expected: "closed", gitProvider: GitHub},
+	}
+	for _, tc := range testCases {
+		t.Run(fmt.Sprintf("%s-%s", tc.gitProvider.String(), tc.state), func(t *testing.T) {
+			assert.Equal(t, tc.expected, *MapPullRequestState(&tc.state))
+		})
+	}
+}
+
+func TestValidateParametersNotBlank(t *testing.T) {
+	testCases := []struct {
+		paramNameValueMap map[string]string
+		expectedErr       error
+		description       string
+	}{
+		{
+			paramNameValueMap: map[string]string{"a": "b", "missing": ""},
+			expectedErr:       errors.New("validation failed: required parameter 'missing' is missing"),
+			description:       "missing param",
+		}, {
+			paramNameValueMap: map[string]string{"a": "b", "not-missing": "not"},
+			expectedErr:       nil,
+			description:       "valid",
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.description, func(t *testing.T) {
+			err := ValidateParametersNotBlank(tc.paramNameValueMap)
+			assert.Equal(t, tc.expectedErr, err)
+		})
+	}
+}
+
+func TestCommitStatusAsStringToStatus(t *testing.T) {
+	testCases := []struct {
+		rawStatus string
+		expected  CommitStatus
+	}{
+		{rawStatus: "success", expected: Pass},
+		{rawStatus: "failure", expected: Fail},
+		{rawStatus: "pending", expected: InProgress},
+		{rawStatus: "madeUpStatus", expected: Error},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.rawStatus, func(t *testing.T) {
+			assert.Equal(t, tc.expected, CommitStatusAsStringToStatus(tc.rawStatus))
+		})
+	}
+}
+
+func TestExtractTimeWithFallback(t *testing.T) {
+	testCases := []struct {
+		timeObject  *time.Time
+		expected    time.Time
+		description string
+	}{
+		{timeObject: nil, expected: time.Time{}, description: "empty"},
+		{timeObject: &time.Time{}, expected: time.Time{}.UTC(), description: "UTC"},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.description, func(t *testing.T) {
+			assert.Equal(t, tc.expected, ExtractTimeWithFallback(tc.timeObject))
+		})
+	}
 }
