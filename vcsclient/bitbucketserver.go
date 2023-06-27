@@ -326,31 +326,6 @@ func (client *BitbucketServerClient) CreatePullRequest(ctx context.Context, owne
 	return err
 }
 
-// UpdatePullRequest on bitbucket server
-func (client *BitbucketServerClient) UpdatePullRequest(ctx context.Context, owner, repository, title, body, targetBranchRef string, prId int, state *vcsutils.PullRequestState) (err error) {
-	bitbucketClient, err := client.buildBitbucketClient(ctx)
-	if err != nil {
-		return
-	}
-	apiResponse, err := bitbucketClient.GetPullRequest(owner, repository, prId)
-	if err != nil {
-		return
-	}
-	version := apiResponse.Values["version"]
-	editOptions := bitbucketv1.EditPullRequestOptions{
-		Version:         fmt.Sprintf("%v", version),
-		ID:              int64(prId),
-		State:           *vcsutils.MapPullRequestState(state),
-		Title:           title,
-		Description:     body,
-		TargetBranchRef: bitbucketv1.PullRequestRef{},
-	}
-	if apiResponse, err := bitbucketClient.UpdatePullRequest(owner, repository, &editOptions); err != nil {
-		return fmt.Errorf("update pull request failed with status %v, error message: %s", apiResponse.StatusCode, apiResponse.Message)
-	}
-	return
-}
-
 // ListOpenPullRequests on Bitbucket server
 func (client *BitbucketServerClient) ListOpenPullRequests(ctx context.Context, owner, repository string) ([]vcsutils.PullRequestInfo, error) {
 	bitbucketClient, err := client.buildBitbucketClient(ctx)

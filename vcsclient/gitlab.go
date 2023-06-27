@@ -235,12 +235,6 @@ func (client *GitLabClient) CreatePullRequest(ctx context.Context, owner, reposi
 	return err
 }
 
-// UpdatePullRequest on GitLab
-func (client *GitLabClient) UpdatePullRequest(ctx context.Context, owner, repository, title, body, targetBranchName string, prId int, state *vcsutils.PullRequestState) error {
-	//TODO implement me
-	panic("implement me")
-}
-
 // ListOpenPullRequests on GitLab
 func (client *GitLabClient) ListOpenPullRequests(ctx context.Context, _, repository string) ([]vcsutils.PullRequestInfo, error) {
 	openState := "opened"

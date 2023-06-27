@@ -177,12 +177,6 @@ func (client *AzureReposClient) CreatePullRequest(ctx context.Context, _, reposi
 	return err
 }
 
-// UpdatePullRequest on Azure Repos
-func (client *AzureReposClient) UpdatePullRequest(ctx context.Context, owner, repository, title, body, targetBranchName string, prId int, state *vcsutils.PullRequestState) error {
-	//TODO implement me
-	panic("implement me")
-}
-
 // AddPullRequestComment on Azure Repos
 func (client *AzureReposClient) AddPullRequestComment(ctx context.Context, _, repository, content string, pullRequestID int) error {
 	azureReposGitClient, err := client.buildAzureReposClient(ctx)
