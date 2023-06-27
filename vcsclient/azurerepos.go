@@ -183,7 +183,9 @@ func (client *AzureReposClient) UpdatePullRequest(ctx context.Context, owner, re
 	if err != nil {
 		return err
 	}
-	targetBranchName = vcsutils.AddBranchPrefix(targetBranchName)
+	if targetBranchName != "" {
+		targetBranchName = vcsutils.AddBranchPrefix(targetBranchName)
+	}
 	client.logger.Debug(updatingPullRequest, prId)
 	_, err = azureReposGitClient.UpdatePullRequest(ctx, git.UpdatePullRequestArgs{
 		GitPullRequestToUpdate: &git.GitPullRequest{

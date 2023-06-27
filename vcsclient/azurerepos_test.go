@@ -154,14 +154,14 @@ func TestAzureReposClient_UpdatePullRequest(t *testing.T) {
 	}
 	jsonRes, err := json.Marshal(res)
 	assert.NoError(t, err)
-	client, cleanUp := createServerAndClient(t, vcsutils.AzureRepos, true, jsonRes, "updatePullRequest", createAzureReposHandler)
+	client, cleanUp := createServerAndClient(t, vcsutils.AzureRepos, false, jsonRes, "updatePullRequest", createAzureReposHandler)
 	defer cleanUp()
-	err = client.UpdatePullRequest(ctx, "", repo1, "Hello World", "Hello World", "", 5, vcsutils.Open)
+	err = client.UpdatePullRequest(ctx, "", repo1, "Hello World", "Hello World", "", pullRequestId, vcsutils.Open)
 	assert.NoError(t, err)
 
 	badClient, cleanUp := createBadAzureReposClient(t, []byte{})
 	defer cleanUp()
-	err = badClient.CreatePullRequest(ctx, "", repo1, branch1, branch2, "Hello World", "Hello World")
+	err = badClient.UpdatePullRequest(ctx, "", repo1, "Hello World", "Hello World", "", pullRequestId, vcsutils.Open)
 	assert.Error(t, err)
 }
 
