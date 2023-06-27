@@ -49,15 +49,6 @@
       "minVersion": "3.2",
       "maxVersion": "7.1",
       "releasedVersion": "0.0"
-    }, {
-      "id": "9946fd70-0d40-406e-b686-b4744cbbcc37",
-      "area": "Location",
-      "resourceName": "ResourceAreas",
-      "routeTemplate": "_apis/{resource}/{areaId}/updatePullRequest",
-      "resourceVersion": 1,
-      "minVersion": "3.2",
-      "maxVersion": "7.1",
-      "releasedVersion": "0.0"
     },
     {
       "id": "c2570c3b-5b3f-41b8-98bf-5407bfde8d58",

@@ -138,25 +138,12 @@ func TestAzureRepos_TestCreatePullRequest(t *testing.T) {
 	assert.Error(t, err)
 }
 
-func TestAzureReposClient_UpdatePullRequest(t *testing.T) {
+func TestAzureReposClient_TestUpdatePullRequest(t *testing.T) {
 	ctx := context.Background()
 	pullRequestId := 1
-	desc := "desc"
-	title := "title"
-	targetBranchName := "master"
-	state := vcsutils.Open
-	res := &git.GitPullRequest{
-		Description:   &desc,
-		PullRequestId: &pullRequestId,
-		Status:        azureMapPullRequestState(state),
-		TargetRefName: &targetBranchName,
-		Title:         &title,
-	}
-	jsonRes, err := json.Marshal(res)
-	assert.NoError(t, err)
-	client, cleanUp := createServerAndClient(t, vcsutils.AzureRepos, false, jsonRes, "updatePullRequest", createAzureReposHandler)
+	client, cleanUp := createServerAndClient(t, vcsutils.AzureRepos, true, []byte("{}"), "", createAzureReposHandler)
 	defer cleanUp()
-	err = client.UpdatePullRequest(ctx, "", repo1, "Hello World", "Hello World", "", pullRequestId, vcsutils.Open)
+	err := client.UpdatePullRequest(ctx, owner, repo1, "Hello World", "Hello World", "", pullRequestId, vcsutils.Open)
 	assert.NoError(t, err)
 
 	badClient, cleanUp := createBadAzureReposClient(t, []byte{})
