@@ -152,7 +152,7 @@ type VcsClient interface {
 	// repository    		    - VCS repository name
 	// title         	        - Pull request title
 	// body                     - Pull request body or description
-	// targetBranchName         - Name of the pull request target branch name,For non-change, leave the field unfilled.
+	// targetBranchName         - Name of the pull request target branch name,For non-change, pass an empty string.
 	// prId				        - Pull request ID
 	// state				    - Pull request state
 	UpdatePullRequest(ctx context.Context, owner, repository, title, body, targetBranchName string, prId int, state vcsutils.PullRequestState) error

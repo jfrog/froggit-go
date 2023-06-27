@@ -279,11 +279,15 @@ func (client *GitHubClient) UpdatePullRequest(ctx context.Context, owner, reposi
 		return err
 	}
 	client.logger.Debug(updatingPullRequest, id)
+	var baseRef *github.PullRequestBranch
+	if targetBranchName != "" {
+		baseRef = &github.PullRequestBranch{Ref: &targetBranchName}
+	}
 	pullRequest := &github.PullRequest{
 		Body:  &body,
 		Title: &title,
 		State: vcsutils.MapPullRequestState(&state),
-		Base:  &github.PullRequestBranch{Ref: &targetBranchName},
+		Base:  baseRef,
 	}
 	_, _, err = ghClient.PullRequests.Edit(ctx, owner, repository, id, pullRequest)
 	return err
