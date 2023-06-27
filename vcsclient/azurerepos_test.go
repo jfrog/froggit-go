@@ -146,7 +146,10 @@ func TestAzureReposClient_TestUpdatePullRequest(t *testing.T) {
 	err := client.UpdatePullRequest(ctx, owner, repo1, "Hello World", "Hello World", "", pullRequestId, vcsutils.Open)
 	assert.NoError(t, err)
 
-	err = client.UpdatePullRequest(ctx, owner, repo1, "Hello World", "Hello World", "somebranch", pullRequestId, vcsutils.Open)
+	err = client.UpdatePullRequest(ctx, owner, repo1, "Hello World", "Hello World", "somebranch", pullRequestId, vcsutils.Closed)
+	assert.NoError(t, err)
+
+	err = client.UpdatePullRequest(ctx, owner, repo1, "Hello World", "Hello World", "somebranch", pullRequestId, "unknownState")
 	assert.NoError(t, err)
 
 	badClient, cleanUp := createBadAzureReposClient(t, []byte{})
