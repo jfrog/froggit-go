@@ -345,10 +345,8 @@ func (client *BitbucketServerClient) UpdatePullRequest(ctx context.Context, owne
 		Title:       title,
 		Description: body,
 	}
-	if apiResponse, err := bitbucketClient.UpdatePullRequest(owner, repository, &editOptions); err != nil {
-		return fmt.Errorf("update pull request failed with status %v, error message: %s", apiResponse.StatusCode, apiResponse.Message)
-	}
-	return
+	_, err = bitbucketClient.UpdatePullRequest(owner, repository, &editOptions)
+	return err
 }
 
 // ListOpenPullRequests on Bitbucket server
