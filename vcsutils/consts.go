@@ -58,3 +58,10 @@ const (
 	// TagRemoved a tag is removed
 	TagRemoved WebhookEvent = "TagRemoved"
 )
+
+type PullRequestState string
+
+const (
+	Open   PullRequestState = "open"
+	Closed PullRequestState = "closed"
+)

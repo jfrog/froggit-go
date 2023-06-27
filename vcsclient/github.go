@@ -272,6 +272,23 @@ func (client *GitHubClient) CreatePullRequest(ctx context.Context, owner, reposi
 	return err
 }
 
+// UpdatePullRequest on GitHub
+func (client *GitHubClient) UpdatePullRequest(ctx context.Context, owner, repository, title, body, targetBranchName string, id int, state vcsutils.PullRequestState) error {
+	ghClient, err := client.buildGithubClient(ctx)
+	if err != nil {
+		return err
+	}
+	client.logger.Debug(updatingPullRequest, id)
+	pullRequest := &github.PullRequest{
+		Body:  &body,
+		Title: &title,
+		State: vcsutils.MapPullRequestState(&state),
+		Base:  &github.PullRequestBranch{Ref: &targetBranchName},
+	}
+	_, _, err = ghClient.PullRequests.Edit(ctx, owner, repository, id, pullRequest)
+	return err
+}
+
 // ListOpenPullRequests on GitHub
 func (client *GitHubClient) ListOpenPullRequests(ctx context.Context, owner, repository string) ([]PullRequestInfo, error) {
 	ghClient, err := client.buildGithubClient(ctx)

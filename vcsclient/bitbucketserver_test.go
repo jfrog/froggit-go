@@ -186,6 +186,19 @@ func TestBitbucketServer_CreatePullRequest(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestBitbucketServer_UpdatePullRequest(t *testing.T) {
+	prId := 4
+	ctx := context.Background()
+	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, true, nil, fmt.Sprintf("/rest/api/1.0/projects/jfrog/repos/repo-1/pull-requests/%v", prId), createBitbucketServerHandler)
+	defer cleanUp()
+
+	err := client.UpdatePullRequest(ctx, owner, repo1, "PR title", "PR body", "", prId, vcsutils.Open)
+	assert.NoError(t, err)
+
+	err = createBadBitbucketServerClient(t).UpdatePullRequest(ctx, owner, repo1, "PR title", "PR body", "", prId, vcsutils.Open)
+	assert.Error(t, err)
+}
+
 func TestBitbucketServer_AddPullRequestComment(t *testing.T) {
 	ctx := context.Background()
 	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, true, nil, "/rest/api/1.0/projects/jfrog/repos/repo-1/pull-requests/1/comments", createBitbucketServerHandler)

@@ -177,6 +177,28 @@ func (client *AzureReposClient) CreatePullRequest(ctx context.Context, _, reposi
 	return err
 }
 
+// UpdatePullRequest on Azure Repos
+func (client *AzureReposClient) UpdatePullRequest(ctx context.Context, owner, repository, title, body, targetBranchName string, prId int, state vcsutils.PullRequestState) error {
+	azureReposGitClient, err := client.buildAzureReposClient(ctx)
+	if err != nil {
+		return err
+	}
+	targetBranchName = vcsutils.AddBranchPrefix(targetBranchName)
+	client.logger.Debug(updatingPullRequest, prId)
+	_, err = azureReposGitClient.UpdatePullRequest(ctx, git.UpdatePullRequestArgs{
+		GitPullRequestToUpdate: &git.GitPullRequest{
+			Description:   &body,
+			Status:        azureMapPullRequestState(state),
+			TargetRefName: &targetBranchName,
+			Title:         &title,
+		},
+		RepositoryId:  &repository,
+		PullRequestId: &prId,
+		Project:       &client.vcsInfo.Project,
+	})
+	return err
+}
+
 // AddPullRequestComment on Azure Repos
 func (client *AzureReposClient) AddPullRequestComment(ctx context.Context, _, repository, content string, pullRequestID int) error {
 	azureReposGitClient, err := client.buildAzureReposClient(ctx)
@@ -534,4 +556,15 @@ func extractTimeFromAzuredevopsTime(rawStatus *azuredevops.Time) time.Time {
 		return time.Time{}
 	}
 	return extractTimeWithFallback(&rawStatus.Time)
+}
+
+func azureMapPullRequestState(state vcsutils.PullRequestState) *git.PullRequestStatus {
+	switch state {
+	case vcsutils.Open:
+		return &git.PullRequestStatusValues.Active
+	case vcsutils.Closed:
+		return &git.PullRequestStatusValues.Abandoned
+	default:
+		return nil
+	}
 }

@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -293,6 +294,24 @@ func (client *BitbucketCloudClient) CreatePullRequest(ctx context.Context, owner
 		Description:       description,
 	}
 	_, err := bitbucketClient.Repositories.PullRequests.Create(options)
+	return err
+}
+
+// UpdatePullRequest on Bitbucket cloud
+func (client *BitbucketCloudClient) UpdatePullRequest(ctx context.Context, owner, repository, title, body, targetBranchName string, prId int, state vcsutils.PullRequestState) error {
+	bitbucketClient := client.buildBitbucketCloudClient(ctx)
+	client.logger.Debug(creatingPullRequest, title)
+	options := &bitbucket.PullRequestsOptions{
+		Owner:             owner,
+		SourceRepository:  owner + "/" + repository,
+		RepoSlug:          repository,
+		Title:             title,
+		Description:       body,
+		DestinationBranch: targetBranchName,
+		ID:                strconv.Itoa(prId),
+		States:            []string{*vcsutils.MapPullRequestState(&state)},
+	}
+	_, err := bitbucketClient.Repositories.PullRequests.Update(options)
 	return err
 }
 

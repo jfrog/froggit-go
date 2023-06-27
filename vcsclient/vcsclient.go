@@ -147,6 +147,16 @@ type VcsClient interface {
 	// description  - Pull request description
 	CreatePullRequest(ctx context.Context, owner, repository, sourceBranch, targetBranch, title, description string) error
 
+	// UpdatePullRequest Updates pull requests metadata
+	// owner        		    - User or organization
+	// repository    		    - VCS repository name
+	// title         	        - Pull request title
+	// body                     - Pull request body or description
+	// targetBranchName         - Name of the pull request target branch name,For non-change, leave the field unfilled.
+	// prId				        - Pull request ID
+	// state				    - Pull request state
+	UpdatePullRequest(ctx context.Context, owner, repository, title, body, targetBranchName string, prId int, state vcsutils.PullRequestState) error
+
 	// AddPullRequestComment Adds a new comment on the requested pull request
 	// owner          - User or organization
 	// repository     - VCS repository name
