@@ -221,7 +221,7 @@ func TestGitLabClient_ListOpenPullRequests(t *testing.T) {
 	}, result[0]))
 }
 
-func TestGitLabClient_GetPullRequest(t *testing.T) {
+func TestGitLabClient_GetPullRequestByID(t *testing.T) {
 	ctx := context.Background()
 	repoName := "repo"
 	pullRequestId := 1

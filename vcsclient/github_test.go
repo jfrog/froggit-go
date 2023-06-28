@@ -531,7 +531,7 @@ func TestGitHubClient_ListOpenPullRequests(t *testing.T) {
 	assert.Error(t, err)
 }
 
-func TestGitHubClient_GetPullRequest(t *testing.T) {
+func TestGitHubClient_GetPullRequestByID(t *testing.T) {
 	ctx := context.Background()
 	pullRequestId := 1
 	repoName := "Hello-World"
@@ -542,7 +542,7 @@ func TestGitHubClient_GetPullRequest(t *testing.T) {
 	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, response,
 		fmt.Sprintf("/repos/%s/%s/pulls/%d", owner, repoName, pullRequestId), createGitHubHandler)
 	defer cleanUp()
-	result, err := client.GetPullRequest(ctx, owner, repoName, pullRequestId)
+	result, err := client.GetPullRequestByID(ctx, owner, repoName, pullRequestId)
 	assert.NoError(t, err)
 	assert.True(t, reflect.DeepEqual(PullRequestInfo{
 		ID:     int64(pullRequestId),

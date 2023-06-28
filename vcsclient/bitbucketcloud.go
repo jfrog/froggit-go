@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/jfrog/gofrog/datastructures"
+	"github.com/ktrysmt/go-bitbucket"
 	"net/http"
 	"net/url"
 	"sort"
@@ -16,7 +17,6 @@ import (
 	"github.com/mitchellh/mapstructure"
 
 	"github.com/jfrog/froggit-go/vcsutils"
-	"github.com/ktrysmt/go-bitbucket"
 )
 
 // BitbucketCloudClient API version 2.0

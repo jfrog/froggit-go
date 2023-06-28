@@ -296,7 +296,7 @@ func (client *GitHubClient) GetPullRequestByID(ctx context.Context, owner, repos
 	}
 	client.logger.Debug(fetchingPullRequestById, repository)
 	pullRequest, response, err := ghClient.PullRequests.Get(ctx, owner, repository, pullRequestId)
-	if err != nil || response.Status != string(rune(http.StatusOK)) {
+	if err != nil || response.StatusCode != http.StatusOK {
 		return PullRequestInfo{}, err
 	}
 
