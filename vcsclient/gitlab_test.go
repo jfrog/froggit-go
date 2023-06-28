@@ -172,6 +172,16 @@ func TestGitLabClient_CreatePullRequest(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestGitLabClient_UpdatePullRequest(t *testing.T) {
+	ctx := context.Background()
+	prId := 5
+	client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, &gitlab.MergeRequest{}, fmt.Sprintf("/api/v4/projects/%s/merge_requests/%v", url.PathEscape(owner+"/"+repo1), prId), createGitLabHandler)
+	defer cleanUp()
+
+	err := client.UpdatePullRequest(ctx, owner, repo1, "PR title", "PR body", "master", prId, vcsutils.Open)
+	assert.NoError(t, err)
+}
+
 func TestGitLabClient_AddPullRequestComment(t *testing.T) {
 	ctx := context.Background()
 	client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, &gitlab.MergeRequest{}, fmt.Sprintf("/api/v4/projects/%s/merge_requests/1/notes", url.PathEscape(owner+"/"+repo1)), createGitLabHandler)

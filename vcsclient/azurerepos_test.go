@@ -138,6 +138,26 @@ func TestAzureRepos_TestCreatePullRequest(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestAzureReposClient_TestUpdatePullRequest(t *testing.T) {
+	ctx := context.Background()
+	pullRequestId := 1
+	client, cleanUp := createServerAndClient(t, vcsutils.AzureRepos, true, []byte("{}"), "", createAzureReposHandler)
+	defer cleanUp()
+	err := client.UpdatePullRequest(ctx, owner, repo1, "Hello World", "Hello World", "", pullRequestId, vcsutils.Open)
+	assert.NoError(t, err)
+
+	err = client.UpdatePullRequest(ctx, owner, repo1, "Hello World", "Hello World", "somebranch", pullRequestId, vcsutils.Closed)
+	assert.NoError(t, err)
+
+	err = client.UpdatePullRequest(ctx, owner, repo1, "Hello World", "Hello World", "somebranch", pullRequestId, "unknownState")
+	assert.NoError(t, err)
+
+	badClient, cleanUp := createBadAzureReposClient(t, []byte{})
+	defer cleanUp()
+	err = badClient.UpdatePullRequest(ctx, "", repo1, "Hello World", "Hello World", "", pullRequestId, vcsutils.Open)
+	assert.Error(t, err)
+}
+
 func TestAzureRepos_TestAddPullRequestComment(t *testing.T) {
 	type AddPullRequestCommentResponse struct {
 		Value git.GitPullRequestCommentThread

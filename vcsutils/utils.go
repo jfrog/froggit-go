@@ -314,3 +314,16 @@ func RemapFields[T any](src any, tagName string) (T, error) {
 	}
 	return dst, nil
 }
+
+func MapPullRequestState(state *PullRequestState) *string {
+	var stateStringValue string
+	switch *state {
+	case Open:
+		stateStringValue = "open"
+	case Closed:
+		stateStringValue = "closed"
+	default:
+		return nil
+	}
+	return &stateStringValue
+}

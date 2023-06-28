@@ -326,6 +326,29 @@ func (client *BitbucketServerClient) CreatePullRequest(ctx context.Context, owne
 	return err
 }
 
+// UpdatePullRequest on bitbucket server
+// Changing targetBranchRef currently not supported.
+func (client *BitbucketServerClient) UpdatePullRequest(ctx context.Context, owner, repository, title, body, targetBranchRef string, prId int, state vcsutils.PullRequestState) (err error) {
+	bitbucketClient, err := client.buildBitbucketClient(ctx)
+	if err != nil {
+		return
+	}
+	apiResponse, err := bitbucketClient.GetPullRequest(owner, repository, prId)
+	if err != nil {
+		return
+	}
+	version := apiResponse.Values["version"]
+	editOptions := bitbucketv1.EditPullRequestOptions{
+		Version:     fmt.Sprintf("%v", version),
+		ID:          int64(prId),
+		State:       *vcsutils.MapPullRequestState(&state),
+		Title:       title,
+		Description: body,
+	}
+	_, err = bitbucketClient.UpdatePullRequest(owner, repository, &editOptions)
+	return err
+}
+
 // ListOpenPullRequests on Bitbucket server
 func (client *BitbucketServerClient) ListOpenPullRequests(ctx context.Context, owner, repository string) ([]PullRequestInfo, error) {
 	bitbucketClient, err := client.buildBitbucketClient(ctx)
