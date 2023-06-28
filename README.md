@@ -358,7 +358,7 @@ repository := "jfrog-cli"
 // Pull Request ID
 pullRequestId := 1
 
-openPullRequests, err := client.GetPullReequest(ctx, owner, repository, pullRequestId)
+openPullRequests, err := client.GetPullRequestByID(ctx, owner, repository, pullRequestId)
 ```
 
 ##### Add Pull Request Comment
