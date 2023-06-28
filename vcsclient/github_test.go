@@ -265,7 +265,7 @@ func TestGitHubClient_UpdatePullRequest(t *testing.T) {
 	err = client.UpdatePullRequest(ctx, owner, repo1, "title", "body", "master", pullRequestId, vcsutils.Open)
 	assert.NoError(t, err)
 
-	err = createBadGitHubClient(t).CreatePullRequest(ctx, owner, repo1, branch1, branch2, "PR title", "PR body")
+	err = createBadGitHubClient(t).UpdatePullRequest(ctx, owner, repo1, "title", "body", "master", pullRequestId, vcsutils.Open)
 	assert.Error(t, err)
 }
 
