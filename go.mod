@@ -8,7 +8,7 @@ require (
 	github.com/google/go-github/v45 v45.2.0
 	github.com/google/uuid v1.3.0
 	github.com/grokify/mogo v0.40.4
-	github.com/jfrog/gofrog v1.2.5
+	github.com/jfrog/gofrog v1.3.0
 	github.com/ktrysmt/go-bitbucket v0.9.32
 	github.com/microsoft/azure-devops-go-api/azuredevops v1.0.0-b5
 	github.com/mitchellh/mapstructure v1.5.0

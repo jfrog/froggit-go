@@ -183,6 +183,7 @@ func (client *AzureReposClient) UpdatePullRequest(ctx context.Context, owner, re
 	if err != nil {
 		return err
 	}
+	// If the string is empty,do not add a prefix,as it indicates that the user does not intend to update the target branch.
 	if targetBranchName != "" {
 		targetBranchName = vcsutils.AddBranchPrefix(targetBranchName)
 	}
