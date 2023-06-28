@@ -253,6 +253,22 @@ func TestGitHubClient_CreatePullRequest(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestGitHubClient_UpdatePullRequest(t *testing.T) {
+	pullRequestId := 3
+	ctx := context.Background()
+	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, github.PullRequest{}, fmt.Sprintf("/repos/jfrog/repo-1/pulls/%v", pullRequestId), createGitHubHandler)
+	defer cleanUp()
+
+	err := client.UpdatePullRequest(ctx, owner, repo1, "title", "body", "", pullRequestId, vcsutils.Open)
+	assert.NoError(t, err)
+
+	err = client.UpdatePullRequest(ctx, owner, repo1, "title", "body", "master", pullRequestId, vcsutils.Open)
+	assert.NoError(t, err)
+
+	err = createBadGitHubClient(t).UpdatePullRequest(ctx, owner, repo1, "title", "body", "master", pullRequestId, vcsutils.Open)
+	assert.Error(t, err)
+}
+
 func TestGitHubClient_AddPullRequestComment(t *testing.T) {
 	ctx := context.Background()
 	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, github.IssueComment{}, "/repos/jfrog/repo-1/issues/1/comments", createGitHubHandler)

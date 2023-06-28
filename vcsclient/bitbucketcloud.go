@@ -297,6 +297,24 @@ func (client *BitbucketCloudClient) CreatePullRequest(ctx context.Context, owner
 	return err
 }
 
+// UpdatePullRequest on Bitbucket cloud
+func (client *BitbucketCloudClient) UpdatePullRequest(ctx context.Context, owner, repository, title, body, targetBranchName string, prId int, state vcsutils.PullRequestState) error {
+	bitbucketClient := client.buildBitbucketCloudClient(ctx)
+	client.logger.Debug(creatingPullRequest, title)
+	options := &bitbucket.PullRequestsOptions{
+		Owner:             owner,
+		SourceRepository:  owner + "/" + repository,
+		RepoSlug:          repository,
+		Title:             title,
+		Description:       body,
+		DestinationBranch: targetBranchName,
+		ID:                strconv.Itoa(prId),
+		States:            []string{*vcsutils.MapPullRequestState(&state)},
+	}
+	_, err := bitbucketClient.Repositories.PullRequests.Update(options)
+	return err
+}
+
 // CreatePullRequest on Bitbucket cloud
 func (client *BitbucketCloudClient) ListOpenPullRequests(ctx context.Context, owner, repository string) (res []PullRequestInfo, err error) {
 	err = validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository})

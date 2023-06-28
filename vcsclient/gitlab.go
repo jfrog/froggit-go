@@ -235,6 +235,19 @@ func (client *GitLabClient) CreatePullRequest(ctx context.Context, owner, reposi
 	return err
 }
 
+// UpdatePullRequest on GitLab
+func (client *GitLabClient) UpdatePullRequest(ctx context.Context, owner, repository, title, body, targetBranchName string, prId int, state vcsutils.PullRequestState) error {
+	options := &gitlab.UpdateMergeRequestOptions{
+		Title:        &title,
+		Description:  &body,
+		TargetBranch: &targetBranchName,
+		StateEvent:   vcsutils.MapPullRequestState(&state),
+	}
+	client.logger.Debug("updating details of merge request ID:", prId)
+	_, _, err := client.glClient.MergeRequests.UpdateMergeRequest(getProjectID(owner, repository), prId, options, gitlab.WithContext(ctx))
+	return err
+}
+
 // ListOpenPullRequests on GitLab
 func (client *GitLabClient) ListOpenPullRequests(ctx context.Context, _, repository string) ([]PullRequestInfo, error) {
 	openState := "opened"

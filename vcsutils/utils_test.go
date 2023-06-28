@@ -1,6 +1,7 @@
 package vcsutils
 
 import (
+	"fmt"
 	"github.com/go-git/go-git/v5"
 	"github.com/stretchr/testify/require"
 	"io"
@@ -260,4 +261,20 @@ func TestRemapFields(t *testing.T) {
 	result, err := RemapFields[destination](src, "some")
 	require.NoError(t, err)
 	require.Equal(t, destination{Name: "John", Birthdate: date}, result)
+}
+
+func TestMapPullRequestState(t *testing.T) {
+	testCases := []struct {
+		state       PullRequestState
+		expected    string
+		gitProvider VcsProvider
+	}{
+		{state: Open, expected: "open", gitProvider: GitHub},
+		{state: Closed, expected: "closed", gitProvider: GitHub},
+	}
+	for _, tc := range testCases {
+		t.Run(fmt.Sprintf("%s-%s", tc.gitProvider.String(), tc.state), func(t *testing.T) {
+			assert.Equal(t, tc.expected, *MapPullRequestState(&tc.state))
+		})
+	}
 }

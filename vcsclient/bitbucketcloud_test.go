@@ -155,6 +155,16 @@ func TestBitbucketCloud_CreatePullRequest(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestBitbucketCloudClient_UpdatePullRequest(t *testing.T) {
+	ctx := context.Background()
+	prId := 3
+	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketCloud, true, nil, fmt.Sprintf("/repositories/jfrog/repo-1/pullrequests/%v", prId), createBitbucketCloudHandler)
+	defer cleanUp()
+
+	err := client.UpdatePullRequest(ctx, owner, repo1, "PR title", "PR body", "master", prId, vcsutils.Open)
+	assert.NoError(t, err)
+}
+
 func TestBitbucketCloud_ListOpenPullRequests(t *testing.T) {
 	ctx := context.Background()
 	response, err := os.ReadFile(filepath.Join("testdata", "bitbucketcloud", "pull_requests_list_response.json"))
