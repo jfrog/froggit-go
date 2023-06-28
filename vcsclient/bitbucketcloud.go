@@ -321,7 +321,7 @@ func (client *BitbucketCloudClient) ListOpenPullRequests(ctx context.Context, ow
 	return mapBitbucketCloudPullRequestToPullRequestInfo(&parsedPullRequests), nil
 }
 
-func (client *BitbucketCloudClient) GetPullRequest(ctx context.Context, owner, repository string, pullRequestId int) (pullRequestInfo PullRequestInfo, err error) {
+func (client *BitbucketCloudClient) GetPullRequestByID(ctx context.Context, owner, repository string, pullRequestId int) (pullRequestInfo PullRequestInfo, err error) {
 	err = validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository})
 	if err != nil {
 		return

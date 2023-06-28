@@ -289,14 +289,14 @@ func (client *GitHubClient) ListOpenPullRequests(ctx context.Context, owner, rep
 	return mapGitHubPullRequestToPullRequestInfoList(pullRequests)
 }
 
-func (client *GitHubClient) GetPullRequest(ctx context.Context, owner, repository string, pullRequestId int) (PullRequestInfo, error) {
+func (client *GitHubClient) GetPullRequestByID(ctx context.Context, owner, repository string, pullRequestId int) (PullRequestInfo, error) {
 	ghClient, err := client.buildGithubClient(ctx)
 	if err != nil {
 		return PullRequestInfo{}, err
 	}
 	client.logger.Debug(fetchingPullRequestById, repository)
-	pullRequest, _, err := ghClient.PullRequests.Get(ctx, owner, repository, pullRequestId)
-	if err != nil {
+	pullRequest, response, err := ghClient.PullRequests.Get(ctx, owner, repository, pullRequestId)
+	if err != nil || response.Status != string(rune(http.StatusOK)) {
 		return PullRequestInfo{}, err
 	}
 

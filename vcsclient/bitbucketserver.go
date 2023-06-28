@@ -361,14 +361,14 @@ func (client *BitbucketServerClient) ListOpenPullRequests(ctx context.Context, o
 }
 
 // GetPullRequestInfoById on bitbucket server
-func (client *BitbucketServerClient) GetPullRequest(ctx context.Context, owner, repository string, pullRequestId int) (pullRequestInfo PullRequestInfo, err error) {
+func (client *BitbucketServerClient) GetPullRequestByID(ctx context.Context, owner, repository string, pullRequestId int) (pullRequestInfo PullRequestInfo, err error) {
 	client.logger.Debug("fetching pull request by ID in ", repository)
 	bitbucketClient, err := client.buildBitbucketClient(ctx)
 	if err != nil {
 		return
 	}
 	apiResponse, err := bitbucketClient.GetPullRequest(owner, repository, pullRequestId)
-	if err != nil {
+	if err != nil || apiResponse.Status != string(rune(http.StatusOK)) {
 		return
 	}
 	pullRequest, err := bitbucketv1.GetPullRequestResponse(apiResponse)

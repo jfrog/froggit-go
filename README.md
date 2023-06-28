@@ -41,7 +41,7 @@ Currently supported providers are: [GitHub](#github), [Bitbucket Server](#bitbuc
       - [Get Commit Status](#get-commit-status)
       - [Create Pull Request](#create-pull-request)
       - [List Open Pull Requests](#list-open-pull-requests)
-      - [Get Pull Request](#get-pull-request)
+      - [Get Pull Request By ID](#get-pull-request)
       - [Add Pull Request Comment](#add-pull-request-comment)
       - [List Pull Request Comments](#list-pull-request-comments)
       - [Get Latest Commit](#get-latest-commit)
@@ -346,7 +346,7 @@ repository := "jfrog-cli"
 openPullRequests, err := client.ListOpenPullRequests(ctx, owner, repository)
 ```
 
-#### Get Pull Request
+#### Get Pull Request By ID
 
 ```go
 // Go context

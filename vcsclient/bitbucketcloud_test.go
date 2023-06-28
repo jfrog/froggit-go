@@ -185,7 +185,7 @@ func TestBitbucketCloudClient_GetPullRequest(t *testing.T) {
 	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketCloud, true, response,
 		fmt.Sprintf("/repositories/%s/%s/pullrequests/%d", owner, repoName, pullRequestId), createBitbucketCloudHandler)
 	defer cleanUp()
-	result, err := client.GetPullRequest(ctx, owner, repoName, pullRequestId)
+	result, err := client.GetPullRequestByID(ctx, owner, repoName, pullRequestId)
 	assert.NoError(t, err)
 	assert.True(t, reflect.DeepEqual(PullRequestInfo{
 		ID:     int64(pullRequestId),
@@ -197,7 +197,7 @@ func TestBitbucketCloudClient_GetPullRequest(t *testing.T) {
 	badClient, badClientCleanUp := createServerAndClient(t, vcsutils.BitbucketCloud, true, "{",
 		fmt.Sprintf("/repositories/%s/%s/pullrequests/%d", owner, repoName, pullRequestId), createBitbucketCloudHandler)
 	defer badClientCleanUp()
-	_, err = badClient.GetPullRequest(ctx, owner, repoName, pullRequestId)
+	_, err = badClient.GetPullRequestByID(ctx, owner, repoName, pullRequestId)
 	assert.Error(t, err)
 
 	// Bad Fields
@@ -205,7 +205,7 @@ func TestBitbucketCloudClient_GetPullRequest(t *testing.T) {
 	badParseClient, badParseClientCleanUp := createServerAndClient(t, vcsutils.BitbucketCloud, true, response,
 		fmt.Sprintf("/repositories/%s/%s/pullrequests/%d", owner, badRepoName, pullRequestId), createBitbucketCloudHandler)
 	defer badParseClientCleanUp()
-	_, err = badParseClient.GetPullRequest(ctx, owner, badRepoName, pullRequestId)
+	_, err = badParseClient.GetPullRequestByID(ctx, owner, badRepoName, pullRequestId)
 	assert.Error(t, err)
 
 }

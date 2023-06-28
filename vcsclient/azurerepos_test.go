@@ -209,13 +209,13 @@ func TestAzureReposClient_GetPullRequest(t *testing.T) {
 	ctx := context.Background()
 	client, cleanUp := createServerAndClient(t, vcsutils.AzureRepos, true, jsonRes, fmt.Sprintf("getPullRequests/%d", pullRequestId), createAzureReposHandler)
 	defer cleanUp()
-	pullRequestsInfo, err := client.GetPullRequest(ctx, "", repoName, pullRequestId)
+	pullRequestsInfo, err := client.GetPullRequestByID(ctx, "", repoName, pullRequestId)
 	assert.NoError(t, err)
 	assert.True(t, reflect.DeepEqual(pullRequestsInfo, PullRequestInfo{ID: 1, Source: BranchInfo{Name: sourceName, Repository: repoName}, Target: BranchInfo{Name: targetName, Repository: repoName}}))
 
 	badClient, cleanUp := createBadAzureReposClient(t, []byte{})
 	defer cleanUp()
-	_, err = badClient.GetPullRequest(ctx, "", repo1, pullRequestId)
+	_, err = badClient.GetPullRequestByID(ctx, "", repo1, pullRequestId)
 	assert.Error(t, err)
 }
 

@@ -556,18 +556,18 @@ func TestGitHubClient_GetPullRequest(t *testing.T) {
 	badLabelsClient, badLabelClientCleanUp := createServerAndClient(t, vcsutils.GitHub, false, badLabels,
 		fmt.Sprintf("/repos/%s/%s/pulls/%d", owner, repoName, pullRequestId), createGitHubHandler)
 	defer badLabelClientCleanUp()
-	_, err = badLabelsClient.GetPullRequest(ctx, owner, repoName, pullRequestId)
+	_, err = badLabelsClient.GetPullRequestByID(ctx, owner, repoName, pullRequestId)
 	assert.Error(t, err)
 
 	// Bad client
-	_, err = createBadGitHubClient(t).GetPullRequest(ctx, owner, repoName, pullRequestId)
+	_, err = createBadGitHubClient(t).GetPullRequestByID(ctx, owner, repoName, pullRequestId)
 	assert.Error(t, err)
 
 	// Bad Response
 	badResponseClient, badResponseCleanUp := createServerAndClient(t, vcsutils.GitHub, false, "{",
 		fmt.Sprintf("/repos/%s/%s/pulls/%d", owner, repoName, pullRequestId), createGitHubHandler)
 	defer badResponseCleanUp()
-	_, err = badResponseClient.GetPullRequest(ctx, owner, repoName, pullRequestId)
+	_, err = badResponseClient.GetPullRequestByID(ctx, owner, repoName, pullRequestId)
 	assert.Error(t, err)
 
 }

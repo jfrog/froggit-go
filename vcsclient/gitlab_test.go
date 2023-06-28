@@ -232,7 +232,7 @@ func TestGitLabClient_GetPullRequest(t *testing.T) {
 	client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, response,
 		fmt.Sprintf("/api/v4/projects/%s/merge_requests/%d", url.PathEscape(owner+"/"+repoName), pullRequestId), createGitLabHandler)
 	defer cleanUp()
-	result, err := client.GetPullRequest(ctx, owner, repoName, pullRequestId)
+	result, err := client.GetPullRequestByID(ctx, owner, repoName, pullRequestId)
 	assert.NoError(t, err)
 	assert.True(t, reflect.DeepEqual(PullRequestInfo{
 		ID:     1,
@@ -244,7 +244,7 @@ func TestGitLabClient_GetPullRequest(t *testing.T) {
 	badClient, badClientCleanUp := createServerAndClient(t, vcsutils.GitLab, false, "",
 		fmt.Sprintf("/api/v4/projects/%s/merge_requests/%d", url.PathEscape(owner+"/"+repoName), pullRequestId), createGitLabHandler)
 	defer badClientCleanUp()
-	_, err = badClient.GetPullRequest(ctx, owner, repoName, pullRequestId)
+	_, err = badClient.GetPullRequestByID(ctx, owner, repoName, pullRequestId)
 	assert.Error(t, err)
 
 }

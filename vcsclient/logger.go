@@ -5,7 +5,7 @@ const (
 	successfulRepoExtraction = "Extracted repository successfully"
 	creatingPullRequest      = "Creating new pull request:"
 	fetchingOpenPullRequests = "Fetching open pull requests in"
-	fetchingPullRequestById  = "Fetching pull requests by id in "
+	fetchingPullRequestById  = "Fetching pull requests by id in"
 	uploadingCodeScanning    = "Uploading code scanning for:"
 )
 
