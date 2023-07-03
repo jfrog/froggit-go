@@ -21,7 +21,8 @@
                     "project": {
                         "key": "PRJ"
                     }
-                }
+                },
+                "displayId": "feature-ABC-123"
             },
             "toRef": {
                 "id": "refs/heads/master",
@@ -31,7 +32,8 @@
                     "project": {
                         "key": "PRJ"
                     }
-                }
+                },
+                "displayId": "master"
             },
             "locked": false,
             "author": {
