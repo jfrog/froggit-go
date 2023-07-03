@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/jfrog/gofrog/datastructures"
-	"google.golang.org/appengine/log"
 	"io"
 	"net/http"
 	"sort"
@@ -372,26 +371,16 @@ func (client *BitbucketServerClient) ListOpenPullRequests(ctx context.Context, o
 				results = append(results, PullRequestInfo{
 					ID: int64(pullRequest.ID),
 					Source: BranchInfo{
-						Name:       bbServerTrimBranchName(pullRequest.FromRef.ID, ctx),
+						Name:       bbServerTrimBranchName(pullRequest.FromRef.ID),
 						Repository: pullRequest.FromRef.Repository.Slug},
 					Target: BranchInfo{
-						Name:       bbServerTrimBranchName(pullRequest.ToRef.ID, ctx),
+						Name:       bbServerTrimBranchName(pullRequest.ToRef.ID),
 						Repository: pullRequest.ToRef.Repository.Slug},
 				})
 			}
 		}
 	}
 	return results, nil
-}
-
-// Trims branch name from ref id which is in the format of head/ref/branchName
-func bbServerTrimBranchName(id string, ctx context.Context) string {
-	split := strings.Split(id, "/")
-	if len(split) < 2 {
-		log.Warningf(ctx, "invalid format, expected ref/head/branchName, received:%s", id)
-		return id
-	}
-	return split[2]
 }
 
 // AddPullRequestComment on Bitbucket server
@@ -752,4 +741,9 @@ func getBitbucketServerRepositoryVisibility(public bool) RepositoryVisibility {
 		return Public
 	}
 	return Private
+}
+
+// Trims branch name from ref id which is in the format of head/ref/branchName
+func bbServerTrimBranchName(id string) string {
+	return strings.Split(id, "/")[2]
 }
