@@ -371,10 +371,10 @@ func (client *BitbucketServerClient) ListOpenPullRequests(ctx context.Context, o
 				results = append(results, PullRequestInfo{
 					ID: int64(pullRequest.ID),
 					Source: BranchInfo{
-						Name:       bbServerTrimBranchName(pullRequest.FromRef.ID),
+						Name:       pullRequest.FromRef.DisplayID,
 						Repository: pullRequest.FromRef.Repository.Slug},
 					Target: BranchInfo{
-						Name:       bbServerTrimBranchName(pullRequest.ToRef.ID),
+						Name:       pullRequest.ToRef.DisplayID,
 						Repository: pullRequest.ToRef.Repository.Slug},
 				})
 			}
@@ -741,9 +741,4 @@ func getBitbucketServerRepositoryVisibility(public bool) RepositoryVisibility {
 		return Public
 	}
 	return Private
-}
-
-// Trims branch name from ref id which is in the format of head/ref/branchName
-func bbServerTrimBranchName(id string) string {
-	return strings.Split(id, "/")[2]
 }
