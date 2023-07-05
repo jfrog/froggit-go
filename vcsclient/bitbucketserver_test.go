@@ -225,6 +225,7 @@ func TestBitbucketServer_ListOpenPullRequests(t *testing.T) {
 	assert.Len(t, result, 1)
 	assert.True(t, reflect.DeepEqual(PullRequestInfo{
 		ID:     101,
+		Body:   "hello world",
 		Source: BranchInfo{Name: "refs/heads/feature-ABC-123", Repository: "my-repo"},
 		Target: BranchInfo{Name: "refs/heads/master", Repository: "my-repo"},
 	}, result[0]))

@@ -278,7 +278,8 @@ func (client *AzureReposClient) ListOpenPullRequests(ctx context.Context, _, rep
 		shortSourceName := (*pullRequest.SourceRefName)[strings.LastIndex(*pullRequest.SourceRefName, "/")+1:]
 		shortTargetName := (*pullRequest.TargetRefName)[strings.LastIndex(*pullRequest.TargetRefName, "/")+1:]
 		pullRequestsInfo = append(pullRequestsInfo, PullRequestInfo{
-			ID: int64(*pullRequest.PullRequestId),
+			ID:   int64(*pullRequest.PullRequestId),
+			Body: *pullRequest.Description,
 			Source: BranchInfo{
 				Name:       shortSourceName,
 				Repository: repository,

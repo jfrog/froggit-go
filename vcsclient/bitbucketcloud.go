@@ -571,8 +571,9 @@ type pullRequestsResponse struct {
 
 type pullRequestsDetails struct {
 	ID     int64             `json:"id"`
-	Target pullRequestBranch `json:"destination"`
+	Body   string            `json:"description"`
 	Source pullRequestBranch `json:"source"`
+	Target pullRequestBranch `json:"destination"`
 }
 
 type pullRequestBranch struct {
@@ -712,7 +713,8 @@ func mapBitbucketCloudPullRequestToPullRequestInfo(parsedPullRequests *pullReque
 	pullRequests := make([]PullRequestInfo, len(parsedPullRequests.Values))
 	for i, pullRequest := range parsedPullRequests.Values {
 		pullRequests[i] = PullRequestInfo{
-			ID: pullRequest.ID,
+			ID:   pullRequest.ID,
+			Body: pullRequest.Body,
 			Source: BranchInfo{
 				Name:       pullRequest.Source.Name.Str,
 				Repository: pullRequest.Source.Repository.Name,

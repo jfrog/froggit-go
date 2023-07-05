@@ -539,6 +539,7 @@ func TestGitHubClient_ListOpenPullRequests(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, reflect.DeepEqual(PullRequestInfo{
 		ID:     1,
+		Body:   "hello world",
 		Source: BranchInfo{Name: "new-topic", Repository: "Hello-World"},
 		Target: BranchInfo{Name: "master", Repository: "Hello-World"},
 	}, result[0]))

@@ -754,7 +754,8 @@ func mapGitHubCommentToCommentInfoList(commentsList []*github.IssueComment) (res
 func mapGitHubPullRequestToPullRequestInfoList(pullRequestList []*github.PullRequest) (res []PullRequestInfo, err error) {
 	for _, pullRequest := range pullRequestList {
 		res = append(res, PullRequestInfo{
-			ID: int64(*pullRequest.Number),
+			ID:   int64(*pullRequest.Number),
+			Body: *pullRequest.Body,
 			Source: BranchInfo{
 				Name:       *pullRequest.Head.Ref,
 				Repository: *pullRequest.Head.Repo.Name,
