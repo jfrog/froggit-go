@@ -226,6 +226,17 @@ func TestGitLabClient_ListOpenPullRequests(t *testing.T) {
 	assert.Len(t, result, 1)
 	assert.True(t, reflect.DeepEqual(PullRequestInfo{
 		ID:     302,
+		Source: BranchInfo{Name: "test1", Repository: ""},
+		Target: BranchInfo{Name: "master", Repository: ""},
+	}, result[0]))
+
+	// With body
+
+	result, err = client.ListOpenPullRequestsWithBody(ctx, owner, repo1)
+	require.NoError(t, err)
+	assert.Len(t, result, 1)
+	assert.True(t, reflect.DeepEqual(PullRequestInfo{
+		ID:     302,
 		Body:   "hello world",
 		Source: BranchInfo{Name: "test1", Repository: ""},
 		Target: BranchInfo{Name: "master", Repository: ""},

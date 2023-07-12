@@ -539,6 +539,20 @@ func TestGitHubClient_ListOpenPullRequests(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, reflect.DeepEqual(PullRequestInfo{
 		ID:     1,
+		Source: BranchInfo{Name: "new-topic", Repository: "Hello-World"},
+		Target: BranchInfo{Name: "master", Repository: "Hello-World"},
+	}, result[0]))
+
+	_, err = createBadGitHubClient(t).ListPullRequestComments(ctx, owner, repo1, 1)
+	assert.Error(t, err)
+
+	// With body:
+	result, err = client.ListOpenPullRequestsWithBody(ctx, owner, repo1)
+	require.NoError(t, err)
+	assert.Len(t, result, 1)
+	assert.NoError(t, err)
+	assert.True(t, reflect.DeepEqual(PullRequestInfo{
+		ID:     1,
 		Body:   "hello world",
 		Source: BranchInfo{Name: "new-topic", Repository: "Hello-World"},
 		Target: BranchInfo{Name: "master", Repository: "Hello-World"},

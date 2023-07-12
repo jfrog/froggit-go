@@ -170,6 +170,11 @@ type VcsClient interface {
 	// pullRequestID  - Pull request ID
 	ListPullRequestComments(ctx context.Context, owner, repository string, pullRequestID int) ([]CommentInfo, error)
 
+	// ListOpenPullRequestsWithBody Gets all open pull requests ids and the pull request body.
+	// owner          - User or organization
+	// repository     - VCS repository name
+	ListOpenPullRequestsWithBody(ctx context.Context, owner, repository string) ([]PullRequestInfo, error)
+
 	// ListOpenPullRequests Gets all open pull requests ids.
 	// owner          - User or organization
 	// repository     - VCS repository name

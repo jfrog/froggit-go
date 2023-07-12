@@ -349,8 +349,17 @@ func (client *BitbucketServerClient) UpdatePullRequest(ctx context.Context, owne
 	return err
 }
 
+// ListOpenPullRequestsWithBody on Bitbucket server
+func (client *BitbucketServerClient) ListOpenPullRequestsWithBody(ctx context.Context, owner, repository string) ([]PullRequestInfo, error) {
+	return client.getOpenPullRequests(ctx, owner, repository, true)
+}
+
 // ListOpenPullRequests on Bitbucket server
 func (client *BitbucketServerClient) ListOpenPullRequests(ctx context.Context, owner, repository string) ([]PullRequestInfo, error) {
+	return client.getOpenPullRequests(ctx, owner, repository, false)
+}
+
+func (client *BitbucketServerClient) getOpenPullRequests(ctx context.Context, owner, repository string, withBody bool) ([]PullRequestInfo, error) {
 	bitbucketClient, err := client.buildBitbucketClient(ctx)
 	if err != nil {
 		return nil, err
@@ -367,10 +376,14 @@ func (client *BitbucketServerClient) ListOpenPullRequests(ctx context.Context, o
 			return nil, err
 		}
 		for _, pullRequest := range pullRequests {
+			var body string
+			if withBody {
+				body = pullRequest.Description
+			}
 			if pullRequest.Open {
 				results = append(results, PullRequestInfo{
 					ID:   int64(pullRequest.ID),
-					Body: pullRequest.Description,
+					Body: body,
 					Source: BranchInfo{
 						Name:       pullRequest.FromRef.DisplayID,
 						Repository: pullRequest.FromRef.Repository.Slug},
