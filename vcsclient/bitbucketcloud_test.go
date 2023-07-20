@@ -182,6 +182,18 @@ func TestBitbucketCloud_ListOpenPullRequests(t *testing.T) {
 		Source: BranchInfo{Name: "test-2", Repository: "user17/test"},
 		Target: BranchInfo{Name: "master", Repository: "user17/test"},
 	}, result[0]))
+
+	// With Body
+	result, err = client.ListOpenPullRequestsWithBody(ctx, owner, repo1)
+
+	require.NoError(t, err)
+	assert.Len(t, result, 3)
+	assert.True(t, reflect.DeepEqual(PullRequestInfo{
+		ID:     3,
+		Body:   "hello world",
+		Source: BranchInfo{Name: "test-2", Repository: "user17/test"},
+		Target: BranchInfo{Name: "master", Repository: "user17/test"},
+	}, result[0]))
 }
 
 func TestBitbucketCloud_AddPullRequestComment(t *testing.T) {

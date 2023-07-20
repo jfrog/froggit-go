@@ -315,8 +315,17 @@ func (client *BitbucketCloudClient) UpdatePullRequest(ctx context.Context, owner
 	return err
 }
 
-// CreatePullRequest on Bitbucket cloud
+// ListOpenPullRequestsWithBody on Bitbucket cloud
+func (client *BitbucketCloudClient) ListOpenPullRequestsWithBody(ctx context.Context, owner, repository string) (res []PullRequestInfo, err error) {
+	return client.getOpenPullRequests(ctx, owner, repository, true)
+}
+
+// ListOpenPullRequests on Bitbucket cloud
 func (client *BitbucketCloudClient) ListOpenPullRequests(ctx context.Context, owner, repository string) (res []PullRequestInfo, err error) {
+	return client.getOpenPullRequests(ctx, owner, repository, false)
+}
+
+func (client *BitbucketCloudClient) getOpenPullRequests(ctx context.Context, owner, repository string, withBody bool) (res []PullRequestInfo, err error) {
 	err = validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository})
 	if err != nil {
 		return nil, err
@@ -336,7 +345,7 @@ func (client *BitbucketCloudClient) ListOpenPullRequests(ctx context.Context, ow
 	if err != nil {
 		return
 	}
-	return mapBitbucketCloudPullRequestToPullRequestInfo(&parsedPullRequests), nil
+	return mapBitbucketCloudPullRequestToPullRequestInfo(&parsedPullRequests, withBody), nil
 }
 
 // AddPullRequestComment on Bitbucket cloud
@@ -571,8 +580,9 @@ type pullRequestsResponse struct {
 
 type pullRequestsDetails struct {
 	ID     int64             `json:"id"`
-	Target pullRequestBranch `json:"destination"`
+	Body   string            `json:"description"`
 	Source pullRequestBranch `json:"source"`
+	Target pullRequestBranch `json:"destination"`
 }
 
 type pullRequestBranch struct {
@@ -708,11 +718,16 @@ func mapBitbucketCloudCommentToCommentInfo(parsedComments *commentsResponse) []C
 	return comments
 }
 
-func mapBitbucketCloudPullRequestToPullRequestInfo(parsedPullRequests *pullRequestsResponse) []PullRequestInfo {
+func mapBitbucketCloudPullRequestToPullRequestInfo(parsedPullRequests *pullRequestsResponse, withBody bool) []PullRequestInfo {
 	pullRequests := make([]PullRequestInfo, len(parsedPullRequests.Values))
 	for i, pullRequest := range parsedPullRequests.Values {
+		var body string
+		if withBody {
+			body = pullRequest.Body
+		}
 		pullRequests[i] = PullRequestInfo{
-			ID: pullRequest.ID,
+			ID:   pullRequest.ID,
+			Body: body,
 			Source: BranchInfo{
 				Name:       pullRequest.Source.Name.Str,
 				Repository: pullRequest.Source.Repository.Name,

@@ -257,8 +257,17 @@ func (client *AzureReposClient) ListPullRequestComments(ctx context.Context, _, 
 	return commentInfo, nil
 }
 
+// ListOpenPullRequestsWithBody on Azure Repos
+func (client *AzureReposClient) ListOpenPullRequestsWithBody(ctx context.Context, _, repository string) ([]PullRequestInfo, error) {
+	return client.getOpenPullRequests(ctx, repository, true)
+}
+
 // ListOpenPullRequests on Azure Repos
 func (client *AzureReposClient) ListOpenPullRequests(ctx context.Context, _, repository string) ([]PullRequestInfo, error) {
+	return client.getOpenPullRequests(ctx, repository, false)
+}
+
+func (client *AzureReposClient) getOpenPullRequests(ctx context.Context, repository string, withBody bool) ([]PullRequestInfo, error) {
 	azureReposGitClient, err := client.buildAzureReposClient(ctx)
 	if err != nil {
 		return nil, err
@@ -274,11 +283,16 @@ func (client *AzureReposClient) ListOpenPullRequests(ctx context.Context, _, rep
 	}
 	var pullRequestsInfo []PullRequestInfo
 	for _, pullRequest := range *pullRequests {
+		var body string
+		if withBody {
+			body = *pullRequest.Description
+		}
 		// Trim the branches prefix and get the actual branches name
 		shortSourceName := (*pullRequest.SourceRefName)[strings.LastIndex(*pullRequest.SourceRefName, "/")+1:]
 		shortTargetName := (*pullRequest.TargetRefName)[strings.LastIndex(*pullRequest.TargetRefName, "/")+1:]
 		pullRequestsInfo = append(pullRequestsInfo, PullRequestInfo{
-			ID: int64(*pullRequest.PullRequestId),
+			ID:   int64(*pullRequest.PullRequestId),
+			Body: body,
 			Source: BranchInfo{
 				Name:       shortSourceName,
 				Repository: repository,

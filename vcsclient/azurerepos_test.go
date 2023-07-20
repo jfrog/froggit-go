@@ -212,6 +212,34 @@ func TestAzureRepos_TestListOpenPullRequests(t *testing.T) {
 	defer cleanUp()
 	_, err = badClient.ListOpenPullRequests(ctx, "", repo1)
 	assert.Error(t, err)
+
+	// Test with body
+	prBody := "hello world"
+	res = ListOpenPullRequestsResponse{
+		Value: []git.GitPullRequest{
+			{
+				PullRequestId: &pullRequestId,
+				Description:   &prBody,
+				Repository:    &git.GitRepository{Name: &repo1},
+				SourceRefName: &branch1,
+				TargetRefName: &branch2,
+			},
+		},
+		Count: 1,
+	}
+	jsonRes, err = json.Marshal(res)
+	assert.NoError(t, err)
+	ctx = context.Background()
+	client, cleanUp = createServerAndClient(t, vcsutils.AzureRepos, true, jsonRes, "getPullRequests", createAzureReposHandler)
+	defer cleanUp()
+	pullRequestsInfo, err = client.ListOpenPullRequestsWithBody(ctx, "", repo1)
+	assert.NoError(t, err)
+	assert.True(t, reflect.DeepEqual(pullRequestsInfo, []PullRequestInfo{{ID: 1, Body: prBody, Source: BranchInfo{Name: branch1, Repository: repo1}, Target: BranchInfo{Name: branch2, Repository: repo1}}}))
+
+	badClient, cleanUp = createBadAzureReposClient(t, []byte{})
+	defer cleanUp()
+	_, err = badClient.ListOpenPullRequests(ctx, "", repo1)
+	assert.Error(t, err)
 }
 
 func TestListPullRequestComments(t *testing.T) {
