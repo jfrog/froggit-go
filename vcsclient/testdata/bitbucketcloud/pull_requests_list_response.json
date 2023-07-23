@@ -2,7 +2,7 @@
     "pagelen": 10,
     "values": [
         {
-            "description": "",
+            "description": "hello world",
             "links": {
                 "decline": {
                     "href": "https://api.bitbucket.org/2.0/repositories/user17/test/pullrequests/3/decline"
@@ -147,7 +147,7 @@
             "closed_by": null
         },
         {
-            "description": "",
+            "description": "hello world",
             "links": {
                 "decline": {
                     "href": "https://api.bitbucket.org/2.0/repositories/user17/test/pullrequests/2/decline"
@@ -309,7 +309,7 @@
             }
         },
         {
-            "description": "",
+            "description": "hello world",
             "links": {
                 "decline": {
                     "href": "https://api.bitbucket.org/2.0/repositories/user17/test/pullrequests/1/decline"

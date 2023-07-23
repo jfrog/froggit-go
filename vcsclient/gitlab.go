@@ -248,8 +248,17 @@ func (client *GitLabClient) UpdatePullRequest(ctx context.Context, owner, reposi
 	return err
 }
 
+// ListOpenPullRequestsWithBody on GitLab
+func (client *GitLabClient) ListOpenPullRequestsWithBody(ctx context.Context, _, repository string) ([]PullRequestInfo, error) {
+	return client.getOpenPullRequests(ctx, repository, true)
+}
+
 // ListOpenPullRequests on GitLab
 func (client *GitLabClient) ListOpenPullRequests(ctx context.Context, _, repository string) ([]PullRequestInfo, error) {
+	return client.getOpenPullRequests(ctx, repository, false)
+}
+
+func (client *GitLabClient) getOpenPullRequests(ctx context.Context, repository string, withBody bool) ([]PullRequestInfo, error) {
 	openState := "opened"
 	allScope := "all"
 	options := &gitlab.ListMergeRequestsOptions{
@@ -262,7 +271,7 @@ func (client *GitLabClient) ListOpenPullRequests(ctx context.Context, _, reposit
 	if err != nil {
 		return []PullRequestInfo{}, err
 	}
-	return mapGitLabMergeRequestToPullRequestInfoList(mergeRequests), nil
+	return mapGitLabMergeRequestToPullRequestInfoList(mergeRequests, withBody), nil
 }
 
 // GetPullRequestInfoById on GitLab
@@ -567,10 +576,15 @@ func mapGitLabNotesToCommentInfoList(notes []*gitlab.Note) (res []CommentInfo) {
 	return
 }
 
-func mapGitLabMergeRequestToPullRequestInfoList(mergeRequests []*gitlab.MergeRequest) (res []PullRequestInfo) {
+func mapGitLabMergeRequestToPullRequestInfoList(mergeRequests []*gitlab.MergeRequest, withBody bool) (res []PullRequestInfo) {
 	for _, mergeRequest := range mergeRequests {
+		var body string
+		if withBody {
+			body = mergeRequest.Description
+		}
 		res = append(res, PullRequestInfo{
 			ID:     int64(mergeRequest.IID),
+			Body:   body,
 			Source: BranchInfo{Name: mergeRequest.SourceBranch},
 			Target: BranchInfo{Name: mergeRequest.TargetBranch},
 		})

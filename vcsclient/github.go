@@ -294,8 +294,17 @@ func (client *GitHubClient) UpdatePullRequest(ctx context.Context, owner, reposi
 	return err
 }
 
+// ListOpenPullRequestsWithBody on GitHub
+func (client *GitHubClient) ListOpenPullRequestsWithBody(ctx context.Context, owner, repository string) ([]PullRequestInfo, error) {
+	return client.getOpenPullRequests(ctx, owner, repository, true)
+}
+
 // ListOpenPullRequests on GitHub
 func (client *GitHubClient) ListOpenPullRequests(ctx context.Context, owner, repository string) ([]PullRequestInfo, error) {
+	return client.getOpenPullRequests(ctx, owner, repository, false)
+}
+
+func (client *GitHubClient) getOpenPullRequests(ctx context.Context, owner, repository string, withBody bool) ([]PullRequestInfo, error) {
 	ghClient, err := client.buildGithubClient(ctx)
 	if err != nil {
 		return nil, err
@@ -307,7 +316,7 @@ func (client *GitHubClient) ListOpenPullRequests(ctx context.Context, owner, rep
 	if err != nil {
 		return []PullRequestInfo{}, err
 	}
-	return mapGitHubPullRequestToPullRequestInfoList(pullRequests)
+	return mapGitHubPullRequestToPullRequestInfoList(pullRequests, withBody)
 }
 
 func (client *GitHubClient) GetPullRequestByID(ctx context.Context, owner, repository string, pullRequestId int) (PullRequestInfo, error) {
@@ -793,10 +802,15 @@ func mapGitHubCommentToCommentInfoList(commentsList []*github.IssueComment) (res
 	return
 }
 
-func mapGitHubPullRequestToPullRequestInfoList(pullRequestList []*github.PullRequest) (res []PullRequestInfo, err error) {
+func mapGitHubPullRequestToPullRequestInfoList(pullRequestList []*github.PullRequest, withBody bool) (res []PullRequestInfo, err error) {
 	for _, pullRequest := range pullRequestList {
+		var body string
+		if withBody {
+			body = *pullRequest.Body
+		}
 		res = append(res, PullRequestInfo{
-			ID: int64(*pullRequest.Number),
+			ID:   int64(*pullRequest.Number),
+			Body: body,
 			Source: BranchInfo{
 				Name:       *pullRequest.Head.Ref,
 				Repository: *pullRequest.Head.Repo.Name,
