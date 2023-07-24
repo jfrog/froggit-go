@@ -579,7 +579,7 @@ func (client *GitHubClient) DownloadFileFromRepo(ctx context.Context, owner, rep
 			}
 		}
 	}()
-	if response != nil && response.StatusCode != http.StatusOK {
+	if response != nil && response.Response != nil && response.Response.StatusCode != http.StatusOK {
 		return nil, response.StatusCode, fmt.Errorf("expected %d status code while received %d status code with error:\n%s", http.StatusOK, response.StatusCode, err)
 	}
 	if err != nil {
@@ -588,9 +588,9 @@ func (client *GitHubClient) DownloadFileFromRepo(ctx context.Context, owner, rep
 
 	content, err = io.ReadAll(body)
 	if err != nil {
-		return nil, response.StatusCode, err
+		return nil, response.Response.StatusCode, err
 	}
-	return content, response.StatusCode, nil
+	return content, response.Response.StatusCode, nil
 }
 
 // GetRepositoryEnvironmentInfo on GitHub

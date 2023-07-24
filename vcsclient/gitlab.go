@@ -447,8 +447,8 @@ func (client *GitLabClient) GetRepositoryEnvironmentInfo(_ context.Context, _, _
 // DownloadFileFromRepo on GitLab
 func (client *GitLabClient) DownloadFileFromRepo(_ context.Context, owner, repository, branch, path string) ([]byte, int, error) {
 	file, response, err := client.glClient.RepositoryFiles.GetFile(getProjectID(owner, repository), path, &gitlab.GetFileOptions{Ref: &branch})
-	if response != nil && response.StatusCode != http.StatusOK {
-		return nil, response.StatusCode, fmt.Errorf("expected %d status code while received %d status code with error:\n%s", http.StatusOK, response.StatusCode, err)
+	if response != nil && response.Response != nil && response.Response.StatusCode != http.StatusOK {
+		return nil, response.Response.StatusCode, fmt.Errorf("expected %d status code while received %d status code with error:\n%s", http.StatusOK, response.StatusCode, err)
 	}
 	if err != nil {
 		return nil, 0, err
@@ -456,10 +456,10 @@ func (client *GitLabClient) DownloadFileFromRepo(_ context.Context, owner, repos
 
 	content, err := base64.StdEncoding.DecodeString(file.Content)
 	if err != nil {
-		return nil, response.StatusCode, err
+		return nil, response.Response.StatusCode, err
 	}
 
-	return content, response.StatusCode, err
+	return content, response.Response.StatusCode, err
 }
 
 func (client *GitLabClient) GetModifiedFiles(_ context.Context, owner, repository, refBefore, refAfter string) ([]string, error) {
