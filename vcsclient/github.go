@@ -342,12 +342,12 @@ func (client *GitHubClient) GetPullRequestByID(ctx context.Context, owner, repos
 		Source: BranchInfo{
 			Name:       sourceBranch,
 			Repository: *pullRequest.Head.Repo.Name,
-			Owner:      *pullRequest.Head.Repo.Owner.Name,
+			Owner:      *pullRequest.Head.Repo.Owner.Login,
 		},
 		Target: BranchInfo{
 			Name:       targetBranch,
 			Repository: *pullRequest.Base.Repo.Name,
-			Owner:      *pullRequest.Base.Repo.Owner.Name,
+			Owner:      *pullRequest.Base.Repo.Owner.Login,
 		},
 	}
 	return prInfo, nil

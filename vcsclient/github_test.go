@@ -577,8 +577,8 @@ func TestGitHubClient_GetPullRequestByID(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, reflect.DeepEqual(PullRequestInfo{
 		ID:     int64(pullRequestId),
-		Source: BranchInfo{Name: "new-topic", Repository: "Hello-World"},
-		Target: BranchInfo{Name: "master", Repository: "Hello-World"},
+		Source: BranchInfo{Name: "new-topic", Repository: "Hello-World", Owner: "octocat"},
+		Target: BranchInfo{Name: "master", Repository: "Hello-World", Owner: "octocat"},
 	}, result))
 
 	// Bad Labels
