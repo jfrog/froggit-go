@@ -99,6 +99,15 @@
       "minVersion": "3.2",
       "maxVersion": "7.1",
       "releasedVersion": "0.0"
+    }   , {
+      "id": "01a46dea-7d46-4d40-bc84-319e7c260d99",
+      "area": "Location",
+      "resourceName": "ResourceAreas",
+      "routeTemplate": "_apis/{resource}/{areaId}/getPullRequests/{pullRequestId}",
+      "resourceVersion": 1,
+      "minVersion": "3.2",
+      "maxVersion": "7.1",
+      "releasedVersion": "0.0"
     }
   ],
   "count": 2

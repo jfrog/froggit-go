@@ -196,6 +196,42 @@ func TestBitbucketCloud_ListOpenPullRequests(t *testing.T) {
 	}, result[0]))
 }
 
+func TestBitbucketCloudClient_GetPullRequest(t *testing.T) {
+	pullRequestId := 1
+	repoName := "froggit"
+	ctx := context.Background()
+
+	// Successful Response
+	response, err := os.ReadFile(filepath.Join("testdata", "bitbucketcloud", "get_pull_request_response.json"))
+	assert.NoError(t, err)
+	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketCloud, true, response,
+		fmt.Sprintf("/repositories/%s/%s/pullrequests/%d", owner, repoName, pullRequestId), createBitbucketCloudHandler)
+	defer cleanUp()
+	result, err := client.GetPullRequestByID(ctx, owner, repoName, pullRequestId)
+	assert.NoError(t, err)
+	assert.True(t, reflect.DeepEqual(PullRequestInfo{
+		ID:     int64(pullRequestId),
+		Source: BranchInfo{Name: "pr", Repository: "workspace/froggit"},
+		Target: BranchInfo{Name: "main", Repository: "workspace/froggit"},
+	}, result))
+
+	// Bad Response
+	badClient, badClientCleanUp := createServerAndClient(t, vcsutils.BitbucketCloud, true, "{",
+		fmt.Sprintf("/repositories/%s/%s/pullrequests/%d", owner, repoName, pullRequestId), createBitbucketCloudHandler)
+	defer badClientCleanUp()
+	_, err = badClient.GetPullRequestByID(ctx, owner, repoName, pullRequestId)
+	assert.Error(t, err)
+
+	// Bad Fields
+	badRepoName := ""
+	badParseClient, badParseClientCleanUp := createServerAndClient(t, vcsutils.BitbucketCloud, true, response,
+		fmt.Sprintf("/repositories/%s/%s/pullrequests/%d", owner, badRepoName, pullRequestId), createBitbucketCloudHandler)
+	defer badParseClientCleanUp()
+	_, err = badParseClient.GetPullRequestByID(ctx, owner, badRepoName, pullRequestId)
+	assert.Error(t, err)
+
+}
+
 func TestBitbucketCloud_AddPullRequestComment(t *testing.T) {
 	ctx := context.Background()
 	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketCloud, true, nil, "/repositories/jfrog/repo-1/pullrequests/1/comments", createBitbucketCloudHandler)

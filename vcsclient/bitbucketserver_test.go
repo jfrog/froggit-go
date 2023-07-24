@@ -242,6 +242,36 @@ func TestBitbucketServer_ListOpenPullRequests(t *testing.T) {
 	}, result[0]))
 }
 
+func TestBitbucketServerClient_GetPullRequest(t *testing.T) {
+	ctx := context.Background()
+	response, err := os.ReadFile(filepath.Join("testdata", "bitbucketserver", "get_pull_request_response.json"))
+	assert.NoError(t, err)
+	pullRequestId := 6
+
+	// Successful
+	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, true, response,
+		fmt.Sprintf("/rest/api/1.0/projects/%s/repos/%s/pull-requests/%d", owner, repo1, pullRequestId), createBitbucketServerHandler)
+	defer cleanUp()
+	result, err := client.GetPullRequestByID(ctx, owner, repo1, pullRequestId)
+	require.NoError(t, err)
+	assert.True(t, reflect.DeepEqual(PullRequestInfo{
+		ID:     int64(pullRequestId),
+		Source: BranchInfo{Name: "refs/heads/new_vul_2", Repository: "repoName"},
+		Target: BranchInfo{Name: "refs/heads/master", Repository: "repoName"},
+	}, result))
+
+	// Bad response
+	badClient, badClientCleanUp := createServerAndClient(t, vcsutils.BitbucketServer, true, "{",
+		fmt.Sprintf("/rest/api/1.0/projects/%s/repos/%s/pull-requests/%d", owner, repo1, pullRequestId), createBitbucketServerHandler)
+	defer badClientCleanUp()
+	_, err2 := badClient.GetPullRequestByID(ctx, owner, repo1, pullRequestId)
+	require.Error(t, err2)
+
+	// Bad Client
+	_, err = createBadBitbucketServerClient(t).GetPullRequestByID(ctx, owner, repo1, pullRequestId)
+	assert.Error(t, err)
+}
+
 func TestBitbucketServer_ListPullRequestComments(t *testing.T) {
 	ctx := context.Background()
 	response, err := os.ReadFile(filepath.Join("testdata", "bitbucketserver", "pull_request_comments_list_response.json"))

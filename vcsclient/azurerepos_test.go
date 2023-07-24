@@ -242,6 +242,31 @@ func TestAzureRepos_TestListOpenPullRequests(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestAzureReposClient_GetPullRequest(t *testing.T) {
+	pullRequestId := 1
+	repoName := "repoName"
+	sourceName := "source"
+	targetName := "master"
+	res := git.GitPullRequest{
+		SourceRefName: &sourceName,
+		TargetRefName: &targetName,
+		PullRequestId: &pullRequestId,
+	}
+	jsonRes, err := json.Marshal(res)
+	assert.NoError(t, err)
+	ctx := context.Background()
+	client, cleanUp := createServerAndClient(t, vcsutils.AzureRepos, true, jsonRes, fmt.Sprintf("getPullRequests/%d", pullRequestId), createAzureReposHandler)
+	defer cleanUp()
+	pullRequestsInfo, err := client.GetPullRequestByID(ctx, "", repoName, pullRequestId)
+	assert.NoError(t, err)
+	assert.True(t, reflect.DeepEqual(pullRequestsInfo, PullRequestInfo{ID: 1, Source: BranchInfo{Name: sourceName, Repository: repoName}, Target: BranchInfo{Name: targetName, Repository: repoName}}))
+
+	badClient, cleanUp := createBadAzureReposClient(t, []byte{})
+	defer cleanUp()
+	_, err = badClient.GetPullRequestByID(ctx, "", repo1, pullRequestId)
+	assert.Error(t, err)
+}
+
 func TestListPullRequestComments(t *testing.T) {
 	type ListPullRequestCommentsResponse struct {
 		Value []git.GitPullRequestCommentThread
