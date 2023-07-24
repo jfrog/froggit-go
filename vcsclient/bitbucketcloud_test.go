@@ -211,8 +211,8 @@ func TestBitbucketCloudClient_GetPullRequest(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, reflect.DeepEqual(PullRequestInfo{
 		ID:     int64(pullRequestId),
-		Source: BranchInfo{Name: "pr", Repository: "workspace/froggit"},
-		Target: BranchInfo{Name: "main", Repository: "workspace/froggit"},
+		Source: BranchInfo{Name: "pr", Repository: "workspace/froggit", Owner: owner},
+		Target: BranchInfo{Name: "main", Repository: "workspace/froggit", Owner: owner},
 	}, result))
 
 	// Bad Response

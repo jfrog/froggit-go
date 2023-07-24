@@ -374,10 +374,12 @@ func (client *BitbucketCloudClient) GetPullRequestByID(ctx context.Context, owne
 		Source: BranchInfo{
 			Name:       pullRequestDetails.Source.Name.Str,
 			Repository: pullRequestDetails.Source.Repository.Name,
+			Owner:      owner,
 		},
 		Target: BranchInfo{
 			Name:       pullRequestDetails.Target.Name.Str,
 			Repository: pullRequestDetails.Target.Repository.Name,
+			Owner:      owner,
 		},
 	}
 	return
