@@ -179,7 +179,7 @@ func (client *GitLabClient) SetCommitStatus(ctx context.Context, commitStatus Co
 }
 
 // GetCommitStatuses on GitLab
-func (client *GitLabClient) GetCommitStatuses(ctx context.Context, owner, repository, ref string) (status []CommitStatusInfo, err error) {
+func (client *GitLabClient) GetCommitStatuses(ctx context.Context, _, repository, ref string) (status []CommitStatusInfo, err error) {
 	statuses, _, err := client.glClient.Commits.GetCommitStatuses(repository, ref, nil, gitlab.WithContext(ctx))
 	if err != nil {
 		return nil, err
@@ -274,7 +274,7 @@ func (client *GitLabClient) getOpenPullRequests(ctx context.Context, owner, repo
 }
 
 // GetPullRequestInfoById on GitLab
-func (client *GitLabClient) GetPullRequestByID(ctx context.Context, owner, repository string, pullRequestId int) (pullRequestInfo PullRequestInfo, err error) {
+func (client *GitLabClient) GetPullRequestByID(_ context.Context, owner, repository string, pullRequestId int) (pullRequestInfo PullRequestInfo, err error) {
 	client.logger.Debug("fetching merge requests by ID in", repository)
 	mergeRequest, response, err := client.glClient.MergeRequests.GetMergeRequest(getProjectID(owner, repository), pullRequestId, nil)
 	if err != nil || response.StatusCode != http.StatusOK {
