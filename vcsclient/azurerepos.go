@@ -257,6 +257,22 @@ func (client *AzureReposClient) ListPullRequestComments(ctx context.Context, _, 
 	return commentInfo, nil
 }
 
+// DeletePullRequestComment on Azure Repos
+func (client *AzureReposClient) DeletePullRequestComment(ctx context.Context, _, repository string, pullRequestID, commentID int) error {
+	azureReposGitClient, err := client.buildAzureReposClient(ctx)
+	if err != nil {
+		return err
+	}
+	firstCommentInThreadID := 1
+	return azureReposGitClient.DeleteComment(ctx, git.DeleteCommentArgs{
+		RepositoryId:  &repository,
+		PullRequestId: &pullRequestID,
+		ThreadId:      &commentID,
+		Project:       &client.vcsInfo.Project,
+		CommentId:     &firstCommentInThreadID,
+	})
+}
+
 // ListOpenPullRequestsWithBody on Azure Repos
 func (client *AzureReposClient) ListOpenPullRequestsWithBody(ctx context.Context, _, repository string) ([]PullRequestInfo, error) {
 	return client.getOpenPullRequests(ctx, repository, true)

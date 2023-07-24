@@ -438,11 +438,35 @@ func (client *BitbucketServerClient) ListPullRequestComments(ctx context.Context
 					ID:      int64(activity.Comment.ID),
 					Created: time.Unix(activity.Comment.CreatedDate, 0),
 					Content: activity.Comment.Text,
+					Version: activity.Comment.Version,
 				})
 			}
 		}
 	}
 	return results, nil
+}
+
+// DeletePullRequestComment on Bitbucket Server
+func (client *BitbucketServerClient) DeletePullRequestComment(ctx context.Context, owner, repository string, pullRequestID, commentID int) error {
+	bitbucketClient, err := client.buildBitbucketClient(ctx)
+	if err != nil {
+		return err
+	}
+	comments, err := client.ListPullRequestComments(ctx, owner, repository, pullRequestID)
+	if err != nil {
+		return err
+	}
+	commentVersion := 0
+	for _, comment := range comments {
+		if comment.ID == int64(commentID) {
+			commentVersion = comment.Version
+			break
+		}
+	}
+	if _, err = bitbucketClient.DeleteComment_2(owner, repository, int64(pullRequestID), int64(commentID), map[string]interface{}{"version": int32(commentVersion)}); err != nil && err.Error() != "EOF" {
+		return fmt.Errorf("an error occurred while deleting pull request comment:\n%s", err.Error())
+	}
+	return nil
 }
 
 type projectsResponse struct {

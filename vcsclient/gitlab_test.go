@@ -495,6 +495,15 @@ func TestGitlabClient_GetRepositoryEnvironmentInfo(t *testing.T) {
 	assert.ErrorIs(t, err, errGitLabGetRepoEnvironmentInfoNotSupported)
 }
 
+func TestGitLabClient_DeletePullRequestComment(t *testing.T) {
+	ctx := context.Background()
+	client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, "",
+		fmt.Sprintf("/api/v4/projects/%s/merge_requests/1/notes/1", url.PathEscape(owner+"/"+repo1)), createGitLabHandler)
+	defer cleanUp()
+	err := client.DeletePullRequestComment(ctx, owner, repo1, 1, 1)
+	assert.NoError(t, err)
+}
+
 func TestGitLabClient_GetModifiedFiles(t *testing.T) {
 	ctx := context.Background()
 	t.Run("ok", func(t *testing.T) {

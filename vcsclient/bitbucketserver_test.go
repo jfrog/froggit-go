@@ -629,7 +629,7 @@ func createBitbucketServerHandler(t *testing.T, expectedURI string, response []b
 		w.WriteHeader(expectedStatusCode)
 		_, err := w.Write(response)
 		require.NoError(t, err)
-		assert.Equal(t, expectedURI, r.RequestURI)
+		assert.Contains(t, expectedURI, r.RequestURI)
 		assert.Equal(t, "Bearer "+token, r.Header.Get("Authorization"))
 	}
 }
@@ -727,6 +727,22 @@ func TestBitbucketServer_TestGetCommitStatus(t *testing.T) {
 		_, err := client.GetCommitStatuses(ctx, owner, repo1, ref)
 		assert.Error(t, err)
 	})
+}
+
+func TestBitbucketServerClient_DeletePullRequestComment(t *testing.T) {
+	ctx := context.Background()
+	prId := 4
+	commentId := 10
+	version := 0
+	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, true, nil, fmt.Sprintf("/rest/api/1.0/projects/jfrog/repos/repo-1/pull-requests/%v/activities?start=%v", prId, version)+
+		fmt.Sprintf("/rest/api/1.0/projects/jfrog/repos/repo-1/pull-requests/%v/comments/%v?version=%v", prId, commentId, version), createBitbucketServerHandler)
+	defer cleanUp()
+
+	err := client.DeletePullRequestComment(ctx, owner, repo1, prId, commentId)
+	assert.NoError(t, err)
+
+	err = createBadBitbucketServerClient(t).DeletePullRequestComment(ctx, owner, repo1, prId, commentId)
+	assert.Error(t, err)
 }
 
 func createBadBitbucketServerClient(t *testing.T) VcsClient {

@@ -796,6 +796,17 @@ func TestGitHubClient_getGitHubGitRemoteUrl(t *testing.T) {
 	}
 }
 
+func TestGitHubClient_DeletePullRequestComment(t *testing.T) {
+	ctx := context.Background()
+	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, nil, fmt.Sprintf("/repos/%v/%v/issues/comments/1", owner, repo1), createGitHubHandler)
+	defer cleanUp()
+	err := client.DeletePullRequestComment(ctx, owner, repo1, 1, 1)
+	assert.NoError(t, err)
+	client = createBadGitHubClient(t)
+	err = client.DeletePullRequestComment(ctx, owner, repo1, 1, 1)
+	assert.Error(t, err)
+}
+
 func createBadGitHubClient(t *testing.T) VcsClient {
 	client, err := NewClientBuilder(vcsutils.GitHub).ApiEndpoint("https://bad^endpoint").Build()
 	require.NoError(t, err)

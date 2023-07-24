@@ -170,6 +170,14 @@ type VcsClient interface {
 	// pullRequestID  - Pull request ID
 	ListPullRequestComments(ctx context.Context, owner, repository string, pullRequestID int) ([]CommentInfo, error)
 
+	// DeletePullRequestComment deleted a specific comment in a pull request.
+	// owner          - User or organization
+	// repository     - VCS repository name
+	// pullRequestID  - Pull request ID
+	// commentID 	  - The ID of the comment
+	// commentVersion - The version of the comment
+	DeletePullRequestComment(ctx context.Context, owner, repository string, pullRequestID, commentID int) error
+
 	// ListOpenPullRequestsWithBody Gets all open pull requests ids and the pull request body.
 	// owner          - User or organization
 	// repository     - VCS repository name
@@ -280,6 +288,7 @@ type CommentInfo struct {
 	ID      int64
 	Content string
 	Created time.Time
+	Version int
 }
 
 type PullRequestInfo struct {
