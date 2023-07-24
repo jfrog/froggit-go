@@ -3,6 +3,7 @@ package vcsclient
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/jfrog/gofrog/datastructures"
 	"io"
@@ -573,24 +574,21 @@ func (client *GitHubClient) DownloadFileFromRepo(ctx context.Context, owner, rep
 	body, response, err := ghClient.Repositories.DownloadContents(ctx, owner, repository, path, &github.RepositoryContentGetOptions{Ref: branch})
 	defer func() {
 		if body != nil {
-			e := body.Close()
-			if err == nil {
-				err = e
-			}
+			err = errors.Join(err, body.Close())
 		}
 	}()
-	if response != nil && response.StatusCode != http.StatusOK {
-		return nil, response.StatusCode, fmt.Errorf("expected %d status code while received %d status code with error:\n%s", http.StatusOK, response.StatusCode, err)
+	if response != nil && response.Response != nil {
+		statusCode = response.StatusCode
+	}
+	if response != nil && response.Response != nil && response.Response.StatusCode != http.StatusOK {
+		err = fmt.Errorf("expected %d status code while received %d status code with error:\n%s", http.StatusOK, response.StatusCode, err)
 	}
 	if err != nil {
-		return nil, 0, err
+		return
 	}
 
 	content, err = io.ReadAll(body)
-	if err != nil {
-		return nil, response.StatusCode, err
-	}
-	return content, response.StatusCode, nil
+	return
 }
 
 // GetRepositoryEnvironmentInfo on GitHub

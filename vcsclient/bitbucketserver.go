@@ -620,8 +620,8 @@ func (client *BitbucketServerClient) DownloadFileFromRepo(ctx context.Context, o
 
 	var statusCode int
 	resp, err := bitbucketClient.GetContent_11(owner, repository, path, map[string]interface{}{"at": branch})
-	if resp != nil {
-		statusCode = resp.StatusCode
+	if resp != nil && resp.Response != nil {
+		statusCode = resp.Response.StatusCode
 	}
 	if err != nil {
 		return nil, statusCode, err
