@@ -298,6 +298,7 @@ type PullRequestInfo struct {
 type BranchInfo struct {
 	Name       string
 	Repository string
+	Owner      string
 }
 
 // RepositoryInfo contains general information about repository.
