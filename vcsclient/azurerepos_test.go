@@ -204,11 +204,9 @@ func TestAzureRepos_TestListOpenPullRequests(t *testing.T) {
 	ctx := context.Background()
 	client, cleanUp := createServerAndClient(t, vcsutils.AzureRepos, true, jsonRes, "getPullRequests", createAzureReposHandler)
 	defer cleanUp()
-	pullRequestsInfo, err := client.ListOpenPullRequests(ctx, owner, repo1)
+	pullRequestsInfo, err := client.ListOpenPullRequests(ctx, "", repo1)
 	assert.NoError(t, err)
-	assert.True(t, reflect.DeepEqual(pullRequestsInfo, []PullRequestInfo{
-		{ID: 1, Source: BranchInfo{Name: branch1, Repository: repo1, Owner: owner},
-			Target: BranchInfo{Name: branch2, Repository: repo1, Owner: owner}}}))
+	assert.True(t, reflect.DeepEqual(pullRequestsInfo, []PullRequestInfo{{ID: 1, Source: BranchInfo{Name: branch1, Repository: repo1}, Target: BranchInfo{Name: branch2, Repository: repo1}}}))
 
 	badClient, cleanUp := createBadAzureReposClient(t, []byte{})
 	defer cleanUp()
@@ -234,11 +232,9 @@ func TestAzureRepos_TestListOpenPullRequests(t *testing.T) {
 	ctx = context.Background()
 	client, cleanUp = createServerAndClient(t, vcsutils.AzureRepos, true, jsonRes, "getPullRequests", createAzureReposHandler)
 	defer cleanUp()
-	pullRequestsInfo, err = client.ListOpenPullRequestsWithBody(ctx, owner, repo1)
+	pullRequestsInfo, err = client.ListOpenPullRequestsWithBody(ctx, "", repo1)
 	assert.NoError(t, err)
-	assert.True(t, reflect.DeepEqual(pullRequestsInfo, []PullRequestInfo{
-		{ID: 1, Body: prBody, Source: BranchInfo{Name: branch1, Repository: repo1, Owner: owner},
-			Target: BranchInfo{Name: branch2, Repository: repo1, Owner: owner}}}))
+	assert.True(t, reflect.DeepEqual(pullRequestsInfo, []PullRequestInfo{{ID: 1, Body: prBody, Source: BranchInfo{Name: branch1, Repository: repo1}, Target: BranchInfo{Name: branch2, Repository: repo1}}}))
 
 	badClient, cleanUp = createBadAzureReposClient(t, []byte{})
 	defer cleanUp()
@@ -261,48 +257,13 @@ func TestAzureReposClient_GetPullRequest(t *testing.T) {
 	ctx := context.Background()
 	client, cleanUp := createServerAndClient(t, vcsutils.AzureRepos, true, jsonRes, fmt.Sprintf("getPullRequests/%d", pullRequestId), createAzureReposHandler)
 	defer cleanUp()
-	pullRequestsInfo, err := client.GetPullRequestByID(ctx, owner, repoName, pullRequestId)
+	pullRequestsInfo, err := client.GetPullRequestByID(ctx, "", repoName, pullRequestId)
 	assert.NoError(t, err)
-	assert.True(t, reflect.DeepEqual(pullRequestsInfo, PullRequestInfo{ID: 1,
-		Source: BranchInfo{Name: sourceName, Repository: repoName, Owner: owner},
-		Target: BranchInfo{Name: targetName, Repository: repoName, Owner: owner}}))
+	assert.True(t, reflect.DeepEqual(pullRequestsInfo, PullRequestInfo{ID: 1, Source: BranchInfo{Name: sourceName, Repository: repoName}, Target: BranchInfo{Name: targetName, Repository: repoName}}))
 
 	badClient, cleanUp := createBadAzureReposClient(t, []byte{})
 	defer cleanUp()
-	_, err = badClient.GetPullRequestByID(ctx, owner, repo1, pullRequestId)
-	assert.Error(t, err)
-}
-
-func TestAzureReposClient_GetPullRequestForked(t *testing.T) {
-	// In the case of a pull request from a forked source, need to parse from the URL the forked repository owner
-	pullRequestId := 1
-	repoName := "repoName"
-	sourceName := "source"
-	targetName := "master"
-	forkedOwner := "forkedOwner"
-	url := fmt.Sprintf("https://dev.azure.com/%s/201f2c7f-305a-446c-a1d6-a04ec811093b/_apis/git/repositories/a00a54c3-9acb-4157-a1f5-8036e5d05a48/pullRequests/4", forkedOwner)
-	res := git.GitPullRequest{
-		SourceRefName: &sourceName,
-		TargetRefName: &targetName,
-		PullRequestId: &pullRequestId,
-		ForkSource: &git.GitForkRef{
-			Url: &url,
-		},
-	}
-	jsonRes, err := json.Marshal(res)
-	assert.NoError(t, err)
-	ctx := context.Background()
-	client, cleanUp := createServerAndClient(t, vcsutils.AzureRepos, true, jsonRes, fmt.Sprintf("getPullRequests/%d", pullRequestId), createAzureReposHandler)
-	defer cleanUp()
-	pullRequestsInfo, err := client.GetPullRequestByID(ctx, owner, repoName, pullRequestId)
-	assert.NoError(t, err)
-	assert.True(t, reflect.DeepEqual(pullRequestsInfo, PullRequestInfo{ID: 1,
-		Source: BranchInfo{Name: sourceName, Repository: repoName, Owner: forkedOwner},
-		Target: BranchInfo{Name: targetName, Repository: repoName, Owner: owner}}))
-
-	badClient, cleanUp := createBadAzureReposClient(t, []byte{})
-	defer cleanUp()
-	_, err = badClient.GetPullRequestByID(ctx, owner, repo1, pullRequestId)
+	_, err = badClient.GetPullRequestByID(ctx, "", repo1, pullRequestId)
 	assert.Error(t, err)
 }
 

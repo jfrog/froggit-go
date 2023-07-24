@@ -32,7 +32,7 @@
         "statusMessage": "Available",
         "forkable": true,
         "project": {
-          "key": "repoOwner",
+          "key": "repoName",
           "id": 100,
           "name": "repoName",
           "description": "repoName",

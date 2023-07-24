@@ -414,8 +414,8 @@ func (client *BitbucketServerClient) GetPullRequestByID(ctx context.Context, own
 	}
 	pullRequestInfo = PullRequestInfo{
 		ID:     int64(pullRequest.ID),
-		Source: BranchInfo{Name: pullRequest.FromRef.ID, Repository: pullRequest.ToRef.Repository.Slug, Owner: pullRequest.ToRef.Repository.Project.Key},
-		Target: BranchInfo{Name: pullRequest.ToRef.ID, Repository: pullRequest.ToRef.Repository.Slug, Owner: pullRequest.ToRef.Repository.Project.Key},
+		Source: BranchInfo{Name: pullRequest.FromRef.ID, Repository: pullRequest.ToRef.Repository.Slug},
+		Target: BranchInfo{Name: pullRequest.ToRef.ID, Repository: pullRequest.ToRef.Repository.Slug},
 	}
 	return
 }
