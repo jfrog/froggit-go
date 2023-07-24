@@ -41,6 +41,7 @@ Currently supported providers are: [GitHub](#github), [Bitbucket Server](#bitbuc
       - [Get Commit Status](#get-commit-status)
       - [Create Pull Request](#create-pull-request)
       - [Update Pull Request](#update-pull-request)
+      - [Get Pull Request By ID](#get-pull-request)
       - [List Open Pull Requests](#list-open-pull-requests)
       - [List Open Pull Requests With Body](#list-open-pull-requests-with-body)
       - [Add Pull Request Comment](#add-pull-request-comment)
@@ -381,6 +382,21 @@ owner := "jfrog"
 repository := "jfrog-cli"
 
 openPullRequests, err := client.ListOpenPullRequests(ctx, owner, repository)
+```
+
+#### Get Pull Request By ID
+
+```go
+// Go context
+ctx := context.Background()
+// Organization or username
+owner := "jfrog"
+// VCS repository
+repository := "jfrog-cli"
+// Pull Request ID
+pullRequestId := 1
+
+openPullRequests, err := client.GetPullRequestByID(ctx, owner, repository, pullRequestId)
 ```
 
 ##### Add Pull Request Comment

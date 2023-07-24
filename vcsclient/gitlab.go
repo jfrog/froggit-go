@@ -273,6 +273,21 @@ func (client *GitLabClient) getOpenPullRequests(ctx context.Context, owner, repo
 	return mapGitLabMergeRequestToPullRequestInfoList(mergeRequests, withBody), nil
 }
 
+// GetPullRequestInfoById on GitLab
+func (client *GitLabClient) GetPullRequestByID(ctx context.Context, owner, repository string, pullRequestId int) (pullRequestInfo PullRequestInfo, err error) {
+	client.logger.Debug("fetching merge requests by ID in", repository)
+	mergeRequest, response, err := client.glClient.MergeRequests.GetMergeRequest(getProjectID(owner, repository), pullRequestId, nil)
+	if err != nil || response.StatusCode != http.StatusOK {
+		return PullRequestInfo{}, err
+	}
+	pullRequestInfo = PullRequestInfo{
+		ID:     int64(mergeRequest.ID),
+		Source: BranchInfo{Name: mergeRequest.SourceBranch},
+		Target: BranchInfo{Name: mergeRequest.TargetBranch},
+	}
+	return
+}
+
 // AddPullRequestComment on GitLab
 func (client *GitLabClient) AddPullRequestComment(ctx context.Context, owner, repository, content string, pullRequestID int) error {
 	err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository, "content": content})

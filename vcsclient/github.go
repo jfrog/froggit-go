@@ -3,6 +3,7 @@ package vcsclient
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/jfrog/gofrog/datastructures"
 	"io"
@@ -316,6 +317,47 @@ func (client *GitHubClient) getOpenPullRequests(ctx context.Context, owner, repo
 		return []PullRequestInfo{}, err
 	}
 	return mapGitHubPullRequestToPullRequestInfoList(pullRequests, withBody)
+}
+
+func (client *GitHubClient) GetPullRequestByID(ctx context.Context, owner, repository string, pullRequestId int) (PullRequestInfo, error) {
+	ghClient, err := client.buildGithubClient(ctx)
+	if err != nil {
+		return PullRequestInfo{}, err
+	}
+	client.logger.Debug(fetchingPullRequestById, repository)
+	pullRequest, response, err := ghClient.PullRequests.Get(ctx, owner, repository, pullRequestId)
+	if err != nil || response.StatusCode != http.StatusOK {
+		return PullRequestInfo{}, err
+	}
+
+	sourceBranch, err1 := extractBranchFromLabel(*pullRequest.Head.Label)
+	targetBranch, err2 := extractBranchFromLabel(*pullRequest.Base.Label)
+	err = errors.Join(err1, err2)
+	if err != nil {
+		return PullRequestInfo{}, err
+	}
+
+	prInfo := PullRequestInfo{
+		ID: int64(pullRequestId),
+		Source: BranchInfo{
+			Name:       sourceBranch,
+			Repository: *pullRequest.Head.Repo.Name,
+		},
+		Target: BranchInfo{
+			Name:       targetBranch,
+			Repository: *pullRequest.Base.Repo.Name,
+		},
+	}
+	return prInfo, nil
+}
+
+// Extracts branch name from the following expected label format repo:branch
+func extractBranchFromLabel(label string) (string, error) {
+	split := strings.Split(label, ":")
+	if len(split) <= 1 {
+		return "", fmt.Errorf("bad label format %s", label)
+	}
+	return split[1], nil
 }
 
 // AddPullRequestComment on GitHub

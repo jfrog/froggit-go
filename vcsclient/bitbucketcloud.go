@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/jfrog/gofrog/datastructures"
+	"github.com/ktrysmt/go-bitbucket"
 	"net/http"
 	"net/url"
 	"sort"
@@ -16,7 +17,6 @@ import (
 	"github.com/mitchellh/mapstructure"
 
 	"github.com/jfrog/froggit-go/vcsutils"
-	"github.com/ktrysmt/go-bitbucket"
 )
 
 // BitbucketCloudClient API version 2.0
@@ -346,6 +346,41 @@ func (client *BitbucketCloudClient) getOpenPullRequests(ctx context.Context, own
 		return
 	}
 	return mapBitbucketCloudPullRequestToPullRequestInfo(&parsedPullRequests, withBody), nil
+}
+
+func (client *BitbucketCloudClient) GetPullRequestByID(ctx context.Context, owner, repository string, pullRequestId int) (pullRequestInfo PullRequestInfo, err error) {
+	err = validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository})
+	if err != nil {
+		return
+	}
+	bitbucketClient := client.buildBitbucketCloudClient(ctx)
+	client.logger.Debug(fetchingPullRequestById, repository)
+	prIdStr := strconv.Itoa(pullRequestId)
+	options := &bitbucket.PullRequestsOptions{
+		Owner:    owner,
+		RepoSlug: repository,
+		ID:       prIdStr,
+	}
+	pullRequestRaw, err := bitbucketClient.Repositories.PullRequests.Get(options)
+	if err != nil {
+		return
+	}
+	pullRequestDetails, err := vcsutils.RemapFields[pullRequestsDetails](pullRequestRaw, "json")
+	if err != nil {
+		return
+	}
+	pullRequestInfo = PullRequestInfo{
+		ID: pullRequestDetails.ID,
+		Source: BranchInfo{
+			Name:       pullRequestDetails.Source.Name.Str,
+			Repository: pullRequestDetails.Source.Repository.Name,
+		},
+		Target: BranchInfo{
+			Name:       pullRequestDetails.Target.Name.Str,
+			Repository: pullRequestDetails.Target.Repository.Name,
+		},
+	}
+	return
 }
 
 // AddPullRequestComment on Bitbucket cloud

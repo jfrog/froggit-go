@@ -397,6 +397,29 @@ func (client *BitbucketServerClient) getOpenPullRequests(ctx context.Context, ow
 	return results, nil
 }
 
+// GetPullRequestInfoById on bitbucket server
+func (client *BitbucketServerClient) GetPullRequestByID(ctx context.Context, owner, repository string, pullRequestId int) (pullRequestInfo PullRequestInfo, err error) {
+	client.logger.Debug("fetching pull request by ID in ", repository)
+	bitbucketClient, err := client.buildBitbucketClient(ctx)
+	if err != nil {
+		return
+	}
+	apiResponse, err := bitbucketClient.GetPullRequest(owner, repository, pullRequestId)
+	if err != nil || apiResponse.StatusCode != http.StatusOK {
+		return
+	}
+	pullRequest, err := bitbucketv1.GetPullRequestResponse(apiResponse)
+	if err != nil {
+		return
+	}
+	pullRequestInfo = PullRequestInfo{
+		ID:     int64(pullRequest.ID),
+		Source: BranchInfo{Name: pullRequest.FromRef.ID, Repository: pullRequest.ToRef.Repository.Slug},
+		Target: BranchInfo{Name: pullRequest.ToRef.ID, Repository: pullRequest.ToRef.Repository.Slug},
+	}
+	return
+}
+
 // AddPullRequestComment on Bitbucket server
 func (client *BitbucketServerClient) AddPullRequestComment(ctx context.Context, owner, repository, content string, pullRequestID int) error {
 	err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository, "content": content})
