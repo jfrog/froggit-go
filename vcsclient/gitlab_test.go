@@ -218,7 +218,7 @@ func TestGitLabClient_ListOpenPullRequests(t *testing.T) {
 	assert.NoError(t, err)
 
 	client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, response,
-		"/api/v4/merge_requests?scope=all&state=opened", createGitLabHandler)
+		"/api/v4/projects/jfrog%2Frepo-1/merge_requests?scope=all&state=opened", createGitLabHandler)
 	defer cleanUp()
 
 	result, err := client.ListOpenPullRequests(ctx, owner, repo1)
@@ -231,7 +231,6 @@ func TestGitLabClient_ListOpenPullRequests(t *testing.T) {
 	}, result[0]))
 
 	// With body
-
 	result, err = client.ListOpenPullRequestsWithBody(ctx, owner, repo1)
 	require.NoError(t, err)
 	assert.Len(t, result, 1)
