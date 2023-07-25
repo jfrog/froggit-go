@@ -370,8 +370,8 @@ func (client *BitbucketCloudClient) GetPullRequestByID(ctx context.Context, owne
 		return
 	}
 
-	sourceRepository, sourceOwner := splitWorkSpaceAndOwner(pullRequestDetails.Source.Repository.Name)
-	targetRepository, targetOwner := splitWorkSpaceAndOwner(pullRequestDetails.Source.Repository.Name)
+	sourceOwner, sourceRepository := splitWorkSpaceAndOwner(pullRequestDetails.Source.Repository.Name)
+	targetOwner, targetRepository := splitWorkSpaceAndOwner(pullRequestDetails.Target.Repository.Name)
 
 	pullRequestInfo = PullRequestInfo{
 		ID: pullRequestDetails.ID,
