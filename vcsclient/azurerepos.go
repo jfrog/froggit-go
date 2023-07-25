@@ -237,8 +237,14 @@ func (client *AzureReposClient) ListPullRequestComments(ctx context.Context, _, 
 	}
 	var commentInfo []CommentInfo
 	for _, thread := range *threads {
+		if thread.IsDeleted != nil && *thread.IsDeleted {
+			continue
+		}
 		var commentsAggregator strings.Builder
 		for _, comment := range *thread.Comments {
+			if comment.IsDeleted != nil && *comment.IsDeleted {
+				continue
+			}
 			_, err = commentsAggregator.WriteString(
 				fmt.Sprintf("Author: %s, Id: %d, Content:%s\n",
 					*comment.Author.DisplayName,
