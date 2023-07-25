@@ -451,8 +451,11 @@ func (client *GitLabClient) DownloadFileFromRepo(_ context.Context, owner, repos
 	if glResponse != nil && glResponse.Response != nil {
 		statusCode = glResponse.Response.StatusCode
 	}
-	if err != nil && statusCode != http.StatusOK {
-		return nil, statusCode, fmt.Errorf("expected %d status code while received %d status code with error:\n%s", http.StatusOK, glResponse.StatusCode, err)
+	if err != nil {
+		return nil, statusCode, err
+	}
+	if statusCode != http.StatusOK {
+		return nil, statusCode, fmt.Errorf("expected %d status code while received %d status code", http.StatusOK, glResponse.StatusCode)
 	}
 	var content []byte
 	if file != nil {
