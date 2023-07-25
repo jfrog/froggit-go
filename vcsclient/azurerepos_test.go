@@ -247,10 +247,15 @@ func TestAzureReposClient_GetPullRequest(t *testing.T) {
 	repoName := "repoName"
 	sourceName := "source"
 	targetName := "master"
+	forkedOwner := "jfrogForked"
+	forkedSourceUrl := fmt.Sprintf("https://dev.azure.com/%s/201f2c7f-305a-446c-a1d6-a04ec811093b/_apis/git/repositories/82d33a66-8971-4279-9687-19c69e66e114", forkedOwner)
 	res := git.GitPullRequest{
 		SourceRefName: &sourceName,
 		TargetRefName: &targetName,
 		PullRequestId: &pullRequestId,
+		ForkSource: &git.GitForkRef{
+			Repository: &git.GitRepository{Url: &forkedSourceUrl},
+		},
 	}
 	jsonRes, err := json.Marshal(res)
 	assert.NoError(t, err)
@@ -260,7 +265,7 @@ func TestAzureReposClient_GetPullRequest(t *testing.T) {
 	pullRequestsInfo, err := client.GetPullRequestByID(ctx, owner, repoName, pullRequestId)
 	assert.NoError(t, err)
 	assert.True(t, reflect.DeepEqual(pullRequestsInfo, PullRequestInfo{ID: 1,
-		Source: BranchInfo{Name: sourceName, Repository: repoName, Owner: owner},
+		Source: BranchInfo{Name: sourceName, Repository: repoName, Owner: forkedOwner},
 		Target: BranchInfo{Name: targetName, Repository: repoName, Owner: owner}}))
 
 	badClient, cleanUp := createBadAzureReposClient(t, []byte{})
@@ -564,6 +569,24 @@ func TestAzureReposClient_GetCommitStatus(t *testing.T) {
 		_, err := badClient.GetCommitStatuses(ctx, owner, repo1, "")
 		assert.Error(t, err)
 	})
+}
+
+func TestExtractOwnerFromForkedRepoUrl(t *testing.T) {
+	validUrl := "https://dev.azure.com/forkedOwner/201f2c7f-305a-446c-a1d6-a04ec811093b/_apis/git/repositories/82d33a66-8971-4279-9687-19c69e66e114"
+	repository := &git.GitForkRef{Repository: &git.GitRepository{Url: &validUrl}}
+	resOwner := extractOwnerFromForkedRepoUrl(repository)
+	assert.Equal(t, "forkedOwner", resOwner)
+
+	// Fallback
+	repository = &git.GitForkRef{Repository: &git.GitRepository{}}
+	resOwner = extractOwnerFromForkedRepoUrl(repository)
+	assert.Equal(t, "", resOwner)
+
+	// Invalid
+	invalidUrl := "https://notazure.com/forked/repo/_git/repo"
+	repository = &git.GitForkRef{Repository: &git.GitRepository{Url: &invalidUrl}}
+	resOwner = extractOwnerFromForkedRepoUrl(repository)
+	assert.Equal(t, "", resOwner)
 }
 
 func createAzureReposHandler(t *testing.T, expectedURI string, response []byte, expectedStatusCode int) http.HandlerFunc {

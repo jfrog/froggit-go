@@ -283,7 +283,7 @@ func (client *AzureReposClient) getOpenPullRequests(ctx context.Context, owner, 
 	}
 	var pullRequestsInfo []PullRequestInfo
 	for _, pullRequest := range *pullRequests {
-		pullRequestDetails := parsePullRequestDetails(pullRequest, owner, repository)
+		pullRequestDetails := parsePullRequestDetails(client, pullRequest, owner, repository)
 		pullRequestsInfo = append(pullRequestsInfo, pullRequestDetails)
 	}
 	return pullRequestsInfo, nil
@@ -302,7 +302,7 @@ func (client *AzureReposClient) GetPullRequestByID(ctx context.Context, owner, r
 	if err != nil {
 		return
 	}
-	pullRequestInfo = parsePullRequestDetails(*pullRequest, owner, repository)
+	pullRequestInfo = parsePullRequestDetails(client, *pullRequest, owner, repository)
 	return
 }
 
@@ -557,7 +557,7 @@ func (client *AzureReposClient) GetModifiedFiles(ctx context.Context, _, reposit
 	return fileNamesList, nil
 }
 
-func parsePullRequestDetails(pullRequest git.GitPullRequest, owner, repository string) PullRequestInfo {
+func parsePullRequestDetails(client *AzureReposClient, pullRequest git.GitPullRequest, owner, repository string) PullRequestInfo {
 	// Trim the branches prefix and get the actual branches name
 	shortSourceName := (*pullRequest.SourceRefName)[strings.LastIndex(*pullRequest.SourceRefName, "/")+1:]
 	shortTargetName := (*pullRequest.TargetRefName)[strings.LastIndex(*pullRequest.TargetRefName, "/")+1:]
@@ -568,13 +568,21 @@ func parsePullRequestDetails(pullRequest git.GitPullRequest, owner, repository s
 		prBody = *bodyPtr
 	}
 
+	// When a pull request is from a forked repository,extract the owner.
+	sourceRepoOwner := owner
+	if pullRequest.ForkSource != nil {
+		if sourceRepoOwner = extractOwnerFromForkedRepoUrl(pullRequest.ForkSource); sourceRepoOwner == "" {
+			client.logger.Warn(failedForkedRepositoryExtraction)
+		}
+	}
+
 	return PullRequestInfo{
 		ID:   int64(*pullRequest.PullRequestId),
 		Body: prBody,
 		Source: BranchInfo{
 			Name:       shortSourceName,
 			Repository: repository,
-			Owner:      owner,
+			Owner:      sourceRepoOwner,
 		},
 		Target: BranchInfo{
 			Name:       shortTargetName,
@@ -582,6 +590,20 @@ func parsePullRequestDetails(pullRequest git.GitPullRequest, owner, repository s
 			Owner:      owner,
 		},
 	}
+}
+
+// Extract the repository owner of a forked source
+func extractOwnerFromForkedRepoUrl(forkedGit *git.GitForkRef) string {
+	if forkedGit == nil || forkedGit.Repository == nil || forkedGit.Repository.Url == nil {
+		return ""
+	}
+	url := *forkedGit.Repository.Url
+	owner := strings.Split(strings.TrimPrefix(url, "https://dev.azure.com/"), "/")[0]
+	// Failed to properly extract owner name
+	if strings.Contains(owner, "http") {
+		return ""
+	}
+	return owner
 }
 
 // mapStatusToString maps commit status enum to string, specific for azure.
