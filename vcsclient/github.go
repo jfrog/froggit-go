@@ -580,14 +580,13 @@ func (client *GitHubClient) DownloadFileFromRepo(ctx context.Context, owner, rep
 	if response != nil && response.Response != nil {
 		statusCode = response.StatusCode
 	}
-	if response != nil && response.Response != nil && response.Response.StatusCode != http.StatusOK {
+	if err != nil && statusCode != http.StatusOK {
 		err = fmt.Errorf("expected %d status code while received %d status code with error:\n%s", http.StatusOK, response.StatusCode, err)
-	}
-	if err != nil {
 		return
 	}
-
-	content, err = io.ReadAll(body)
+	if body != nil {
+		content, err = io.ReadAll(body)
+	}
 	return
 }
 

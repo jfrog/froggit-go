@@ -451,15 +451,14 @@ func (client *GitLabClient) DownloadFileFromRepo(_ context.Context, owner, repos
 	if response != nil && response.Response != nil {
 		statusCode = response.Response.StatusCode
 	}
-	if statusCode != http.StatusOK {
+	if err != nil && statusCode != http.StatusOK {
 		return nil, statusCode, fmt.Errorf("expected %d status code while received %d status code with error:\n%s", http.StatusOK, response.StatusCode, err)
 	}
-	if err != nil {
-		return nil, statusCode, err
+	var content []byte
+	if file != nil {
+		content, err = base64.StdEncoding.DecodeString(file.Content)
 	}
-
-	content, err := base64.StdEncoding.DecodeString(file.Content)
-	return content, response.Response.StatusCode, err
+	return content, statusCode, err
 }
 
 func (client *GitLabClient) GetModifiedFiles(_ context.Context, owner, repository, refBefore, refAfter string) ([]string, error) {
