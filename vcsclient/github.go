@@ -816,10 +816,12 @@ func mapGitHubPullRequestToPullRequestInfoList(pullRequestList []*github.PullReq
 			Source: BranchInfo{
 				Name:       *pullRequest.Head.Ref,
 				Repository: *pullRequest.Head.Repo.Name,
+				Owner:      *pullRequest.Head.Repo.Owner.Login,
 			},
 			Target: BranchInfo{
 				Name:       *pullRequest.Base.Ref,
 				Repository: *pullRequest.Base.Repo.Name,
+				Owner:      *pullRequest.Base.Repo.Owner.Login,
 			},
 		})
 	}

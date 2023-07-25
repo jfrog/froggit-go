@@ -539,8 +539,8 @@ func TestGitHubClient_ListOpenPullRequests(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, reflect.DeepEqual(PullRequestInfo{
 		ID:     1,
-		Source: BranchInfo{Name: "new-topic", Repository: "Hello-World"},
-		Target: BranchInfo{Name: "master", Repository: "Hello-World"},
+		Source: BranchInfo{Name: "new-topic", Repository: "Hello-World", Owner: owner},
+		Target: BranchInfo{Name: "master", Repository: "Hello-World", Owner: owner},
 	}, result[0]))
 
 	_, err = createBadGitHubClient(t).ListPullRequestComments(ctx, owner, repo1, 1)
@@ -554,8 +554,8 @@ func TestGitHubClient_ListOpenPullRequests(t *testing.T) {
 	assert.True(t, reflect.DeepEqual(PullRequestInfo{
 		ID:     1,
 		Body:   "hello world",
-		Source: BranchInfo{Name: "new-topic", Repository: "Hello-World"},
-		Target: BranchInfo{Name: "master", Repository: "Hello-World"},
+		Source: BranchInfo{Name: "new-topic", Repository: "Hello-World", Owner: owner},
+		Target: BranchInfo{Name: "master", Repository: "Hello-World", Owner: owner},
 	}, result[0]))
 
 	_, err = createBadGitHubClient(t).ListPullRequestComments(ctx, owner, repo1, 1)
@@ -566,8 +566,10 @@ func TestGitHubClient_GetPullRequestByID(t *testing.T) {
 	ctx := context.Background()
 	pullRequestId := 1
 	repoName := "Hello-World"
+	forkedOwner := owner + "Forked"
 
 	// Successful response
+	// This response mimics a pull request from a forked source
 	response, err := os.ReadFile(filepath.Join("testdata", "github", "pull_request_info_response.json"))
 	assert.NoError(t, err)
 	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, response,
@@ -577,8 +579,8 @@ func TestGitHubClient_GetPullRequestByID(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, reflect.DeepEqual(PullRequestInfo{
 		ID:     int64(pullRequestId),
-		Source: BranchInfo{Name: "new-topic", Repository: "Hello-World", Owner: "octocat"},
-		Target: BranchInfo{Name: "master", Repository: "Hello-World", Owner: "octocat"},
+		Source: BranchInfo{Name: "new-topic", Repository: "Hello-World", Owner: owner},
+		Target: BranchInfo{Name: "master", Repository: "Hello-World", Owner: forkedOwner},
 	}, result))
 
 	// Bad Labels
