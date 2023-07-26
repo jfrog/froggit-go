@@ -505,9 +505,9 @@ func (client *GitHubClient) GetLabel(ctx context.Context, owner, repository, nam
 		return nil, err
 	}
 
-	label, response, err := ghClient.Issues.GetLabel(ctx, owner, repository, name)
+	label, ghResponse, err := ghClient.Issues.GetLabel(ctx, owner, repository, name)
 	if err != nil {
-		if response.Response.StatusCode == http.StatusNotFound {
+		if ghResponse.Response.StatusCode == http.StatusNotFound {
 			return nil, nil
 		}
 		return nil, err
@@ -614,27 +614,23 @@ func (client *GitHubClient) DownloadFileFromRepo(ctx context.Context, owner, rep
 	if err != nil {
 		return nil, 0, err
 	}
-	body, response, err := ghClient.Repositories.DownloadContents(ctx, owner, repository, path, &github.RepositoryContentGetOptions{Ref: branch})
+	body, ghResponse, err := ghClient.Repositories.DownloadContents(ctx, owner, repository, path, &github.RepositoryContentGetOptions{Ref: branch})
 	defer func() {
 		if body != nil {
-			e := body.Close()
-			if err == nil {
-				err = e
-			}
+			err = errors.Join(err, body.Close())
 		}
 	}()
-	if response != nil && response.StatusCode != http.StatusOK {
-		return nil, response.StatusCode, fmt.Errorf("expected %d status code while received %d status code with error:\n%s", http.StatusOK, response.StatusCode, err)
+	if ghResponse != nil && ghResponse.Response != nil {
+		statusCode = ghResponse.StatusCode
 	}
-	if err != nil {
-		return nil, 0, err
+	if err != nil && statusCode != http.StatusOK {
+		err = fmt.Errorf("expected %d status code while received %d status code with error:\n%s", http.StatusOK, ghResponse.StatusCode, err)
+		return
 	}
-
-	content, err = io.ReadAll(body)
-	if err != nil {
-		return nil, response.StatusCode, err
+	if body != nil {
+		content, err = io.ReadAll(body)
 	}
-	return content, response.StatusCode, nil
+	return
 }
 
 // GetRepositoryEnvironmentInfo on GitHub

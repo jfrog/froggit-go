@@ -648,14 +648,14 @@ func (client *BitbucketServerClient) DownloadFileFromRepo(ctx context.Context, o
 	}
 
 	var statusCode int
-	resp, err := bitbucketClient.GetContent_11(owner, repository, path, map[string]interface{}{"at": branch})
-	if resp != nil {
-		statusCode = resp.StatusCode
+	bbResp, err := bitbucketClient.GetContent_11(owner, repository, path, map[string]interface{}{"at": branch})
+	if bbResp != nil && bbResp.Response != nil {
+		statusCode = bbResp.Response.StatusCode
 	}
 	if err != nil {
 		return nil, statusCode, err
 	}
-	return resp.Payload, statusCode, err
+	return bbResp.Payload, statusCode, err
 }
 
 func createPaginationOptions(nextPageStart int) map[string]interface{} {
