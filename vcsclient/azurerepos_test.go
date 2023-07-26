@@ -268,6 +268,25 @@ func TestAzureReposClient_GetPullRequest(t *testing.T) {
 		Source: BranchInfo{Name: sourceName, Repository: repoName, Owner: forkedOwner},
 		Target: BranchInfo{Name: targetName, Repository: repoName, Owner: owner}}))
 
+	// Fail source repository owner extraction, should be empty string and not fail the process.
+	res = git.GitPullRequest{
+		SourceRefName: &sourceName,
+		TargetRefName: &targetName,
+		PullRequestId: &pullRequestId,
+		ForkSource: &git.GitForkRef{
+			Repository: &git.GitRepository{Url: &repoName},
+		},
+	}
+	jsonRes, err = json.Marshal(res)
+	assert.NoError(t, err)
+	client, _ = createServerAndClient(t, vcsutils.AzureRepos, true, jsonRes, fmt.Sprintf("getPullRequests/%d", pullRequestId), createAzureReposHandler)
+	pullRequestsInfo, err = client.GetPullRequestByID(ctx, owner, repoName, pullRequestId)
+	assert.NoError(t, err)
+	assert.True(t, reflect.DeepEqual(pullRequestsInfo, PullRequestInfo{ID: 1,
+		Source: BranchInfo{Name: sourceName, Repository: repoName, Owner: ""},
+		Target: BranchInfo{Name: targetName, Repository: repoName, Owner: owner}}))
+
+	// Bad client
 	badClient, cleanUp := createBadAzureReposClient(t, []byte{})
 	defer cleanUp()
 	_, err = badClient.GetPullRequestByID(ctx, owner, repo1, pullRequestId)
