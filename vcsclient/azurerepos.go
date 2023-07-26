@@ -17,6 +17,8 @@ import (
 	"time"
 )
 
+const defaultAzureBaseUrl = "https://dev.azure.com/"
+
 // Azure Devops API version 6
 type AzureReposClient struct {
 	vcsInfo           VcsInfo
@@ -598,11 +600,10 @@ func extractOwnerFromForkedRepoUrl(forkedGit *git.GitForkRef) string {
 		return ""
 	}
 	url := *forkedGit.Repository.Url
-	owner := strings.Split(strings.TrimPrefix(url, "https://dev.azure.com/"), "/")[0]
-	// Failed to properly extract owner name
-	if strings.Contains(owner, "http") {
+	if !strings.Contains(url, defaultAzureBaseUrl) {
 		return ""
 	}
+	owner := strings.Split(strings.TrimPrefix(url, defaultAzureBaseUrl), "/")[0]
 	return owner
 }
 
