@@ -811,17 +811,17 @@ func mapGitHubPullRequestToPullRequestInfoList(pullRequestList []*github.PullReq
 			body = *pullRequest.Body
 		}
 		res = append(res, PullRequestInfo{
-			ID:   int64(*pullRequest.Number),
+			ID:   int64(vcsutils.DefaultIfNotNil(pullRequest.Number)),
 			Body: body,
 			Source: BranchInfo{
-				Name:       *pullRequest.Head.Ref,
-				Repository: *pullRequest.Head.Repo.Name,
-				Owner:      *pullRequest.Head.Repo.Owner.Login,
+				Name:       vcsutils.DefaultIfNotNil(pullRequest.Head.Ref),
+				Repository: vcsutils.DefaultIfNotNil(pullRequest.Head.Repo.Name),
+				Owner:      vcsutils.DefaultIfNotNil(pullRequest.Head.Repo.Owner.Login),
 			},
 			Target: BranchInfo{
-				Name:       *pullRequest.Base.Ref,
-				Repository: *pullRequest.Base.Repo.Name,
-				Owner:      *pullRequest.Base.Repo.Owner.Login,
+				Name:       vcsutils.DefaultIfNotNil(pullRequest.Base.Ref),
+				Repository: vcsutils.DefaultIfNotNil(pullRequest.Base.Repo.Name),
+				Owner:      vcsutils.DefaultIfNotNil(pullRequest.Base.Repo.Owner.Login),
 			},
 		})
 	}

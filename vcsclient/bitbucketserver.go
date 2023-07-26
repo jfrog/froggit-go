@@ -412,11 +412,12 @@ func (client *BitbucketServerClient) GetPullRequestByID(ctx context.Context, own
 	if err != nil {
 		return
 	}
-	if pullRequest.FromRef.Repository.Project == nil {
+	project := pullRequest.FromRef.Repository.Project
+	if project == nil {
 		err = fmt.Errorf("failed to get source repository owner, project is nil")
 		return
 	}
-	sourceOwner := pullRequest.FromRef.Repository.Project.Key
+	sourceOwner := project.Key
 	pullRequestInfo = PullRequestInfo{
 		ID:     int64(pullRequest.ID),
 		Source: BranchInfo{Name: pullRequest.FromRef.ID, Repository: pullRequest.ToRef.Repository.Slug, Owner: sourceOwner},
