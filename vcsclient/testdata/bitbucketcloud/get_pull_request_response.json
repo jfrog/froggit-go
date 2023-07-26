@@ -96,7 +96,7 @@
     },
     "repository": {
       "type": "repository",
-      "full_name": "workspace/froggit",
+      "full_name": "forkedWorkspace/froggit",
       "links": {
         "self": {
           "href": "https://api.bitbucket.org/2.0/repositories/workspace/froggit"

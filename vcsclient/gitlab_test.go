@@ -258,8 +258,8 @@ func TestGitLabClient_GetPullRequestByID(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, reflect.DeepEqual(PullRequestInfo{
 		ID:     1,
-		Source: BranchInfo{Name: "manual-job-rules", Repository: ""},
-		Target: BranchInfo{Name: "master", Repository: ""},
+		Source: BranchInfo{Name: "manual-job-rules", Repository: repoName, Owner: owner},
+		Target: BranchInfo{Name: "master", Repository: repoName, Owner: owner},
 	}, result))
 
 	// Bad client

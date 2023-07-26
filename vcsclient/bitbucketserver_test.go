@@ -256,9 +256,18 @@ func TestBitbucketServerClient_GetPullRequest(t *testing.T) {
 	require.NoError(t, err)
 	assert.True(t, reflect.DeepEqual(PullRequestInfo{
 		ID:     int64(pullRequestId),
-		Source: BranchInfo{Name: "refs/heads/new_vul_2", Repository: "repoName"},
-		Target: BranchInfo{Name: "refs/heads/master", Repository: "repoName"},
+		Source: BranchInfo{Name: "refs/heads/new_vul_2", Repository: "repoName", Owner: "~fromOwner"},
+		Target: BranchInfo{Name: "refs/heads/master", Repository: "repoName", Owner: owner},
 	}, result))
+
+	// Failed owner extraction
+	response, err = os.ReadFile(filepath.Join("testdata", "bitbucketserver", "get_pull_request_response_nil.json"))
+	assert.NoError(t, err)
+	ownerClient, ownerCleanUp := createServerAndClient(t, vcsutils.BitbucketServer, true, response,
+		fmt.Sprintf("/rest/api/1.0/projects/%s/repos/%s/pull-requests/%d", owner, repo1, pullRequestId), createBitbucketServerHandler)
+	defer ownerCleanUp()
+	_, err = ownerClient.GetPullRequestByID(ctx, owner, repo1, pullRequestId)
+	assert.Error(t, err)
 
 	// Bad response
 	badClient, badClientCleanUp := createServerAndClient(t, vcsutils.BitbucketServer, true, "{",

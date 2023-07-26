@@ -283,8 +283,8 @@ func (client *GitLabClient) GetPullRequestByID(ctx context.Context, owner, repos
 	}
 	pullRequestInfo = PullRequestInfo{
 		ID:     int64(mergeRequest.ID),
-		Source: BranchInfo{Name: mergeRequest.SourceBranch},
-		Target: BranchInfo{Name: mergeRequest.TargetBranch},
+		Source: BranchInfo{Name: mergeRequest.SourceBranch, Repository: repository, Owner: owner},
+		Target: BranchInfo{Name: mergeRequest.TargetBranch, Repository: repository, Owner: owner},
 	}
 	return
 }
