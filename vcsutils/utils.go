@@ -19,7 +19,12 @@ import (
 	"time"
 )
 
-const RemoteName = "origin"
+const (
+	RemoteName = "origin"
+	GitHubUrl  = "https://github.com"
+	GitlabUrl  = "https://gitlab.com"
+	AzureUrl   = "https://dev.azure.com"
+)
 
 // CreateToken create a random UUID
 func CreateToken() string {
@@ -326,4 +331,18 @@ func MapPullRequestState(state *PullRequestState) *string {
 		return nil
 	}
 	return &stateStringValue
+}
+
+func GetDefaultApiEndpoint(provider VcsProvider) string {
+	switch provider {
+	case GitHub:
+		return GitHubUrl
+	case GitLab:
+		return GitlabUrl
+	case AzureRepos:
+		return AzureUrl
+	default:
+		// Bitbucket server, for example, doesn't have a default as this is on perm
+		return ""
+	}
 }

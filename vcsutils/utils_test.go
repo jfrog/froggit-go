@@ -278,3 +278,21 @@ func TestMapPullRequestState(t *testing.T) {
 		})
 	}
 }
+
+func TestGetDefaultApiEndpoint(t *testing.T) {
+	testCases := []struct {
+		expected    string
+		gitProvider VcsProvider
+	}{
+		{expected: GitHubUrl, gitProvider: GitHub},
+		{expected: GitlabUrl, gitProvider: GitLab},
+		{expected: "", gitProvider: BitbucketCloud},
+		{expected: "", gitProvider: BitbucketServer},
+		{expected: AzureUrl, gitProvider: AzureRepos},
+	}
+	for _, tc := range testCases {
+		t.Run(fmt.Sprintf(tc.gitProvider.String()), func(t *testing.T) {
+			assert.Equal(t, tc.expected, GetDefaultApiEndpoint(tc.gitProvider))
+		})
+	}
+}
