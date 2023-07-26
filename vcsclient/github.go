@@ -330,8 +330,8 @@ func (client *GitHubClient) GetPullRequestByID(ctx context.Context, owner, repos
 		return PullRequestInfo{}, err
 	}
 
-	sourceBranch, err1 := extractBranchFromLabel(*pullRequest.Head.Label)
-	targetBranch, err2 := extractBranchFromLabel(*pullRequest.Base.Label)
+	sourceBranch, err1 := extractBranchFromLabel(vcsutils.DefaultIfNotNil(pullRequest.Head.Label))
+	targetBranch, err2 := extractBranchFromLabel(vcsutils.DefaultIfNotNil(pullRequest.Base.Label))
 	err = errors.Join(err1, err2)
 	if err != nil {
 		return PullRequestInfo{}, err
@@ -341,13 +341,13 @@ func (client *GitHubClient) GetPullRequestByID(ctx context.Context, owner, repos
 		ID: int64(pullRequestId),
 		Source: BranchInfo{
 			Name:       sourceBranch,
-			Repository: *pullRequest.Head.Repo.Name,
-			Owner:      *pullRequest.Head.Repo.Owner.Login,
+			Repository: vcsutils.DefaultIfNotNil(pullRequest.Head.Repo.Name),
+			Owner:      vcsutils.DefaultIfNotNil(pullRequest.Head.Repo.Owner.Login),
 		},
 		Target: BranchInfo{
 			Name:       targetBranch,
-			Repository: *pullRequest.Base.Repo.Name,
-			Owner:      *pullRequest.Base.Repo.Owner.Login,
+			Repository: vcsutils.DefaultIfNotNil(pullRequest.Base.Repo.Name),
+			Owner:      vcsutils.DefaultIfNotNil(pullRequest.Base.Repo.Owner.Login),
 		},
 	}
 	return prInfo, nil

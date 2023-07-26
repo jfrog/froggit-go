@@ -412,7 +412,10 @@ func (client *BitbucketServerClient) GetPullRequestByID(ctx context.Context, own
 	if err != nil {
 		return
 	}
-	// Could differ from a forked repository
+	if pullRequest.FromRef.Repository.Project == nil {
+		err = fmt.Errorf("failed to get source repository owner, project is nil")
+		return
+	}
 	sourceOwner := pullRequest.FromRef.Repository.Project.Key
 	pullRequestInfo = PullRequestInfo{
 		ID:     int64(pullRequest.ID),

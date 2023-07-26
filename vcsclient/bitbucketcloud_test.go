@@ -573,12 +573,12 @@ func TestBitbucketCloudClient_GetCommitStatus(t *testing.T) {
 
 func TestSplitWorkSpaceAndOwner(t *testing.T) {
 	valid := "work/repo"
-	workspace, repo := splitWorkSpaceAndOwner(valid)
+	workspace, repo := splitBitbucketCloudRepoName(valid)
 	assert.Equal(t, "work", workspace)
 	assert.Equal(t, "repo", repo)
 
 	invalid := "workrepo"
-	workspace, repo = splitWorkSpaceAndOwner(invalid)
+	workspace, repo = splitBitbucketCloudRepoName(invalid)
 	assert.Equal(t, "", workspace)
 	assert.Equal(t, "", repo)
 }
