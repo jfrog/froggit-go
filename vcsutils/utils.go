@@ -332,17 +332,3 @@ func MapPullRequestState(state *PullRequestState) *string {
 	}
 	return &stateStringValue
 }
-
-func GetDefaultApiEndpoint(provider VcsProvider) string {
-	switch provider {
-	case GitHub:
-		return GitHubUrl
-	case GitLab:
-		return GitlabUrl
-	case AzureRepos:
-		return AzureUrl
-	default:
-		// Bitbucket server, for example, doesn't have a default as this is on perm
-		return ""
-	}
-}
