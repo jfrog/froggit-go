@@ -291,7 +291,7 @@ func TestGetDefaultApiEndpoint(t *testing.T) {
 		{expected: AzureUrl, gitProvider: AzureRepos},
 	}
 	for _, tc := range testCases {
-		t.Run(fmt.Sprintf(tc.gitProvider.String()), func(t *testing.T) {
+		t.Run(tc.gitProvider.String(), func(t *testing.T) {
 			assert.Equal(t, tc.expected, GetDefaultApiEndpoint(tc.gitProvider))
 		})
 	}
