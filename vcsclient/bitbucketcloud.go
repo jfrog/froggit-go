@@ -429,6 +429,11 @@ func (client *BitbucketCloudClient) ListPullRequestComments(ctx context.Context,
 	return mapBitbucketCloudCommentToCommentInfo(&parsedComments), nil
 }
 
+// DeletePullRequestComment on Bitbucket cloud
+func (client *BitbucketCloudClient) DeletePullRequestComment(_ context.Context, _, _ string, _, _ int) error {
+	return nil
+}
+
 // GetLatestCommit on Bitbucket cloud
 func (client *BitbucketCloudClient) GetLatestCommit(ctx context.Context, owner, repository, branch string) (CommitInfo, error) {
 	err := validateParametersNotBlank(map[string]string{

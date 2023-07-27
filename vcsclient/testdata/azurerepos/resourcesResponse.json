@@ -89,17 +89,28 @@
       "minVersion": "3.2",
       "maxVersion": "7.1",
       "releasedVersion": "0.0"
-    },
+	},
+	{
+	  "id": "fb93c0db-47ed-4a31-8c20-47552878fb44",
+	  "area": "Location",
+	  "resourceName": "ResourceAreas",
+	  "routeTemplate": "_apis/{resource}/DownloadFileFromRepo",
+	  "resourceVersion": 1,
+	  "minVersion": "3.2",
+	  "maxVersion": "7.1",
+	  "releasedVersion": "0.0"
+	},
+	{
+	  "id": "965a3ec7-5ed8-455a-bdcb-835a5ea7fe7b",
+	  "area": "Location",
+	  "resourceName": "ResourceAreas",
+	  "routeTemplate": "_apis/{resource}/deletePullRequestComments",
+	  "resourceVersion": 1,
+	  "minVersion": "3.2",
+	  "maxVersion": "7.1",
+	  "releasedVersion": "0.0"
+	},
     {
-      "id": "fb93c0db-47ed-4a31-8c20-47552878fb44",
-      "area": "Location",
-      "resourceName": "ResourceAreas",
-      "routeTemplate": "_apis/{resource}/DownloadFileFromRepo",
-      "resourceVersion": 1,
-      "minVersion": "3.2",
-      "maxVersion": "7.1",
-      "releasedVersion": "0.0"
-    }   , {
       "id": "01a46dea-7d46-4d40-bc84-319e7c260d99",
       "area": "Location",
       "resourceName": "ResourceAreas",

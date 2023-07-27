@@ -396,6 +396,30 @@ func (client *GitHubClient) ListPullRequestComments(ctx context.Context, owner, 
 	return mapGitHubCommentToCommentInfoList(commentsList)
 }
 
+// DeletePullRequestComment on GitHub
+func (client *GitHubClient) DeletePullRequestComment(ctx context.Context, owner, repository string, _, commentID int) error {
+	err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository})
+	if err != nil {
+		return err
+	}
+	ghClient, err := client.buildGithubClient(ctx)
+	if err != nil {
+		return err
+	}
+	resp, err := ghClient.Issues.DeleteComment(ctx, owner, repository, int64(commentID))
+	if err != nil {
+		return err
+	}
+	var statusCode int
+	if resp.Response != nil {
+		statusCode = resp.Response.StatusCode
+	}
+	if statusCode != http.StatusNoContent && statusCode != http.StatusOK {
+		return fmt.Errorf("expected %d status code while received %d status code", http.StatusNoContent, resp.Response.StatusCode)
+	}
+	return nil
+}
+
 // GetLatestCommit on GitHub
 func (client *GitHubClient) GetLatestCommit(ctx context.Context, owner, repository, branch string) (CommitInfo, error) {
 	err := validateParametersNotBlank(map[string]string{

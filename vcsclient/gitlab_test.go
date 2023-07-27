@@ -218,7 +218,7 @@ func TestGitLabClient_ListOpenPullRequests(t *testing.T) {
 	assert.NoError(t, err)
 
 	client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, response,
-		"/api/v4/merge_requests?scope=all&state=opened", createGitLabHandler)
+		"/api/v4/projects/jfrog%2Frepo-1/merge_requests?scope=all&state=opened", createGitLabHandler)
 	defer cleanUp()
 
 	result, err := client.ListOpenPullRequests(ctx, owner, repo1)
@@ -231,7 +231,6 @@ func TestGitLabClient_ListOpenPullRequests(t *testing.T) {
 	}, result[0]))
 
 	// With body
-
 	result, err = client.ListOpenPullRequestsWithBody(ctx, owner, repo1)
 	require.NoError(t, err)
 	assert.Len(t, result, 1)
@@ -521,6 +520,15 @@ func TestGitlabClient_GetRepositoryEnvironmentInfo(t *testing.T) {
 
 	_, err := client.GetRepositoryEnvironmentInfo(ctx, owner, repo1, envName)
 	assert.ErrorIs(t, err, errGitLabGetRepoEnvironmentInfoNotSupported)
+}
+
+func TestGitLabClient_DeletePullRequestComment(t *testing.T) {
+	ctx := context.Background()
+	client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, "",
+		fmt.Sprintf("/api/v4/projects/%s/merge_requests/1/notes/1", url.PathEscape(owner+"/"+repo1)), createGitLabHandler)
+	defer cleanUp()
+	err := client.DeletePullRequestComment(ctx, owner, repo1, 1, 1)
+	assert.NoError(t, err)
 }
 
 func TestGitLabClient_GetModifiedFiles(t *testing.T) {

@@ -249,25 +249,24 @@ func (client *GitLabClient) UpdatePullRequest(ctx context.Context, owner, reposi
 }
 
 // ListOpenPullRequestsWithBody on GitLab
-func (client *GitLabClient) ListOpenPullRequestsWithBody(ctx context.Context, _, repository string) ([]PullRequestInfo, error) {
-	return client.getOpenPullRequests(ctx, repository, true)
+func (client *GitLabClient) ListOpenPullRequestsWithBody(ctx context.Context, owner, repository string) ([]PullRequestInfo, error) {
+	return client.getOpenPullRequests(ctx, owner, repository, true)
 }
 
 // ListOpenPullRequests on GitLab
-func (client *GitLabClient) ListOpenPullRequests(ctx context.Context, _, repository string) ([]PullRequestInfo, error) {
-	return client.getOpenPullRequests(ctx, repository, false)
+func (client *GitLabClient) ListOpenPullRequests(ctx context.Context, owner, repository string) ([]PullRequestInfo, error) {
+	return client.getOpenPullRequests(ctx, owner, repository, false)
 }
 
-func (client *GitLabClient) getOpenPullRequests(ctx context.Context, repository string, withBody bool) ([]PullRequestInfo, error) {
+func (client *GitLabClient) getOpenPullRequests(ctx context.Context, owner, repository string, withBody bool) ([]PullRequestInfo, error) {
 	openState := "opened"
 	allScope := "all"
-	options := &gitlab.ListMergeRequestsOptions{
+	options := &gitlab.ListProjectMergeRequestsOptions{
 		State: &openState,
 		Scope: &allScope,
 	}
-	client.logger.Debug("fetching open merge requests in", repository)
-	mergeRequests, _, err := client.glClient.MergeRequests.ListMergeRequests(options,
-		gitlab.WithContext(ctx))
+	//client.logger.Debug("fetching open merge requests in", repository)
+	mergeRequests, _, err := client.glClient.MergeRequests.ListProjectMergeRequests(getProjectID(owner, repository), options, gitlab.WithContext(ctx))
 	if err != nil {
 		return []PullRequestInfo{}, err
 	}
@@ -275,7 +274,7 @@ func (client *GitLabClient) getOpenPullRequests(ctx context.Context, repository 
 }
 
 // GetPullRequestInfoById on GitLab
-func (client *GitLabClient) GetPullRequestByID(ctx context.Context, owner, repository string, pullRequestId int) (pullRequestInfo PullRequestInfo, err error) {
+func (client *GitLabClient) GetPullRequestByID(_ context.Context, owner, repository string, pullRequestId int) (pullRequestInfo PullRequestInfo, err error) {
 	client.logger.Debug("fetching merge requests by ID in", repository)
 	mergeRequest, response, err := client.glClient.MergeRequests.GetMergeRequest(getProjectID(owner, repository), pullRequestId, nil)
 	if err != nil || response.StatusCode != http.StatusOK {
@@ -316,6 +315,17 @@ func (client *GitLabClient) ListPullRequestComments(ctx context.Context, owner, 
 		return []CommentInfo{}, err
 	}
 	return mapGitLabNotesToCommentInfoList(commentsList), nil
+}
+
+// DeletePullRequestComment on GitLab
+func (client *GitLabClient) DeletePullRequestComment(ctx context.Context, owner, repository string, pullRequestID, commentID int) error {
+	if err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository}); err != nil {
+		return err
+	}
+	if _, err := client.glClient.Notes.DeleteMergeRequestNote(getProjectID(owner, repository), pullRequestID, commentID, gitlab.WithContext(ctx)); err != nil {
+		return fmt.Errorf("an error occurred while deleting pull request comment:\n%s", err.Error())
+	}
+	return nil
 }
 
 // GetLatestCommit on GitLab

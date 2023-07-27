@@ -239,8 +239,14 @@ func (client *AzureReposClient) ListPullRequestComments(ctx context.Context, _, 
 	}
 	var commentInfo []CommentInfo
 	for _, thread := range *threads {
+		if thread.IsDeleted != nil && *thread.IsDeleted {
+			continue
+		}
 		var commentsAggregator strings.Builder
 		for _, comment := range *thread.Comments {
+			if comment.IsDeleted != nil && *comment.IsDeleted {
+				continue
+			}
 			_, err = commentsAggregator.WriteString(
 				fmt.Sprintf("Author: %s, Id: %d, Content:%s\n",
 					*comment.Author.DisplayName,
@@ -257,6 +263,22 @@ func (client *AzureReposClient) ListPullRequestComments(ctx context.Context, _, 
 		})
 	}
 	return commentInfo, nil
+}
+
+// DeletePullRequestComment on Azure Repos
+func (client *AzureReposClient) DeletePullRequestComment(ctx context.Context, _, repository string, pullRequestID, commentID int) error {
+	azureReposGitClient, err := client.buildAzureReposClient(ctx)
+	if err != nil {
+		return err
+	}
+	firstCommentInThreadID := 1
+	return azureReposGitClient.DeleteComment(ctx, git.DeleteCommentArgs{
+		RepositoryId:  &repository,
+		PullRequestId: &pullRequestID,
+		ThreadId:      &commentID,
+		Project:       &client.vcsInfo.Project,
+		CommentId:     &firstCommentInThreadID,
+	})
 }
 
 // ListOpenPullRequestsWithBody on Azure Repos

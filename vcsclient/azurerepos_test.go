@@ -560,6 +560,17 @@ func TestAzureReposClient_GetModifiedFiles(t *testing.T) {
 	})
 }
 
+func TestAzureReposClient_DeletePullRequestComment(t *testing.T) {
+	client, cleanUp := createServerAndClient(t, vcsutils.AzureRepos, true, "", "deletePullRequestComments", createAzureReposHandler)
+	defer cleanUp()
+	err := client.DeletePullRequestComment(context.Background(), "", repo1, 1, 1)
+	assert.NoError(t, err)
+	badClient, badClientCleanup := createBadAzureReposClient(t, []byte{})
+	defer badClientCleanup()
+	err = badClient.DeletePullRequestComment(context.Background(), "", repo1, 1, 1)
+	assert.Error(t, err)
+}
+
 func TestAzureReposClient_GetCommitStatus(t *testing.T) {
 	ctx := context.Background()
 	commitHash := "86d6919952702f9ab03bc95b45687f145a663de0"
