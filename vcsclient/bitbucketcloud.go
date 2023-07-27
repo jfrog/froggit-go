@@ -369,15 +369,21 @@ func (client *BitbucketCloudClient) GetPullRequestByID(ctx context.Context, owne
 	if err != nil {
 		return
 	}
+
+	sourceOwner, sourceRepository := splitBitbucketCloudRepoName(pullRequestDetails.Source.Repository.Name)
+	targetOwner, targetRepository := splitBitbucketCloudRepoName(pullRequestDetails.Target.Repository.Name)
+
 	pullRequestInfo = PullRequestInfo{
 		ID: pullRequestDetails.ID,
 		Source: BranchInfo{
 			Name:       pullRequestDetails.Source.Name.Str,
-			Repository: pullRequestDetails.Source.Repository.Name,
+			Repository: sourceRepository,
+			Owner:      sourceOwner,
 		},
 		Target: BranchInfo{
 			Name:       pullRequestDetails.Target.Name.Str,
-			Repository: pullRequestDetails.Target.Repository.Name,
+			Repository: targetRepository,
+			Owner:      targetOwner,
 		},
 	}
 	return
@@ -786,4 +792,14 @@ func getBitbucketCloudRepositoryVisibility(repo *bitbucket.Repository) Repositor
 		return Private
 	}
 	return Public
+}
+
+// Bitbucket cloud repository name is a combination of workspace/repository
+// Return the two separate elements
+func splitBitbucketCloudRepoName(name string) (string, string) {
+	split := strings.Split(name, "/")
+	if len(split) < 2 {
+		return "", ""
+	}
+	return split[0], split[1]
 }

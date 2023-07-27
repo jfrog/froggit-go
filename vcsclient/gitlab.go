@@ -282,8 +282,8 @@ func (client *GitLabClient) GetPullRequestByID(_ context.Context, owner, reposit
 	}
 	pullRequestInfo = PullRequestInfo{
 		ID:     int64(mergeRequest.ID),
-		Source: BranchInfo{Name: mergeRequest.SourceBranch},
-		Target: BranchInfo{Name: mergeRequest.TargetBranch},
+		Source: BranchInfo{Name: mergeRequest.SourceBranch, Repository: repository, Owner: owner},
+		Target: BranchInfo{Name: mergeRequest.TargetBranch, Repository: repository, Owner: owner},
 	}
 	return
 }
@@ -471,20 +471,22 @@ func (client *GitLabClient) GetRepositoryEnvironmentInfo(_ context.Context, _, _
 
 // DownloadFileFromRepo on GitLab
 func (client *GitLabClient) DownloadFileFromRepo(_ context.Context, owner, repository, branch, path string) ([]byte, int, error) {
-	file, response, err := client.glClient.RepositoryFiles.GetFile(getProjectID(owner, repository), path, &gitlab.GetFileOptions{Ref: &branch})
-	if response != nil && response.StatusCode != http.StatusOK {
-		return nil, response.StatusCode, fmt.Errorf("expected %d status code while received %d status code with error:\n%s", http.StatusOK, response.StatusCode, err)
+	file, glResponse, err := client.glClient.RepositoryFiles.GetFile(getProjectID(owner, repository), path, &gitlab.GetFileOptions{Ref: &branch})
+	var statusCode int
+	if glResponse != nil && glResponse.Response != nil {
+		statusCode = glResponse.Response.StatusCode
 	}
 	if err != nil {
-		return nil, 0, err
+		return nil, statusCode, err
 	}
-
-	content, err := base64.StdEncoding.DecodeString(file.Content)
-	if err != nil {
-		return nil, response.StatusCode, err
+	if statusCode != http.StatusOK {
+		return nil, statusCode, fmt.Errorf("expected %d status code while received %d status code", http.StatusOK, glResponse.StatusCode)
 	}
-
-	return content, response.StatusCode, err
+	var content []byte
+	if file != nil {
+		content, err = base64.StdEncoding.DecodeString(file.Content)
+	}
+	return content, statusCode, err
 }
 
 func (client *GitLabClient) GetModifiedFiles(_ context.Context, owner, repository, refBefore, refAfter string) ([]string, error) {

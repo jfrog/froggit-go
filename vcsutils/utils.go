@@ -19,7 +19,12 @@ import (
 	"time"
 )
 
-const RemoteName = "origin"
+const (
+	RemoteName = "origin"
+	GitHubUrl  = "https://github.com"
+	GitlabUrl  = "https://gitlab.com"
+	AzureUrl   = "https://dev.azure.com"
+)
 
 // CreateToken create a random UUID
 func CreateToken() string {

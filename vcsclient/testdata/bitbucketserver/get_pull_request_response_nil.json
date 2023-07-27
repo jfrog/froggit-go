@@ -31,21 +31,6 @@
         "state": "AVAILABLE",
         "statusMessage": "Available",
         "forkable": true,
-        "project": {
-          "key": "repoName",
-          "id": 100,
-          "name": "repoName",
-          "description": "repoName",
-          "public": false,
-          "type": "NORMAL",
-          "links": {
-            "self": [
-              {
-                "href": "https://git.bbServerHost.info/projects/repoName"
-              }
-            ]
-          }
-        },
         "public": false,
         "archived": false,
         "links": {
@@ -62,35 +47,6 @@
           "self": [
             {
               "href": "https://git.bbServerHost.info/projects/repoName/repos/repoName/browse"
-            }
-          ]
-        }
-      },
-      "project": {
-        "key": "~fromOwner",
-        "id": 2424,
-        "name": "some name",
-        "type": "PERSONAL",
-        "owner": {
-          "name": "owner",
-          "emailAddress": "owner@bbServerHost.com",
-          "active": true,
-          "displayName": "some name",
-          "id": 2118757,
-          "slug": "owner",
-          "type": "NORMAL",
-          "links": {
-            "self": [
-              {
-                "href": "https://git.bbServerHost.info/users/owner"
-              }
-            ]
-          }
-        },
-        "links": {
-          "self": [
-            {
-              "href": "https://git.bbServerHost.info/users/owner"
             }
           ]
         }

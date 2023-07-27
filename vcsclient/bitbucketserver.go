@@ -412,10 +412,16 @@ func (client *BitbucketServerClient) GetPullRequestByID(ctx context.Context, own
 	if err != nil {
 		return
 	}
+	project := pullRequest.FromRef.Repository.Project
+	if project == nil {
+		err = fmt.Errorf("failed to get source repository owner, project is nil")
+		return
+	}
+	sourceOwner := project.Key
 	pullRequestInfo = PullRequestInfo{
 		ID:     int64(pullRequest.ID),
-		Source: BranchInfo{Name: pullRequest.FromRef.ID, Repository: pullRequest.ToRef.Repository.Slug},
-		Target: BranchInfo{Name: pullRequest.ToRef.ID, Repository: pullRequest.ToRef.Repository.Slug},
+		Source: BranchInfo{Name: pullRequest.FromRef.ID, Repository: pullRequest.ToRef.Repository.Slug, Owner: sourceOwner},
+		Target: BranchInfo{Name: pullRequest.ToRef.ID, Repository: pullRequest.ToRef.Repository.Slug, Owner: owner},
 	}
 	return
 }
@@ -666,14 +672,14 @@ func (client *BitbucketServerClient) DownloadFileFromRepo(ctx context.Context, o
 	}
 
 	var statusCode int
-	resp, err := bitbucketClient.GetContent_11(owner, repository, path, map[string]interface{}{"at": branch})
-	if resp != nil {
-		statusCode = resp.StatusCode
+	bbResp, err := bitbucketClient.GetContent_11(owner, repository, path, map[string]interface{}{"at": branch})
+	if bbResp != nil && bbResp.Response != nil {
+		statusCode = bbResp.Response.StatusCode
 	}
 	if err != nil {
 		return nil, statusCode, err
 	}
-	return resp.Payload, statusCode, err
+	return bbResp.Payload, statusCode, err
 }
 
 func createPaginationOptions(nextPageStart int) map[string]interface{} {

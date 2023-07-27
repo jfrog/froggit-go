@@ -211,8 +211,8 @@ func TestBitbucketCloudClient_GetPullRequest(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, reflect.DeepEqual(PullRequestInfo{
 		ID:     int64(pullRequestId),
-		Source: BranchInfo{Name: "pr", Repository: "workspace/froggit"},
-		Target: BranchInfo{Name: "main", Repository: "workspace/froggit"},
+		Source: BranchInfo{Name: "pr", Repository: "froggit", Owner: "forkedWorkspace"},
+		Target: BranchInfo{Name: "main", Repository: "froggit", Owner: "workspace"},
 	}, result))
 
 	// Bad Response
@@ -569,6 +569,18 @@ func TestBitbucketCloudClient_GetCommitStatus(t *testing.T) {
 		assert.True(t, commitStatuses[1].State == Pass)
 		assert.True(t, commitStatuses[2].State == Fail)
 	})
+}
+
+func TestSplitWorkSpaceAndOwner(t *testing.T) {
+	valid := "work/repo"
+	workspace, repo := splitBitbucketCloudRepoName(valid)
+	assert.Equal(t, "work", workspace)
+	assert.Equal(t, "repo", repo)
+
+	invalid := "workrepo"
+	workspace, repo = splitBitbucketCloudRepoName(invalid)
+	assert.Equal(t, "", workspace)
+	assert.Equal(t, "", repo)
 }
 
 func createBitbucketCloudHandler(t *testing.T, expectedURI string, response []byte, expectedStatusCode int) http.HandlerFunc {

@@ -17,6 +17,8 @@ import (
 	"time"
 )
 
+const defaultAzureBaseUrl = "https://dev.azure.com/"
+
 // Azure Devops API version 6
 type AzureReposClient struct {
 	vcsInfo           VcsInfo
@@ -280,16 +282,16 @@ func (client *AzureReposClient) DeletePullRequestComment(ctx context.Context, _,
 }
 
 // ListOpenPullRequestsWithBody on Azure Repos
-func (client *AzureReposClient) ListOpenPullRequestsWithBody(ctx context.Context, _, repository string) ([]PullRequestInfo, error) {
-	return client.getOpenPullRequests(ctx, repository, true)
+func (client *AzureReposClient) ListOpenPullRequestsWithBody(ctx context.Context, owner, repository string) ([]PullRequestInfo, error) {
+	return client.getOpenPullRequests(ctx, owner, repository, true)
 }
 
 // ListOpenPullRequests on Azure Repos
-func (client *AzureReposClient) ListOpenPullRequests(ctx context.Context, _, repository string) ([]PullRequestInfo, error) {
-	return client.getOpenPullRequests(ctx, repository, false)
+func (client *AzureReposClient) ListOpenPullRequests(ctx context.Context, owner, repository string) ([]PullRequestInfo, error) {
+	return client.getOpenPullRequests(ctx, owner, repository, false)
 }
 
-func (client *AzureReposClient) getOpenPullRequests(ctx context.Context, repository string, withBody bool) ([]PullRequestInfo, error) {
+func (client *AzureReposClient) getOpenPullRequests(ctx context.Context, owner, repository string, withBody bool) ([]PullRequestInfo, error) {
 	azureReposGitClient, err := client.buildAzureReposClient(ctx)
 	if err != nil {
 		return nil, err
@@ -305,7 +307,7 @@ func (client *AzureReposClient) getOpenPullRequests(ctx context.Context, reposit
 	}
 	var pullRequestsInfo []PullRequestInfo
 	for _, pullRequest := range *pullRequests {
-		pullRequestDetails := parsePullRequestDetails(pullRequest, repository)
+		pullRequestDetails := parsePullRequestDetails(client, pullRequest, owner, repository)
 		pullRequestsInfo = append(pullRequestsInfo, pullRequestDetails)
 	}
 	return pullRequestsInfo, nil
@@ -324,7 +326,7 @@ func (client *AzureReposClient) GetPullRequestByID(ctx context.Context, owner, r
 	if err != nil {
 		return
 	}
-	pullRequestInfo = parsePullRequestDetails(*pullRequest, repository)
+	pullRequestInfo = parsePullRequestDetails(client, *pullRequest, owner, repository)
 	return
 }
 
@@ -579,7 +581,7 @@ func (client *AzureReposClient) GetModifiedFiles(ctx context.Context, _, reposit
 	return fileNamesList, nil
 }
 
-func parsePullRequestDetails(pullRequest git.GitPullRequest, repository string) PullRequestInfo {
+func parsePullRequestDetails(client *AzureReposClient, pullRequest git.GitPullRequest, owner, repository string) PullRequestInfo {
 	// Trim the branches prefix and get the actual branches name
 	shortSourceName := (*pullRequest.SourceRefName)[strings.LastIndex(*pullRequest.SourceRefName, "/")+1:]
 	shortTargetName := (*pullRequest.TargetRefName)[strings.LastIndex(*pullRequest.TargetRefName, "/")+1:]
@@ -590,18 +592,41 @@ func parsePullRequestDetails(pullRequest git.GitPullRequest, repository string) 
 		prBody = *bodyPtr
 	}
 
+	// When a pull request is from a forked repository,extract the owner.
+	sourceRepoOwner := owner
+	if pullRequest.ForkSource != nil {
+		if sourceRepoOwner = extractOwnerFromForkedRepoUrl(pullRequest.ForkSource); sourceRepoOwner == "" {
+			client.logger.Warn(failedForkedRepositoryExtraction)
+		}
+	}
+
 	return PullRequestInfo{
 		ID:   int64(*pullRequest.PullRequestId),
 		Body: prBody,
 		Source: BranchInfo{
 			Name:       shortSourceName,
 			Repository: repository,
+			Owner:      sourceRepoOwner,
 		},
 		Target: BranchInfo{
 			Name:       shortTargetName,
 			Repository: repository,
+			Owner:      owner,
 		},
 	}
+}
+
+// Extract the repository owner of a forked source
+func extractOwnerFromForkedRepoUrl(forkedGit *git.GitForkRef) string {
+	if forkedGit == nil || forkedGit.Repository == nil || forkedGit.Repository.Url == nil {
+		return ""
+	}
+	url := *forkedGit.Repository.Url
+	if !strings.Contains(url, defaultAzureBaseUrl) {
+		return ""
+	}
+	owner := strings.Split(strings.TrimPrefix(url, defaultAzureBaseUrl), "/")[0]
+	return owner
 }
 
 // mapStatusToString maps commit status enum to string, specific for azure.
