@@ -410,8 +410,11 @@ func (client *GitHubClient) DeletePullRequestComment(ctx context.Context, owner,
 	if err != nil {
 		return err
 	}
-	// A valid response code following GitHub REST API is 204
-	if resp.Response != nil && resp.Response.StatusCode != http.StatusNoContent {
+	var statusCode int
+	if resp.Response != nil {
+		statusCode = resp.Response.StatusCode
+	}
+	if statusCode != http.StatusNoContent || statusCode != http.StatusOK {
 		return fmt.Errorf("expected %d status code while received %d status code", http.StatusNoContent, resp.Response.StatusCode)
 	}
 	return nil
