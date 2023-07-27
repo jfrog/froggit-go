@@ -414,7 +414,7 @@ func (client *GitHubClient) DeletePullRequestComment(ctx context.Context, owner,
 	if resp.Response != nil {
 		statusCode = resp.Response.StatusCode
 	}
-	if statusCode != http.StatusNoContent || statusCode != http.StatusOK {
+	if statusCode != http.StatusNoContent && statusCode != http.StatusOK {
 		return fmt.Errorf("expected %d status code while received %d status code", http.StatusNoContent, resp.Response.StatusCode)
 	}
 	return nil
