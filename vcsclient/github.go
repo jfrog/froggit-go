@@ -407,8 +407,12 @@ func (client *GitHubClient) DeletePullRequestComment(ctx context.Context, owner,
 		return err
 	}
 	resp, err := ghClient.Issues.DeleteComment(ctx, owner, repository, int64(commentID))
-	if err != nil || resp.StatusCode > 300 {
-		return fmt.Errorf("error occurred while deleting pull request comment:\n%s", err.Error())
+	if err != nil {
+		return err
+	}
+	// A valid response code following GitHub REST API is 204
+	if resp.Response != nil && resp.Response.StatusCode != http.StatusNoContent {
+		return fmt.Errorf("expected %d status code while received %d status code", http.StatusNoContent, resp.Response.StatusCode)
 	}
 	return nil
 }
