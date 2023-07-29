@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/jfrog/froggit-go/vcsutils"
 	"github.com/microsoft/azure-devops-go-api/azuredevops"
@@ -534,11 +533,11 @@ func TestAzureReposClient_GetModifiedFiles(t *testing.T) {
 	t.Run("validation fails", func(t *testing.T) {
 		client := AzureReposClient{}
 		_, err := client.GetModifiedFiles(ctx, owner, "", "sha-1", "sha-2")
-		require.Equal(t, errors.New("validation failed: required parameter 'repository' is missing"), err)
+		assert.EqualError(t, err, "validation failed: required parameter 'repository' is missing")
 		_, err = client.GetModifiedFiles(ctx, owner, repo1, "", "sha-2")
-		require.Equal(t, errors.New("validation failed: required parameter 'refBefore' is missing"), err)
+		assert.EqualError(t, err, "validation failed: required parameter 'refBefore' is missing")
 		_, err = client.GetModifiedFiles(ctx, owner, repo1, "sha-1", "")
-		require.Equal(t, errors.New("validation failed: required parameter 'refAfter' is missing"), err)
+		assert.EqualError(t, err, "validation failed: required parameter 'refAfter' is missing")
 	})
 
 	t.Run("failed request", func(t *testing.T) {

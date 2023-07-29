@@ -3,7 +3,6 @@ package vcsclient
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"math"
@@ -559,13 +558,13 @@ func TestGitLabClient_GetModifiedFiles(t *testing.T) {
 	t.Run("validation fails", func(t *testing.T) {
 		client := GitLabClient{}
 		_, err := client.GetModifiedFiles(ctx, "", repo1, "sha-1", "sha-2")
-		require.Equal(t, errors.New("validation failed: required parameter 'owner' is missing"), err)
+		assert.EqualError(t, err, "validation failed: required parameter 'owner' is missing")
 		_, err = client.GetModifiedFiles(ctx, owner, "", "sha-1", "sha-2")
-		require.Equal(t, errors.New("validation failed: required parameter 'repository' is missing"), err)
+		assert.EqualError(t, err, "validation failed: required parameter 'repository' is missing")
 		_, err = client.GetModifiedFiles(ctx, owner, repo1, "", "sha-2")
-		require.Equal(t, errors.New("validation failed: required parameter 'refBefore' is missing"), err)
+		assert.EqualError(t, err, "validation failed: required parameter 'refBefore' is missing")
 		_, err = client.GetModifiedFiles(ctx, owner, repo1, "sha-1", "")
-		require.Equal(t, errors.New("validation failed: required parameter 'refAfter' is missing"), err)
+		assert.EqualError(t, err, "validation failed: required parameter 'refAfter' is missing")
 	})
 
 	t.Run("failed request", func(t *testing.T) {
