@@ -41,7 +41,7 @@ Currently supported providers are: [GitHub](#github), [Bitbucket Server](#bitbuc
       - [Get Commit Status](#get-commit-status)
       - [Create Pull Request](#create-pull-request)
       - [Update Pull Request](#update-pull-request)
-      - [Get Pull Request By ID](#get-pull-request)
+      - [Get Pull Request By ID](#get-pull-request-by-id)
       - [List Open Pull Requests](#list-open-pull-requests)
       - [List Open Pull Requests With Body](#list-open-pull-requests-with-body)
       - [Add Pull Request Comment](#add-pull-request-comment)

@@ -385,7 +385,7 @@ func TestGitLabClient_GetRepositoryInfo(t *testing.T) {
 		RepositoryInfo{
 			RepositoryVisibility: Private,
 			CloneInfo: CloneInfo{
-				HTTP: "http://example.com/diaspora/diaspora-project-site.git",
+				HTTP: "https://example.com/diaspora/diaspora-project-site.git",
 				SSH:  "git@example.com:diaspora/diaspora-project-site.git"},
 		},
 		result,

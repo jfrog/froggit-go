@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/config"
@@ -80,7 +81,7 @@ func Untar(destDir string, reader io.Reader, shouldRemoveBaseDir bool) (err erro
 		// Check the file type
 		switch header.Typeflag {
 
-		// If its a dir and it doesn't exist create it
+		// If it's a dir, and it doesn't exist create it
 		case tar.TypeDir:
 			if _, err := os.Stat(target); err != nil {
 				if err := os.MkdirAll(target, 0750); err != nil {
@@ -285,7 +286,7 @@ func generateErrorString(bodyArray []byte) string {
 // CreateDotGitFolderWithRemote creates a .git folder inside path with remote details of remoteName and remoteUrl
 func CreateDotGitFolderWithRemote(path, remoteName, remoteUrl string) error {
 	repo, err := git.PlainInit(path, false)
-	if err == git.ErrRepositoryAlreadyExists {
+	if errors.Is(err, git.ErrRepositoryAlreadyExists) {
 		// If the .git folder already exists, we can skip this function
 		return nil
 	}

@@ -23,14 +23,14 @@ func TestBitbucketParseCommitStatuses(t *testing.T) {
 			{
 				State:       "SUCCESSFUL",
 				Description: "Build successful",
-				Url:         "http://example.com/build/1234",
+				Url:         "https://example.com/build/1234",
 				Title:       "jenkins",
 				DateAdded:   1619189054828,
 			},
 			{
 				State:       "FAILED",
 				Description: "Build failed",
-				Url:         "http://example.com/build/5678",
+				Url:         "https://example.com/build/5678",
 				Title:       "jenkins",
 				DateAdded:   1619189055832,
 			},
@@ -42,14 +42,14 @@ func TestBitbucketParseCommitStatuses(t *testing.T) {
 		{
 			State:       Pass,
 			Description: "Build successful",
-			DetailsUrl:  "http://example.com/build/1234",
+			DetailsUrl:  "https://example.com/build/1234",
 			Creator:     "jenkins",
 			CreatedAt:   time.Unix(1619189054, 828000000).UTC(),
 		},
 		{
 			State:       Fail,
 			Description: "Build failed",
-			DetailsUrl:  "http://example.com/build/5678",
+			DetailsUrl:  "https://example.com/build/5678",
 			Creator:     "jenkins",
 			CreatedAt:   time.Unix(1619189055, 832000000).UTC(),
 		},
@@ -64,7 +64,7 @@ func TestGetCommitStatusInfoByBitbucketProvider_BitbucketServer(t *testing.T) {
 	commitStatus := &BitbucketCommitInfo{
 		State:       "SUCCESSFUL",
 		Description: "Build successful",
-		Url:         "http://example.com/build/1234",
+		Url:         "https://example.com/build/1234",
 		Title:       "jenkins",
 		DateAdded:   1619189054828,
 	}
@@ -72,7 +72,7 @@ func TestGetCommitStatusInfoByBitbucketProvider_BitbucketServer(t *testing.T) {
 	expectedStatus := CommitStatusInfo{
 		State:       Pass,
 		Description: "Build successful",
-		DetailsUrl:  "http://example.com/build/1234",
+		DetailsUrl:  "https://example.com/build/1234",
 		Creator:     "jenkins",
 		CreatedAt:   time.Unix(1619189054, 828000000).UTC(),
 	}

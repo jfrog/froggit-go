@@ -91,9 +91,9 @@ type WebHookInfoRepoDetails struct {
 type WebhookInfoTag struct {
 	// Name is a name of the tag.
 	Name string `json:"name,omitempty"`
-	// Hash is a SHA of the tag.
+	// Hash is an SHA of the tag.
 	Hash string `json:"hash,omitempty"`
-	// TargetHash is a SHA of the commit the tag points to.
+	// TargetHash is an SHA of the commit the tag points to.
 	TargetHash string `json:"target_hash,omitempty"`
 	// Message is a message used during tag creation if any.
 	Message string `json:"message,omitempty"`
