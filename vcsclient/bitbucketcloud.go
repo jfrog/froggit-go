@@ -253,7 +253,7 @@ func (client *BitbucketCloudClient) DownloadRepository(ctx context.Context, owne
 		return err
 	}
 	client.logger.Debug("received archive url:", downloadLink)
-	getRequest, err := http.NewRequestWithContext(ctx, "GET", downloadLink, nil)
+	getRequest, err := http.NewRequestWithContext(ctx, http.MethodGet, downloadLink, nil)
 	if err != nil {
 		return err
 	}

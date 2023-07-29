@@ -173,7 +173,7 @@ func TestCheckResponseStatusWithBody(t *testing.T) {
 	expectedStatusCode := 200
 	resp := &http.Response{
 		Status:     "200",
-		StatusCode: 200,
+		StatusCode: http.StatusOK,
 	}
 	assert.NoError(t, CheckResponseStatusWithBody(resp, expectedStatusCode))
 }

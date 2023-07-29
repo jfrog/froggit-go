@@ -12,7 +12,6 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
-	"reflect"
 	"strconv"
 	"testing"
 	"time"
@@ -224,22 +223,22 @@ func TestGitLabClient_ListOpenPullRequests(t *testing.T) {
 	result, err := client.ListOpenPullRequests(ctx, owner, repo1)
 	require.NoError(t, err)
 	assert.Len(t, result, 1)
-	assert.True(t, reflect.DeepEqual(PullRequestInfo{
+	assert.EqualValues(t, PullRequestInfo{
 		ID:     302,
 		Source: BranchInfo{Name: "test1", Repository: repo1, Owner: owner},
 		Target: BranchInfo{Name: "master", Repository: repo1, Owner: owner},
-	}, result[0]))
+	}, result[0])
 
 	// With body
 	result, err = client.ListOpenPullRequestsWithBody(ctx, owner, repo1)
 	require.NoError(t, err)
 	assert.Len(t, result, 1)
-	assert.True(t, reflect.DeepEqual(PullRequestInfo{
+	assert.EqualValues(t, PullRequestInfo{
 		ID:     302,
 		Body:   "hello world",
 		Source: BranchInfo{Name: "test1", Repository: repo1, Owner: owner},
 		Target: BranchInfo{Name: "master", Repository: repo1, Owner: owner},
-	}, result[0]))
+	}, result[0])
 }
 
 func TestGitLabClient_GetPullRequestByID(t *testing.T) {
@@ -255,11 +254,11 @@ func TestGitLabClient_GetPullRequestByID(t *testing.T) {
 	defer cleanUp()
 	result, err := client.GetPullRequestByID(ctx, owner, repoName, pullRequestId)
 	assert.NoError(t, err)
-	assert.True(t, reflect.DeepEqual(PullRequestInfo{
+	assert.EqualValues(t, PullRequestInfo{
 		ID:     1,
 		Source: BranchInfo{Name: "manual-job-rules", Repository: repoName, Owner: owner},
 		Target: BranchInfo{Name: "master", Repository: repoName, Owner: owner},
-	}, result))
+	}, result)
 
 	// Bad client
 	badClient, badClientCleanUp := createServerAndClient(t, vcsutils.GitLab, false, "",

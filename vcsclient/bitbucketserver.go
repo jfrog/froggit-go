@@ -35,7 +35,7 @@ func NewBitbucketServerClient(vcsInfo VcsInfo, logger Log) (*BitbucketServerClie
 	return bitbucketServerClient, nil
 }
 
-func (client *BitbucketServerClient) buildBitbucketClient(ctx context.Context) (*bitbucketv1.DefaultApiService, error) {
+func (client *BitbucketServerClient) buildBitbucketClient(ctx context.Context) *bitbucketv1.DefaultApiService {
 	// Bitbucket API Endpoint ends with '/rest'
 	if !strings.HasSuffix(client.vcsInfo.APIEndpoint, "/rest") {
 		client.vcsInfo.APIEndpoint += "/rest"
@@ -45,7 +45,7 @@ func (client *BitbucketServerClient) buildBitbucketClient(ctx context.Context) (
 		HTTPClient: client.buildHTTPClient(ctx),
 		BasePath:   client.vcsInfo.APIEndpoint,
 	})
-	return bbClient.DefaultApi, nil
+	return bbClient.DefaultApi
 }
 
 func (client *BitbucketServerClient) buildHTTPClient(ctx context.Context) *http.Client {
@@ -58,22 +58,16 @@ func (client *BitbucketServerClient) buildHTTPClient(ctx context.Context) *http.
 
 // TestConnection on Bitbucket server
 func (client *BitbucketServerClient) TestConnection(ctx context.Context) error {
-	bitbucketClient, err := client.buildBitbucketClient(ctx)
-	if err != nil {
-		return err
-	}
+	bitbucketClient := client.buildBitbucketClient(ctx)
 
 	options := map[string]interface{}{"limit": 1}
-	_, err = bitbucketClient.GetUsers(options)
+	_, err := bitbucketClient.GetUsers(options)
 	return err
 }
 
 // ListRepositories on Bitbucket server
 func (client *BitbucketServerClient) ListRepositories(ctx context.Context) (map[string][]string, error) {
-	bitbucketClient, err := client.buildBitbucketClient(ctx)
-	if err != nil {
-		return nil, err
-	}
+	bitbucketClient := client.buildBitbucketClient(ctx)
 	projects, err := client.listProjects(bitbucketClient)
 	if err != nil {
 		return nil, err
@@ -103,14 +97,11 @@ func (client *BitbucketServerClient) ListRepositories(ctx context.Context) (map[
 
 // ListBranches on Bitbucket server
 func (client *BitbucketServerClient) ListBranches(ctx context.Context, owner, repository string) ([]string, error) {
-	bitbucketClient, err := client.buildBitbucketClient(ctx)
-	if err != nil {
-		return nil, err
-	}
+	bitbucketClient := client.buildBitbucketClient(ctx)
 	var results []string
 	var apiResponse *bitbucketv1.APIResponse
 	for isLastPage, nextPageStart := true, 0; isLastPage; isLastPage, nextPageStart = bitbucketv1.HasNextPage(apiResponse) {
-		apiResponse, err = bitbucketClient.GetBranches(owner, repository, createPaginationOptions(nextPageStart))
+		apiResponse, err := bitbucketClient.GetBranches(owner, repository, createPaginationOptions(nextPageStart))
 		if err != nil {
 			return nil, err
 		}
@@ -193,10 +184,7 @@ type bitbucketServerSSHKey struct {
 // CreateWebhook on Bitbucket server
 func (client *BitbucketServerClient) CreateWebhook(ctx context.Context, owner, repository, _, payloadURL string,
 	webhookEvents ...vcsutils.WebhookEvent) (string, string, error) {
-	bitbucketClient, err := client.buildBitbucketClient(ctx)
-	if err != nil {
-		return "", "", err
-	}
+	bitbucketClient := client.buildBitbucketClient(ctx)
 	token := vcsutils.CreateToken()
 	hook := createBitbucketServerHook(token, payloadURL, webhookEvents...)
 	response, err := bitbucketClient.CreateWebhook(owner, repository, hook, []string{})
@@ -213,10 +201,7 @@ func (client *BitbucketServerClient) CreateWebhook(ctx context.Context, owner, r
 // UpdateWebhook on Bitbucket server
 func (client *BitbucketServerClient) UpdateWebhook(ctx context.Context, owner, repository, _, payloadURL, token,
 	webhookID string, webhookEvents ...vcsutils.WebhookEvent) error {
-	bitbucketClient, err := client.buildBitbucketClient(ctx)
-	if err != nil {
-		return err
-	}
+	bitbucketClient := client.buildBitbucketClient(ctx)
 	webhookIDInt32, err := strconv.ParseInt(webhookID, 10, 32)
 	if err != nil {
 		return err
@@ -228,10 +213,7 @@ func (client *BitbucketServerClient) UpdateWebhook(ctx context.Context, owner, r
 
 // DeleteWebhook on Bitbucket server
 func (client *BitbucketServerClient) DeleteWebhook(ctx context.Context, owner, repository, webhookID string) error {
-	bitbucketClient, err := client.buildBitbucketClient(ctx)
-	if err != nil {
-		return err
-	}
+	bitbucketClient := client.buildBitbucketClient(ctx)
 	webhookIDInt32, err := strconv.ParseInt(webhookID, 10, 32)
 	if err != nil {
 		return err
@@ -243,11 +225,8 @@ func (client *BitbucketServerClient) DeleteWebhook(ctx context.Context, owner, r
 // SetCommitStatus on Bitbucket server
 func (client *BitbucketServerClient) SetCommitStatus(ctx context.Context, commitStatus CommitStatus, _, _, ref, title,
 	description, detailsURL string) error {
-	bitbucketClient, err := client.buildBitbucketClient(ctx)
-	if err != nil {
-		return err
-	}
-	_, err = bitbucketClient.SetCommitStatus(ref, bitbucketv1.BuildStatus{
+	bitbucketClient := client.buildBitbucketClient(ctx)
+	_, err := bitbucketClient.SetCommitStatus(ref, bitbucketv1.BuildStatus{
 		State:       getBitbucketCommitState(commitStatus),
 		Key:         title,
 		Description: description,
@@ -258,10 +237,7 @@ func (client *BitbucketServerClient) SetCommitStatus(ctx context.Context, commit
 
 // GetCommitStatuses on Bitbucket server
 func (client *BitbucketServerClient) GetCommitStatuses(ctx context.Context, owner, repository, ref string) (status []CommitStatusInfo, err error) {
-	bitbucketClient, err := client.buildBitbucketClient(ctx)
-	if err != nil {
-		return nil, err
-	}
+	bitbucketClient := client.buildBitbucketClient(ctx)
 	response, err := bitbucketClient.GetCommitStatus(ref)
 	if err != nil {
 		return nil, err
@@ -271,10 +247,7 @@ func (client *BitbucketServerClient) GetCommitStatuses(ctx context.Context, owne
 
 // DownloadRepository on Bitbucket server
 func (client *BitbucketServerClient) DownloadRepository(ctx context.Context, owner, repository, branch, localPath string) error {
-	bitbucketClient, err := client.buildBitbucketClient(ctx)
-	if err != nil {
-		return err
-	}
+	bitbucketClient := client.buildBitbucketClient(ctx)
 	params := map[string]interface{}{"format": "tgz"}
 	branch = strings.TrimSpace(branch)
 	if branch != "" {
@@ -300,10 +273,7 @@ func (client *BitbucketServerClient) DownloadRepository(ctx context.Context, own
 // CreatePullRequest on Bitbucket server
 func (client *BitbucketServerClient) CreatePullRequest(ctx context.Context, owner, repository, sourceBranch, targetBranch,
 	title, description string) error {
-	bitbucketClient, err := client.buildBitbucketClient(ctx)
-	if err != nil {
-		return err
-	}
+	bitbucketClient := client.buildBitbucketClient(ctx)
 	bitbucketRepo := &bitbucketv1.Repository{
 		Slug: repository,
 		Project: &bitbucketv1.Project{
@@ -322,17 +292,14 @@ func (client *BitbucketServerClient) CreatePullRequest(ctx context.Context, owne
 			Repository: *bitbucketRepo,
 		},
 	}
-	_, err = bitbucketClient.CreatePullRequest(owner, repository, options)
+	_, err := bitbucketClient.CreatePullRequest(owner, repository, options)
 	return err
 }
 
 // UpdatePullRequest on bitbucket server
 // Changing targetBranchRef currently not supported.
 func (client *BitbucketServerClient) UpdatePullRequest(ctx context.Context, owner, repository, title, body, targetBranchRef string, prId int, state vcsutils.PullRequestState) (err error) {
-	bitbucketClient, err := client.buildBitbucketClient(ctx)
-	if err != nil {
-		return
-	}
+	bitbucketClient := client.buildBitbucketClient(ctx)
 	apiResponse, err := bitbucketClient.GetPullRequest(owner, repository, prId)
 	if err != nil {
 		return
@@ -360,14 +327,11 @@ func (client *BitbucketServerClient) ListOpenPullRequests(ctx context.Context, o
 }
 
 func (client *BitbucketServerClient) getOpenPullRequests(ctx context.Context, owner, repository string, withBody bool) ([]PullRequestInfo, error) {
-	bitbucketClient, err := client.buildBitbucketClient(ctx)
-	if err != nil {
-		return nil, err
-	}
+	bitbucketClient := client.buildBitbucketClient(ctx)
 	var results []PullRequestInfo
 	var apiResponse *bitbucketv1.APIResponse
 	for isLastPage, nextPageStart := true, 0; isLastPage; isLastPage, nextPageStart = bitbucketv1.HasNextPage(apiResponse) {
-		apiResponse, err = bitbucketClient.GetPullRequestsPage(owner, repository, createPaginationOptions(nextPageStart))
+		apiResponse, err := bitbucketClient.GetPullRequestsPage(owner, repository, createPaginationOptions(nextPageStart))
 		if err != nil {
 			return nil, err
 		}
@@ -410,10 +374,7 @@ func (client *BitbucketServerClient) getOpenPullRequests(ctx context.Context, ow
 // GetPullRequestInfoById on bitbucket server
 func (client *BitbucketServerClient) GetPullRequestByID(ctx context.Context, owner, repository string, pullRequestId int) (pullRequestInfo PullRequestInfo, err error) {
 	client.logger.Debug("fetching pull request by ID in ", repository)
-	bitbucketClient, err := client.buildBitbucketClient(ctx)
-	if err != nil {
-		return
-	}
+	bitbucketClient := client.buildBitbucketClient(ctx)
 	apiResponse, err := bitbucketClient.GetPullRequest(owner, repository, pullRequestId)
 	if err != nil || apiResponse.StatusCode != http.StatusOK {
 		return
@@ -440,10 +401,7 @@ func (client *BitbucketServerClient) AddPullRequestComment(ctx context.Context, 
 	if err != nil {
 		return err
 	}
-	bitbucketClient, err := client.buildBitbucketClient(ctx)
-	if err != nil {
-		return err
-	}
+	bitbucketClient := client.buildBitbucketClient(ctx)
 	_, err = bitbucketClient.CreatePullRequestComment(owner, repository, pullRequestID, bitbucketv1.Comment{
 		Text: content,
 	}, []string{"application/json"})
@@ -453,14 +411,11 @@ func (client *BitbucketServerClient) AddPullRequestComment(ctx context.Context, 
 
 // ListPullRequestComments on Bitbucket server
 func (client *BitbucketServerClient) ListPullRequestComments(ctx context.Context, owner, repository string, pullRequestID int) ([]CommentInfo, error) {
-	bitbucketClient, err := client.buildBitbucketClient(ctx)
-	if err != nil {
-		return nil, err
-	}
+	bitbucketClient := client.buildBitbucketClient(ctx)
 	var results []CommentInfo
 	var apiResponse *bitbucketv1.APIResponse
 	for isLastPage, nextPageStart := true, 0; isLastPage; isLastPage, nextPageStart = bitbucketv1.HasNextPage(apiResponse) {
-		apiResponse, err = bitbucketClient.GetActivities(owner, repository, int64(pullRequestID), createPaginationOptions(nextPageStart))
+		apiResponse, err := bitbucketClient.GetActivities(owner, repository, int64(pullRequestID), createPaginationOptions(nextPageStart))
 		if err != nil {
 			return nil, err
 		}
@@ -485,10 +440,7 @@ func (client *BitbucketServerClient) ListPullRequestComments(ctx context.Context
 
 // DeletePullRequestComment on Bitbucket Server
 func (client *BitbucketServerClient) DeletePullRequestComment(ctx context.Context, owner, repository string, pullRequestID, commentID int) error {
-	bitbucketClient, err := client.buildBitbucketClient(ctx)
-	if err != nil {
-		return err
-	}
+	bitbucketClient := client.buildBitbucketClient(ctx)
 	comments, err := client.ListPullRequestComments(ctx, owner, repository, pullRequestID)
 	if err != nil {
 		return err
@@ -527,10 +479,7 @@ func (client *BitbucketServerClient) GetLatestCommit(ctx context.Context, owner,
 		"limit": 1,
 		"until": branch,
 	}
-	bitbucketClient, err := client.buildBitbucketClient(ctx)
-	if err != nil {
-		return CommitInfo{}, err
-	}
+	bitbucketClient := client.buildBitbucketClient(ctx)
 
 	apiResponse, err := bitbucketClient.GetCommits(owner, repository, options)
 	if err != nil {
@@ -553,10 +502,7 @@ func (client *BitbucketServerClient) GetRepositoryInfo(ctx context.Context, owne
 		return RepositoryInfo{}, err
 	}
 
-	bitbucketClient, err := client.buildBitbucketClient(ctx)
-	if err != nil {
-		return RepositoryInfo{}, err
-	}
+	bitbucketClient := client.buildBitbucketClient(ctx)
 
 	repo, err := bitbucketClient.GetRepository(owner, repository)
 	if err != nil {
@@ -601,10 +547,7 @@ func (client *BitbucketServerClient) GetCommitBySha(ctx context.Context, owner, 
 		return CommitInfo{}, err
 	}
 
-	bitbucketClient, err := client.buildBitbucketClient(ctx)
-	if err != nil {
-		return CommitInfo{}, err
-	}
+	bitbucketClient := client.buildBitbucketClient(ctx)
 
 	apiResponse, err := bitbucketClient.GetCommit(owner, repository, sha, nil)
 	if err != nil {
@@ -674,10 +617,7 @@ func (client *BitbucketServerClient) listProjects(bitbucketClient *bitbucketv1.D
 
 // DownloadFileFromRepo on Bitbucket server
 func (client *BitbucketServerClient) DownloadFileFromRepo(ctx context.Context, owner, repository, branch, path string) ([]byte, int, error) {
-	bitbucketClient, err := client.buildBitbucketClient(ctx)
-	if err != nil {
-		return nil, 0, err
-	}
+	bitbucketClient := client.buildBitbucketClient(ctx)
 
 	var statusCode int
 	bbResp, err := bitbucketClient.GetContent_11(owner, repository, path, map[string]interface{}{"at": branch})
@@ -784,10 +724,7 @@ func (client *BitbucketServerClient) GetModifiedFiles(ctx context.Context, owner
 		return nil, err
 	}
 
-	bitbucketClient, err := client.buildBitbucketClient(ctx)
-	if err != nil {
-		return nil, err
-	}
+	bitbucketClient := client.buildBitbucketClient(ctx)
 
 	params := map[string]interface{}{"contextLines": int32(0), "from": refAfter, "to": refBefore}
 	resp, err := bitbucketClient.StreamDiff_37(owner, repository, "", params)

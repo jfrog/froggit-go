@@ -31,7 +31,7 @@ func TestBitbucketCloudParseIncomingPushWebhook(t *testing.T) {
 	defer close(reader)
 
 	// Create request
-	request := httptest.NewRequest("POST", "https://127.0.0.1?token="+string(token), reader)
+	request := httptest.NewRequest(http.MethodPost, "https://127.0.0.1?token="+string(token), reader)
 	request.Header.Add(EventHeaderKey, "repo:push")
 
 	// Parse webhook
@@ -222,7 +222,7 @@ func TestBitbucketCloudParseIncomingPrWebhook(t *testing.T) {
 			defer close(reader)
 
 			// Create request
-			request := httptest.NewRequest("POST", "https://127.0.0.1?token="+string(token), reader)
+			request := httptest.NewRequest(http.MethodPost, "https://127.0.0.1?token="+string(token), reader)
 			request.Header.Add(EventHeaderKey, tt.eventHeader)
 
 			// Parse webhook
@@ -296,7 +296,7 @@ func TestBitbucketCloudParseIncomingWebhookTagEvents(t *testing.T) {
 			require.NoError(t, err)
 			defer close(reader)
 
-			request := httptest.NewRequest("POST", "https://127.0.0.1?token="+string(token), reader)
+			request := httptest.NewRequest(http.MethodPost, "https://127.0.0.1?token="+string(token), reader)
 			request.Header.Add(EventHeaderKey, tt.eventHeader)
 
 			actual, err := ParseIncomingWebhook(
@@ -336,7 +336,7 @@ func TestBitbucketCloudPayloadMismatchToken(t *testing.T) {
 	defer close(reader)
 
 	// Create request
-	request := httptest.NewRequest("POST", "https://127.0.0.1?token=wrong-token", reader)
+	request := httptest.NewRequest(http.MethodPost, "https://127.0.0.1?token=wrong-token", reader)
 	request.Header.Add(EventHeaderKey, "repo:push")
 
 	// Parse webhook

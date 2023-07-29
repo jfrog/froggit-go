@@ -10,7 +10,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"reflect"
 	"strconv"
 	"strings"
 	"testing"
@@ -223,23 +222,23 @@ func TestBitbucketServer_ListOpenPullRequests(t *testing.T) {
 
 	require.NoError(t, err)
 	assert.Len(t, result, 1)
-	assert.True(t, reflect.DeepEqual(PullRequestInfo{
+	assert.EqualValues(t, PullRequestInfo{
 		ID:     101,
 		Source: BranchInfo{Name: "feature-ABC-123", Repository: "my-repo", Owner: owner},
 		Target: BranchInfo{Name: "master", Repository: "my-repo", Owner: owner},
-	}, result[0]))
+	}, result[0])
 
 	// With body:
 	result, err = client.ListOpenPullRequestsWithBody(ctx, owner, repo1)
 
 	require.NoError(t, err)
 	assert.Len(t, result, 1)
-	assert.True(t, reflect.DeepEqual(PullRequestInfo{
+	assert.EqualValues(t, PullRequestInfo{
 		ID:     101,
 		Body:   "hello world",
 		Source: BranchInfo{Name: "feature-ABC-123", Repository: "my-repo", Owner: owner},
 		Target: BranchInfo{Name: "master", Repository: "my-repo", Owner: owner},
-	}, result[0]))
+	}, result[0])
 }
 
 func TestBitbucketServerClient_GetPullRequest(t *testing.T) {
@@ -254,11 +253,11 @@ func TestBitbucketServerClient_GetPullRequest(t *testing.T) {
 	defer cleanUp()
 	result, err := client.GetPullRequestByID(ctx, owner, repo1, pullRequestId)
 	require.NoError(t, err)
-	assert.True(t, reflect.DeepEqual(PullRequestInfo{
+	assert.EqualValues(t, PullRequestInfo{
 		ID:     int64(pullRequestId),
 		Source: BranchInfo{Name: "refs/heads/new_vul_2", Repository: "repoName", Owner: "~fromOwner"},
 		Target: BranchInfo{Name: "refs/heads/master", Repository: "repoName", Owner: owner},
-	}, result))
+	}, result)
 
 	// Failed owner extraction
 	response, err = os.ReadFile(filepath.Join("testdata", "bitbucketserver", "get_pull_request_response_nil.json"))
@@ -677,15 +676,15 @@ func createBitbucketServerHandler(t *testing.T, expectedURI string, response []b
 func createBitbucketServerListRepositoriesHandler(t *testing.T, _ string, _ []byte, expectedStatusCode int) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var responseObj interface{}
-		if r.RequestURI == "/rest/api/1.0/projects?start=0" {
+		switch r.RequestURI {
+		case "/rest/api/1.0/projects?start=0":
 			responseObj = map[string][]bitbucketv1.Project{"values": {{Key: username}}}
 			w.Header().Add("X-Ausername", username)
-
-		} else if r.RequestURI == "/rest/api/1.0/projects/~FROGGER/repos?start=0" {
+		case "/rest/api/1.0/projects/~FROGGER/repos?start=0":
 			responseObj = map[string][]bitbucketv1.Repository{"values": {{Slug: repo1}}}
-		} else if r.RequestURI == "/rest/api/1.0/projects/frogger/repos?start=0" {
+		case "/rest/api/1.0/projects/frogger/repos?start=0":
 			responseObj = map[string][]bitbucketv1.Repository{"values": {{Slug: repo2}}}
-		} else {
+		default:
 			assert.Fail(t, "Unexpected request Uri "+r.RequestURI)
 		}
 		w.WriteHeader(expectedStatusCode)

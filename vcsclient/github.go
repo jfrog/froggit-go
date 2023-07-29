@@ -233,7 +233,7 @@ func (client *GitHubClient) DownloadRepository(ctx context.Context, owner, repos
 		return err
 	}
 	httpClient := &http.Client{}
-	req, err := http.NewRequest("GET", baseURL.String(), nil)
+	req, err := http.NewRequest(http.MethodGet, baseURL.String(), nil)
 	if err != nil {
 		return err
 	}

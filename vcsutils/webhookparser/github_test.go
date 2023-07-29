@@ -51,7 +51,7 @@ func TestGitHubParseIncomingPushWebhook(t *testing.T) {
 	defer close(reader)
 
 	// Create request
-	request := httptest.NewRequest("POST", "https://127.0.0.1", reader)
+	request := httptest.NewRequest(http.MethodPost, "https://127.0.0.1", reader)
 	request.Header.Add("content-type", "application/x-www-form-urlencoded")
 	request.Header.Add(githubSha256Header, "sha256="+githubPushSha256)
 	request.Header.Add(githubEventHeader, "push")
@@ -301,7 +301,7 @@ func TestGithubParseIncomingPrWebhook(t *testing.T) {
 			defer close(reader)
 
 			// Create request
-			request := httptest.NewRequest("POST", "https://127.0.0.1", reader)
+			request := httptest.NewRequest(http.MethodPost, "https://127.0.0.1", reader)
 			request.Header.Add("content-type", "application/x-www-form-urlencoded")
 			request.Header.Add(githubSha256Header, "sha256="+tt.payloadSha)
 			request.Header.Add(githubEventHeader, "pull_request")
@@ -382,7 +382,7 @@ func TestGitHubParseIncomingWebhookTagEvents(t *testing.T) {
 			require.NoError(t, err)
 			defer close(reader)
 
-			request := httptest.NewRequest("POST", "https://127.0.0.1", reader)
+			request := httptest.NewRequest(http.MethodPost, "https://127.0.0.1", reader)
 			request.Header.Add("content-type", "application/x-www-form-urlencoded")
 			request.Header.Add(githubSha256Header, "sha256="+tt.payloadSha)
 			request.Header.Add(githubEventHeader, "push")
@@ -429,7 +429,7 @@ func TestGitHubPayloadMismatchSignature(t *testing.T) {
 	defer close(reader)
 
 	// Create request
-	request := httptest.NewRequest("POST", "https://127.0.0.1", reader)
+	request := httptest.NewRequest(http.MethodPost, "https://127.0.0.1", reader)
 	request.Header.Add("content-type", "application/x-www-form-urlencoded")
 	request.Header.Add(githubSha256Header, "sha256=wrongsignature")
 	request.Header.Add(githubEventHeader, "push")

@@ -15,7 +15,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -206,7 +205,7 @@ func TestAzureRepos_TestListOpenPullRequests(t *testing.T) {
 	defer cleanUp()
 	pullRequestsInfo, err := client.ListOpenPullRequests(ctx, "", repo1)
 	assert.NoError(t, err)
-	assert.True(t, reflect.DeepEqual(pullRequestsInfo, []PullRequestInfo{{ID: 1, Source: BranchInfo{Name: branch1, Repository: repo1}, Target: BranchInfo{Name: branch2, Repository: repo1}}}))
+	assert.EqualValues(t, pullRequestsInfo, []PullRequestInfo{{ID: 1, Source: BranchInfo{Name: branch1, Repository: repo1}, Target: BranchInfo{Name: branch2, Repository: repo1}}})
 
 	badClient, cleanUp := createBadAzureReposClient(t, []byte{})
 	defer cleanUp()
@@ -234,7 +233,7 @@ func TestAzureRepos_TestListOpenPullRequests(t *testing.T) {
 	defer cleanUp()
 	pullRequestsInfo, err = client.ListOpenPullRequestsWithBody(ctx, "", repo1)
 	assert.NoError(t, err)
-	assert.True(t, reflect.DeepEqual(pullRequestsInfo, []PullRequestInfo{{ID: 1, Body: prBody, Source: BranchInfo{Name: branch1, Repository: repo1}, Target: BranchInfo{Name: branch2, Repository: repo1}}}))
+	assert.EqualValues(t, pullRequestsInfo, []PullRequestInfo{{ID: 1, Body: prBody, Source: BranchInfo{Name: branch1, Repository: repo1}, Target: BranchInfo{Name: branch2, Repository: repo1}}})
 
 	badClient, cleanUp = createBadAzureReposClient(t, []byte{})
 	defer cleanUp()
@@ -264,9 +263,9 @@ func TestAzureReposClient_GetPullRequest(t *testing.T) {
 	defer cleanUp()
 	pullRequestsInfo, err := client.GetPullRequestByID(ctx, owner, repoName, pullRequestId)
 	assert.NoError(t, err)
-	assert.True(t, reflect.DeepEqual(pullRequestsInfo, PullRequestInfo{ID: 1,
+	assert.EqualValues(t, pullRequestsInfo, PullRequestInfo{ID: 1,
 		Source: BranchInfo{Name: sourceName, Repository: repoName, Owner: forkedOwner},
-		Target: BranchInfo{Name: targetName, Repository: repoName, Owner: owner}}))
+		Target: BranchInfo{Name: targetName, Repository: repoName, Owner: owner}})
 
 	// Fail source repository owner extraction, should be empty string and not fail the process.
 	res = git.GitPullRequest{
@@ -282,9 +281,9 @@ func TestAzureReposClient_GetPullRequest(t *testing.T) {
 	client, _ = createServerAndClient(t, vcsutils.AzureRepos, true, jsonRes, fmt.Sprintf("getPullRequests/%d", pullRequestId), createAzureReposHandler)
 	pullRequestsInfo, err = client.GetPullRequestByID(ctx, owner, repoName, pullRequestId)
 	assert.NoError(t, err)
-	assert.True(t, reflect.DeepEqual(pullRequestsInfo, PullRequestInfo{ID: 1,
+	assert.EqualValues(t, pullRequestsInfo, PullRequestInfo{ID: 1,
 		Source: BranchInfo{Name: sourceName, Repository: repoName, Owner: ""},
-		Target: BranchInfo{Name: targetName, Repository: repoName, Owner: owner}}))
+		Target: BranchInfo{Name: targetName, Repository: repoName, Owner: owner}})
 
 	// Bad client
 	badClient, cleanUp := createBadAzureReposClient(t, []byte{})
@@ -643,7 +642,7 @@ func createAzureReposHandler(t *testing.T, expectedURI string, response []byte, 
 			require.NoError(t, err)
 			return
 		}
-		w.WriteHeader(404)
+		w.WriteHeader(http.StatusNotFound)
 	}
 }
 

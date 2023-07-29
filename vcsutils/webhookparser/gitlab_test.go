@@ -34,7 +34,7 @@ func TestGitLabParseIncomingPushWebhook(t *testing.T) {
 	defer close(reader)
 
 	// Create request
-	request := httptest.NewRequest("POST", "https://127.0.0.1", reader)
+	request := httptest.NewRequest(http.MethodPost, "https://127.0.0.1", reader)
 	request.Header.Add(gitLabKeyHeader, string(token))
 	request.Header.Add(gitLabEventHeader, "Push Hook")
 
@@ -259,7 +259,7 @@ func TestGitLabParseIncomingPrWebhook(t *testing.T) {
 			defer close(reader)
 
 			// Create request
-			request := httptest.NewRequest("POST", "https://127.0.0.1", reader)
+			request := httptest.NewRequest(http.MethodPost, "https://127.0.0.1", reader)
 			request.Header.Add(gitLabKeyHeader, string(token))
 			request.Header.Add(gitLabEventHeader, "Merge Request Hook")
 
@@ -340,7 +340,7 @@ func TestGitLabParseIncomingWebhookTagEvents(t *testing.T) {
 			require.NoError(t, err)
 			defer close(reader)
 
-			request := httptest.NewRequest("POST", "https://127.0.0.1", reader)
+			request := httptest.NewRequest(http.MethodPost, "https://127.0.0.1", reader)
 			request.Header.Add(gitLabKeyHeader, string(token))
 			request.Header.Add(gitLabEventHeader, string(gitlab.EventTypeTagPush))
 
@@ -387,7 +387,7 @@ func TestGitLabPayloadMismatchSignature(t *testing.T) {
 	defer close(reader)
 
 	// Create request
-	request := httptest.NewRequest("POST", "https://127.0.0.1", reader)
+	request := httptest.NewRequest(http.MethodPost, "https://127.0.0.1", reader)
 	request.Header.Add(gitLabKeyHeader, "wrong-token")
 	request.Header.Add(gitLabEventHeader, "Push Hook")
 

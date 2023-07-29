@@ -12,7 +12,6 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
-	"reflect"
 	"strconv"
 	"strings"
 	"testing"
@@ -86,7 +85,7 @@ func TestGitHubClient_ListRepositoriesWithPagination(t *testing.T) {
 	}
 
 	client, cleanUp := createBodyHandlingServerAndClient(t, vcsutils.GitHub, false, repos, "/user/repos",
-		http.StatusOK, nil, "GET", createGitHubWithPaginationHandler)
+		http.StatusOK, nil, http.MethodGet, createGitHubWithPaginationHandler)
 	defer cleanUp()
 
 	actualRepositories, err := client.ListRepositories(ctx)
@@ -97,7 +96,7 @@ func TestGitHubClient_ListRepositoriesWithPagination(t *testing.T) {
 	// Test Case 2 - No Items to return
 	repos = make([]github.Repository, 0)
 	client, cleanUp = createBodyHandlingServerAndClient(t, vcsutils.GitHub, false, repos, "/user/repos",
-		http.StatusOK, nil, "GET", createGitHubWithPaginationHandler)
+		http.StatusOK, nil, http.MethodGet, createGitHubWithPaginationHandler)
 	defer cleanUp()
 
 	actualRepositories, err = client.ListRepositories(ctx)
@@ -503,7 +502,7 @@ func TestGitGubClient_GetLabelNotExisted(t *testing.T) {
 	ctx := context.Background()
 
 	client, cleanUp := createBodyHandlingServerAndClient(t, vcsutils.GitHub, false, github.Label{},
-		fmt.Sprintf("/repos/jfrog/%s/labels/%s", repo1, "not-existed"), http.StatusNotFound, []byte{}, "GET", createGitHubWithBodyHandler)
+		fmt.Sprintf("/repos/jfrog/%s/labels/%s", repo1, "not-existed"), http.StatusNotFound, []byte{}, http.MethodGet, createGitHubWithBodyHandler)
 	defer cleanUp()
 
 	actualLabel, err := client.GetLabel(ctx, owner, repo1, "not-existed")
@@ -537,11 +536,11 @@ func TestGitHubClient_ListOpenPullRequests(t *testing.T) {
 	require.NoError(t, err)
 	assert.Len(t, result, 1)
 	assert.NoError(t, err)
-	assert.True(t, reflect.DeepEqual(PullRequestInfo{
+	assert.EqualValues(t, PullRequestInfo{
 		ID:     1,
 		Source: BranchInfo{Name: "new-topic", Repository: "Hello-World", Owner: owner},
 		Target: BranchInfo{Name: "master", Repository: "Hello-World", Owner: owner},
-	}, result[0]))
+	}, result[0])
 
 	_, err = createBadGitHubClient(t).ListPullRequestComments(ctx, owner, repo1, 1)
 	assert.Error(t, err)
@@ -551,12 +550,12 @@ func TestGitHubClient_ListOpenPullRequests(t *testing.T) {
 	require.NoError(t, err)
 	assert.Len(t, result, 1)
 	assert.NoError(t, err)
-	assert.True(t, reflect.DeepEqual(PullRequestInfo{
+	assert.EqualValues(t, PullRequestInfo{
 		ID:     1,
 		Body:   "hello world",
 		Source: BranchInfo{Name: "new-topic", Repository: "Hello-World", Owner: owner},
 		Target: BranchInfo{Name: "master", Repository: "Hello-World", Owner: owner},
-	}, result[0]))
+	}, result[0])
 
 	_, err = createBadGitHubClient(t).ListPullRequestComments(ctx, owner, repo1, 1)
 	assert.Error(t, err)
@@ -577,11 +576,11 @@ func TestGitHubClient_GetPullRequestByID(t *testing.T) {
 	defer cleanUp()
 	result, err := client.GetPullRequestByID(ctx, owner, repoName, pullRequestId)
 	assert.NoError(t, err)
-	assert.True(t, reflect.DeepEqual(PullRequestInfo{
+	assert.EqualValues(t, PullRequestInfo{
 		ID:     int64(pullRequestId),
 		Source: BranchInfo{Name: "new-topic", Repository: "Hello-World", Owner: owner},
 		Target: BranchInfo{Name: "master", Repository: "Hello-World", Owner: forkedOwner},
-	}, result))
+	}, result)
 
 	// Bad Labels
 	badLabels, err := os.ReadFile(filepath.Join("testdata", "github", "pull_request_info_response_bad_labels.json"))
@@ -945,8 +944,9 @@ func createGitHubSarifUploadHandler(t *testing.T, _ string, _ []byte, _ int) htt
 	resultSHA := "66d9a06b02a9f3f5fb47bb026a6fa5577647d96e"
 	return func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, "Bearer "+token, r.Header.Get("Authorization"))
-		if r.RequestURI == "/repos/jfrog/repo-1/commits?page=1&per_page=1&sha=master" {
-			w.WriteHeader(200)
+		switch r.RequestURI {
+		case "/repos/jfrog/repo-1/commits?page=1&per_page=1&sha=master":
+			w.WriteHeader(http.StatusOK)
 			repositoryCommits := []*github.RepositoryCommit{
 				{
 					SHA: &resultSHA,
@@ -956,17 +956,17 @@ func createGitHubSarifUploadHandler(t *testing.T, _ string, _ []byte, _ int) htt
 			require.NoError(t, err)
 			_, err = w.Write(jsonRepositoryCommits)
 			require.NoError(t, err)
-		} else if r.RequestURI == "/repos/jfrog/repo-1/code-scanning/sarifs" {
+		case "/repos/jfrog/repo-1/code-scanning/sarifs":
 			body, err := io.ReadAll(r.Body)
 			require.NoError(t, err)
 			bodyAsString := string(body)
 			if !strings.Contains(bodyAsString, resultSHA) {
 				assert.Fail(t, "Unexpected Commit SHA")
 			}
-			w.WriteHeader(200)
+			w.WriteHeader(http.StatusOK)
 			_, err = w.Write([]byte(`{"id" : "b16b0368-01b9-11ed-90a3-cabff0b8ad31", "url": ""}`))
 			require.NoError(t, err)
-		} else {
+		default:
 			assert.Fail(t, "Unexpected Request URI", r.RequestURI)
 		}
 	}

@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"reflect"
 	"testing"
 	"time"
 
@@ -177,23 +176,23 @@ func TestBitbucketCloud_ListOpenPullRequests(t *testing.T) {
 
 	require.NoError(t, err)
 	assert.Len(t, result, 3)
-	assert.True(t, reflect.DeepEqual(PullRequestInfo{
+	assert.EqualValues(t, PullRequestInfo{
 		ID:     3,
 		Source: BranchInfo{Name: "test-2", Repository: "user17/test"},
 		Target: BranchInfo{Name: "master", Repository: "user17/test"},
-	}, result[0]))
+	}, result[0])
 
 	// With Body
 	result, err = client.ListOpenPullRequestsWithBody(ctx, owner, repo1)
 
 	require.NoError(t, err)
 	assert.Len(t, result, 3)
-	assert.True(t, reflect.DeepEqual(PullRequestInfo{
+	assert.EqualValues(t, PullRequestInfo{
 		ID:     3,
 		Body:   "hello world",
 		Source: BranchInfo{Name: "test-2", Repository: "user17/test"},
 		Target: BranchInfo{Name: "master", Repository: "user17/test"},
-	}, result[0]))
+	}, result[0])
 }
 
 func TestBitbucketCloudClient_GetPullRequest(t *testing.T) {
@@ -209,11 +208,11 @@ func TestBitbucketCloudClient_GetPullRequest(t *testing.T) {
 	defer cleanUp()
 	result, err := client.GetPullRequestByID(ctx, owner, repoName, pullRequestId)
 	assert.NoError(t, err)
-	assert.True(t, reflect.DeepEqual(PullRequestInfo{
+	assert.EqualValues(t, PullRequestInfo{
 		ID:     int64(pullRequestId),
 		Source: BranchInfo{Name: "pr", Repository: "froggit", Owner: "forkedWorkspace"},
 		Target: BranchInfo{Name: "main", Repository: "froggit", Owner: "workspace"},
-	}, result))
+	}, result)
 
 	// Bad Response
 	badClient, badClientCleanUp := createServerAndClient(t, vcsutils.BitbucketCloud, true, "{",

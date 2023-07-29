@@ -50,7 +50,7 @@ func TestBitbucketServerParseIncomingPushWebhook(t *testing.T) {
 	defer close(reader)
 
 	// Create request
-	request := httptest.NewRequest("POST", "https://127.0.0.1", reader)
+	request := httptest.NewRequest(http.MethodPost, "https://127.0.0.1", reader)
 	request.Header.Add(EventHeaderKey, "repo:refs_changed")
 	request.Header.Add(sha256Signature, "sha256="+bitbucketServerPushSha256)
 
@@ -237,7 +237,7 @@ func TestBitbucketServerParseIncomingPrWebhook(t *testing.T) {
 			defer close(reader)
 
 			// Create request
-			request := httptest.NewRequest("POST", "https://127.0.0.1", reader)
+			request := httptest.NewRequest(http.MethodPost, "https://127.0.0.1", reader)
 			request.Header.Add(EventHeaderKey, tt.eventHeader)
 			request.Header.Add(sha256Signature, "sha256="+tt.payloadSha)
 
@@ -320,7 +320,7 @@ func TestBitbucketServerParseIncomingWebhookTagEvents(t *testing.T) {
 			require.NoError(t, err)
 			defer close(reader)
 
-			request := httptest.NewRequest("POST", "https://127.0.0.1", reader)
+			request := httptest.NewRequest(http.MethodPost, "https://127.0.0.1", reader)
 			request.Header.Add(EventHeaderKey, tt.eventHeader)
 			request.Header.Add(sha256Signature, "sha256="+tt.payloadSha)
 
@@ -367,7 +367,7 @@ func TestBitbucketServerPayloadMismatchSignature(t *testing.T) {
 	defer close(reader)
 
 	// Create request
-	request := httptest.NewRequest("POST", "https://127.0.0.1", reader)
+	request := httptest.NewRequest(http.MethodPost, "https://127.0.0.1", reader)
 	request.Header.Add(EventHeaderKey, "repo:refs_changed")
 	request.Header.Add(sha256Signature, "sha256=wrongsianature")
 
