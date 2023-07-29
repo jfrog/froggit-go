@@ -10,7 +10,6 @@ import (
 	"github.com/microsoft/azure-devops-go-api/azuredevops/git"
 	"github.com/microsoft/azure-devops-go-api/azuredevops/webapi"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -86,7 +85,7 @@ func TestAzureRepos_TestDownloadRepository(t *testing.T) {
 	defer func() { _ = os.RemoveAll(dir) }()
 
 	repoFile, err := os.ReadFile(filepath.Join("testdata", "azurerepos", "hello_world.zip"))
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
 	downloadURL := fmt.Sprintf("/%s/_apis/git/repositories/%s/items/items?path=/&versionDescriptor[version]=%s&$format=zip",
 		"",
@@ -96,7 +95,7 @@ func TestAzureRepos_TestDownloadRepository(t *testing.T) {
 		repoFile, downloadURL, createAzureReposHandler)
 	defer cleanUp()
 	err = client.DownloadRepository(ctx, "", repo1, branch1, dir)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	assert.FileExists(t, filepath.Join(dir, "README.md"))
 	assert.DirExists(t, filepath.Join(dir, ".git"))
 
@@ -499,14 +498,14 @@ func TestAzureReposClient_GetModifiedFiles(t *testing.T) {
 	ctx := context.Background()
 	t.Run("ok", func(t *testing.T) {
 		response, err := os.ReadFile(filepath.Join("testdata", "azurerepos", "compare_commits.json"))
-		require.NoError(t, err)
+		assert.NoError(t, err)
 
 		const expectedURI = "/_apis/ResourceAreas?%24skip=0&%24top=100&baseVersion=sha-1&diffCommonCommit=true&targetVersion=sha-2"
 		client, cleanUp := createServerAndClient(t, vcsutils.AzureRepos, true, response, expectedURI, createAzureReposHandler)
 		defer cleanUp()
 
 		actual, err := client.GetModifiedFiles(ctx, "", repo1, "sha-1", "sha-2")
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		assert.Equal(t, []string{
 			"CustomerAddressModule/CustomerAddressModule.sln",
 			"CustomerAddressModule/CustomerAddressModule/App.config",
@@ -554,7 +553,7 @@ func TestAzureReposClient_GetModifiedFiles(t *testing.T) {
 		defer cleanUp()
 
 		_, err := client.GetModifiedFiles(ctx, "", repo1, "sha-1", "sha-2")
-		require.EqualError(t, err, "null")
+		assert.EqualError(t, err, "null")
 	})
 }
 
@@ -580,10 +579,10 @@ func TestAzureReposClient_GetCommitStatus(t *testing.T) {
 		defer cleanUp()
 		commitStatuses, err := client.GetCommitStatuses(ctx, owner, repo1, commitHash)
 		assert.NoError(t, err)
-		assert.True(t, len(commitStatuses) == 3)
-		assert.True(t, commitStatuses[0].State == Pass)
-		assert.True(t, commitStatuses[1].State == InProgress)
-		assert.True(t, commitStatuses[2].State == Fail)
+		assert.Len(t, commitStatuses, 3)
+		assert.Equal(t, Pass, commitStatuses[0])
+		assert.Equal(t, InProgress, commitStatuses[1])
+		assert.Equal(t, Fail, commitStatuses[2])
 	})
 	t.Run("Empty response", func(t *testing.T) {
 		client, cleanUp := createServerAndClient(t, vcsutils.AzureRepos, true, nil, expectedUri, createAzureReposHandler)
@@ -638,7 +637,7 @@ func createAzureReposHandler(t *testing.T, expectedURI string, response []byte, 
 			assert.Contains(t, r.RequestURI, expectedURI)
 			w.WriteHeader(expectedStatusCode)
 			_, err := w.Write(response)
-			require.NoError(t, err)
+			assert.NoError(t, err)
 			return
 		}
 		w.WriteHeader(http.StatusNotFound)

@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/stretchr/testify/require"
 	"github.com/xanzy/go-gitlab"
 
 	"github.com/stretchr/testify/assert"
@@ -30,7 +29,7 @@ const (
 
 func TestGitLabParseIncomingPushWebhook(t *testing.T) {
 	reader, err := os.Open(filepath.Join("testdata", "gitlab", "pushpayload.json"))
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	defer close(reader)
 
 	// Create request
@@ -45,7 +44,7 @@ func TestGitLabParseIncomingPushWebhook(t *testing.T) {
 			VcsProvider: vcsutils.GitLab,
 			Token:       token,
 		}, request)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
 	// Check values
 	assert.Equal(t, expectedRepoName, actual.TargetRepositoryDetails.Name)
@@ -255,7 +254,7 @@ func TestGitLabParseIncomingPrWebhook(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			reader, err := os.Open(filepath.Join("testdata", "gitlab", tt.payloadFilename))
-			require.NoError(t, err)
+			assert.NoError(t, err)
 			defer close(reader)
 
 			// Create request
@@ -270,7 +269,7 @@ func TestGitLabParseIncomingPrWebhook(t *testing.T) {
 					VcsProvider: vcsutils.GitLab,
 					Token:       token,
 				}, request)
-			require.NoError(t, err)
+			assert.NoError(t, err)
 
 			// Check values
 			assert.Equal(t, gitlabExpectedPrID, actual.PullRequestId)
@@ -337,7 +336,7 @@ func TestGitLabParseIncomingWebhookTagEvents(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			reader, err := os.Open(filepath.Join("testdata", "gitlab", tt.payloadFilename))
-			require.NoError(t, err)
+			assert.NoError(t, err)
 			defer close(reader)
 
 			request := httptest.NewRequest(http.MethodPost, "https://127.0.0.1", reader)
@@ -353,7 +352,7 @@ func TestGitLabParseIncomingWebhookTagEvents(t *testing.T) {
 				},
 				request,
 			)
-			require.NoError(t, err)
+			assert.NoError(t, err)
 			assert.Equal(t, &WebhookInfo{Event: tt.expectedEventType, Tag: tt.expectedTagInfo}, actual)
 		})
 	}
@@ -368,7 +367,7 @@ func TestGitLabParseIncomingWebhookError(t *testing.T) {
 			Token:       token,
 		}, request)
 
-	require.Error(t, err)
+	assert.Error(t, err)
 
 	webhook := gitLabWebhookParser{logger: vcsclient.EmptyLogger{}}
 	_, err = webhook.parseIncomingWebhook(context.Background(), request, []byte{})
@@ -383,7 +382,7 @@ func TestGitLabParsePrEventsError(t *testing.T) {
 
 func TestGitLabPayloadMismatchSignature(t *testing.T) {
 	reader, err := os.Open(filepath.Join("testdata", "gitlab", "pushpayload.json"))
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	defer close(reader)
 
 	// Create request

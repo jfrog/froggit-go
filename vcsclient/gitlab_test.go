@@ -15,8 +15,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/jfrog/froggit-go/vcsutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/xanzy/go-gitlab"
@@ -141,9 +139,9 @@ func TestGitLabClient_DownloadRepository(t *testing.T) {
 	defer cleanUp()
 
 	err = client.DownloadRepository(ctx, owner, repo1, ref, dir)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	fileinfo, err := os.ReadDir(dir)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	assert.Len(t, fileinfo, 2)
 	assert.Equal(t, ".git", fileinfo[0].Name())
 	assert.Equal(t, "README.md", fileinfo[1].Name())
@@ -199,7 +197,7 @@ func TestGitLabClient_ListPullRequestComments(t *testing.T) {
 	defer cleanUp()
 
 	result, err := client.ListPullRequestComments(ctx, owner, repo1, 1)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	expectedCreated, err := time.Parse(time.RFC3339, "2013-10-02T09:56:03Z")
 	assert.NoError(t, err)
 	assert.Len(t, result, 2)
@@ -220,7 +218,7 @@ func TestGitLabClient_ListOpenPullRequests(t *testing.T) {
 	defer cleanUp()
 
 	result, err := client.ListOpenPullRequests(ctx, owner, repo1)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	assert.Len(t, result, 1)
 	assert.EqualValues(t, PullRequestInfo{
 		ID:     302,
@@ -230,7 +228,7 @@ func TestGitLabClient_ListOpenPullRequests(t *testing.T) {
 
 	// With body
 	result, err = client.ListOpenPullRequestsWithBody(ctx, owner, repo1)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	assert.Len(t, result, 1)
 	assert.EqualValues(t, PullRequestInfo{
 		ID:     302,
@@ -280,7 +278,7 @@ func TestGitLabClient_GetLatestCommit(t *testing.T) {
 
 	result, err := client.GetLatestCommit(ctx, owner, repo1, "master")
 
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	assert.Equal(t, CommitInfo{
 		Hash:          "ed899a2f4b50b4370feeea94676502b42383c746",
 		AuthorName:    "Example User",
@@ -305,7 +303,7 @@ func TestGitLabClient_GetLatestCommitNotFound(t *testing.T) {
 
 	result, err := client.GetLatestCommit(ctx, owner, repo1, "master")
 
-	require.Error(t, err)
+	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "404 Project Not Found")
 	assert.Empty(t, result)
 }
@@ -320,7 +318,7 @@ func TestGitLabClient_GetLatestCommitUnknownBranch(t *testing.T) {
 
 	result, err := client.GetLatestCommit(ctx, owner, repo1, "unknown")
 
-	require.Error(t, err)
+	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "404 Not Found")
 	assert.Empty(t, result)
 }
@@ -344,7 +342,7 @@ func TestGitLabClient_AddSshKeyToRepository(t *testing.T) {
 
 	err := client.AddSshKeyToRepository(ctx, owner, repo1, "My deploy key", "ssh-rsa AAAA...", Read)
 
-	require.NoError(t, err)
+	assert.NoError(t, err)
 }
 
 func TestGitLabClient_AddSshKeyToRepositoryReadWrite(t *testing.T) {
@@ -366,21 +364,21 @@ func TestGitLabClient_AddSshKeyToRepositoryReadWrite(t *testing.T) {
 
 	err := client.AddSshKeyToRepository(ctx, owner, repo1, "My deploy key", "ssh-rsa AAAA...", ReadWrite)
 
-	require.NoError(t, err)
+	assert.NoError(t, err)
 }
 
 func TestGitLabClient_GetRepositoryInfo(t *testing.T) {
 	ctx := context.Background()
 	response, err := os.ReadFile(filepath.Join("testdata", "gitlab", "repository_response.json"))
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
 	client, cleanUp := createServerAndClientReturningStatus(t, vcsutils.GitLab, false, response,
 		"/api/v4/projects/diaspora%2Fdiaspora-project-site", http.StatusOK, createGitLabHandler)
 	defer cleanUp()
 
 	result, err := client.GetRepositoryInfo(ctx, "diaspora", "diaspora-project-site")
-	require.NoError(t, err)
-	require.Equal(t,
+	assert.NoError(t, err)
+	assert.Equal(t,
 		RepositoryInfo{
 			RepositoryVisibility: Private,
 			CloneInfo: CloneInfo{
@@ -404,7 +402,7 @@ func TestGitLabClient_GetCommitBySha(t *testing.T) {
 
 	result, err := client.GetCommitBySha(ctx, owner, repo1, sha)
 
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	assert.Equal(t, CommitInfo{
 		Hash:          sha,
 		AuthorName:    "Example User",
@@ -430,7 +428,7 @@ func TestGitLabClient_GetCommitByShaNotFound(t *testing.T) {
 
 	result, err := client.GetCommitBySha(ctx, owner, repo1, sha)
 
-	require.Error(t, err)
+	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "404 Commit Not Found")
 	assert.Empty(t, result)
 }
@@ -533,7 +531,7 @@ func TestGitLabClient_GetModifiedFiles(t *testing.T) {
 	ctx := context.Background()
 	t.Run("ok", func(t *testing.T) {
 		response, err := os.ReadFile(filepath.Join("testdata", "gitlab", "compare_commits.json"))
-		require.NoError(t, err)
+		assert.NoError(t, err)
 
 		client, cleanUp := createServerAndClient(
 			t,
@@ -546,8 +544,8 @@ func TestGitLabClient_GetModifiedFiles(t *testing.T) {
 		defer cleanUp()
 
 		fileNames, err := client.GetModifiedFiles(ctx, owner, repo1, "sha-1", "sha-2")
-		require.NoError(t, err)
-		require.Equal(t, []string{
+		assert.NoError(t, err)
+		assert.Equal(t, []string{
 			"doc/user/project/integrations/gitlab_slack_application.md",
 			"doc/user/project/integrations/slack.md",
 			"doc/user/project/integrations/slack_slash_commands.md",
@@ -579,8 +577,8 @@ func TestGitLabClient_GetModifiedFiles(t *testing.T) {
 		)
 		defer cleanUp()
 		_, err := client.GetModifiedFiles(ctx, owner, repo1, "sha-1", "sha-2")
-		require.Error(t, err)
-		require.Contains(t, err.Error(), "api/v4/projects/jfrog/repo-1/repository/compare: 500 failed to parse unexpected error type: <nil>")
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "api/v4/projects/jfrog/repo-1/repository/compare: 500 failed to parse unexpected error type: <nil>")
 	})
 }
 
@@ -675,7 +673,7 @@ func createGitLabWithBodyHandler(t *testing.T, expectedURI string, response []by
 		assert.Equal(t, token, request.Header.Get("Private-Token"))
 
 		b, err := io.ReadAll(request.Body)
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		assert.Equal(t, expectedRequestBody, b)
 
 		writer.WriteHeader(expectedStatusCode)
@@ -703,10 +701,10 @@ func TestGitLabClient_TestGetCommitStatus(t *testing.T) {
 			createGitLabHandler)
 		defer cleanUp()
 		commitStatuses, err := client.GetCommitStatuses(ctx, owner, repo1, ref)
-		assert.True(t, len(commitStatuses) == 3)
-		assert.True(t, commitStatuses[0].State == Pass)
-		assert.True(t, commitStatuses[1].State == InProgress)
-		assert.True(t, commitStatuses[2].State == Fail)
+		assert.Len(t, commitStatuses, 3)
+		assert.Equal(t, Pass, commitStatuses[0])
+		assert.Equal(t, InProgress, commitStatuses[1])
+		assert.Equal(t, Fail, commitStatuses[2])
 		assert.NoError(t, err)
 	})
 	t.Run("Invalid response format", func(t *testing.T) {

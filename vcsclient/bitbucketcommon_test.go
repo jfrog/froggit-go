@@ -2,7 +2,6 @@ package vcsclient
 
 import (
 	"github.com/jfrog/froggit-go/vcsutils"
-	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
 
@@ -56,7 +55,7 @@ func TestBitbucketParseCommitStatuses(t *testing.T) {
 	}
 
 	statuses, err := bitbucketParseCommitStatuses(rawStatuses, provider)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	assert.Equal(t, expectedStatuses, statuses)
 }
 
@@ -78,7 +77,7 @@ func TestGetCommitStatusInfoByBitbucketProvider_BitbucketServer(t *testing.T) {
 	}
 
 	status, err := getCommitStatusInfoByBitbucketProvider(commitStatus, vcsutils.BitbucketServer)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	assert.Equal(t, expectedStatus, status)
 }
 
@@ -102,6 +101,6 @@ func TestGetCommitStatusInfoByBitbucketProvider_BitbucketCloud(t *testing.T) {
 	}
 
 	result, err := getCommitStatusInfoByBitbucketProvider(commitStatus, vcsutils.BitbucketCloud)
-	require.NoError(t, err)
-	require.Equal(t, expectedResult, result)
+	assert.NoError(t, err)
+	assert.Equal(t, expectedResult, result)
 }

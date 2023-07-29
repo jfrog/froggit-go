@@ -11,8 +11,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/stretchr/testify/assert"
 
 	"github.com/jfrog/froggit-go/vcsclient"
@@ -46,7 +44,7 @@ const (
 
 func TestBitbucketServerParseIncomingPushWebhook(t *testing.T) {
 	reader, err := os.Open(filepath.Join("testdata", "bitbucketserver", "pushpayload.json"))
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	defer close(reader)
 
 	// Create request
@@ -57,7 +55,7 @@ func TestBitbucketServerParseIncomingPushWebhook(t *testing.T) {
 	// Parse webhook
 	parser := newBitbucketServerWebhookParser(vcsclient.EmptyLogger{}, "https://bitbucket.test/rest")
 	actual, err := validateAndParseHttpRequest(context.Background(), vcsclient.EmptyLogger{}, parser, token, request)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
 	// Check values
 	assert.Equal(t, expectedRepoName, actual.TargetRepositoryDetails.Name)
@@ -233,7 +231,7 @@ func TestBitbucketServerParseIncomingPrWebhook(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			reader, err := os.Open(filepath.Join("testdata", "bitbucketserver", tt.payloadFilename))
-			require.NoError(t, err)
+			assert.NoError(t, err)
 			defer close(reader)
 
 			// Create request
@@ -249,7 +247,7 @@ func TestBitbucketServerParseIncomingPrWebhook(t *testing.T) {
 					Token:       token,
 				},
 				request)
-			require.NoError(t, err)
+			assert.NoError(t, err)
 
 			// Check values
 			assert.Equal(t, bitbucketServerExpectedPrID, actual.PullRequestId)
@@ -317,7 +315,7 @@ func TestBitbucketServerParseIncomingWebhookTagEvents(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			reader, err := os.Open(filepath.Join("testdata", "bitbucketserver", tt.payloadFilename))
-			require.NoError(t, err)
+			assert.NoError(t, err)
 			defer close(reader)
 
 			request := httptest.NewRequest(http.MethodPost, "https://127.0.0.1", reader)
@@ -333,7 +331,7 @@ func TestBitbucketServerParseIncomingWebhookTagEvents(t *testing.T) {
 				},
 				request,
 			)
-			require.NoError(t, err)
+			assert.NoError(t, err)
 			assert.Equal(t, &WebhookInfo{Event: tt.expectedEventType, Tag: tt.expectedTagInfo}, actual)
 		})
 	}
@@ -348,7 +346,7 @@ func TestBitbucketServerParseIncomingWebhookError(t *testing.T) {
 			Token:       token,
 		},
 		request)
-	require.Error(t, err)
+	assert.Error(t, err)
 
 	webhook := bitbucketServerWebhookParser{}
 	_, err = webhook.parseIncomingWebhook(context.Background(), request, []byte{})
@@ -363,7 +361,7 @@ func TestBitbucketServerParsePrEventsError(t *testing.T) {
 
 func TestBitbucketServerPayloadMismatchSignature(t *testing.T) {
 	reader, err := os.Open(filepath.Join("testdata", "bitbucketserver", "pushpayload.json"))
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	defer close(reader)
 
 	// Create request

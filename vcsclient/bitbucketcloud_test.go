@@ -11,8 +11,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/google/uuid"
 	"github.com/jfrog/froggit-go/vcsutils"
 	"github.com/ktrysmt/go-bitbucket"
@@ -173,7 +171,7 @@ func TestBitbucketCloud_ListOpenPullRequests(t *testing.T) {
 
 	result, err := client.ListOpenPullRequests(ctx, owner, repo1)
 
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	assert.Len(t, result, 3)
 	assert.EqualValues(t, PullRequestInfo{
 		ID:     3,
@@ -184,7 +182,7 @@ func TestBitbucketCloud_ListOpenPullRequests(t *testing.T) {
 	// With Body
 	result, err = client.ListOpenPullRequestsWithBody(ctx, owner, repo1)
 
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	assert.Len(t, result, 3)
 	assert.EqualValues(t, PullRequestInfo{
 		ID:     3,
@@ -249,7 +247,7 @@ func TestBitbucketCloud_ListPullRequestComments(t *testing.T) {
 
 	result, err := client.ListPullRequestComments(ctx, owner, repo1, 1)
 
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	expectedCreated, err := time.Parse(time.RFC3339, "2022-05-16T11:04:07.075827+00:00")
 	assert.NoError(t, err)
 	assert.Len(t, result, 2)
@@ -271,7 +269,7 @@ func TestBitbucketCloud_GetLatestCommit(t *testing.T) {
 
 	result, err := client.GetLatestCommit(ctx, owner, repo1, "master")
 
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	assert.Equal(t, CommitInfo{
 		Hash:          "ec05bacb91d757b4b6b2a11a0676471020e89fb5",
 		AuthorName:    "user",
@@ -293,7 +291,7 @@ func TestBitbucketCloud_GetLatestCommitNotFound(t *testing.T) {
 	defer cleanUp()
 
 	result, err := client.GetLatestCommit(ctx, owner, repo1, "master")
-	require.EqualError(t, err, "404 Not Found")
+	assert.EqualError(t, err, "404 Not Found")
 	assert.Empty(t, result)
 }
 
@@ -322,7 +320,7 @@ func TestBitbucketCloud_GetLatestCommitUnknownBranch(t *testing.T) {
 	defer cleanUp()
 
 	result, err := client.GetLatestCommit(ctx, owner, repo1, "unknown")
-	require.EqualError(t, err, "404 Not Found")
+	assert.EqualError(t, err, "404 Not Found")
 	assert.Empty(t, result)
 }
 
@@ -341,7 +339,7 @@ func TestBitbucketCloud_AddSshKeyToRepository(t *testing.T) {
 
 	err = client.AddSshKeyToRepository(ctx, owner, repo1, "My deploy key", "ssh-rsa AAAA...", Read)
 
-	require.NoError(t, err)
+	assert.NoError(t, err)
 }
 
 func TestBitbucketCloud_AddSshKeyToRepositoryNotFound(t *testing.T) {
@@ -358,7 +356,7 @@ func TestBitbucketCloud_AddSshKeyToRepositoryNotFound(t *testing.T) {
 
 	err := client.AddSshKeyToRepository(ctx, owner, repo1, "My deploy key", "ssh-rsa AAAA...", Read)
 
-	require.EqualError(t, err, "404 Not Found")
+	assert.EqualError(t, err, "404 Not Found")
 }
 
 func TestBitbucketCloud_GetCommitBySha(t *testing.T) {
@@ -373,7 +371,7 @@ func TestBitbucketCloud_GetCommitBySha(t *testing.T) {
 
 	result, err := client.GetCommitBySha(ctx, owner, repo1, sha)
 
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	assert.Equal(t, CommitInfo{
 		Hash:          sha,
 		AuthorName:    "user",
@@ -397,7 +395,7 @@ func TestBitbucketCloud_GetCommitByShaNotFound(t *testing.T) {
 	defer cleanUp()
 
 	result, err := client.GetCommitBySha(ctx, owner, repo1, sha)
-	require.EqualError(t, err, "404 Not Found")
+	assert.EqualError(t, err, "404 Not Found")
 	assert.Empty(t, result)
 }
 
@@ -409,7 +407,7 @@ func createBitbucketCloudWithBodyHandler(t *testing.T, expectedURI string, respo
 		assert.Equal(t, basicAuthHeader, request.Header.Get("Authorization"))
 
 		b, err := io.ReadAll(request.Body)
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		assert.Equal(t, expectedRequestBody, b)
 
 		writer.WriteHeader(expectedStatusCode)
@@ -429,8 +427,8 @@ func TestBitbucketCloud_GetRepositoryInfo(t *testing.T) {
 	defer cleanUp()
 
 	res, err := client.GetRepositoryInfo(ctx, owner, repo1)
-	require.NoError(t, err)
-	require.Equal(t,
+	assert.NoError(t, err)
+	assert.Equal(t,
 		RepositoryInfo{
 			RepositoryVisibility: Public,
 			CloneInfo: CloneInfo{
@@ -514,8 +512,8 @@ func TestBitbucketCloudClient_GetModifiedFiles(t *testing.T) {
 		defer cleanUp()
 
 		res, err := client.GetModifiedFiles(ctx, owner, repo1, "sha-1", "sha-2")
-		require.NoError(t, err)
-		require.Equal(t, []string{"setup.py", "some/full.py"}, res)
+		assert.NoError(t, err)
+		assert.Equal(t, []string{"setup.py", "some/full.py"}, res)
 	})
 
 	t.Run("validation fails", func(t *testing.T) {
@@ -562,10 +560,10 @@ func TestBitbucketCloudClient_GetCommitStatus(t *testing.T) {
 		defer cleanUp()
 		commitStatuses, err := client.GetCommitStatuses(ctx, "owner", "repo", "ref")
 		assert.NoError(t, err)
-		assert.True(t, len(commitStatuses) == 3)
-		assert.True(t, commitStatuses[0].State == InProgress)
-		assert.True(t, commitStatuses[1].State == Pass)
-		assert.True(t, commitStatuses[2].State == Fail)
+		assert.Len(t, commitStatuses, 3)
+		assert.Equal(t, InProgress, commitStatuses[0])
+		assert.Equal(t, Pass, commitStatuses[1])
+		assert.Equal(t, Fail, commitStatuses[2])
 	})
 }
 
@@ -588,12 +586,12 @@ func createBitbucketCloudHandler(t *testing.T, expectedURI string, response []by
 			workspacesResults := make(map[string]interface{})
 			workspacesResults["values"] = []bitbucket.Workspace{{Slug: username}}
 			response, err := json.Marshal(workspacesResults)
-			require.NoError(t, err)
+			assert.NoError(t, err)
 			_, err = w.Write(response)
-			require.NoError(t, err)
+			assert.NoError(t, err)
 		} else {
 			_, err := w.Write(response)
-			require.NoError(t, err)
+			assert.NoError(t, err)
 			assert.Equal(t, expectedURI, r.RequestURI)
 		}
 		assert.Equal(t, basicAuthHeader, r.Header.Get("Authorization"))

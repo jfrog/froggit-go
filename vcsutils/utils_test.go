@@ -3,7 +3,6 @@ package vcsutils
 import (
 	"fmt"
 	"github.com/go-git/go-git/v5"
-	"github.com/stretchr/testify/require"
 	"io"
 	"net/http"
 	"os"
@@ -207,8 +206,8 @@ func TestCreateDotGitFolderWithoutRemote(t *testing.T) {
 }
 
 func TestPointerOf(t *testing.T) {
-	require.Equal(t, 5, *PointerOf(5))
-	require.Equal(t, "some", *PointerOf("some"))
+	assert.Equal(t, 5, *PointerOf(5))
+	assert.Equal(t, "some", *PointerOf("some"))
 }
 
 func TestGetGenericGitRemoteUrl(t *testing.T) {
@@ -259,8 +258,8 @@ func TestRemapFields(t *testing.T) {
 	date := time.Date(2020, 10, 9, 8, 7, 6, 0, time.UTC)
 	src := map[string]any{"n_ame": "John", "B_day": date.Format(time.RFC3339)}
 	result, err := RemapFields[destination](src, "some")
-	require.NoError(t, err)
-	require.Equal(t, destination{Name: "John", Birthdate: date}, result)
+	assert.NoError(t, err)
+	assert.Equal(t, destination{Name: "John", Birthdate: date}, result)
 }
 
 func TestMapPullRequestState(t *testing.T) {
