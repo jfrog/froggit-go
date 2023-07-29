@@ -159,11 +159,10 @@ func TestBitbucketServer_DownloadRepository(t *testing.T) {
 	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, false, repoFile,
 		fmt.Sprintf("/rest/api/1.0/projects/%s/repos/%s/archive?format=tgz", owner, repo1), createBitbucketServerHandler)
 	defer cleanUp()
-
 	err = client.DownloadRepository(ctx, owner, repo1, "", dir)
 	assert.NoError(t, err)
 
-	_, err = os.OpenFile(filepath.Join(dir, "README.md"), os.O_RDONLY, 0644)
+	_, err = os.OpenFile(filepath.Join(dir, "README.md"), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 	assert.NoError(t, err)
 
 	err = createBadBitbucketServerClient(t).DownloadRepository(ctx, "ssa", "solr-system", "master", dir)
