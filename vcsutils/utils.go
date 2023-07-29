@@ -48,8 +48,9 @@ func Untar(destDir string, reader io.Reader, shouldRemoveBaseDir bool) (err erro
 	}
 
 	var header *tar.Header
-	for tarEntryReader := tar.NewReader(gzr); err != io.EOF; header, err = tarEntryReader.Next() {
-		if err != nil {
+	var readerErr error
+	for tarEntryReader := tar.NewReader(gzr); readerErr != io.EOF; header, readerErr = tarEntryReader.Next() {
+		if readerErr != nil {
 			return
 		}
 
@@ -79,10 +80,9 @@ func Untar(destDir string, reader io.Reader, shouldRemoveBaseDir bool) (err erro
 
 		// If it's a dir, and it doesn't exist create it
 		case tar.TypeDir:
-			if _, err = os.Stat(target); err != nil {
-				if err = os.MkdirAll(target, 0750); err != nil {
-					return
-				}
+			err = makeDirIfMissing(target)
+			if err != nil {
+				return
 			}
 
 		// If it's a file create it
