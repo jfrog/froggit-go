@@ -3,6 +3,7 @@ package vcsclient
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"math/rand"
@@ -162,9 +163,11 @@ func TestBitbucketServer_DownloadRepository(t *testing.T) {
 	err = client.DownloadRepository(ctx, owner, repo1, "", dir)
 	assert.NoError(t, err)
 
-	_, err = os.OpenFile(filepath.Join(dir, "README.md"), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	readmeFile, err := os.OpenFile(filepath.Join(dir, "README.md"), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 	assert.NoError(t, err)
-
+	defer func() {
+		err = errors.Join(err, readmeFile.Close())
+	}()
 	err = createBadBitbucketServerClient(t).DownloadRepository(ctx, "ssa", "solr-system", "master", dir)
 	assert.Error(t, err)
 }
