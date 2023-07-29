@@ -324,3 +324,36 @@ func MapPullRequestState(state *PullRequestState) *string {
 	}
 	return &stateStringValue
 }
+
+func RemoveTempDir(dirPath string) error {
+	if err := os.RemoveAll(dirPath); err == nil {
+		return nil
+	}
+	// Sometimes removing the directory fails (in Windows) because it's locked by another process.
+	// That's a known issue, but its cause is unknown (golang.org/issue/30789).
+	// In this case, we'll only remove the contents of the directory, and let CleanOldDirs() remove the directory itself at a later time.
+	return RemoveDirContents(dirPath)
+}
+
+// RemoveDirContents removes the contents of the directory, without removing the directory itself.
+// If it encounters an error before removing all the files, it stops and returns that error.
+func RemoveDirContents(dirPath string) (err error) {
+	d, err := os.Open(dirPath)
+	if err != nil {
+		return
+	}
+	defer func() {
+		err = errors.Join(err, d.Close())
+	}()
+	names, err := d.Readdirnames(-1)
+	if err != nil {
+		return
+	}
+	for _, name := range names {
+		err = os.RemoveAll(filepath.Join(dirPath, name))
+		if err != nil {
+			return
+		}
+	}
+	return
+}
