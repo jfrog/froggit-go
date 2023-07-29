@@ -151,7 +151,7 @@ func TestBitbucketServer_DownloadRepository(t *testing.T) {
 	ctx := context.Background()
 	dir, err := os.MkdirTemp("", "")
 	assert.NoError(t, err)
-	defer func() { assert.NoError(t, os.RemoveAll(dir)) }()
+	defer func() { assert.NoError(t, vcsutils.RemoveTempDir(dir)) }()
 
 	repoFile, err := os.ReadFile(filepath.Join("testdata", "bitbucketserver", "hello-world-main.tar.gz"))
 	assert.NoError(t, err)

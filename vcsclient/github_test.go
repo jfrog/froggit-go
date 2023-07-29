@@ -196,7 +196,7 @@ func TestGitHubClient_DownloadRepository(t *testing.T) {
 	ctx := context.Background()
 	dir, err := os.MkdirTemp("", "")
 	assert.NoError(t, err)
-	defer func() { assert.NoError(t, os.RemoveAll(dir)) }()
+	defer func() { assert.NoError(t, vcsutils.RemoveTempDir(dir)) }()
 
 	client, cleanUp := createServerAndClientReturningStatus(t, vcsutils.GitHub, false,
 		[]byte("https://github.com/octocat/Hello-World/archive/refs/heads/master.tar.gz"),

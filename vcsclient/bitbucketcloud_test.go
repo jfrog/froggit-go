@@ -131,7 +131,7 @@ func TestBitbucketCloud_DownloadRepository(t *testing.T) {
 	ctx := context.Background()
 	dir, err := os.MkdirTemp("", "")
 	assert.NoError(t, err)
-	defer func() { assert.NoError(t, os.RemoveAll(dir)) }()
+	defer func() { assert.NoError(t, vcsutils.RemoveTempDir(dir)) }()
 
 	client, err := NewClientBuilder(vcsutils.BitbucketCloud).Build()
 	assert.NoError(t, err)
