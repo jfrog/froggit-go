@@ -101,7 +101,8 @@ func (client *BitbucketServerClient) ListBranches(ctx context.Context, owner, re
 	var results []string
 	var apiResponse *bitbucketv1.APIResponse
 	for isLastPage, nextPageStart := true, 0; isLastPage; isLastPage, nextPageStart = bitbucketv1.HasNextPage(apiResponse) {
-		apiResponse, err := bitbucketClient.GetBranches(owner, repository, createPaginationOptions(nextPageStart))
+		var err error
+		apiResponse, err = bitbucketClient.GetBranches(owner, repository, createPaginationOptions(nextPageStart))
 		if err != nil {
 			return nil, err
 		}
@@ -331,7 +332,8 @@ func (client *BitbucketServerClient) getOpenPullRequests(ctx context.Context, ow
 	var results []PullRequestInfo
 	var apiResponse *bitbucketv1.APIResponse
 	for isLastPage, nextPageStart := true, 0; isLastPage; isLastPage, nextPageStart = bitbucketv1.HasNextPage(apiResponse) {
-		apiResponse, err := bitbucketClient.GetPullRequestsPage(owner, repository, createPaginationOptions(nextPageStart))
+		var err error
+		apiResponse, err = bitbucketClient.GetPullRequestsPage(owner, repository, createPaginationOptions(nextPageStart))
 		if err != nil {
 			return nil, err
 		}
@@ -408,7 +410,8 @@ func (client *BitbucketServerClient) ListPullRequestComments(ctx context.Context
 	var results []CommentInfo
 	var apiResponse *bitbucketv1.APIResponse
 	for isLastPage, nextPageStart := true, 0; isLastPage; isLastPage, nextPageStart = bitbucketv1.HasNextPage(apiResponse) {
-		apiResponse, err := bitbucketClient.GetActivities(owner, repository, int64(pullRequestID), createPaginationOptions(nextPageStart))
+		var err error
+		apiResponse, err = bitbucketClient.GetActivities(owner, repository, int64(pullRequestID), createPaginationOptions(nextPageStart))
 		if err != nil {
 			return nil, err
 		}
