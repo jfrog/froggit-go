@@ -350,11 +350,11 @@ func (client *BitbucketServerClient) getOpenPullRequests(ctx context.Context, ow
 					ID:   int64(pullRequest.ID),
 					Body: body,
 					Source: BranchInfo{
-						Name: pullRequest.FromRef.DisplayID,
-					},
+						Name:       pullRequest.FromRef.DisplayID,
+						Repository: pullRequest.FromRef.Repository.Slug},
 					Target: BranchInfo{
-						Name: pullRequest.ToRef.DisplayID,
-					},
+						Name:       pullRequest.ToRef.DisplayID,
+						Repository: pullRequest.ToRef.Repository.Slug},
 				})
 			}
 		}
@@ -380,9 +380,6 @@ func (client *BitbucketServerClient) GetPullRequestByID(ctx context.Context, own
 		return
 	}
 	sourceOwner := project.Key
-	if err != nil {
-		return
-	}
 	pullRequestInfo = PullRequestInfo{
 		ID:     int64(pullRequest.ID),
 		Source: BranchInfo{Name: pullRequest.FromRef.ID, Repository: pullRequest.ToRef.Repository.Slug, Owner: sourceOwner},

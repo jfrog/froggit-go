@@ -594,14 +594,10 @@ func mapGitLabMergeRequestToPullRequestInfoList(mergeRequests []*gitlab.MergeReq
 			body = mergeRequest.Description
 		}
 		res = append(res, PullRequestInfo{
-			ID:   int64(mergeRequest.IID),
-			Body: body,
-			Source: BranchInfo{
-				Name: mergeRequest.SourceBranch,
-			},
-			Target: BranchInfo{
-				Name: mergeRequest.TargetBranch,
-			},
+			ID:     int64(mergeRequest.IID),
+			Body:   body,
+			Source: BranchInfo{Name: mergeRequest.SourceBranch},
+			Target: BranchInfo{Name: mergeRequest.TargetBranch},
 		})
 	}
 	return
