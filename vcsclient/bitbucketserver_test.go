@@ -223,23 +223,23 @@ func TestBitbucketServer_ListOpenPullRequests(t *testing.T) {
 
 	require.NoError(t, err)
 	assert.Len(t, result, 1)
-	assert.True(t, reflect.DeepEqual(PullRequestInfo{
+	assert.EqualValues(t, PullRequestInfo{
 		ID:     101,
 		Source: BranchInfo{Name: "feature-ABC-123", Repository: "my-repo", Owner: owner},
 		Target: BranchInfo{Name: "master", Repository: "my-repo", Owner: owner},
-	}, result[0]))
+	}, result[0])
 
 	// With body:
 	result, err = client.ListOpenPullRequestsWithBody(ctx, owner, repo1)
 
 	require.NoError(t, err)
 	assert.Len(t, result, 1)
-	assert.True(t, reflect.DeepEqual(PullRequestInfo{
+	assert.EqualValues(t, PullRequestInfo{
 		ID:     101,
 		Body:   "hello world",
 		Source: BranchInfo{Name: "feature-ABC-123", Repository: "my-repo", Owner: owner},
 		Target: BranchInfo{Name: "master", Repository: "my-repo", Owner: owner},
-	}, result[0]))
+	}, result[0])
 }
 
 func TestBitbucketServerClient_GetPullRequest(t *testing.T) {
