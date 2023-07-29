@@ -120,9 +120,9 @@ func (client *BitbucketServerClient) ListBranches(ctx context.Context, owner, re
 }
 
 // AddSshKeyToRepository on Bitbucket server
-func (client *BitbucketServerClient) AddSshKeyToRepository(ctx context.Context, owner, repository, keyName, publicKey string, permission Permission) error {
+func (client *BitbucketServerClient) AddSshKeyToRepository(ctx context.Context, owner, repository, keyName, publicKey string, permission Permission) (err error) {
 	// https://docs.atlassian.com/bitbucket-server/rest/5.16.0/bitbucket-ssh-rest.html
-	err := validateParametersNotBlank(map[string]string{
+	err = validateParametersNotBlank(map[string]string{
 		"owner":      owner,
 		"repository": repository,
 		"key name":   keyName,
@@ -159,16 +159,18 @@ func (client *BitbucketServerClient) AddSshKeyToRepository(ctx context.Context, 
 	if err != nil {
 		return err
 	}
-	defer func() { _ = response.Body.Close() }()
+	defer func() {
+		err = errors.Join(err, vcsutils.DiscardResponseBody(response), response.Body.Close())
+	}()
 
 	if response.StatusCode >= 300 {
-		bodyBytes, err := io.ReadAll(response.Body)
+		var bodyBytes []byte
+		bodyBytes, err = io.ReadAll(response.Body)
 		if err != nil {
-			return err
+			return
 		}
 		return fmt.Errorf("status: %v, body: %s", response.Status, bodyBytes)
 	}
-	_ = vcsutils.DiscardResponseBody(response)
 	return nil
 }
 

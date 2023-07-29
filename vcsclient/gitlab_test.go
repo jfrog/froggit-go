@@ -129,7 +129,7 @@ func TestGitLabClient_DownloadRepository(t *testing.T) {
 	ctx := context.Background()
 	dir, err := os.MkdirTemp("", "")
 	assert.NoError(t, err)
-	defer func() { _ = os.RemoveAll(dir) }()
+	defer func() { assert.NoError(t, os.RemoveAll(dir)) }()
 
 	repoFile, err := os.ReadFile(filepath.Join("testdata", "gitlab", "hello-world-main.tar.gz"))
 	assert.NoError(t, err)
@@ -702,9 +702,9 @@ func TestGitLabClient_TestGetCommitStatus(t *testing.T) {
 		defer cleanUp()
 		commitStatuses, err := client.GetCommitStatuses(ctx, owner, repo1, ref)
 		assert.Len(t, commitStatuses, 3)
-		assert.Equal(t, Pass, commitStatuses[0])
-		assert.Equal(t, InProgress, commitStatuses[1])
-		assert.Equal(t, Fail, commitStatuses[2])
+		assert.Equal(t, Pass, commitStatuses[0].State)
+		assert.Equal(t, InProgress, commitStatuses[1].State)
+		assert.Equal(t, Fail, commitStatuses[2].State)
 		assert.NoError(t, err)
 	})
 	t.Run("Invalid response format", func(t *testing.T) {

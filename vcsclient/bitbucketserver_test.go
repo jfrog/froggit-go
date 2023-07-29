@@ -151,7 +151,7 @@ func TestBitbucketServer_DownloadRepository(t *testing.T) {
 	ctx := context.Background()
 	dir, err := os.MkdirTemp("", "")
 	assert.NoError(t, err)
-	defer func() { _ = os.RemoveAll(dir) }()
+	defer func() { assert.NoError(t, os.RemoveAll(dir)) }()
 
 	repoFile, err := os.ReadFile(filepath.Join("testdata", "bitbucketserver", "hello-world-main.tar.gz"))
 	assert.NoError(t, err)
@@ -745,9 +745,9 @@ func TestBitbucketServer_TestGetCommitStatus(t *testing.T) {
 		commitStatuses, err := client.GetCommitStatuses(ctx, owner, repo1, ref)
 		assert.NoError(t, err)
 		assert.Len(t, commitStatuses, 3)
-		assert.Equal(t, InProgress, commitStatuses[0])
-		assert.Equal(t, Pass, commitStatuses[1])
-		assert.Equal(t, Fail, commitStatuses[2])
+		assert.Equal(t, InProgress, commitStatuses[0].State)
+		assert.Equal(t, Pass, commitStatuses[1].State)
+		assert.Equal(t, Fail, commitStatuses[2].State)
 	})
 	t.Run("Decode failure", func(t *testing.T) {
 		response, err := os.ReadFile(filepath.Join("testdata", "bitbucketserver", "commits_statuses_bad_decode.json"))

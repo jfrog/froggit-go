@@ -2,6 +2,7 @@ package webhookparser
 
 import (
 	"context"
+	"errors"
 	"net/http"
 
 	"github.com/jfrog/froggit-go/vcsclient"
@@ -155,7 +156,7 @@ type webhookParser interface {
 // request - Received HTTP request
 func ParseIncomingWebhook(ctx context.Context, logger vcsclient.Log, origin WebhookOrigin, request *http.Request) (*WebhookInfo, error) {
 	parser := createWebhookParser(logger, origin)
-	return validateAndParseHttpRequest(ctx, logger, parser, origin.Token, request)
+	return validateAndParseHttpRequest(ctx, parser, origin.Token, request)
 }
 
 // WebhookOrigin provides information about the hook to parse.
@@ -169,20 +170,18 @@ type WebhookOrigin struct {
 	Token []byte
 }
 
-func validateAndParseHttpRequest(ctx context.Context, logger vcsclient.Log, parser webhookParser, token []byte, request *http.Request) (*WebhookInfo, error) {
+func validateAndParseHttpRequest(ctx context.Context, parser webhookParser, token []byte, request *http.Request) (webhook *WebhookInfo, err error) {
 	if request.Body != nil {
 		defer func() {
-			err := request.Body.Close()
-			if err != nil {
-				logger.Warn("Error when closing HTTP request body: ", err)
-			}
+			err = errors.Join(err, request.Body.Close())
 		}()
 	}
 
 	payload, err := parser.validatePayload(ctx, request, token)
 	if err != nil {
-		return nil, err
+		return
 	}
 
-	return parser.parseIncomingWebhook(ctx, request, payload)
+	webhook, err = parser.parseIncomingWebhook(ctx, request, payload)
+	return
 }

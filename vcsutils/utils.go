@@ -39,23 +39,18 @@ func CreateToken() string {
 func Untar(destDir string, reader io.Reader, shouldRemoveBaseDir bool) (err error) {
 	gzr, err := gzip.NewReader(reader)
 	if err != nil {
-		return err
+		return
 	}
-	defer func() {
-		e := gzr.Close()
-		if err == nil {
-			err = e
-		}
-	}()
+	defer func() { err = errors.Join(err, gzr.Close()) }()
 
-	if err := makeDirIfMissing(destDir); err != nil {
-		return err
+	if err = makeDirIfMissing(destDir); err != nil {
+		return
 	}
 
 	var header *tar.Header
 	for tarEntryReader := tar.NewReader(gzr); err != io.EOF; header, err = tarEntryReader.Next() {
 		if err != nil {
-			return err
+			return
 		}
 
 		if header == nil {
@@ -73,9 +68,10 @@ func Untar(destDir string, reader io.Reader, shouldRemoveBaseDir bool) (err erro
 		}
 
 		// The target location where the dir/file should be created
-		target, err := sanitizeExtractionPath(filePath, destDir)
+		var target string
+		target, err = sanitizeExtractionPath(filePath, destDir)
 		if err != nil {
-			return err
+			return
 		}
 
 		// Check the file type
@@ -83,32 +79,33 @@ func Untar(destDir string, reader io.Reader, shouldRemoveBaseDir bool) (err erro
 
 		// If it's a dir, and it doesn't exist create it
 		case tar.TypeDir:
-			if _, err := os.Stat(target); err != nil {
-				if err := os.MkdirAll(target, 0750); err != nil {
-					return err
+			if _, err = os.Stat(target); err != nil {
+				if err = os.MkdirAll(target, 0750); err != nil {
+					return
 				}
 			}
 
 		// If it's a file create it
 		case tar.TypeReg:
-			targetFile, err := os.OpenFile(filepath.Clean(target), os.O_CREATE|os.O_RDWR, os.FileMode(header.Mode))
+			var targetFile *os.File
+			targetFile, err = os.OpenFile(filepath.Clean(target), os.O_CREATE|os.O_RDWR, os.FileMode(header.Mode))
 			if err != nil {
-				return err
+				return
 			}
 
 			// Copy file contents
 			if err = safeCopy(targetFile, tarEntryReader); err != nil {
-				return err
+				return
 			}
 
-			// Manually close here after each file operation; defering would cause each file close
+			// Manually close here after each file operation; deferring would cause each file close
 			// to wait until all operations have completed.
-			if err := targetFile.Close(); err != nil {
-				return err
+			if err = targetFile.Close(); err != nil {
+				return
 			}
 		}
 	}
-	return nil
+	return
 }
 
 func makeDirIfMissing(destDir string) error {
@@ -230,10 +227,7 @@ func unzipFile(f *zip.File, destination string) (err error) {
 		return err
 	}
 	defer func() {
-		if e := destinationFile.Close(); err == nil {
-			err = e
-			return
-		}
+		err = errors.Join(err, destinationFile.Close())
 	}()
 	// Unzip the content of a file and copy it to the destination file
 	zippedFile, err := f.Open()
@@ -241,10 +235,7 @@ func unzipFile(f *zip.File, destination string) (err error) {
 		return err
 	}
 	defer func() {
-		if e := zippedFile.Close(); err == nil {
-			err = e
-			return
-		}
+		err = errors.Join(err, zippedFile.Close())
 	}()
 	return safeCopy(destinationFile, zippedFile)
 }

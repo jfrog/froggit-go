@@ -54,7 +54,7 @@ func TestBitbucketServerParseIncomingPushWebhook(t *testing.T) {
 
 	// Parse webhook
 	parser := newBitbucketServerWebhookParser(vcsclient.EmptyLogger{}, "https://bitbucket.test/rest")
-	actual, err := validateAndParseHttpRequest(context.Background(), vcsclient.EmptyLogger{}, parser, token, request)
+	actual, err := validateAndParseHttpRequest(context.Background(), parser, token, request)
 	assert.NoError(t, err)
 
 	// Check values

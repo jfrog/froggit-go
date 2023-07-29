@@ -82,7 +82,7 @@ func TestAzureRepos_TestDownloadRepository(t *testing.T) {
 	ctx := context.Background()
 	dir, err := os.MkdirTemp("", "")
 	assert.NoError(t, err)
-	defer func() { _ = os.RemoveAll(dir) }()
+	defer func() { assert.NoError(t, os.RemoveAll(dir)) }()
 
 	repoFile, err := os.ReadFile(filepath.Join("testdata", "azurerepos", "hello_world.zip"))
 	assert.NoError(t, err)
@@ -580,9 +580,9 @@ func TestAzureReposClient_GetCommitStatus(t *testing.T) {
 		commitStatuses, err := client.GetCommitStatuses(ctx, owner, repo1, commitHash)
 		assert.NoError(t, err)
 		assert.Len(t, commitStatuses, 3)
-		assert.Equal(t, Pass, commitStatuses[0])
-		assert.Equal(t, InProgress, commitStatuses[1])
-		assert.Equal(t, Fail, commitStatuses[2])
+		assert.Equal(t, Pass, commitStatuses[0].State)
+		assert.Equal(t, InProgress, commitStatuses[1].State)
+		assert.Equal(t, Fail, commitStatuses[2].State)
 	})
 	t.Run("Empty response", func(t *testing.T) {
 		client, cleanUp := createServerAndClient(t, vcsutils.AzureRepos, true, nil, expectedUri, createAzureReposHandler)

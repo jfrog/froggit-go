@@ -196,7 +196,7 @@ func TestGitHubClient_DownloadRepository(t *testing.T) {
 	ctx := context.Background()
 	dir, err := os.MkdirTemp("", "")
 	assert.NoError(t, err)
-	defer func() { _ = os.RemoveAll(dir) }()
+	defer func() { assert.NoError(t, os.RemoveAll(dir)) }()
 
 	client, cleanUp := createServerAndClientReturningStatus(t, vcsutils.GitHub, false,
 		[]byte("https://github.com/octocat/Hello-World/archive/refs/heads/master.tar.gz"),
@@ -778,10 +778,10 @@ func TestGitHubClient_TestGetCommitStatus(t *testing.T) {
 		commitStatuses, err := client.GetCommitStatuses(ctx, owner, repo1, ref)
 		assert.NoError(t, err)
 		assert.Len(t, commitStatuses, 4)
-		assert.Equal(t, Pass, commitStatuses[0])
-		assert.Equal(t, InProgress, commitStatuses[1])
-		assert.Equal(t, Fail, commitStatuses[2])
-		assert.Equal(t, Error, commitStatuses[3])
+		assert.Equal(t, Pass, commitStatuses[0].State)
+		assert.Equal(t, InProgress, commitStatuses[1].State)
+		assert.Equal(t, Fail, commitStatuses[2].State)
+		assert.Equal(t, Error, commitStatuses[3].State)
 	})
 	t.Run("Bad response format", func(t *testing.T) {
 		response, err := os.ReadFile(filepath.Join("testdata", "github", "commits_statuses_bad_json.json"))
