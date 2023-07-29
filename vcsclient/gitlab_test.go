@@ -225,8 +225,8 @@ func TestGitLabClient_ListOpenPullRequests(t *testing.T) {
 	assert.Len(t, result, 1)
 	assert.EqualValues(t, PullRequestInfo{
 		ID:     302,
-		Source: BranchInfo{Name: "test1", Repository: repo1, Owner: owner},
-		Target: BranchInfo{Name: "master", Repository: repo1, Owner: owner},
+		Source: BranchInfo{Name: "test1", Repository: repo1},
+		Target: BranchInfo{Name: "master", Repository: repo1},
 	}, result[0])
 
 	// With body

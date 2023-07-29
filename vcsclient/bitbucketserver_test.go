@@ -224,8 +224,8 @@ func TestBitbucketServer_ListOpenPullRequests(t *testing.T) {
 	assert.Len(t, result, 1)
 	assert.EqualValues(t, PullRequestInfo{
 		ID:     101,
-		Source: BranchInfo{Name: "feature-ABC-123", Repository: "my-repo", Owner: owner},
-		Target: BranchInfo{Name: "master", Repository: "my-repo", Owner: owner},
+		Source: BranchInfo{Name: "feature-ABC-123", Repository: "my-repo"},
+		Target: BranchInfo{Name: "master", Repository: "my-repo"},
 	}, result[0])
 
 	// With body:
