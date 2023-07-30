@@ -301,7 +301,7 @@ func (client *AzureReposClient) getOpenPullRequests(ctx context.Context, owner, 
 	}
 	var pullRequestsInfo []PullRequestInfo
 	for _, pullRequest := range *pullRequests {
-		pullRequestDetails := parsePullRequestDetails(client, pullRequest, owner, repository)
+		pullRequestDetails := parsePullRequestDetails(client, pullRequest, owner, repository, withBody)
 		pullRequestsInfo = append(pullRequestsInfo, pullRequestDetails)
 	}
 	return pullRequestsInfo, nil
@@ -320,7 +320,7 @@ func (client *AzureReposClient) GetPullRequestByID(ctx context.Context, owner, r
 	if err != nil {
 		return
 	}
-	pullRequestInfo = parsePullRequestDetails(client, *pullRequest, owner, repository)
+	pullRequestInfo = parsePullRequestDetails(client, *pullRequest, owner, repository, false)
 	return
 }
 
@@ -575,14 +575,14 @@ func (client *AzureReposClient) GetModifiedFiles(ctx context.Context, _, reposit
 	return fileNamesList, nil
 }
 
-func parsePullRequestDetails(client *AzureReposClient, pullRequest git.GitPullRequest, owner, repository string) PullRequestInfo {
+func parsePullRequestDetails(client *AzureReposClient, pullRequest git.GitPullRequest, owner, repository string, withBody bool) PullRequestInfo {
 	// Trim the branches prefix and get the actual branches name
 	shortSourceName := (*pullRequest.SourceRefName)[strings.LastIndex(*pullRequest.SourceRefName, "/")+1:]
 	shortTargetName := (*pullRequest.TargetRefName)[strings.LastIndex(*pullRequest.TargetRefName, "/")+1:]
 
 	var prBody string
 	bodyPtr := pullRequest.Description
-	if bodyPtr != nil {
+	if bodyPtr != nil && withBody {
 		prBody = *bodyPtr
 	}
 
