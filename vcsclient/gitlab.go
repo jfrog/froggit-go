@@ -286,7 +286,7 @@ func (client *GitLabClient) GetPullRequestByID(_ context.Context, owner, reposit
 	}
 	sourceOwner := owner
 	if mergeRequest.SourceProjectID != mergeRequest.TargetProjectID {
-		client.logger.Debug("source project owner is different from the target project owner, fetching its name by the project id...")
+		client.logger.Debug("Source project owner is different from the target project owner, fetching its name by the project id...")
 		if sourceOwner, err = getProjectOwnerByID(mergeRequest.SourceProjectID, client); err != nil {
 			return PullRequestInfo{}, err
 		}
