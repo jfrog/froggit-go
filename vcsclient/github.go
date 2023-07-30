@@ -221,38 +221,39 @@ func (client *GitHubClient) GetCommitStatuses(ctx context.Context, owner, reposi
 }
 
 // DownloadRepository on GitHub
-func (client *GitHubClient) DownloadRepository(ctx context.Context, owner, repository, branch, localPath string) error {
+func (client *GitHubClient) DownloadRepository(ctx context.Context, owner, repository, branch, localPath string) (err error) {
 	ghClient, err := client.buildGithubClient(ctx)
 	if err != nil {
-		return err
+		return
 	}
 	client.logger.Debug("Getting GitHub archive link to download")
 	baseURL, _, err := ghClient.Repositories.GetArchiveLink(ctx, owner, repository, github.Tarball,
 		&github.RepositoryContentGetOptions{Ref: branch}, true)
 	if err != nil {
-		return err
+		return
 	}
 	httpClient := &http.Client{}
-	req, err := http.NewRequest("GET", baseURL.String(), nil)
+	req, err := http.NewRequest(http.MethodGet, baseURL.String(), nil)
 	if err != nil {
-		return err
+		return
 	}
 	resp, err := httpClient.Do(req)
 	if err != nil {
-		return err
+		return
 	}
-	defer func() { _ = resp.Body.Close() }()
+	defer func() { err = errors.Join(err, resp.Body.Close()) }()
 	if err = vcsutils.CheckResponseStatusWithBody(resp, http.StatusOK); err != nil {
-		return err
+		return
 	}
 	client.logger.Info(repository, successfulRepoDownload)
 	err = vcsutils.Untar(localPath, resp.Body, true)
 	if err != nil {
-		return err
+		return
 	}
 
 	client.logger.Info(successfulRepoExtraction)
-	return vcsutils.CreateDotGitFolderWithRemote(localPath, vcsutils.RemoteName, getGitHubGitRemoteUrl(client, owner, repository))
+	err = vcsutils.CreateDotGitFolderWithRemote(localPath, vcsutils.RemoteName, getGitHubGitRemoteUrl(client, owner, repository))
+	return
 }
 
 // CreatePullRequest on GitHub

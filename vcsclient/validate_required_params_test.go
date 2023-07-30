@@ -7,7 +7,6 @@ import (
 
 	"github.com/jfrog/froggit-go/vcsutils"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestRequiredParams_AddSshKeyInvalidPayload(t *testing.T) {
@@ -240,7 +239,7 @@ func TestRequiredParams_UnlabelPullRequest(t *testing.T) {
 func createClientAndContext(t *testing.T, provider vcsutils.VcsProvider) (context.Context, VcsClient) {
 	ctx := context.Background()
 	client, err := NewClientBuilder(provider).Build()
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	return ctx, client
 }
 

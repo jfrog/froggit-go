@@ -93,18 +93,12 @@ func (client *AzureReposClient) DownloadRepository(ctx context.Context, owner, r
 		return
 	}
 	defer func() {
-		e := os.Chdir(wd)
-		if err == nil {
-			err = e
-		}
+		err = errors.Join(err, os.Chdir(wd))
 	}()
 	res, err := client.sendDownloadRepoRequest(ctx, repository, branch)
 	defer func() {
 		if res.Body != nil {
-			e := res.Body.Close()
-			if err == nil {
-				err = e
-			}
+			err = errors.Join(err, res.Body.Close())
 		}
 	}()
 	if err != nil {
