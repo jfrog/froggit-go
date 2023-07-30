@@ -640,7 +640,7 @@ func getProjectOwnerByID(projectID int, client *GitLabClient) (string, error) {
 		}
 	}
 	if project.Namespace == nil {
-		return "", fmt.Errorf("could not fetch the name of the project owner. projectID: %d", projectID)
+		return "", fmt.Errorf("could not fetch the name of the project owner. Project ID: %d", projectID)
 	}
 	return project.Namespace.Name, nil
 }
