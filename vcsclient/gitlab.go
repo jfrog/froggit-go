@@ -269,7 +269,7 @@ func (client *GitLabClient) getOpenPullRequests(ctx context.Context, owner, repo
 	if err != nil {
 		return []PullRequestInfo{}, err
 	}
-	return mapGitLabMergeRequestToPullRequestInfoList(mergeRequests, owner, repository, withBody), nil
+	return mapGitLabMergeRequestToPullRequestInfoList(mergeRequests, client, owner, repository, withBody)
 }
 
 // GetPullRequestInfoById on GitLab
@@ -286,7 +286,6 @@ func (client *GitLabClient) GetPullRequestByID(_ context.Context, owner, reposit
 	}
 	sourceOwner := owner
 	if mergeRequest.SourceProjectID != mergeRequest.TargetProjectID {
-		client.logger.Debug("Source project owner is different from the target project owner, fetching its name by the project id...")
 		if sourceOwner, err = getProjectOwnerByID(mergeRequest.SourceProjectID, client); err != nil {
 			return PullRequestInfo{}, err
 		}
@@ -600,11 +599,17 @@ func mapGitLabNotesToCommentInfoList(notes []*gitlab.Note) (res []CommentInfo) {
 	return
 }
 
-func mapGitLabMergeRequestToPullRequestInfoList(mergeRequests []*gitlab.MergeRequest, owner, repository string, withBody bool) (res []PullRequestInfo) {
+func mapGitLabMergeRequestToPullRequestInfoList(mergeRequests []*gitlab.MergeRequest, client *GitLabClient, owner, repository string, withBody bool) (res []PullRequestInfo, err error) {
 	for _, mergeRequest := range mergeRequests {
 		var body string
 		if withBody {
 			body = mergeRequest.Description
+		}
+		sourceOwner := owner
+		if mergeRequest.SourceProjectID != mergeRequest.TargetProjectID {
+			if sourceOwner, err = getProjectOwnerByID(mergeRequest.SourceProjectID, client); err != nil {
+				return
+			}
 		}
 		res = append(res, PullRequestInfo{
 			ID:   int64(mergeRequest.IID),
@@ -612,7 +617,7 @@ func mapGitLabMergeRequestToPullRequestInfoList(mergeRequests []*gitlab.MergeReq
 			Source: BranchInfo{
 				Name:       mergeRequest.SourceBranch,
 				Repository: repository,
-				Owner:      owner,
+				Owner:      sourceOwner,
 			},
 			Target: BranchInfo{
 				Name:       mergeRequest.TargetBranch,
@@ -624,9 +629,8 @@ func mapGitLabMergeRequestToPullRequestInfoList(mergeRequests []*gitlab.MergeReq
 	return
 }
 
-func getProjectOwnerByID(sourceProjectID int, client *GitLabClient) (string, error) {
-	var sourceProject *gitlab.Project
-	sourceProject, glResponse, err := client.glClient.Projects.GetProject(sourceProjectID, &gitlab.GetProjectOptions{})
+func getProjectOwnerByID(projectID int, client *GitLabClient) (string, error) {
+	project, glResponse, err := client.glClient.Projects.GetProject(projectID, &gitlab.GetProjectOptions{})
 	if err != nil {
 		return "", err
 	}
@@ -635,8 +639,8 @@ func getProjectOwnerByID(sourceProjectID int, client *GitLabClient) (string, err
 			return "", err
 		}
 	}
-	if sourceProject.Namespace == nil {
-		return "", errors.New("could not fetch the name of the source project owner")
+	if project.Namespace == nil {
+		return "", errors.New("could not fetch the name of the project owner. projectID: " + string(projectID))
 	}
-	return sourceProject.Namespace.Name, nil
+	return project.Namespace.Name, nil
 }
