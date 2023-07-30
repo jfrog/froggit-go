@@ -56,7 +56,7 @@
       "web_url": "https://gitlab.example.com//kenyatta_oconnell"
     }],
     "source_project_id": 2,
-    "target_project_id": 3,
+    "target_project_id": 2,
     "labels": [
       "Community contribution",
       "Manage"
