@@ -269,7 +269,7 @@ func (client *GitLabClient) getOpenPullRequests(ctx context.Context, owner, repo
 	if err != nil {
 		return []PullRequestInfo{}, err
 	}
-	return mapGitLabMergeRequestToPullRequestInfoList(mergeRequests, withBody), nil
+	return mapGitLabMergeRequestToPullRequestInfoList(mergeRequests, owner, repository, withBody), nil
 }
 
 // GetPullRequestInfoById on GitLab
@@ -600,17 +600,25 @@ func mapGitLabNotesToCommentInfoList(notes []*gitlab.Note) (res []CommentInfo) {
 	return
 }
 
-func mapGitLabMergeRequestToPullRequestInfoList(mergeRequests []*gitlab.MergeRequest, withBody bool) (res []PullRequestInfo) {
+func mapGitLabMergeRequestToPullRequestInfoList(mergeRequests []*gitlab.MergeRequest, owner, repository string, withBody bool) (res []PullRequestInfo) {
 	for _, mergeRequest := range mergeRequests {
 		var body string
 		if withBody {
 			body = mergeRequest.Description
 		}
 		res = append(res, PullRequestInfo{
-			ID:     int64(mergeRequest.IID),
-			Body:   body,
-			Source: BranchInfo{Name: mergeRequest.SourceBranch},
-			Target: BranchInfo{Name: mergeRequest.TargetBranch},
+			ID:   int64(mergeRequest.IID),
+			Body: body,
+			Source: BranchInfo{
+				Name:       mergeRequest.SourceBranch,
+				Repository: repository,
+				Owner:      owner,
+			},
+			Target: BranchInfo{
+				Name:       mergeRequest.TargetBranch,
+				Repository: repository,
+				Owner:      owner,
+			},
 		})
 	}
 	return
