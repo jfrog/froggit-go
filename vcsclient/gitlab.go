@@ -447,13 +447,14 @@ func (client *GitLabClient) ListPullRequestLabels(ctx context.Context, owner, re
 }
 
 // UnlabelPullRequest on GitLab
-func (client *GitLabClient) UnlabelPullRequest(ctx context.Context, owner, repository, name string, pullRequestID int) error {
+func (client *GitLabClient) UnlabelPullRequest(ctx context.Context, owner, repository, label string, pullRequestID int) error {
 	err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository})
 	if err != nil {
 		return err
 	}
+	labels := gitlab.Labels{label}
 	_, _, err = client.glClient.MergeRequests.UpdateMergeRequest(getProjectID(owner, repository), pullRequestID, &gitlab.UpdateMergeRequestOptions{
-		RemoveLabels: gitlab.Labels{name},
+		RemoveLabels: &labels,
 	}, gitlab.WithContext(ctx))
 	return err
 }

@@ -5,7 +5,7 @@
     "default_branch": "main",
     "description": "",
     "forks_count": 0,
-    "http_url_to_repo": "http://gitlab.example.com/example-user/example-project.git",
+    "http_url_to_repo": "https://gitlab.example.com/example-user/example-project.git",
     "id": 3,
     "last_activity_at": "2021-11-17T08:04:55.332Z",
     "name": "example-project",
@@ -18,16 +18,16 @@
       "name": "example-user",
       "parent_id": null,
       "path": "example-user",
-      "web_url": "http://gitlab.example.com/example-user"
+      "web_url": "https://gitlab.example.com/example-user"
     },
     "path": "example-project",
     "path_with_namespace": "example-user/example-project",
-    "readme_url": "http://gitlab.example.com/example-user/example-project/-/blob/main/README.md",
+    "readme_url": "https://gitlab.example.com/example-user/example-project/-/blob/main/README.md",
     "ssh_url_to_repo": "git@gitlab.example.com:example-user/example-project.git",
     "star_count": 0,
     "tag_list": [],
     "topics": [],
-    "web_url": "http://gitlab.example.com/example-user/example-project"
+    "web_url": "https://gitlab.example.com/example-user/example-project"
   },
   {
     "avatar_url": null,
@@ -35,7 +35,7 @@
     "default_branch": "master",
     "description": "",
     "forks_count": 0,
-    "http_url_to_repo": "http://gitlab.example.com/root/my-project.git",
+    "http_url_to_repo": "https://gitlab.example.com/root/my-project.git",
     "id": 2,
     "last_activity_at": "2021-11-15T14:11:01.589Z",
     "name": "My project",
@@ -48,16 +48,16 @@
       "name": "Administrator",
       "parent_id": null,
       "path": "root",
-      "web_url": "http://gitlab.example.com/root"
+      "web_url": "https://gitlab.example.com/root"
     },
     "path": "my-project",
     "path_with_namespace": "root/my-project",
-    "readme_url": "http://gitlab.example.com/root/my-project/-/blob/master/README.md",
+    "readme_url": "https://gitlab.example.com/root/my-project/-/blob/master/README.md",
     "ssh_url_to_repo": "git@gitlab.example.com:root/my-project.git",
     "star_count": 0,
     "tag_list": [],
     "topics": [],
-    "web_url": "http://gitlab.example.com/root/my-project"
+    "web_url": "https://gitlab.example.com/root/my-project"
   },
   {
     "avatar_url": null,
@@ -65,7 +65,7 @@
     "default_branch": "main",
     "description": "This project is automatically generated and helps monitor this GitLab instance. [Learn more](/help/administration/monitoring/gitlab_self_monitoring_project/index).",
     "forks_count": 0,
-    "http_url_to_repo": "http://gitlab.example.com/gitlab-instance-ba535d0c/Monitoring.git",
+    "http_url_to_repo": "https://gitlab.example.com/gitlab-instance-ba535d0c/Monitoring.git",
     "id": 1,
     "last_activity_at": "2021-10-20T11:40:18.512Z",
     "name": "Monitoring",
@@ -78,7 +78,7 @@
       "name": "GitLab Instance",
       "parent_id": null,
       "path": "gitlab-instance-ba535d0c",
-      "web_url": "http://gitlab.example.com/groups/gitlab-instance-ba535d0c"
+      "web_url": "https://gitlab.example.com/groups/gitlab-instance-ba535d0c"
     },
     "path": "Monitoring",
     "path_with_namespace": "gitlab-instance-ba535d0c/Monitoring",
@@ -87,7 +87,7 @@
     "star_count": 0,
     "tag_list": [],
     "topics": [],
-    "web_url": "http://gitlab.example.com/gitlab-instance-ba535d0c/Monitoring"
+    "web_url": "https://gitlab.example.com/gitlab-instance-ba535d0c/Monitoring"
   },
   {
     "avatar_url": null,
@@ -95,7 +95,7 @@
     "default_branch": "master",
     "description": "A getting started template for go-micro (https://micro.mu/docs/go-micro.html)",
     "forks_count": 0,
-    "http_url_to_repo": "http://gitlab.example.com/root/go-micro.git",
+    "http_url_to_repo": "https://gitlab.example.com/root/go-micro.git",
     "id": 4,
     "last_activity_at": "2021-11-17T08:46:19.858Z",
     "name": "go-micro",
@@ -108,16 +108,16 @@
       "name": "Administrator",
       "parent_id": null,
       "path": "root",
-      "web_url": "http://gitlab.example.com/root"
+      "web_url": "https://gitlab.example.com/root"
     },
     "path": "go-micro",
     "path_with_namespace": "root/go-micro",
-    "readme_url": "http://gitlab.example.com/root/go-micro/-/blob/master/README.md",
+    "readme_url": "https://gitlab.example.com/root/go-micro/-/blob/master/README.md",
     "ssh_url_to_repo": "git@gitlab.example.com:root/go-micro.git",
     "star_count": 0,
     "tag_list": [],
     "topics": [],
-    "web_url": "http://gitlab.example.com/root/go-micro"
+    "web_url": "https://gitlab.example.com/root/go-micro"
   },
   {
     "id": 35090609,

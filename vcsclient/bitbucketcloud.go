@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/jfrog/gofrog/datastructures"
 	"github.com/ktrysmt/go-bitbucket"
@@ -93,15 +94,15 @@ func (client *BitbucketCloudClient) ListBranches(ctx context.Context, owner, rep
 }
 
 // AddSshKeyToRepository on Bitbucket cloud, the deploy-key is always read-only.
-func (client *BitbucketCloudClient) AddSshKeyToRepository(ctx context.Context, owner, repository, keyName, publicKey string, _ Permission) error {
-	err := validateParametersNotBlank(map[string]string{
+func (client *BitbucketCloudClient) AddSshKeyToRepository(ctx context.Context, owner, repository, keyName, publicKey string, _ Permission) (err error) {
+	err = validateParametersNotBlank(map[string]string{
 		"owner":      owner,
 		"repository": repository,
 		"key name":   keyName,
 		"public key": publicKey,
 	})
 	if err != nil {
-		return err
+		return
 	}
 	endpoint := client.vcsInfo.APIEndpoint
 	if endpoint == "" {
@@ -116,11 +117,11 @@ func (client *BitbucketCloudClient) AddSshKeyToRepository(ctx context.Context, o
 	body := new(bytes.Buffer)
 	err = json.NewEncoder(body).Encode(addKeyRequest)
 	if err != nil {
-		return err
+		return
 	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, u, body)
 	if err != nil {
-		return err
+		return
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.SetBasicAuth(client.vcsInfo.Username, client.vcsInfo.Token)
@@ -128,17 +129,16 @@ func (client *BitbucketCloudClient) AddSshKeyToRepository(ctx context.Context, o
 	bitbucketClient := client.buildBitbucketCloudClient(ctx)
 	response, err := bitbucketClient.HttpClient.Do(req)
 	if err != nil {
-		return err
+		return
 	}
 	defer func() {
-		_ = vcsutils.DiscardResponseBody(response)
-		_ = response.Body.Close()
+		err = errors.Join(err, vcsutils.DiscardResponseBody(response), response.Body.Close())
 	}()
 
 	if response.StatusCode >= 300 {
-		return fmt.Errorf(response.Status)
+		err = fmt.Errorf(response.Status)
 	}
-	return nil
+	return
 }
 
 type bitbucketCloudAddSSHKeyRequest struct {
@@ -253,7 +253,7 @@ func (client *BitbucketCloudClient) DownloadRepository(ctx context.Context, owne
 		return err
 	}
 	client.logger.Debug("received archive url:", downloadLink)
-	getRequest, err := http.NewRequestWithContext(ctx, "GET", downloadLink, nil)
+	getRequest, err := http.NewRequestWithContext(ctx, http.MethodGet, downloadLink, nil)
 	if err != nil {
 		return err
 	}

@@ -16,7 +16,7 @@
     "links": {
       "self": [
         {
-          "href": "http://link/to/project"
+          "href": "https://link/to/project"
         }
       ]
     }
@@ -35,7 +35,7 @@
     ],
     "self": [
       {
-        "href": "http://link/to/repository"
+        "href": "https://link/to/repository"
       }
     ]
   }

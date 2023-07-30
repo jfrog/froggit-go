@@ -118,7 +118,7 @@
     "tags_url": "https://api.github.com/repos/octocat/Hello-World/tags",
     "teams_url": "https://api.github.com/repos/octocat/Hello-World/teams",
     "trees_url": "https://api.github.com/repos/octocat/Hello-World/git/trees{/sha}",
-    "hooks_url": "http://api.github.com/repos/octocat/Hello-World/hooks"
+    "hooks_url": "https://api.github.com/repos/octocat/Hello-World/hooks"
   },
   "commit_url": "https://api.github.com/repos/octocat/Hello-World/6dcb09b5b57875f334f61aebed695e2e4193db5e",
   "url": "https://api.github.com/repos/octocat/Hello-World/6dcb09b5b57875f334f61aebed695e2e4193db5e/status"

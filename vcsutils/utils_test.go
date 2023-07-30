@@ -3,7 +3,6 @@ package vcsutils
 import (
 	"fmt"
 	"github.com/go-git/go-git/v5"
-	"github.com/stretchr/testify/require"
 	"io"
 	"net/http"
 	"os"
@@ -107,7 +106,7 @@ func openTarball(t *testing.T) (string, *os.File) {
 	dir, err := os.MkdirTemp("", "")
 	assert.NoError(t, err)
 	defer func() {
-		assert.NoError(t, os.RemoveAll(dir))
+		assert.NoError(t, RemoveTempDir(dir))
 	}()
 
 	tarball, err := os.Open(filepath.Join("testdata", "a.tar.gz"))
@@ -133,7 +132,7 @@ func TestDefaultIfNotNil(t *testing.T) {
 func TestUnzip(t *testing.T) {
 	destDir, err := os.MkdirTemp("", "")
 	assert.NoError(t, err)
-	defer assert.NoError(t, os.RemoveAll(destDir))
+	defer assert.NoError(t, RemoveTempDir(destDir))
 	zipFileContent, err := os.ReadFile(filepath.Join("testdata", "hello_world.zip"))
 	assert.NoError(t, err)
 	err = Unzip(zipFileContent, destDir)
@@ -173,7 +172,7 @@ func TestCheckResponseStatusWithBody(t *testing.T) {
 	expectedStatusCode := 200
 	resp := &http.Response{
 		Status:     "200",
-		StatusCode: 200,
+		StatusCode: http.StatusOK,
 	}
 	assert.NoError(t, CheckResponseStatusWithBody(resp, expectedStatusCode))
 }
@@ -182,7 +181,7 @@ func TestCreateDotGitFolderWithRemote(t *testing.T) {
 	dir1, err := os.MkdirTemp("", "tmp")
 	assert.NoError(t, err)
 	defer func() {
-		assert.NoError(t, os.RemoveAll(dir1))
+		assert.NoError(t, RemoveTempDir(dir1))
 	}()
 	err = CreateDotGitFolderWithRemote(dir1, "origin", "fakeurl")
 	assert.NoError(t, err)
@@ -201,14 +200,14 @@ func TestCreateDotGitFolderWithoutRemote(t *testing.T) {
 	dir2, err := os.MkdirTemp("", "tmp")
 	assert.NoError(t, err)
 	defer func() {
-		assert.NoError(t, os.RemoveAll(dir2))
+		assert.NoError(t, RemoveTempDir(dir2))
 	}()
 	assert.Error(t, CreateDotGitFolderWithRemote(dir2, "", "fakeurl"))
 }
 
 func TestPointerOf(t *testing.T) {
-	require.Equal(t, 5, *PointerOf(5))
-	require.Equal(t, "some", *PointerOf("some"))
+	assert.Equal(t, 5, *PointerOf(5))
+	assert.Equal(t, "some", *PointerOf("some"))
 }
 
 func TestGetGenericGitRemoteUrl(t *testing.T) {
@@ -259,8 +258,8 @@ func TestRemapFields(t *testing.T) {
 	date := time.Date(2020, 10, 9, 8, 7, 6, 0, time.UTC)
 	src := map[string]any{"n_ame": "John", "B_day": date.Format(time.RFC3339)}
 	result, err := RemapFields[destination](src, "some")
-	require.NoError(t, err)
-	require.Equal(t, destination{Name: "John", Birthdate: date}, result)
+	assert.NoError(t, err)
+	assert.Equal(t, destination{Name: "John", Birthdate: date}, result)
 }
 
 func TestMapPullRequestState(t *testing.T) {
