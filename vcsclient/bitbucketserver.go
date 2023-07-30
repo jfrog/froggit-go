@@ -350,15 +350,24 @@ func (client *BitbucketServerClient) getOpenPullRequests(ctx context.Context, ow
 				body = pullRequest.Description
 			}
 			if pullRequest.Open {
+				var sourceOwner string
+				sourceOwner, err = getSourceRepositoryOwner(pullRequest)
+				if err != nil {
+					return nil, err
+				}
 				results = append(results, PullRequestInfo{
 					ID:   int64(pullRequest.ID),
 					Body: body,
 					Source: BranchInfo{
 						Name:       pullRequest.FromRef.DisplayID,
-						Repository: pullRequest.FromRef.Repository.Slug},
+						Repository: pullRequest.FromRef.Repository.Slug,
+						Owner:      sourceOwner,
+					},
 					Target: BranchInfo{
 						Name:       pullRequest.ToRef.DisplayID,
-						Repository: pullRequest.ToRef.Repository.Slug},
+						Repository: pullRequest.ToRef.Repository.Slug,
+						Owner:      owner,
+					},
 				})
 			}
 		}
@@ -378,12 +387,10 @@ func (client *BitbucketServerClient) GetPullRequestByID(ctx context.Context, own
 	if err != nil {
 		return
 	}
-	project := pullRequest.FromRef.Repository.Project
-	if project == nil {
-		err = fmt.Errorf("failed to get source repository owner, project is nil")
+	sourceOwner, err := getSourceRepositoryOwner(pullRequest)
+	if err != nil {
 		return
 	}
-	sourceOwner := project.Key
 	pullRequestInfo = PullRequestInfo{
 		ID:     int64(pullRequest.ID),
 		Source: BranchInfo{Name: pullRequest.FromRef.ID, Repository: pullRequest.ToRef.Repository.Slug, Owner: sourceOwner},
@@ -751,4 +758,12 @@ func getBitbucketServerRepositoryVisibility(public bool) RepositoryVisibility {
 		return Public
 	}
 	return Private
+}
+
+func getSourceRepositoryOwner(pullRequest bitbucketv1.PullRequest) (string, error) {
+	project := pullRequest.FromRef.Repository.Project
+	if project == nil {
+		return "", fmt.Errorf("failed to get source repository owner, project is nil. (PR - %s, repository - %s)", pullRequest.FromRef.DisplayID, pullRequest.FromRef.Repository.Slug)
+	}
+	return project.Key, nil
 }
