@@ -275,13 +275,25 @@ func (client *GitLabClient) getOpenPullRequests(ctx context.Context, owner, repo
 // GetPullRequestInfoById on GitLab
 func (client *GitLabClient) GetPullRequestByID(_ context.Context, owner, repository string, pullRequestId int) (pullRequestInfo PullRequestInfo, err error) {
 	client.logger.Debug("fetching merge requests by ID in", repository)
-	mergeRequest, response, err := client.glClient.MergeRequests.GetMergeRequest(getProjectID(owner, repository), pullRequestId, nil)
-	if err != nil || response.StatusCode != http.StatusOK {
+	mergeRequest, glResponse, err := client.glClient.MergeRequests.GetMergeRequest(getProjectID(owner, repository), pullRequestId, nil)
+	if err != nil {
 		return PullRequestInfo{}, err
+	}
+	if glResponse != nil {
+		if err = vcsutils.CheckResponseStatusWithBody(glResponse.Response, http.StatusOK); err != nil {
+			return PullRequestInfo{}, err
+		}
+	}
+	sourceOwner := owner
+	if mergeRequest.SourceProjectID != mergeRequest.TargetProjectID {
+		client.logger.Debug("source project owner is different from the target project owner, fetching its name by the project id...")
+		if sourceOwner, err = getProjectOwnerByID(mergeRequest.SourceProjectID, client); err != nil {
+			return PullRequestInfo{}, err
+		}
 	}
 	pullRequestInfo = PullRequestInfo{
 		ID:     int64(mergeRequest.ID),
-		Source: BranchInfo{Name: mergeRequest.SourceBranch, Repository: repository, Owner: owner},
+		Source: BranchInfo{Name: mergeRequest.SourceBranch, Repository: repository, Owner: sourceOwner},
 		Target: BranchInfo{Name: mergeRequest.TargetBranch, Repository: repository, Owner: owner},
 	}
 	return
@@ -602,4 +614,21 @@ func mapGitLabMergeRequestToPullRequestInfoList(mergeRequests []*gitlab.MergeReq
 		})
 	}
 	return
+}
+
+func getProjectOwnerByID(sourceProjectID int, client *GitLabClient) (string, error) {
+	var sourceProject *gitlab.Project
+	sourceProject, glResponse, err := client.glClient.Projects.GetProject(sourceProjectID, &gitlab.GetProjectOptions{})
+	if err != nil {
+		return "", err
+	}
+	if glResponse != nil {
+		if err = vcsutils.CheckResponseStatusWithBody(glResponse.Response, http.StatusOK); err != nil {
+			return "", err
+		}
+	}
+	if sourceProject.Namespace == nil {
+		return "", errors.New("could not fetch the name of the source project owner")
+	}
+	return sourceProject.Namespace.Name, nil
 }
