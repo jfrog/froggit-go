@@ -734,11 +734,12 @@ func TestGitLabClient_getProjectOwnerByID(t *testing.T) {
 	defer cleanUp()
 	projectOwner, err := getProjectOwnerByID(projectID, client.(*GitLabClient))
 	assert.NoError(t, err)
-	assert.Equal(t, projectOwner, "test")
+	assert.Equal(t, "test", projectOwner)
 	badClient, badClientCleanUp := createServerAndClient(t, vcsutils.GitLab, false, nil,
 		fmt.Sprintf("/api/v4/projects/%d", projectID), createGitLabHandler)
 	defer badClientCleanUp()
 
 	projectOwner, err = getProjectOwnerByID(projectID, badClient.(*GitLabClient))
 	assert.Error(t, err)
+	assert.NotEqual(t, "test", projectOwner)
 }
