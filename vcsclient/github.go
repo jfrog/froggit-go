@@ -620,12 +620,11 @@ func (client *GitHubClient) UploadCodeScanning(ctx context.Context, owner, repos
 	if sarifID != nil && *sarifID.ID != "" {
 		return *sarifID.ID, err
 	}
-	aerr, ok := err.(*github.AcceptedError)
 	var result map[string]string
-	if ok {
-		err = json.Unmarshal(aerr.Raw, &result)
-		if err != nil {
-			return "", nil
+	var ghAcceptedError *github.AcceptedError
+	if errors.As(err, &ghAcceptedError) {
+		if err = json.Unmarshal(ghAcceptedError.Raw, &result); err != nil {
+			return "", err
 		}
 		return result["id"], nil
 	}
