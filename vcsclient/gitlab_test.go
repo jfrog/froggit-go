@@ -596,7 +596,6 @@ func createGitLabHandler(t *testing.T, expectedURI string, response []byte, expe
 	}
 }
 func createGitLabWithPaginationHandler(t *testing.T, _ string, response []byte, _ []byte, expectedStatusCode int, expectedHttpMethod string) http.HandlerFunc {
-
 	var repos []gitlab.Project
 	err := json.Unmarshal(response, &repos)
 	assert.NoError(t, err)
@@ -722,4 +721,25 @@ func TestGitLabClient_TestGetCommitStatus(t *testing.T) {
 		_, err := client.GetCommitStatuses(ctx, owner, repo1, ref)
 		assert.Error(t, err)
 	})
+}
+
+func TestGitLabClient_getProjectOwnerByID(t *testing.T) {
+	projectID := 47457684
+
+	// Successful response
+	response, err := os.ReadFile(filepath.Join("testdata", "gitlab", "get_project_response.json"))
+	assert.NoError(t, err)
+	client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, response,
+		fmt.Sprintf("/api/v4/projects/%d", projectID), createGitLabHandler)
+	defer cleanUp()
+	projectOwner, err := getProjectOwnerByID(projectID, client.(*GitLabClient))
+	assert.NoError(t, err)
+	assert.Equal(t, "test", projectOwner)
+
+	badClient, badClientCleanUp :=
+		createServerAndClient(t, vcsutils.GitLab, false, nil, fmt.Sprintf("/api/v4/projects/%d", projectID), createGitLabHandler)
+	defer badClientCleanUp()
+	projectOwner, err = getProjectOwnerByID(projectID, badClient.(*GitLabClient))
+	assert.Error(t, err)
+	assert.NotEqual(t, "test", projectOwner)
 }

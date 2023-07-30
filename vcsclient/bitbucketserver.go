@@ -380,8 +380,13 @@ func (client *BitbucketServerClient) GetPullRequestByID(ctx context.Context, own
 	client.logger.Debug("fetching pull request by ID in ", repository)
 	bitbucketClient := client.buildBitbucketClient(ctx)
 	apiResponse, err := bitbucketClient.GetPullRequest(owner, repository, pullRequestId)
-	if err != nil || apiResponse.StatusCode != http.StatusOK {
-		return
+	if err != nil {
+		return PullRequestInfo{}, err
+	}
+	if apiResponse != nil {
+		if err = vcsutils.CheckResponseStatusWithBody(apiResponse.Response, http.StatusOK); err != nil {
+			return PullRequestInfo{}, err
+		}
 	}
 	pullRequest, err := bitbucketv1.GetPullRequestResponse(apiResponse)
 	if err != nil {

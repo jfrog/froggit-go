@@ -12,6 +12,7 @@ import (
 	"github.com/go-git/go-git/v5/config"
 	"github.com/google/uuid"
 	"github.com/mitchellh/mapstructure"
+	"golang.org/x/exp/slices"
 	"io"
 	"net/http"
 	"os"
@@ -241,10 +242,12 @@ func unzipFile(f *zip.File, destination string) (err error) {
 }
 
 func CheckResponseStatusWithBody(resp *http.Response, expectedStatusCodes ...int) error {
-	for _, statusCode := range expectedStatusCodes {
-		if statusCode == resp.StatusCode {
-			return nil
-		}
+	if resp == nil {
+		return errors.New("received an empty response")
+	}
+
+	if slices.Contains(expectedStatusCodes, resp.StatusCode) {
+		return nil
 	}
 
 	body, err := io.ReadAll(resp.Body)

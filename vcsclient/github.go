@@ -326,9 +326,14 @@ func (client *GitHubClient) GetPullRequestByID(ctx context.Context, owner, repos
 		return PullRequestInfo{}, err
 	}
 	client.logger.Debug(fetchingPullRequestById, repository)
-	pullRequest, response, err := ghClient.PullRequests.Get(ctx, owner, repository, pullRequestId)
-	if err != nil || response.StatusCode != http.StatusOK {
+	pullRequest, ghResponse, err := ghClient.PullRequests.Get(ctx, owner, repository, pullRequestId)
+	if err != nil {
 		return PullRequestInfo{}, err
+	}
+	if ghResponse != nil {
+		if err = vcsutils.CheckResponseStatusWithBody(ghResponse.Response, http.StatusOK); err != nil {
+			return PullRequestInfo{}, err
+		}
 	}
 
 	sourceBranch, err1 := extractBranchFromLabel(vcsutils.DefaultIfNotNil(pullRequest.Head.Label))
