@@ -135,7 +135,7 @@ func (webhook *gitLabWebhookParser) parsePrEvents(event *gitlab.MergeEvent) (*We
 	case "close":
 		webhookEvent = vcsutils.PrRejected
 	default:
-		//Action is not supported
+		// Action is not supported
 		return nil, nil
 	}
 	eventTime, err := time.Parse("2006-01-02 15:04:05 MST", event.ObjectAttributes.UpdatedAt)

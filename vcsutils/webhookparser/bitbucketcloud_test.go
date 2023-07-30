@@ -9,11 +9,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-
 	"github.com/jfrog/froggit-go/vcsclient"
 	"github.com/jfrog/froggit-go/vcsutils"
+	"github.com/stretchr/testify/assert"
 )
 
 const (
@@ -27,11 +25,11 @@ const (
 
 func TestBitbucketCloudParseIncomingPushWebhook(t *testing.T) {
 	reader, err := os.Open(filepath.Join("testdata", "bitbucketcloud", "pushpayload.json"))
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	defer close(reader)
 
 	// Create request
-	request := httptest.NewRequest("POST", "https://127.0.0.1?token="+string(token), reader)
+	request := httptest.NewRequest(http.MethodPost, "https://127.0.0.1?token="+string(token), reader)
 	request.Header.Add(EventHeaderKey, "repo:push")
 
 	// Parse webhook
@@ -42,7 +40,7 @@ func TestBitbucketCloudParseIncomingPushWebhook(t *testing.T) {
 			Token:       token,
 		},
 		request)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
 	// Check values
 	assert.Equal(t, expectedRepoName, actual.TargetRepositoryDetails.Name)
@@ -218,11 +216,11 @@ func TestBitbucketCloudParseIncomingPrWebhook(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			reader, err := os.Open(filepath.Join("testdata", "bitbucketcloud", tt.payloadFilename))
-			require.NoError(t, err)
+			assert.NoError(t, err)
 			defer close(reader)
 
 			// Create request
-			request := httptest.NewRequest("POST", "https://127.0.0.1?token="+string(token), reader)
+			request := httptest.NewRequest(http.MethodPost, "https://127.0.0.1?token="+string(token), reader)
 			request.Header.Add(EventHeaderKey, tt.eventHeader)
 
 			// Parse webhook
@@ -233,7 +231,7 @@ func TestBitbucketCloudParseIncomingPrWebhook(t *testing.T) {
 					Token:       token,
 				},
 				request)
-			require.NoError(t, err)
+			assert.NoError(t, err)
 
 			// Check values
 			assert.Equal(t, bitbucketCloudExpectedPrID, actual.PullRequestId)
@@ -293,10 +291,10 @@ func TestBitbucketCloudParseIncomingWebhookTagEvents(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			reader, err := os.Open(filepath.Join("testdata", "bitbucketcloud", tt.payloadFilename))
-			require.NoError(t, err)
+			assert.NoError(t, err)
 			defer close(reader)
 
-			request := httptest.NewRequest("POST", "https://127.0.0.1?token="+string(token), reader)
+			request := httptest.NewRequest(http.MethodPost, "https://127.0.0.1?token="+string(token), reader)
 			request.Header.Add(EventHeaderKey, tt.eventHeader)
 
 			actual, err := ParseIncomingWebhook(
@@ -308,7 +306,7 @@ func TestBitbucketCloudParseIncomingWebhookTagEvents(t *testing.T) {
 				},
 				request,
 			)
-			require.NoError(t, err)
+			assert.NoError(t, err)
 			assert.Equal(t, &WebhookInfo{Event: tt.expectedEventType, Tag: tt.expectedTagInfo}, actual)
 		})
 	}
@@ -332,11 +330,11 @@ func TestBitbucketCloudParseIncomingWebhookError(t *testing.T) {
 
 func TestBitbucketCloudPayloadMismatchToken(t *testing.T) {
 	reader, err := os.Open(filepath.Join("testdata", "bitbucketcloud", "pushpayload.json"))
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	defer close(reader)
 
 	// Create request
-	request := httptest.NewRequest("POST", "https://127.0.0.1?token=wrong-token", reader)
+	request := httptest.NewRequest(http.MethodPost, "https://127.0.0.1?token=wrong-token", reader)
 	request.Header.Add(EventHeaderKey, "repo:push")
 
 	// Parse webhook

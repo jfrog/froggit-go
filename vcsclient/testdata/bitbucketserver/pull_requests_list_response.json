@@ -100,7 +100,7 @@
             "links": {
                 "self": [
                     {
-                        "href": "http://link/to/pullrequest"
+                        "href": "https://link/to/pullrequest"
                     }
                 ]
             }

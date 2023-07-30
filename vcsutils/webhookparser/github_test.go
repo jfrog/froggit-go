@@ -9,8 +9,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/stretchr/testify/assert"
 
 	"github.com/jfrog/froggit-go/vcsclient"
@@ -47,11 +45,11 @@ const (
 
 func TestGitHubParseIncomingPushWebhook(t *testing.T) {
 	reader, err := os.Open(filepath.Join("testdata", "github", "pushpayload"))
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	defer close(reader)
 
 	// Create request
-	request := httptest.NewRequest("POST", "https://127.0.0.1", reader)
+	request := httptest.NewRequest(http.MethodPost, "https://127.0.0.1", reader)
 	request.Header.Add("content-type", "application/x-www-form-urlencoded")
 	request.Header.Add(githubSha256Header, "sha256="+githubPushSha256)
 	request.Header.Add(githubEventHeader, "push")
@@ -63,7 +61,7 @@ func TestGitHubParseIncomingPushWebhook(t *testing.T) {
 			VcsProvider: vcsutils.GitHub,
 			Token:       token,
 		}, request)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
 	// Check values
 	assert.Equal(t, expectedRepoName, actual.TargetRepositoryDetails.Name)
@@ -297,11 +295,11 @@ func TestGithubParseIncomingPrWebhook(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			reader, err := os.Open(filepath.Join("testdata", "github", tt.payloadFilename))
-			require.NoError(t, err)
+			assert.NoError(t, err)
 			defer close(reader)
 
 			// Create request
-			request := httptest.NewRequest("POST", "https://127.0.0.1", reader)
+			request := httptest.NewRequest(http.MethodPost, "https://127.0.0.1", reader)
 			request.Header.Add("content-type", "application/x-www-form-urlencoded")
 			request.Header.Add(githubSha256Header, "sha256="+tt.payloadSha)
 			request.Header.Add(githubEventHeader, "pull_request")
@@ -313,7 +311,7 @@ func TestGithubParseIncomingPrWebhook(t *testing.T) {
 					VcsProvider: vcsutils.GitHub,
 					Token:       token,
 				}, request)
-			require.NoError(t, err)
+			assert.NoError(t, err)
 
 			// Check values
 			assert.Equal(t, gitHubExpectedPrID, actual.PullRequestId)
@@ -379,10 +377,10 @@ func TestGitHubParseIncomingWebhookTagEvents(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			reader, err := os.Open(filepath.Join("testdata", "github", tt.payloadFilename))
-			require.NoError(t, err)
+			assert.NoError(t, err)
 			defer close(reader)
 
-			request := httptest.NewRequest("POST", "https://127.0.0.1", reader)
+			request := httptest.NewRequest(http.MethodPost, "https://127.0.0.1", reader)
 			request.Header.Add("content-type", "application/x-www-form-urlencoded")
 			request.Header.Add(githubSha256Header, "sha256="+tt.payloadSha)
 			request.Header.Add(githubEventHeader, "push")
@@ -396,7 +394,7 @@ func TestGitHubParseIncomingWebhookTagEvents(t *testing.T) {
 				},
 				request,
 			)
-			require.NoError(t, err)
+			assert.NoError(t, err)
 			assert.Equal(t, &WebhookInfo{Event: tt.expectedEventType, Tag: tt.expectedTagInfo}, actual)
 		})
 	}
@@ -411,7 +409,7 @@ func TestGitHubParseIncomingWebhookError(t *testing.T) {
 			Token:       token,
 		}, request)
 
-	require.Error(t, err)
+	assert.Error(t, err)
 
 	webhook := gitHubWebhookParser{logger: vcsclient.EmptyLogger{}}
 	_, err = webhook.parseIncomingWebhook(context.Background(), request, []byte{})
@@ -425,11 +423,11 @@ func TestGitHubParsePrEventsError(t *testing.T) {
 
 func TestGitHubPayloadMismatchSignature(t *testing.T) {
 	reader, err := os.Open(filepath.Join("testdata", "github", "pushpayload"))
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	defer close(reader)
 
 	// Create request
-	request := httptest.NewRequest("POST", "https://127.0.0.1", reader)
+	request := httptest.NewRequest(http.MethodPost, "https://127.0.0.1", reader)
 	request.Header.Add("content-type", "application/x-www-form-urlencoded")
 	request.Header.Add(githubSha256Header, "sha256=wrongsignature")
 	request.Header.Add(githubEventHeader, "push")
