@@ -224,6 +224,7 @@ func TestGitLabClient_ListOpenPullRequests(t *testing.T) {
 		ID:     302,
 		Source: BranchInfo{Name: "test1", Repository: repo1, Owner: owner},
 		Target: BranchInfo{Name: "master", Repository: repo1, Owner: owner},
+		URL:    "https://gitlab.example.com/my-group/my-project/merge_requests/1",
 	}, result[0])
 
 	// With body
@@ -235,6 +236,7 @@ func TestGitLabClient_ListOpenPullRequests(t *testing.T) {
 		Body:   "hello world",
 		Source: BranchInfo{Name: "test1", Repository: repo1, Owner: owner},
 		Target: BranchInfo{Name: "master", Repository: repo1, Owner: owner},
+		URL:    "https://gitlab.example.com/my-group/my-project/merge_requests/1",
 	}, result[0])
 }
 
@@ -255,6 +257,7 @@ func TestGitLabClient_GetPullRequestByID(t *testing.T) {
 		ID:     1,
 		Source: BranchInfo{Name: "manual-job-rules", Repository: repoName, Owner: owner},
 		Target: BranchInfo{Name: "master", Repository: repoName, Owner: owner},
+		URL:    "https://gitlab.com/marcel.amirault/test-project/-/merge_requests/133",
 	}, result)
 
 	// Bad client
@@ -732,14 +735,17 @@ func TestGitLabClient_getProjectOwnerByID(t *testing.T) {
 	client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, response,
 		fmt.Sprintf("/api/v4/projects/%d", projectID), createGitLabHandler)
 	defer cleanUp()
-	projectOwner, err := getProjectOwnerByID(projectID, client.(*GitLabClient))
+
+	glClient := client.(*GitLabClient)
+	projectOwner, err := glClient.getProjectOwnerByID(projectID)
 	assert.NoError(t, err)
 	assert.Equal(t, "test", projectOwner)
 
 	badClient, badClientCleanUp :=
 		createServerAndClient(t, vcsutils.GitLab, false, nil, fmt.Sprintf("/api/v4/projects/%d", projectID), createGitLabHandler)
 	defer badClientCleanUp()
-	projectOwner, err = getProjectOwnerByID(projectID, badClient.(*GitLabClient))
+	badGlClient := badClient.(*GitLabClient)
+	projectOwner, err = badGlClient.getProjectOwnerByID(projectID)
 	assert.Error(t, err)
 	assert.NotEqual(t, "test", projectOwner)
 }

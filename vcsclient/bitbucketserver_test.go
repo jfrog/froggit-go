@@ -225,6 +225,7 @@ func TestBitbucketServer_ListOpenPullRequests(t *testing.T) {
 		ID:     101,
 		Source: BranchInfo{Name: "feature-ABC-123", Repository: repo1, Owner: forkedOwner},
 		Target: BranchInfo{Name: "master", Repository: repo1, Owner: owner},
+		URL:    "https://link/to/pullrequest",
 	}, result[0])
 
 	// With body:
@@ -237,6 +238,7 @@ func TestBitbucketServer_ListOpenPullRequests(t *testing.T) {
 		Body:   "hello world",
 		Source: BranchInfo{Name: "feature-ABC-123", Repository: repo1, Owner: forkedOwner},
 		Target: BranchInfo{Name: "master", Repository: repo1, Owner: owner},
+		URL:    "https://link/to/pullrequest",
 	}, result[0])
 }
 
@@ -256,6 +258,7 @@ func TestBitbucketServerClient_GetPullRequest(t *testing.T) {
 		ID:     int64(pullRequestId),
 		Source: BranchInfo{Name: "refs/heads/new_vul_2", Repository: "repoName", Owner: "~fromOwner"},
 		Target: BranchInfo{Name: "refs/heads/master", Repository: "repoName", Owner: owner},
+		URL:    "https://git.bbServerHost.info/users/owner/repos/repoName/pull-requests/6",
 	}, result)
 
 	// Failed owner extraction

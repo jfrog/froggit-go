@@ -300,6 +300,7 @@ type CommentInfo struct {
 type PullRequestInfo struct {
 	ID     int64
 	Body   string
+	URL    string
 	Source BranchInfo
 	Target BranchInfo
 }

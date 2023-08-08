@@ -336,27 +336,53 @@ func (client *GitHubClient) GetPullRequestByID(ctx context.Context, owner, repos
 		}
 	}
 
-	sourceBranch, err1 := extractBranchFromLabel(vcsutils.DefaultIfNotNil(pullRequest.Head.Label))
-	targetBranch, err2 := extractBranchFromLabel(vcsutils.DefaultIfNotNil(pullRequest.Base.Label))
-	err = errors.Join(err1, err2)
-	if err != nil {
-		return PullRequestInfo{}, err
+	return mapGitHubPullRequestToPullRequestInfo(pullRequest, false)
+}
+
+func mapGitHubPullRequestToPullRequestInfo(ghPullRequest *github.PullRequest, withBody bool) (PullRequestInfo, error) {
+	var sourceBranch, targetBranch string
+	var err1, err2 error
+	if ghPullRequest != nil && ghPullRequest.Head != nil && ghPullRequest.Base != nil {
+		sourceBranch, err1 = extractBranchFromLabel(vcsutils.DefaultIfNotNil(ghPullRequest.Head.Label))
+		targetBranch, err2 = extractBranchFromLabel(vcsutils.DefaultIfNotNil(ghPullRequest.Base.Label))
+		err := errors.Join(err1, err2)
+		if err != nil {
+			return PullRequestInfo{}, err
+		}
 	}
 
-	prInfo := PullRequestInfo{
-		ID: int64(pullRequestId),
+	var sourceRepoName, sourceRepoOwner string
+	if ghPullRequest.Head.Repo != nil && ghPullRequest.Head.Repo.Owner != nil {
+		sourceRepoName = vcsutils.DefaultIfNotNil(ghPullRequest.Head.Repo.Name)
+		sourceRepoOwner = vcsutils.DefaultIfNotNil(ghPullRequest.Head.Repo.Owner.Login)
+	}
+
+	var targetRepoName, targetRepoOwner string
+	if ghPullRequest.Base.Repo != nil && ghPullRequest.Base.Repo.Owner != nil {
+		targetRepoName = vcsutils.DefaultIfNotNil(ghPullRequest.Base.Repo.Name)
+		targetRepoOwner = vcsutils.DefaultIfNotNil(ghPullRequest.Base.Repo.Owner.Login)
+	}
+
+	var body string
+	if withBody {
+		body = vcsutils.DefaultIfNotNil(ghPullRequest.Body)
+	}
+
+	return PullRequestInfo{
+		ID:   vcsutils.DefaultIfNotNil(ghPullRequest.ID),
+		URL:  vcsutils.DefaultIfNotNil(ghPullRequest.HTMLURL),
+		Body: body,
 		Source: BranchInfo{
 			Name:       sourceBranch,
-			Repository: vcsutils.DefaultIfNotNil(pullRequest.Head.Repo.Name),
-			Owner:      vcsutils.DefaultIfNotNil(pullRequest.Head.Repo.Owner.Login),
+			Repository: sourceRepoName,
+			Owner:      sourceRepoOwner,
 		},
 		Target: BranchInfo{
 			Name:       targetBranch,
-			Repository: vcsutils.DefaultIfNotNil(pullRequest.Base.Repo.Name),
-			Owner:      vcsutils.DefaultIfNotNil(pullRequest.Base.Repo.Owner.Login),
+			Repository: targetRepoName,
+			Owner:      targetRepoOwner,
 		},
-	}
-	return prInfo, nil
+	}, nil
 }
 
 // Extracts branch name from the following expected label format repo:branch
@@ -830,25 +856,13 @@ func mapGitHubCommentToCommentInfoList(commentsList []*github.IssueComment) (res
 }
 
 func mapGitHubPullRequestToPullRequestInfoList(pullRequestList []*github.PullRequest, withBody bool) (res []PullRequestInfo, err error) {
+	var mappedPullRequest PullRequestInfo
 	for _, pullRequest := range pullRequestList {
-		var body string
-		if withBody {
-			body = *pullRequest.Body
+		mappedPullRequest, err = mapGitHubPullRequestToPullRequestInfo(pullRequest, withBody)
+		if err != nil {
+			return
 		}
-		res = append(res, PullRequestInfo{
-			ID:   int64(vcsutils.DefaultIfNotNil(pullRequest.Number)),
-			Body: body,
-			Source: BranchInfo{
-				Name:       vcsutils.DefaultIfNotNil(pullRequest.Head.Ref),
-				Repository: vcsutils.DefaultIfNotNil(pullRequest.Head.Repo.Name),
-				Owner:      vcsutils.DefaultIfNotNil(pullRequest.Head.Repo.Owner.Login),
-			},
-			Target: BranchInfo{
-				Name:       vcsutils.DefaultIfNotNil(pullRequest.Base.Ref),
-				Repository: vcsutils.DefaultIfNotNil(pullRequest.Base.Repo.Name),
-				Owner:      vcsutils.DefaultIfNotNil(pullRequest.Base.Repo.Owner.Login),
-			},
-		})
+		res = append(res, mappedPullRequest)
 	}
 	return
 }

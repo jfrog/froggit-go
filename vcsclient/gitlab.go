@@ -269,7 +269,7 @@ func (client *GitLabClient) getOpenPullRequests(ctx context.Context, owner, repo
 	if err != nil {
 		return []PullRequestInfo{}, err
 	}
-	return mapGitLabMergeRequestToPullRequestInfoList(mergeRequests, client, owner, repository, withBody)
+	return client.mapGitLabMergeRequestToPullRequestInfoList(mergeRequests, owner, repository, withBody)
 }
 
 // GetPullRequestInfoById on GitLab
@@ -284,17 +284,7 @@ func (client *GitLabClient) GetPullRequestByID(_ context.Context, owner, reposit
 			return PullRequestInfo{}, err
 		}
 	}
-	sourceOwner := owner
-	if mergeRequest.SourceProjectID != mergeRequest.TargetProjectID {
-		if sourceOwner, err = getProjectOwnerByID(mergeRequest.SourceProjectID, client); err != nil {
-			return PullRequestInfo{}, err
-		}
-	}
-	pullRequestInfo = PullRequestInfo{
-		ID:     int64(mergeRequest.ID),
-		Source: BranchInfo{Name: mergeRequest.SourceBranch, Repository: repository, Owner: sourceOwner},
-		Target: BranchInfo{Name: mergeRequest.TargetBranch, Repository: repository, Owner: owner},
-	}
+	pullRequestInfo, err = client.mapGitLabMergeRequestToPullRequestInfo(mergeRequest, false, owner, repository)
 	return
 }
 
@@ -599,37 +589,48 @@ func mapGitLabNotesToCommentInfoList(notes []*gitlab.Note) (res []CommentInfo) {
 	return
 }
 
-func mapGitLabMergeRequestToPullRequestInfoList(mergeRequests []*gitlab.MergeRequest, client *GitLabClient, owner, repository string, withBody bool) (res []PullRequestInfo, err error) {
+func (client *GitLabClient) mapGitLabMergeRequestToPullRequestInfoList(mergeRequests []*gitlab.MergeRequest, owner, repository string, withBody bool) (res []PullRequestInfo, err error) {
 	for _, mergeRequest := range mergeRequests {
-		var body string
-		if withBody {
-			body = mergeRequest.Description
+		var mergeRequestInfo PullRequestInfo
+		if mergeRequestInfo, err = client.mapGitLabMergeRequestToPullRequestInfo(mergeRequest, withBody, owner, repository); err != nil {
+			return
 		}
-		sourceOwner := owner
-		if mergeRequest.SourceProjectID != mergeRequest.TargetProjectID {
-			if sourceOwner, err = getProjectOwnerByID(mergeRequest.SourceProjectID, client); err != nil {
-				return
-			}
-		}
-		res = append(res, PullRequestInfo{
-			ID:   int64(mergeRequest.IID),
-			Body: body,
-			Source: BranchInfo{
-				Name:       mergeRequest.SourceBranch,
-				Repository: repository,
-				Owner:      sourceOwner,
-			},
-			Target: BranchInfo{
-				Name:       mergeRequest.TargetBranch,
-				Repository: repository,
-				Owner:      owner,
-			},
-		})
+		res = append(res, mergeRequestInfo)
 	}
 	return
 }
 
-func getProjectOwnerByID(projectID int, client *GitLabClient) (string, error) {
+func (client *GitLabClient) mapGitLabMergeRequestToPullRequestInfo(mergeRequest *gitlab.MergeRequest, withBody bool, owner, repository string) (PullRequestInfo, error) {
+	var body string
+	if withBody {
+		body = mergeRequest.Description
+	}
+	sourceOwner := owner
+	var err error
+	if mergeRequest.SourceProjectID != mergeRequest.TargetProjectID {
+		if sourceOwner, err = client.getProjectOwnerByID(mergeRequest.SourceProjectID); err != nil {
+			return PullRequestInfo{}, err
+		}
+	}
+
+	return PullRequestInfo{
+		ID:   int64(mergeRequest.IID),
+		Body: body,
+		Source: BranchInfo{
+			Name:       mergeRequest.SourceBranch,
+			Repository: repository,
+			Owner:      sourceOwner,
+		},
+		URL: mergeRequest.WebURL,
+		Target: BranchInfo{
+			Name:       mergeRequest.TargetBranch,
+			Repository: repository,
+			Owner:      owner,
+		},
+	}, nil
+}
+
+func (client *GitLabClient) getProjectOwnerByID(projectID int) (string, error) {
 	project, glResponse, err := client.glClient.Projects.GetProject(projectID, &gitlab.GetProjectOptions{})
 	if err != nil {
 		return "", err

@@ -345,30 +345,12 @@ func (client *BitbucketServerClient) getOpenPullRequests(ctx context.Context, ow
 			return nil, err
 		}
 		for _, pullRequest := range pullRequests {
-			var body string
-			if withBody {
-				body = pullRequest.Description
-			}
 			if pullRequest.Open {
-				var sourceOwner string
-				sourceOwner, err = getSourceRepositoryOwner(pullRequest)
-				if err != nil {
+				var pullRequestInfo PullRequestInfo
+				if pullRequestInfo, err = mapBitbucketServerPullRequestToPullRequestInfo(pullRequest, withBody, owner); err != nil {
 					return nil, err
 				}
-				results = append(results, PullRequestInfo{
-					ID:   int64(pullRequest.ID),
-					Body: body,
-					Source: BranchInfo{
-						Name:       pullRequest.FromRef.DisplayID,
-						Repository: pullRequest.FromRef.Repository.Slug,
-						Owner:      sourceOwner,
-					},
-					Target: BranchInfo{
-						Name:       pullRequest.ToRef.DisplayID,
-						Repository: pullRequest.ToRef.Repository.Slug,
-						Owner:      owner,
-					},
-				})
+				results = append(results, pullRequestInfo)
 			}
 		}
 	}
@@ -392,16 +374,26 @@ func (client *BitbucketServerClient) GetPullRequestByID(ctx context.Context, own
 	if err != nil {
 		return
 	}
+	pullRequestInfo, err = mapBitbucketServerPullRequestToPullRequestInfo(pullRequest, false, owner)
+	return
+}
+
+func mapBitbucketServerPullRequestToPullRequestInfo(pullRequest bitbucketv1.PullRequest, withBody bool, owner string) (PullRequestInfo, error) {
 	sourceOwner, err := getSourceRepositoryOwner(pullRequest)
 	if err != nil {
-		return
+		return PullRequestInfo{}, err
 	}
-	pullRequestInfo = PullRequestInfo{
+	var body string
+	if withBody {
+		body = pullRequest.Description
+	}
+	return PullRequestInfo{
 		ID:     int64(pullRequest.ID),
 		Source: BranchInfo{Name: pullRequest.FromRef.ID, Repository: pullRequest.ToRef.Repository.Slug, Owner: sourceOwner},
 		Target: BranchInfo{Name: pullRequest.ToRef.ID, Repository: pullRequest.ToRef.Repository.Slug, Owner: owner},
-	}
-	return
+		Body:   body,
+		URL:    pullRequest.Links.Self[0].Href,
+	}, nil
 }
 
 // AddPullRequestComment on Bitbucket server
