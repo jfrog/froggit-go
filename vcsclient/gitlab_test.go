@@ -736,7 +736,8 @@ func TestGitLabClient_getProjectOwnerByID(t *testing.T) {
 		fmt.Sprintf("/api/v4/projects/%d", projectID), createGitLabHandler)
 	defer cleanUp()
 
-	glClient := client.(*GitLabClient)
+	glClient, ok := client.(*GitLabClient)
+	assert.True(t, ok)
 	projectOwner, err := glClient.getProjectOwnerByID(projectID)
 	assert.NoError(t, err)
 	assert.Equal(t, "test", projectOwner)
@@ -744,7 +745,8 @@ func TestGitLabClient_getProjectOwnerByID(t *testing.T) {
 	badClient, badClientCleanUp :=
 		createServerAndClient(t, vcsutils.GitLab, false, nil, fmt.Sprintf("/api/v4/projects/%d", projectID), createGitLabHandler)
 	defer badClientCleanUp()
-	badGlClient := badClient.(*GitLabClient)
+	badGlClient, ok := badClient.(*GitLabClient)
+	assert.True(t, ok)
 	projectOwner, err = badGlClient.getProjectOwnerByID(projectID)
 	assert.Error(t, err)
 	assert.NotEqual(t, "test", projectOwner)
