@@ -256,8 +256,8 @@ func TestBitbucketServerClient_GetPullRequest(t *testing.T) {
 	assert.NoError(t, err)
 	assert.EqualValues(t, PullRequestInfo{
 		ID:     int64(pullRequestId),
-		Source: BranchInfo{Name: "refs/heads/new_vul_2", Repository: "repoName", Owner: "~fromOwner"},
-		Target: BranchInfo{Name: "refs/heads/master", Repository: "repoName", Owner: owner},
+		Source: BranchInfo{Name: "new_vul_2", Repository: "repoName", Owner: "~fromOwner"},
+		Target: BranchInfo{Name: "master", Repository: "repoName", Owner: owner},
 		URL:    "https://git.bbServerHost.info/users/owner/repos/repoName/pull-requests/6",
 	}, result)
 
