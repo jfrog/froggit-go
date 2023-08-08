@@ -389,8 +389,8 @@ func mapBitbucketServerPullRequestToPullRequestInfo(pullRequest bitbucketv1.Pull
 	}
 	return PullRequestInfo{
 		ID:     int64(pullRequest.ID),
-		Source: BranchInfo{Name: pullRequest.FromRef.ID, Repository: pullRequest.ToRef.Repository.Slug, Owner: sourceOwner},
-		Target: BranchInfo{Name: pullRequest.ToRef.ID, Repository: pullRequest.ToRef.Repository.Slug, Owner: owner},
+		Source: BranchInfo{Name: pullRequest.FromRef.DisplayID, Repository: pullRequest.ToRef.Repository.Slug, Owner: sourceOwner},
+		Target: BranchInfo{Name: pullRequest.ToRef.DisplayID, Repository: pullRequest.ToRef.Repository.Slug, Owner: owner},
 		Body:   body,
 		URL:    pullRequest.Links.Self[0].Href,
 	}, nil
