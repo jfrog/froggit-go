@@ -445,6 +445,7 @@ func TestGitLabClient_GetCommitBySha(t *testing.T) {
 		Timestamp:     1636383388,
 		Message:       "Initial commit",
 		ParentHashes:  []string{"667fb1d7f3854da3ee036ba3ad711c87c8b37fbd"},
+		AuthorEmail:   "user@example.com",
 	}, result)
 }
 
