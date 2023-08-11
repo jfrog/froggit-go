@@ -344,11 +344,11 @@ func (client *GitLabClient) GetLatestCommit(ctx context.Context, owner, reposito
 		return CommitInfo{}, err
 	}
 
-	latestCommit := CommitInfo{}
 	if len(commits) > 0 {
-		latestCommit = commits[0]
+		return commits[0], nil
 	}
-	return latestCommit, nil
+
+	return CommitInfo{}, fmt.Errorf("no commits were returned for <%s/%s/%s>", owner, repository, branch)
 }
 
 // GetCommits on GitLab
