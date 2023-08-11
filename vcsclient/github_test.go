@@ -349,7 +349,7 @@ func TestGitHubClient_GetLatestCommitNotFound(t *testing.T) {
 	}`)
 
 	client, cleanUp := createServerAndClientReturningStatus(t, vcsutils.GitHub, false, response,
-		fmt.Sprintf("/repos/%s/%s/commits?page=1&per_page=1&sha=master", owner, "unknown"), http.StatusNotFound,
+		fmt.Sprintf("/repos/%s/%s/commits?page=1&per_page=50&sha=master", owner, "unknown"), http.StatusNotFound,
 		createGitHubHandler)
 	defer cleanUp()
 
@@ -368,7 +368,7 @@ func TestGitHubClient_GetLatestCommitUnknownBranch(t *testing.T) {
 	}`)
 
 	client, cleanUp := createServerAndClientReturningStatus(t, vcsutils.GitHub, false, response,
-		fmt.Sprintf("/repos/%s/%s/commits?page=1&per_page=1&sha=unknown", owner, repo1), http.StatusNotFound,
+		fmt.Sprintf("/repos/%s/%s/commits?page=1&per_page=50&sha=unknown", owner, repo1), http.StatusNotFound,
 		createGitHubHandler)
 	defer cleanUp()
 
@@ -450,6 +450,7 @@ func TestGitHubClient_GetCommitBySha(t *testing.T) {
 		Timestamp:     1302796850,
 		Message:       "Fix all the bugs",
 		ParentHashes:  []string{"5dcb09b5b57875f334f61aebed695e2e4193db5e"},
+		AuthorEmail:   "support@github.com",
 	}, result)
 
 	_, err = createBadGitHubClient(t).GetCommitBySha(ctx, owner, repo1, sha)
@@ -681,7 +682,7 @@ func TestGitHubClient_UploadScanningAnalysis(t *testing.T) {
 	assert.NoError(t, err)
 	expectedUploadSarifID := "b16b0368-01b9-11ed-90a3-cabff0b8ad31"
 	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, response,
-		fmt.Sprintf("/repos/%s/%s/commits?page=1&per_page=1&sha=master", owner, repo1), createGitHubSarifUploadHandler)
+		fmt.Sprintf("/repos/%s/%s/commits?page=1&per_page=50&sha=master", owner, repo1), createGitHubSarifUploadHandler)
 	defer cleanUp()
 
 	sarifID, err := client.UploadCodeScanning(ctx, owner, repo1, "master", scan)
@@ -980,7 +981,7 @@ func createGitHubSarifUploadHandler(t *testing.T, _ string, _ []byte, _ int) htt
 	return func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, "Bearer "+token, r.Header.Get("Authorization"))
 		switch r.RequestURI {
-		case "/repos/jfrog/repo-1/commits?page=1&per_page=1&sha=master":
+		case "/repos/jfrog/repo-1/commits?page=1&per_page=50&sha=master":
 			w.WriteHeader(http.StatusOK)
 			repositoryCommits := []*github.RepositoryCommit{
 				{

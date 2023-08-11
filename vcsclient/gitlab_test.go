@@ -333,7 +333,7 @@ func TestGitLabClient_GetLatestCommitNotFound(t *testing.T) {
 	}`)
 
 	client, cleanUp := createServerAndClientReturningStatus(t, vcsutils.GitLab, false, response,
-		fmt.Sprintf("/api/v4/projects/%s/repository/commits?page=1&per_page=1&ref_name=master",
+		fmt.Sprintf("/api/v4/projects/%s/repository/commits?page=1&per_page=50&ref_name=master",
 			url.PathEscape(owner+"/"+repo1)), http.StatusNotFound, createGitLabHandler)
 	defer cleanUp()
 
@@ -348,7 +348,7 @@ func TestGitLabClient_GetLatestCommitUnknownBranch(t *testing.T) {
 	ctx := context.Background()
 
 	client, cleanUp := createServerAndClientReturningStatus(t, vcsutils.GitLab, false, []byte("[]"),
-		fmt.Sprintf("/api/v4/projects/%s/repository/commits?page=1&per_page=1&ref_name=unknown",
+		fmt.Sprintf("/api/v4/projects/%s/repository/commits?page=1&per_page=50&ref_name=unknown",
 			url.PathEscape(owner+"/"+repo1)), http.StatusOK, createGitLabHandler)
 	defer cleanUp()
 

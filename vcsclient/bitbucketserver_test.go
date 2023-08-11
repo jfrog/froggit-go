@@ -384,7 +384,7 @@ func TestBitbucketServer_GetLatestCommitNotFound(t *testing.T) {
     	]
 	}`)
 	client, cleanUp := createServerAndClientReturningStatus(t, vcsutils.BitbucketServer, false, response,
-		fmt.Sprintf("/rest/api/1.0/projects/%s/repos/%s/commits?limit=1&limit=1&until=master", owner, repo1),
+		fmt.Sprintf("/rest/api/1.0/projects/%s/repos/%s/commits?limit=50&limit=50&until=master", owner, repo1),
 		http.StatusNotFound, createBitbucketServerHandler)
 	defer cleanUp()
 
@@ -407,7 +407,7 @@ func TestBitbucketServer_GetLatestCommitUnknownBranch(t *testing.T) {
 		]
 	}`)
 	client, cleanUp := createServerAndClientReturningStatus(t, vcsutils.BitbucketServer, false, response,
-		fmt.Sprintf("/rest/api/1.0/projects/%s/repos/%s/commits?limit=1&limit=1&until=unknown", owner, repo1),
+		fmt.Sprintf("/rest/api/1.0/projects/%s/repos/%s/commits?limit=50&limit=50&until=unknown", owner, repo1),
 		http.StatusNotFound, createBitbucketServerHandler)
 	defer cleanUp()
 
@@ -587,6 +587,7 @@ func TestBitbucketServer_GetCommitBySha(t *testing.T) {
 		Timestamp:     1636089306104,
 		Message:       "WIP on feature 1",
 		ParentHashes:  []string{"bbcdef0123abcdef4567abcdef8987abcdef6543"},
+		AuthorEmail:   "charlie@example.com",
 	}, result)
 
 	_, err = createBadBitbucketServerClient(t).GetCommitBySha(ctx, owner, repo1, sha)
