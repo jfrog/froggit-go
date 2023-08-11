@@ -453,37 +453,52 @@ type projectsResponse struct {
 
 // GetLatestCommit on Bitbucket server
 func (client *BitbucketServerClient) GetLatestCommit(ctx context.Context, owner, repository, branch string) (CommitInfo, error) {
+	commits, err := client.GetCommits(ctx, owner, repository, branch)
+	if err != nil {
+		return CommitInfo{}, err
+	}
+
+	latestCommit := CommitInfo{}
+	if len(commits) > 0 {
+		latestCommit = commits[0]
+	}
+	return latestCommit, nil
+}
+
+// GetCommits on Bitbucket server
+func (client *BitbucketServerClient) GetCommits(ctx context.Context, owner, repository, branch string) ([]CommitInfo, error) {
 	err := validateParametersNotBlank(map[string]string{
 		"owner":      owner,
 		"repository": repository,
 		"branch":     branch,
 	})
 	if err != nil {
-		return CommitInfo{}, err
+		return nil, err
 	}
 
 	options := map[string]interface{}{
-		"limit": 1,
+		"limit": 50,
 		"until": branch,
 	}
 	bitbucketClient, err := client.buildBitbucketClient(ctx)
 	if err != nil {
-		return CommitInfo{}, err
+		return nil, err
 	}
 
 	apiResponse, err := bitbucketClient.GetCommits(owner, repository, options)
 	if err != nil {
-		return CommitInfo{}, err
+		return nil, err
 	}
 	commits, err := bitbucketv1.GetCommitsResponse(apiResponse)
 	if err != nil {
-		return CommitInfo{}, err
+		return nil, err
 	}
-	if len(commits) > 0 {
-		latestCommit := commits[0]
-		return client.mapBitbucketServerCommitToCommitInfo(latestCommit, owner, repository), nil
+	var commitsInfo []CommitInfo
+	for _, commit := range commits {
+		commitInfo := client.mapBitbucketServerCommitToCommitInfo(commit, owner, repository)
+		commitsInfo = append(commitsInfo, commitInfo)
 	}
-	return CommitInfo{}, nil
+	return commitsInfo, nil
 }
 
 // GetRepositoryInfo on Bitbucket server
@@ -694,6 +709,7 @@ func (client *BitbucketServerClient) mapBitbucketServerCommitToCommitInfo(commit
 		Timestamp:     commit.CommitterTimestamp,
 		Message:       commit.Message,
 		ParentHashes:  parents,
+		AuthorEmail:   commit.Author.EmailAddress,
 	}
 }
 

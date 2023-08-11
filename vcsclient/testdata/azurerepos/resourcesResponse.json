@@ -54,7 +54,7 @@
       "id": "c2570c3b-5b3f-41b8-98bf-5407bfde8d58",
       "area": "Location",
       "resourceName": "ResourceAreas",
-      "routeTemplate": "_apis/{resource}/{areaId}/getLatestCommit",
+      "routeTemplate": "_apis/{resource}/{areaId}/getCommits",
       "resourceVersion": 1,
       "minVersion": "3.2",
       "maxVersion": "7.1",

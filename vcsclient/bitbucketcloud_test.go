@@ -249,6 +249,21 @@ func TestBitbucketCloud_GetLatestCommit(t *testing.T) {
 	}, result)
 }
 
+func TestBitbucketCloud_GetCommits(t *testing.T) {
+	ctx := context.Background()
+	response, err := os.ReadFile(filepath.Join("testdata", "bitbucketcloud", "commit_list_response.json"))
+	assert.NoError(t, err)
+
+	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketCloud, true, response,
+		fmt.Sprintf("/repositories/%s/%s/commits/%s?pagelen=1", owner, repo1, "master"), createBitbucketCloudHandler)
+	defer cleanUp()
+
+	result, err := client.GetCommits(ctx, owner, repo1, "master")
+	assert.Error(t, err)
+	assert.Equal(t, errBitbucketGetCommitsNotSupported.Error(), err.Error())
+	assert.Nil(t, result)
+}
+
 func TestBitbucketCloud_GetLatestCommitNotFound(t *testing.T) {
 	ctx := context.Background()
 	response := []byte(`<!DOCTYPE html><html lang="en"></html>`)

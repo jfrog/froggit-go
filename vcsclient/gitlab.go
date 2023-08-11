@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/base64"
-	"errors"
 	"fmt"
 	"github.com/jfrog/froggit-go/vcsutils"
 	"github.com/jfrog/gofrog/datastructures"
@@ -305,32 +304,48 @@ func (client *GitLabClient) ListPullRequestComments(ctx context.Context, owner, 
 
 // GetLatestCommit on GitLab
 func (client *GitLabClient) GetLatestCommit(ctx context.Context, owner, repository, branch string) (CommitInfo, error) {
+	commits, err := client.GetCommits(ctx, owner, repository, branch)
+	if err != nil {
+		return CommitInfo{}, err
+	}
+
+	latestCommit := CommitInfo{}
+	if len(commits) > 0 {
+		latestCommit = commits[0]
+	}
+	return latestCommit, nil
+}
+
+// GetCommits on GitLab
+func (client *GitLabClient) GetCommits(ctx context.Context, owner, repository, branch string) ([]CommitInfo, error) {
 	err := validateParametersNotBlank(map[string]string{
 		"owner":      owner,
 		"repository": repository,
 		"branch":     branch,
 	})
 	if err != nil {
-		return CommitInfo{}, err
+		return nil, err
 	}
 
 	listOptions := &gitlab.ListCommitsOptions{
 		RefName: &branch,
 		ListOptions: gitlab.ListOptions{
 			Page:    1,
-			PerPage: 1,
+			PerPage: 50,
 		},
 	}
 
 	commits, _, err := client.glClient.Commits.ListCommits(getProjectID(owner, repository), listOptions, gitlab.WithContext(ctx))
 	if err != nil {
-		return CommitInfo{}, err
+		return nil, err
 	}
-	if len(commits) > 0 {
-		latestCommit := commits[0]
-		return mapGitLabCommitToCommitInfo(latestCommit), nil
+
+	var commitsInfo []CommitInfo
+	for _, commit := range commits {
+		commitInfo := mapGitLabCommitToCommitInfo(commit)
+		commitsInfo = append(commitsInfo, commitInfo)
 	}
-	return CommitInfo{}, errors.New(`{"message":"404 Not Found"}`)
+	return commitsInfo, nil
 }
 
 // GetRepositoryInfo on GitLab
@@ -547,6 +562,7 @@ func mapGitLabCommitToCommitInfo(commit *gitlab.Commit) CommitInfo {
 		Timestamp:     commit.CommittedDate.UTC().Unix(),
 		Message:       commit.Message,
 		ParentHashes:  commit.ParentIDs,
+		AuthorEmail:   commit.AuthorEmail,
 	}
 }
 

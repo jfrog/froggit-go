@@ -420,6 +420,11 @@ func (client *BitbucketCloudClient) GetLatestCommit(ctx context.Context, owner, 
 	return CommitInfo{}, nil
 }
 
+// GetCommits on Bitbucket Cloud
+func (client *BitbucketCloudClient) GetCommits(_ context.Context, _, _, _ string) ([]CommitInfo, error) {
+	return nil, errBitbucketGetCommitsNotSupported
+}
+
 // GetRepositoryInfo on Bitbucket cloud
 func (client *BitbucketCloudClient) GetRepositoryInfo(ctx context.Context, owner, repository string) (RepositoryInfo, error) {
 	if err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository}); err != nil {

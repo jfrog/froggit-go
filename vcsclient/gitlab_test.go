@@ -249,7 +249,7 @@ func TestGitLabClient_GetLatestCommit(t *testing.T) {
 	assert.NoError(t, err)
 
 	client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, response,
-		fmt.Sprintf("/api/v4/projects/%s/repository/commits?page=1&per_page=1&ref_name=master",
+		fmt.Sprintf("/api/v4/projects/%s/repository/commits?page=1&per_page=50&ref_name=master",
 			url.PathEscape(owner+"/"+repo1)), createGitLabHandler)
 	defer cleanUp()
 
@@ -264,7 +264,43 @@ func TestGitLabClient_GetLatestCommit(t *testing.T) {
 		Timestamp:     1348131022,
 		Message:       "Replace sanitize with escape once",
 		ParentHashes:  []string{"6104942438c14ec7bd21c6cd5bd995272b3faff6"},
+		AuthorEmail:   "user@example.com",
 	}, result)
+}
+
+func TestGitLabClient_GetCommits(t *testing.T) {
+	ctx := context.Background()
+	response, err := os.ReadFile(filepath.Join("testdata", "gitlab", "commit_list_response.json"))
+	assert.NoError(t, err)
+
+	client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, response,
+		fmt.Sprintf("/api/v4/projects/%s/repository/commits?page=1&per_page=50&ref_name=master",
+			url.PathEscape(owner+"/"+repo1)), createGitLabHandler)
+	defer cleanUp()
+
+	result, err := client.GetCommits(ctx, owner, repo1, "master")
+
+	require.NoError(t, err)
+	assert.Equal(t, CommitInfo{
+		Hash:          "ed899a2f4b50b4370feeea94676502b42383c746",
+		AuthorName:    "Example User",
+		CommitterName: "Administrator",
+		Url:           "https://gitlab.example.com/thedude/gitlab-foss/-/commit/ed899a2f4b50b4370feeea94676502b42383c746",
+		Timestamp:     1348131022,
+		Message:       "Replace sanitize with escape once",
+		ParentHashes:  []string{"6104942438c14ec7bd21c6cd5bd995272b3faff6"},
+		AuthorEmail:   "user@example.com",
+	}, result[0])
+	assert.Equal(t, CommitInfo{
+		Hash:          "6104942438c14ec7bd21c6cd5bd995272b3faff6",
+		AuthorName:    "randx",
+		CommitterName: "ExampleName",
+		Url:           "https://gitlab.example.com/thedude/gitlab-foss/-/commit/ed899a2f4b50b4370feeea94676502b42383c746",
+		Timestamp:     1348131022,
+		Message:       "Sanitize for network graph",
+		ParentHashes:  []string{"ae1d9fb46aa2b07ee9836d49862ec4e2c46fbbba"},
+		AuthorEmail:   "user@example.com",
+	}, result[1])
 }
 
 func TestGitLabClient_GetLatestCommitNotFound(t *testing.T) {

@@ -12,6 +12,7 @@ var (
 	errLabelsNotSupported                          = errors.New("labels are not supported on Bitbucket")
 	errBitbucketCodeScanningNotSupported           = errors.New("code scanning is not supported on Bitbucket")
 	errBitbucketDownloadFileFromRepoNotSupported   = errors.New("download file from repo is currently not supported on Bitbucket")
+	errBitbucketGetCommitsNotSupported             = errors.New("get commits is currently not supported on Bitbucket")
 	errBitbucketGetRepoEnvironmentInfoNotSupported = errors.New("get repository environment info is currently not supported on Bitbucket")
 )
 

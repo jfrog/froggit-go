@@ -292,7 +292,7 @@ func TestAzureRepos_TestGetLatestCommit(t *testing.T) {
 	response, err := os.ReadFile(filepath.Join("testdata", "azurerepos", "commits.json"))
 	assert.NoError(t, err)
 
-	client, cleanUp := createServerAndClient(t, vcsutils.AzureRepos, true, response, "getLatestCommit", createAzureReposHandler)
+	client, cleanUp := createServerAndClient(t, vcsutils.AzureRepos, true, response, "getCommits", createAzureReposHandler)
 	defer cleanUp()
 
 	commit, err := client.GetLatestCommit(ctx, "", repo1, branch1)
@@ -303,12 +303,57 @@ func TestAzureRepos_TestGetLatestCommit(t *testing.T) {
 		Url:           "https://dev.azure.com/testuser/0b8072c4-ad86-4edb-a8f2-06dbc07e3e2d/_apis/git/repositories/94c1dba8-d9d9-4600-94b4-1a51acb43220/commits/86d6919952702f9ab03bc95b45687f145a663de0",
 		Timestamp:     1667812601,
 		Message:       "Updated package.json",
+		AuthorEmail:   "testuser@jfrog.com",
 	})
 	assert.NoError(t, err)
 
 	badClient, cleanUp := createBadAzureReposClient(t, []byte{})
 	defer cleanUp()
 	_, err = badClient.GetLatestCommit(ctx, "", repo1, branch1)
+	assert.Error(t, err)
+}
+
+func TestAzureRepos_TestGetCommits(t *testing.T) {
+	ctx := context.Background()
+	response, err := os.ReadFile(filepath.Join("testdata", "azurerepos", "commits.json"))
+	assert.NoError(t, err)
+
+	client, cleanUp := createServerAndClient(t, vcsutils.AzureRepos, true, response, "getCommits", createAzureReposHandler)
+	defer cleanUp()
+
+	commits, err := client.GetCommits(ctx, "", repo1, branch1)
+	assert.Equal(t, CommitInfo{
+		Hash:          "86d6919952702f9ab03bc95b45687f145a663de0",
+		AuthorName:    "Test User",
+		CommitterName: "Test User",
+		Url:           "https://dev.azure.com/testuser/0b8072c4-ad86-4edb-a8f2-06dbc07e3e2d/_apis/git/repositories/94c1dba8-d9d9-4600-94b4-1a51acb43220/commits/86d6919952702f9ab03bc95b45687f145a663de0",
+		Timestamp:     1667812601,
+		Message:       "Updated package.json",
+		AuthorEmail:   "testuser@jfrog.com",
+	}, commits[0])
+	assert.Equal(t, CommitInfo{
+		Hash:          "4aa8367809020c4e97af29e2b57f7528d5d27702",
+		AuthorName:    "Test User",
+		CommitterName: "Test User",
+		Url:           "https://dev.azure.com/testuser/0b8072c4-ad86-4edb-a8f2-06dbc07e3e2d/_apis/git/repositories/94c1dba8-d9d9-4600-94b4-1a51acb43220/commits/4aa8367809020c4e97af29e2b57f7528d5d27702",
+		Timestamp:     1667201343,
+		Message:       "Set up CI with Azure Pipelines",
+		AuthorEmail:   "testuser@jfrog.com",
+	}, commits[1])
+	assert.Equal(t, CommitInfo{
+		Hash:          "3779104c35804e15b6fdf4fee303e717cd6c1352",
+		AuthorName:    "Test User",
+		CommitterName: "Test User",
+		Url:           "https://dev.azure.com/testuser/0b8072c4-ad86-4edb-a8f2-06dbc07e3e2d/_apis/git/repositories/94c1dba8-d9d9-4600-94b4-1a51acb43220/commits/3779104c35804e15b6fdf4fee303e717cd6c1352",
+		Timestamp:     1667201200,
+		Message:       "first commit",
+		AuthorEmail:   "testuser@jfrog.com",
+	}, commits[2])
+	assert.NoError(t, err)
+
+	badClient, cleanUp := createBadAzureReposClient(t, []byte{})
+	defer cleanUp()
+	_, err = badClient.GetCommits(ctx, "", repo1, branch1)
 	assert.Error(t, err)
 }
 
