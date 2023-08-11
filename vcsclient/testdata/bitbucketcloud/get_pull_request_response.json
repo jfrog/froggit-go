@@ -1,0 +1,161 @@
+{
+  "comment_count": 0,
+  "task_count": 0,
+  "type": "pullrequest",
+  "id": 1,
+  "title": "s",
+  "description": "s",
+  "rendered": {
+    "title": {
+      "type": "rendered",
+      "raw": "s",
+      "markup": "markdown",
+      "html": "<p>s</p>"
+    },
+    "description": {
+      "type": "rendered",
+      "raw": "s",
+      "markup": "markdown",
+      "html": "<p>s</p>"
+    }
+  },
+  "state": "CLOSED",
+  "merge_commit": null,
+  "close_source_branch": false,
+  "closed_by": null,
+  "author": {
+    "display_name": "fname lname",
+    "links": {
+      "self": {
+        "href": "https://api.bitbucket.org/2.0/users/%7B0488ed53-e751-4504-a343-1a43d72590a4%7D"
+      },
+      "avatar": {
+        "href": "https://secure.gravatar.com/avatar/4a0ffac6cc540dd6983b35ec3bd4df94?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FED-1.png"
+      },
+      "html": {
+        "href": "https://bitbucket.org/%7B0488ed53-e751-4504-a343-1a43d72590a4%7D/"
+      }
+    },
+    "type": "user",
+    "uuid": "{0488ed53-e751-4504-a343-1a43d72590a4}",
+    "account_id": "63f32b584e86f362d399cdc2",
+    "nickname": "fname lname"
+  },
+  "reason": "",
+  "created_on": "2023-06-20T09:00:47.082738+00:00",
+  "updated_on": "2023-06-20T09:00:47.725250+00:00",
+  "destination": {
+    "branch": {
+      "name": "main"
+    },
+    "commit": {
+      "type": "commit",
+      "hash": "9a1e81efaa1c",
+      "links": {
+        "self": {
+          "href": "https://api.bitbucket.org/2.0/repositories/workspace/froggit/commit/9a1e81efaa1c"
+        },
+        "html": {
+          "href": "https://bitbucket.org/workspace/froggit/commits/9a1e81efaa1c"
+        }
+      }
+    },
+    "repository": {
+      "type": "repository",
+      "full_name": "workspace/froggit",
+      "links": {
+        "self": {
+          "href": "https://api.bitbucket.org/2.0/repositories/workspace/froggit"
+        },
+        "html": {
+          "href": "https://bitbucket.org/workspace/froggit"
+        },
+        "avatar": {
+          "href": "https://bytebucket.org/ravatar/%7Bacb2b52e-67f2-48bf-96f1-b441b5acb810%7D?ts=default"
+        }
+      },
+      "name": "froggit",
+      "uuid": "{acb2b52e-67f2-48bf-96f1-b441b5acb810}"
+    }
+  },
+  "source": {
+    "branch": {
+      "name": "pr"
+    },
+    "commit": {
+      "type": "commit",
+      "hash": "18f5e1ecb37e",
+      "links": {
+        "self": {
+          "href": "https://api.bitbucket.org/2.0/repositories/workspace/froggit/commit/18f5e1ecb37e"
+        },
+        "html": {
+          "href": "https://bitbucket.org/workspace/froggit/commits/18f5e1ecb37e"
+        }
+      }
+    },
+    "repository": {
+      "type": "repository",
+      "full_name": "forkedWorkspace/froggit",
+      "links": {
+        "self": {
+          "href": "https://api.bitbucket.org/2.0/repositories/workspace/froggit"
+        },
+        "html": {
+          "href": "https://bitbucket.org/workspace/froggit"
+        },
+        "avatar": {
+          "href": "https://bytebucket.org/ravatar/%7Bacb2b52e-67f2-48bf-96f1-b441b5acb810%7D?ts=default"
+        }
+      },
+      "name": "froggit",
+      "uuid": "{acb2b52e-67f2-48bf-96f1-b441b5acb810}"
+    }
+  },
+  "reviewers": [],
+  "participants": [],
+  "links": {
+    "self": {
+      "href": "https://api.bitbucket.org/2.0/repositories/workspace/froggit/pullrequests/1"
+    },
+    "html": {
+      "href": "https://bitbucket.org/workspace/froggit/pull-requests/1"
+    },
+    "commits": {
+      "href": "https://api.bitbucket.org/2.0/repositories/workspace/froggit/pullrequests/1/commits"
+    },
+    "approve": {
+      "href": "https://api.bitbucket.org/2.0/repositories/workspace/froggit/pullrequests/1/approve"
+    },
+    "request-changes": {
+      "href": "https://api.bitbucket.org/2.0/repositories/workspace/froggit/pullrequests/1/request-changes"
+    },
+    "diff": {
+      "href": "https://api.bitbucket.org/2.0/repositories/workspace/froggit/diff/workspace/froggit:18f5e1ecb37e%0D9a1e81efaa1c?from_pullrequest_id=1&topic=true"
+    },
+    "diffstat": {
+      "href": "https://api.bitbucket.org/2.0/repositories/workspace/froggit/diffstat/workspace/froggit:18f5e1ecb37e%0D9a1e81efaa1c?from_pullrequest_id=1&topic=true"
+    },
+    "comments": {
+      "href": "https://api.bitbucket.org/2.0/repositories/workspace/froggit/pullrequests/1/comments"
+    },
+    "activity": {
+      "href": "https://api.bitbucket.org/2.0/repositories/workspace/froggit/pullrequests/1/activity"
+    },
+    "merge": {
+      "href": "https://api.bitbucket.org/2.0/repositories/workspace/froggit/pullrequests/1/merge"
+    },
+    "decline": {
+      "href": "https://api.bitbucket.org/2.0/repositories/workspace/froggit/pullrequests/1/decline"
+    },
+    "statuses": {
+      "href": "https://api.bitbucket.org/2.0/repositories/workspace/froggit/pullrequests/1/statuses"
+    }
+  },
+  "summary": {
+    "type": "rendered",
+    "raw": "s",
+    "markup": "markdown",
+    "html": "<p>s</p>"
+  }
+}

@@ -4,18 +4,15 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/jfrog/froggit-go/vcsutils"
 	"github.com/microsoft/azure-devops-go-api/azuredevops"
 	"github.com/microsoft/azure-devops-go-api/azuredevops/git"
 	"github.com/microsoft/azure-devops-go-api/azuredevops/webapi"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"net/http"
 	"os"
 	"path/filepath"
-	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -85,10 +82,10 @@ func TestAzureRepos_TestDownloadRepository(t *testing.T) {
 	ctx := context.Background()
 	dir, err := os.MkdirTemp("", "")
 	assert.NoError(t, err)
-	defer func() { _ = os.RemoveAll(dir) }()
+	defer func() { assert.NoError(t, vcsutils.RemoveTempDir(dir)) }()
 
 	repoFile, err := os.ReadFile(filepath.Join("testdata", "azurerepos", "hello_world.zip"))
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
 	downloadURL := fmt.Sprintf("/%s/_apis/git/repositories/%s/items/items?path=/&versionDescriptor[version]=%s&$format=zip",
 		"",
@@ -98,7 +95,7 @@ func TestAzureRepos_TestDownloadRepository(t *testing.T) {
 		repoFile, downloadURL, createAzureReposHandler)
 	defer cleanUp()
 	err = client.DownloadRepository(ctx, "", repo1, branch1, dir)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	assert.FileExists(t, filepath.Join(dir, "README.md"))
 	assert.DirExists(t, filepath.Join(dir, ".git"))
 
@@ -206,7 +203,7 @@ func TestAzureRepos_TestListOpenPullRequests(t *testing.T) {
 	defer cleanUp()
 	pullRequestsInfo, err := client.ListOpenPullRequests(ctx, "", repo1)
 	assert.NoError(t, err)
-	assert.True(t, reflect.DeepEqual(pullRequestsInfo, []PullRequestInfo{{ID: 1, Source: BranchInfo{Name: branch1, Repository: repo1}, Target: BranchInfo{Name: branch2, Repository: repo1}}}))
+	assert.EqualValues(t, pullRequestsInfo, []PullRequestInfo{{ID: 1, Source: BranchInfo{Name: branch1, Repository: repo1}, Target: BranchInfo{Name: branch2, Repository: repo1}}})
 
 	badClient, cleanUp := createBadAzureReposClient(t, []byte{})
 	defer cleanUp()
@@ -234,11 +231,62 @@ func TestAzureRepos_TestListOpenPullRequests(t *testing.T) {
 	defer cleanUp()
 	pullRequestsInfo, err = client.ListOpenPullRequestsWithBody(ctx, "", repo1)
 	assert.NoError(t, err)
-	assert.True(t, reflect.DeepEqual(pullRequestsInfo, []PullRequestInfo{{ID: 1, Body: prBody, Source: BranchInfo{Name: branch1, Repository: repo1}, Target: BranchInfo{Name: branch2, Repository: repo1}}}))
+	assert.EqualValues(t, pullRequestsInfo, []PullRequestInfo{{ID: 1, Body: prBody, Source: BranchInfo{Name: branch1, Repository: repo1}, Target: BranchInfo{Name: branch2, Repository: repo1}}})
 
 	badClient, cleanUp = createBadAzureReposClient(t, []byte{})
 	defer cleanUp()
 	_, err = badClient.ListOpenPullRequests(ctx, "", repo1)
+	assert.Error(t, err)
+}
+
+func TestAzureReposClient_GetPullRequest(t *testing.T) {
+	pullRequestId := 1
+	repoName := "repoName"
+	sourceName := "source"
+	targetName := "master"
+	forkedOwner := "jfrogForked"
+	forkedSourceUrl := fmt.Sprintf("https://dev.azure.com/%s/201f2c7f-305a-446c-a1d6-a04ec811093b/_apis/git/repositories/82d33a66-8971-4279-9687-19c69e66e114", forkedOwner)
+	res := git.GitPullRequest{
+		SourceRefName: &sourceName,
+		TargetRefName: &targetName,
+		PullRequestId: &pullRequestId,
+		ForkSource: &git.GitForkRef{
+			Repository: &git.GitRepository{Url: &forkedSourceUrl},
+		},
+	}
+	jsonRes, err := json.Marshal(res)
+	assert.NoError(t, err)
+	ctx := context.Background()
+	client, cleanUp := createServerAndClient(t, vcsutils.AzureRepos, true, jsonRes, fmt.Sprintf("getPullRequests/%d", pullRequestId), createAzureReposHandler)
+	defer cleanUp()
+	pullRequestsInfo, err := client.GetPullRequestByID(ctx, owner, repoName, pullRequestId)
+	assert.NoError(t, err)
+	assert.EqualValues(t, pullRequestsInfo, PullRequestInfo{ID: 1,
+		Source: BranchInfo{Name: sourceName, Repository: repoName, Owner: forkedOwner},
+		Target: BranchInfo{Name: targetName, Repository: repoName, Owner: owner}})
+
+	// Fail source repository owner extraction, should be empty string and not fail the process.
+	res = git.GitPullRequest{
+		SourceRefName: &sourceName,
+		TargetRefName: &targetName,
+		PullRequestId: &pullRequestId,
+		ForkSource: &git.GitForkRef{
+			Repository: &git.GitRepository{Url: &repoName},
+		},
+	}
+	jsonRes, err = json.Marshal(res)
+	assert.NoError(t, err)
+	client, _ = createServerAndClient(t, vcsutils.AzureRepos, true, jsonRes, fmt.Sprintf("getPullRequests/%d", pullRequestId), createAzureReposHandler)
+	pullRequestsInfo, err = client.GetPullRequestByID(ctx, owner, repoName, pullRequestId)
+	assert.NoError(t, err)
+	assert.EqualValues(t, pullRequestsInfo, PullRequestInfo{ID: 1,
+		Source: BranchInfo{Name: sourceName, Repository: repoName, Owner: ""},
+		Target: BranchInfo{Name: targetName, Repository: repoName, Owner: owner}})
+
+	// Bad client
+	badClient, cleanUp := createBadAzureReposClient(t, []byte{})
+	defer cleanUp()
+	_, err = badClient.GetPullRequestByID(ctx, owner, repo1, pullRequestId)
 	assert.Error(t, err)
 }
 
@@ -495,14 +543,14 @@ func TestAzureReposClient_GetModifiedFiles(t *testing.T) {
 	ctx := context.Background()
 	t.Run("ok", func(t *testing.T) {
 		response, err := os.ReadFile(filepath.Join("testdata", "azurerepos", "compare_commits.json"))
-		require.NoError(t, err)
+		assert.NoError(t, err)
 
 		const expectedURI = "/_apis/ResourceAreas?%24skip=0&%24top=100&baseVersion=sha-1&diffCommonCommit=true&targetVersion=sha-2"
 		client, cleanUp := createServerAndClient(t, vcsutils.AzureRepos, true, response, expectedURI, createAzureReposHandler)
 		defer cleanUp()
 
 		actual, err := client.GetModifiedFiles(ctx, "", repo1, "sha-1", "sha-2")
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		assert.Equal(t, []string{
 			"CustomerAddressModule/CustomerAddressModule.sln",
 			"CustomerAddressModule/CustomerAddressModule/App.config",
@@ -529,11 +577,11 @@ func TestAzureReposClient_GetModifiedFiles(t *testing.T) {
 	t.Run("validation fails", func(t *testing.T) {
 		client := AzureReposClient{}
 		_, err := client.GetModifiedFiles(ctx, owner, "", "sha-1", "sha-2")
-		require.Equal(t, errors.New("validation failed: required parameter 'repository' is missing"), err)
+		assert.EqualError(t, err, "validation failed: required parameter 'repository' is missing")
 		_, err = client.GetModifiedFiles(ctx, owner, repo1, "", "sha-2")
-		require.Equal(t, errors.New("validation failed: required parameter 'refBefore' is missing"), err)
+		assert.EqualError(t, err, "validation failed: required parameter 'refBefore' is missing")
 		_, err = client.GetModifiedFiles(ctx, owner, repo1, "sha-1", "")
-		require.Equal(t, errors.New("validation failed: required parameter 'refAfter' is missing"), err)
+		assert.EqualError(t, err, "validation failed: required parameter 'refAfter' is missing")
 	})
 
 	t.Run("failed request", func(t *testing.T) {
@@ -550,8 +598,19 @@ func TestAzureReposClient_GetModifiedFiles(t *testing.T) {
 		defer cleanUp()
 
 		_, err := client.GetModifiedFiles(ctx, "", repo1, "sha-1", "sha-2")
-		require.EqualError(t, err, "null")
+		assert.EqualError(t, err, "null")
 	})
+}
+
+func TestAzureReposClient_DeletePullRequestComment(t *testing.T) {
+	client, cleanUp := createServerAndClient(t, vcsutils.AzureRepos, true, "", "deletePullRequestComments", createAzureReposHandler)
+	defer cleanUp()
+	err := client.DeletePullRequestComment(context.Background(), "", repo1, 1, 1)
+	assert.NoError(t, err)
+	badClient, badClientCleanup := createBadAzureReposClient(t, []byte{})
+	defer badClientCleanup()
+	err = badClient.DeletePullRequestComment(context.Background(), "", repo1, 1, 1)
+	assert.Error(t, err)
 }
 
 func TestAzureReposClient_GetCommitStatus(t *testing.T) {
@@ -565,10 +624,10 @@ func TestAzureReposClient_GetCommitStatus(t *testing.T) {
 		defer cleanUp()
 		commitStatuses, err := client.GetCommitStatuses(ctx, owner, repo1, commitHash)
 		assert.NoError(t, err)
-		assert.True(t, len(commitStatuses) == 3)
-		assert.True(t, commitStatuses[0].State == Pass)
-		assert.True(t, commitStatuses[1].State == InProgress)
-		assert.True(t, commitStatuses[2].State == Fail)
+		assert.Len(t, commitStatuses, 3)
+		assert.Equal(t, Pass, commitStatuses[0].State)
+		assert.Equal(t, InProgress, commitStatuses[1].State)
+		assert.Equal(t, Fail, commitStatuses[2].State)
 	})
 	t.Run("Empty response", func(t *testing.T) {
 		client, cleanUp := createServerAndClient(t, vcsutils.AzureRepos, true, nil, expectedUri, createAzureReposHandler)
@@ -582,6 +641,24 @@ func TestAzureReposClient_GetCommitStatus(t *testing.T) {
 		_, err := badClient.GetCommitStatuses(ctx, owner, repo1, "")
 		assert.Error(t, err)
 	})
+}
+
+func TestExtractOwnerFromForkedRepoUrl(t *testing.T) {
+	validUrl := "https://dev.azure.com/forkedOwner/201f2c7f-305a-446c-a1d6-a04ec811093b/_apis/git/repositories/82d33a66-8971-4279-9687-19c69e66e114"
+	repository := &git.GitForkRef{Repository: &git.GitRepository{Url: &validUrl}}
+	resOwner := extractOwnerFromForkedRepoUrl(repository)
+	assert.Equal(t, "forkedOwner", resOwner)
+
+	// Fallback
+	repository = &git.GitForkRef{Repository: &git.GitRepository{}}
+	resOwner = extractOwnerFromForkedRepoUrl(repository)
+	assert.Equal(t, "", resOwner)
+
+	// Invalid
+	invalidUrl := "https://notazure.com/forked/repo/_git/repo"
+	repository = &git.GitForkRef{Repository: &git.GitRepository{Url: &invalidUrl}}
+	resOwner = extractOwnerFromForkedRepoUrl(repository)
+	assert.Equal(t, "", resOwner)
 }
 
 func createAzureReposHandler(t *testing.T, expectedURI string, response []byte, expectedStatusCode int) http.HandlerFunc {
@@ -605,10 +682,10 @@ func createAzureReposHandler(t *testing.T, expectedURI string, response []byte, 
 			assert.Contains(t, r.RequestURI, expectedURI)
 			w.WriteHeader(expectedStatusCode)
 			_, err := w.Write(response)
-			require.NoError(t, err)
+			assert.NoError(t, err)
 			return
 		}
-		w.WriteHeader(404)
+		w.WriteHeader(http.StatusNotFound)
 	}
 }
 

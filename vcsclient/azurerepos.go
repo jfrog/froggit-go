@@ -17,6 +17,8 @@ import (
 	"time"
 )
 
+const defaultAzureBaseUrl = "https://dev.azure.com/"
+
 // Azure Devops API version 6
 type AzureReposClient struct {
 	vcsInfo           VcsInfo
@@ -91,18 +93,12 @@ func (client *AzureReposClient) DownloadRepository(ctx context.Context, owner, r
 		return
 	}
 	defer func() {
-		e := os.Chdir(wd)
-		if err == nil {
-			err = e
-		}
+		err = errors.Join(err, os.Chdir(wd))
 	}()
 	res, err := client.sendDownloadRepoRequest(ctx, repository, branch)
 	defer func() {
 		if res.Body != nil {
-			e := res.Body.Close()
-			if err == nil {
-				err = e
-			}
+			err = errors.Join(err, res.Body.Close())
 		}
 	}()
 	if err != nil {
@@ -237,8 +233,14 @@ func (client *AzureReposClient) ListPullRequestComments(ctx context.Context, _, 
 	}
 	var commentInfo []CommentInfo
 	for _, thread := range *threads {
+		if thread.IsDeleted != nil && *thread.IsDeleted {
+			continue
+		}
 		var commentsAggregator strings.Builder
 		for _, comment := range *thread.Comments {
+			if comment.IsDeleted != nil && *comment.IsDeleted {
+				continue
+			}
 			_, err = commentsAggregator.WriteString(
 				fmt.Sprintf("Author: %s, Id: %d, Content:%s\n",
 					*comment.Author.DisplayName,
@@ -257,17 +259,33 @@ func (client *AzureReposClient) ListPullRequestComments(ctx context.Context, _, 
 	return commentInfo, nil
 }
 
+// DeletePullRequestComment on Azure Repos
+func (client *AzureReposClient) DeletePullRequestComment(ctx context.Context, _, repository string, pullRequestID, commentID int) error {
+	azureReposGitClient, err := client.buildAzureReposClient(ctx)
+	if err != nil {
+		return err
+	}
+	firstCommentInThreadID := 1
+	return azureReposGitClient.DeleteComment(ctx, git.DeleteCommentArgs{
+		RepositoryId:  &repository,
+		PullRequestId: &pullRequestID,
+		ThreadId:      &commentID,
+		Project:       &client.vcsInfo.Project,
+		CommentId:     &firstCommentInThreadID,
+	})
+}
+
 // ListOpenPullRequestsWithBody on Azure Repos
-func (client *AzureReposClient) ListOpenPullRequestsWithBody(ctx context.Context, _, repository string) ([]PullRequestInfo, error) {
-	return client.getOpenPullRequests(ctx, repository, true)
+func (client *AzureReposClient) ListOpenPullRequestsWithBody(ctx context.Context, owner, repository string) ([]PullRequestInfo, error) {
+	return client.getOpenPullRequests(ctx, owner, repository, true)
 }
 
 // ListOpenPullRequests on Azure Repos
-func (client *AzureReposClient) ListOpenPullRequests(ctx context.Context, _, repository string) ([]PullRequestInfo, error) {
-	return client.getOpenPullRequests(ctx, repository, false)
+func (client *AzureReposClient) ListOpenPullRequests(ctx context.Context, owner, repository string) ([]PullRequestInfo, error) {
+	return client.getOpenPullRequests(ctx, owner, repository, false)
 }
 
-func (client *AzureReposClient) getOpenPullRequests(ctx context.Context, repository string, withBody bool) ([]PullRequestInfo, error) {
+func (client *AzureReposClient) getOpenPullRequests(ctx context.Context, owner, repository string, withBody bool) ([]PullRequestInfo, error) {
 	azureReposGitClient, err := client.buildAzureReposClient(ctx)
 	if err != nil {
 		return nil, err
@@ -283,27 +301,27 @@ func (client *AzureReposClient) getOpenPullRequests(ctx context.Context, reposit
 	}
 	var pullRequestsInfo []PullRequestInfo
 	for _, pullRequest := range *pullRequests {
-		var body string
-		if withBody {
-			body = *pullRequest.Description
-		}
-		// Trim the branches prefix and get the actual branches name
-		shortSourceName := (*pullRequest.SourceRefName)[strings.LastIndex(*pullRequest.SourceRefName, "/")+1:]
-		shortTargetName := (*pullRequest.TargetRefName)[strings.LastIndex(*pullRequest.TargetRefName, "/")+1:]
-		pullRequestsInfo = append(pullRequestsInfo, PullRequestInfo{
-			ID:   int64(*pullRequest.PullRequestId),
-			Body: body,
-			Source: BranchInfo{
-				Name:       shortSourceName,
-				Repository: repository,
-			},
-			Target: BranchInfo{
-				Name:       shortTargetName,
-				Repository: repository,
-			},
-		})
+		pullRequestDetails := parsePullRequestDetails(client, pullRequest, owner, repository, withBody)
+		pullRequestsInfo = append(pullRequestsInfo, pullRequestDetails)
 	}
 	return pullRequestsInfo, nil
+}
+
+func (client *AzureReposClient) GetPullRequestByID(ctx context.Context, owner, repository string, pullRequestId int) (pullRequestInfo PullRequestInfo, err error) {
+	azureReposGitClient, err := client.buildAzureReposClient(ctx)
+	if err != nil {
+		return
+	}
+	client.logger.Debug(fetchingPullRequestById, repository)
+	pullRequest, err := azureReposGitClient.GetPullRequestById(ctx, git.GetPullRequestByIdArgs{
+		PullRequestId: &pullRequestId,
+		Project:       &client.vcsInfo.Project,
+	})
+	if err != nil {
+		return
+	}
+	pullRequestInfo = parsePullRequestDetails(client, *pullRequest, owner, repository, false)
+	return
 }
 
 // GetLatestCommit on Azure Repos
@@ -588,6 +606,54 @@ func (client *AzureReposClient) GetModifiedFiles(ctx context.Context, _, reposit
 	fileNamesList := fileNamesSet.ToSlice()
 	sort.Strings(fileNamesList)
 	return fileNamesList, nil
+}
+
+func parsePullRequestDetails(client *AzureReposClient, pullRequest git.GitPullRequest, owner, repository string, withBody bool) PullRequestInfo {
+	// Trim the branches prefix and get the actual branches name
+	shortSourceName := (*pullRequest.SourceRefName)[strings.LastIndex(*pullRequest.SourceRefName, "/")+1:]
+	shortTargetName := (*pullRequest.TargetRefName)[strings.LastIndex(*pullRequest.TargetRefName, "/")+1:]
+
+	var prBody string
+	bodyPtr := pullRequest.Description
+	if bodyPtr != nil && withBody {
+		prBody = *bodyPtr
+	}
+
+	// When a pull request is from a forked repository,extract the owner.
+	sourceRepoOwner := owner
+	if pullRequest.ForkSource != nil {
+		if sourceRepoOwner = extractOwnerFromForkedRepoUrl(pullRequest.ForkSource); sourceRepoOwner == "" {
+			client.logger.Warn(failedForkedRepositoryExtraction)
+		}
+	}
+
+	return PullRequestInfo{
+		ID:   int64(*pullRequest.PullRequestId),
+		Body: prBody,
+		Source: BranchInfo{
+			Name:       shortSourceName,
+			Repository: repository,
+			Owner:      sourceRepoOwner,
+		},
+		Target: BranchInfo{
+			Name:       shortTargetName,
+			Repository: repository,
+			Owner:      owner,
+		},
+	}
+}
+
+// Extract the repository owner of a forked source
+func extractOwnerFromForkedRepoUrl(forkedGit *git.GitForkRef) string {
+	if forkedGit == nil || forkedGit.Repository == nil || forkedGit.Repository.Url == nil {
+		return ""
+	}
+	url := *forkedGit.Repository.Url
+	if !strings.Contains(url, defaultAzureBaseUrl) {
+		return ""
+	}
+	owner := strings.Split(strings.TrimPrefix(url, defaultAzureBaseUrl), "/")[0]
+	return owner
 }
 
 // mapStatusToString maps commit status enum to string, specific for azure.

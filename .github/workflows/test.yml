@@ -1,7 +1,11 @@
 name: Test
-
-on: [push, pull_request]
-
+on:
+  push:
+    branches:
+      - '**'
+    tags-ignore:
+      - '**'
+  pull_request:
 jobs:
   test:
     runs-on: ${{ matrix.os }}
@@ -10,19 +14,33 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest, macOS-latest]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Setup Go
         uses: actions/setup-go@v3
         with:
           go-version: 1.20.x
 
-      # Run lint
+      - name: Go Cache
+        uses: actions/cache@v3
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
       - name: Lint
         run: go vet ./...
-      - name: Staticcheck
-        uses: dominikh/staticcheck-action@v1
+
+      - name: Static Code Analysis
+        uses: golangci/golangci-lint-action@v3
+        if: runner.os == 'Linux'
         with:
-          install-go: false
+          args: |
+            --timeout 5m --out-${NO_FUTURE}format colored-line-number --enable errcheck,gosimple,govet,ineffassign,staticcheck,typecheck,unused,gocritic,asasalint,asciicheck,errchkjson,exportloopref,forcetypeassert,makezero,nilerr,unparam,unconvert,wastedassign,usestdlibvars
+
+      - name: Run Gosec Security Scanner
+        uses: securego/gosec@master
+        if: runner.os == 'Linux'
 
       # Run tests
       - name: Tests
@@ -35,12 +53,4 @@ jobs:
           goveralls -coverprofile=covprofile -service=github
         env:
           COVERALLS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        if: runner.os == 'Linux'
-
-      # Run gosec
-      - name: Install gosec
-        run: curl -sfL https://raw.githubusercontent.com/securego/gosec/master/install.sh | sh -s -- -b $(go env GOPATH)/bin
-        if: runner.os == 'Linux'
-      - name: Run gosec
-        run: gosec ./...
         if: runner.os == 'Linux'

@@ -3,6 +3,7 @@ package vcsclient
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/jfrog/gofrog/datastructures"
 	"io"
@@ -220,38 +221,39 @@ func (client *GitHubClient) GetCommitStatuses(ctx context.Context, owner, reposi
 }
 
 // DownloadRepository on GitHub
-func (client *GitHubClient) DownloadRepository(ctx context.Context, owner, repository, branch, localPath string) error {
+func (client *GitHubClient) DownloadRepository(ctx context.Context, owner, repository, branch, localPath string) (err error) {
 	ghClient, err := client.buildGithubClient(ctx)
 	if err != nil {
-		return err
+		return
 	}
 	client.logger.Debug("Getting GitHub archive link to download")
 	baseURL, _, err := ghClient.Repositories.GetArchiveLink(ctx, owner, repository, github.Tarball,
 		&github.RepositoryContentGetOptions{Ref: branch}, true)
 	if err != nil {
-		return err
+		return
 	}
 	httpClient := &http.Client{}
-	req, err := http.NewRequest("GET", baseURL.String(), nil)
+	req, err := http.NewRequest(http.MethodGet, baseURL.String(), nil)
 	if err != nil {
-		return err
+		return
 	}
 	resp, err := httpClient.Do(req)
 	if err != nil {
-		return err
+		return
 	}
-	defer func() { _ = resp.Body.Close() }()
+	defer func() { err = errors.Join(err, resp.Body.Close()) }()
 	if err = vcsutils.CheckResponseStatusWithBody(resp, http.StatusOK); err != nil {
-		return err
+		return
 	}
 	client.logger.Info(repository, successfulRepoDownload)
 	err = vcsutils.Untar(localPath, resp.Body, true)
 	if err != nil {
-		return err
+		return
 	}
 
 	client.logger.Info(successfulRepoExtraction)
-	return vcsutils.CreateDotGitFolderWithRemote(localPath, vcsutils.RemoteName, getGitHubGitRemoteUrl(client, owner, repository))
+	err = vcsutils.CreateDotGitFolderWithRemote(localPath, vcsutils.RemoteName, getGitHubGitRemoteUrl(client, owner, repository))
+	return
 }
 
 // CreatePullRequest on GitHub
@@ -318,6 +320,54 @@ func (client *GitHubClient) getOpenPullRequests(ctx context.Context, owner, repo
 	return mapGitHubPullRequestToPullRequestInfoList(pullRequests, withBody)
 }
 
+func (client *GitHubClient) GetPullRequestByID(ctx context.Context, owner, repository string, pullRequestId int) (PullRequestInfo, error) {
+	ghClient, err := client.buildGithubClient(ctx)
+	if err != nil {
+		return PullRequestInfo{}, err
+	}
+	client.logger.Debug(fetchingPullRequestById, repository)
+	pullRequest, ghResponse, err := ghClient.PullRequests.Get(ctx, owner, repository, pullRequestId)
+	if err != nil {
+		return PullRequestInfo{}, err
+	}
+	if ghResponse != nil {
+		if err = vcsutils.CheckResponseStatusWithBody(ghResponse.Response, http.StatusOK); err != nil {
+			return PullRequestInfo{}, err
+		}
+	}
+
+	sourceBranch, err1 := extractBranchFromLabel(vcsutils.DefaultIfNotNil(pullRequest.Head.Label))
+	targetBranch, err2 := extractBranchFromLabel(vcsutils.DefaultIfNotNil(pullRequest.Base.Label))
+	err = errors.Join(err1, err2)
+	if err != nil {
+		return PullRequestInfo{}, err
+	}
+
+	prInfo := PullRequestInfo{
+		ID: int64(pullRequestId),
+		Source: BranchInfo{
+			Name:       sourceBranch,
+			Repository: vcsutils.DefaultIfNotNil(pullRequest.Head.Repo.Name),
+			Owner:      vcsutils.DefaultIfNotNil(pullRequest.Head.Repo.Owner.Login),
+		},
+		Target: BranchInfo{
+			Name:       targetBranch,
+			Repository: vcsutils.DefaultIfNotNil(pullRequest.Base.Repo.Name),
+			Owner:      vcsutils.DefaultIfNotNil(pullRequest.Base.Repo.Owner.Login),
+		},
+	}
+	return prInfo, nil
+}
+
+// Extracts branch name from the following expected label format repo:branch
+func extractBranchFromLabel(label string) (string, error) {
+	split := strings.Split(label, ":")
+	if len(split) <= 1 {
+		return "", fmt.Errorf("bad label format %s", label)
+	}
+	return split[1], nil
+}
+
 // AddPullRequestComment on GitHub
 func (client *GitHubClient) AddPullRequestComment(ctx context.Context, owner, repository, content string, pullRequestID int) error {
 	err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository, "content": content})
@@ -350,6 +400,30 @@ func (client *GitHubClient) ListPullRequestComments(ctx context.Context, owner, 
 		return []CommentInfo{}, err
 	}
 	return mapGitHubCommentToCommentInfoList(commentsList)
+}
+
+// DeletePullRequestComment on GitHub
+func (client *GitHubClient) DeletePullRequestComment(ctx context.Context, owner, repository string, _, commentID int) error {
+	err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository})
+	if err != nil {
+		return err
+	}
+	ghClient, err := client.buildGithubClient(ctx)
+	if err != nil {
+		return err
+	}
+	resp, err := ghClient.Issues.DeleteComment(ctx, owner, repository, int64(commentID))
+	if err != nil {
+		return err
+	}
+	var statusCode int
+	if resp.Response != nil {
+		statusCode = resp.Response.StatusCode
+	}
+	if statusCode != http.StatusNoContent && statusCode != http.StatusOK {
+		return fmt.Errorf("expected %d status code while received %d status code", http.StatusNoContent, resp.Response.StatusCode)
+	}
+	return nil
 }
 
 // GetLatestCommit on GitHub
@@ -475,9 +549,9 @@ func (client *GitHubClient) GetLabel(ctx context.Context, owner, repository, nam
 		return nil, err
 	}
 
-	label, response, err := ghClient.Issues.GetLabel(ctx, owner, repository, name)
+	label, ghResponse, err := ghClient.Issues.GetLabel(ctx, owner, repository, name)
 	if err != nil {
-		if response.Response.StatusCode == http.StatusNotFound {
+		if ghResponse.Response.StatusCode == http.StatusNotFound {
 			return nil, nil
 		}
 		return nil, err
@@ -565,12 +639,11 @@ func (client *GitHubClient) UploadCodeScanning(ctx context.Context, owner, repos
 	if sarifID != nil && *sarifID.ID != "" {
 		return *sarifID.ID, err
 	}
-	aerr, ok := err.(*github.AcceptedError)
 	var result map[string]string
-	if ok {
-		err = json.Unmarshal(aerr.Raw, &result)
-		if err != nil {
-			return "", nil
+	var ghAcceptedError *github.AcceptedError
+	if errors.As(err, &ghAcceptedError) {
+		if err = json.Unmarshal(ghAcceptedError.Raw, &result); err != nil {
+			return "", err
 		}
 		return result["id"], nil
 	}
@@ -584,27 +657,23 @@ func (client *GitHubClient) DownloadFileFromRepo(ctx context.Context, owner, rep
 	if err != nil {
 		return nil, 0, err
 	}
-	body, response, err := ghClient.Repositories.DownloadContents(ctx, owner, repository, path, &github.RepositoryContentGetOptions{Ref: branch})
+	body, ghResponse, err := ghClient.Repositories.DownloadContents(ctx, owner, repository, path, &github.RepositoryContentGetOptions{Ref: branch})
 	defer func() {
 		if body != nil {
-			e := body.Close()
-			if err == nil {
-				err = e
-			}
+			err = errors.Join(err, body.Close())
 		}
 	}()
-	if response != nil && response.StatusCode != http.StatusOK {
-		return nil, response.StatusCode, fmt.Errorf("expected %d status code while received %d status code with error:\n%s", http.StatusOK, response.StatusCode, err)
+	if ghResponse != nil && ghResponse.Response != nil {
+		statusCode = ghResponse.StatusCode
 	}
-	if err != nil {
-		return nil, 0, err
+	if err != nil && statusCode != http.StatusOK {
+		err = fmt.Errorf("expected %d status code while received %d status code with error:\n%s", http.StatusOK, ghResponse.StatusCode, err)
+		return
 	}
-
-	content, err = io.ReadAll(body)
-	if err != nil {
-		return nil, response.StatusCode, err
+	if body != nil {
+		content, err = io.ReadAll(body)
 	}
-	return content, response.StatusCode, nil
+	return
 }
 
 // GetRepositoryEnvironmentInfo on GitHub
@@ -782,15 +851,17 @@ func mapGitHubPullRequestToPullRequestInfoList(pullRequestList []*github.PullReq
 			body = *pullRequest.Body
 		}
 		res = append(res, PullRequestInfo{
-			ID:   int64(*pullRequest.Number),
+			ID:   int64(vcsutils.DefaultIfNotNil(pullRequest.Number)),
 			Body: body,
 			Source: BranchInfo{
-				Name:       *pullRequest.Head.Ref,
-				Repository: *pullRequest.Head.Repo.Name,
+				Name:       vcsutils.DefaultIfNotNil(pullRequest.Head.Ref),
+				Repository: vcsutils.DefaultIfNotNil(pullRequest.Head.Repo.Name),
+				Owner:      vcsutils.DefaultIfNotNil(pullRequest.Head.Repo.Owner.Login),
 			},
 			Target: BranchInfo{
-				Name:       *pullRequest.Base.Ref,
-				Repository: *pullRequest.Base.Repo.Name,
+				Name:       vcsutils.DefaultIfNotNil(pullRequest.Base.Ref),
+				Repository: vcsutils.DefaultIfNotNil(pullRequest.Base.Repo.Name),
+				Owner:      vcsutils.DefaultIfNotNil(pullRequest.Base.Repo.Owner.Login),
 			},
 		})
 	}

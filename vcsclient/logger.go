@@ -7,7 +7,10 @@ const (
 
 	updatingPullRequest      = "Updating details of pull request ID:"
 	fetchingOpenPullRequests = "Fetching open pull requests in"
+	fetchingPullRequestById  = "Fetching pull requests by id in"
 	uploadingCodeScanning    = "Uploading code scanning for:"
+
+	failedForkedRepositoryExtraction = "Failed to extract forked repository owner"
 )
 
 type Log interface {
