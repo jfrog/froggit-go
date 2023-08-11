@@ -6,11 +6,13 @@ import (
 	"bytes"
 	"compress/gzip"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/config"
 	"github.com/google/uuid"
 	"github.com/mitchellh/mapstructure"
+	"golang.org/x/exp/slices"
 	"io"
 	"net/http"
 	"os"
@@ -19,7 +21,12 @@ import (
 	"time"
 )
 
-const RemoteName = "origin"
+const (
+	RemoteName = "origin"
+	GitHubUrl  = "https://github.com"
+	GitlabUrl  = "https://gitlab.com"
+	AzureUrl   = "https://dev.azure.com"
+)
 
 // CreateToken create a random UUID
 func CreateToken() string {
@@ -33,23 +40,19 @@ func CreateToken() string {
 func Untar(destDir string, reader io.Reader, shouldRemoveBaseDir bool) (err error) {
 	gzr, err := gzip.NewReader(reader)
 	if err != nil {
-		return err
+		return
 	}
-	defer func() {
-		e := gzr.Close()
-		if err == nil {
-			err = e
-		}
-	}()
+	defer func() { err = errors.Join(err, gzr.Close()) }()
 
-	if err := makeDirIfMissing(destDir); err != nil {
-		return err
+	if err = makeDirIfMissing(destDir); err != nil {
+		return
 	}
 
 	var header *tar.Header
-	for tarEntryReader := tar.NewReader(gzr); err != io.EOF; header, err = tarEntryReader.Next() {
-		if err != nil {
-			return err
+	var readerErr error
+	for tarEntryReader := tar.NewReader(gzr); readerErr != io.EOF; header, readerErr = tarEntryReader.Next() {
+		if readerErr != nil {
+			return
 		}
 
 		if header == nil {
@@ -67,42 +70,43 @@ func Untar(destDir string, reader io.Reader, shouldRemoveBaseDir bool) (err erro
 		}
 
 		// The target location where the dir/file should be created
-		target, err := sanitizeExtractionPath(filePath, destDir)
+		var target string
+		target, err = sanitizeExtractionPath(filePath, destDir)
 		if err != nil {
-			return err
+			return
 		}
 
 		// Check the file type
 		switch header.Typeflag {
 
-		// If its a dir and it doesn't exist create it
+		// If it's a dir, and it doesn't exist create it
 		case tar.TypeDir:
-			if _, err := os.Stat(target); err != nil {
-				if err := os.MkdirAll(target, 0750); err != nil {
-					return err
-				}
+			err = makeDirIfMissing(target)
+			if err != nil {
+				return
 			}
 
 		// If it's a file create it
 		case tar.TypeReg:
-			targetFile, err := os.OpenFile(filepath.Clean(target), os.O_CREATE|os.O_RDWR, os.FileMode(header.Mode))
+			var targetFile *os.File
+			targetFile, err = os.OpenFile(filepath.Clean(target), os.O_CREATE|os.O_RDWR, os.FileMode(header.Mode))
 			if err != nil {
-				return err
+				return
 			}
 
 			// Copy file contents
 			if err = safeCopy(targetFile, tarEntryReader); err != nil {
-				return err
+				return
 			}
 
-			// Manually close here after each file operation; defering would cause each file close
+			// Manually close here after each file operation; deferring would cause each file close
 			// to wait until all operations have completed.
-			if err := targetFile.Close(); err != nil {
-				return err
+			if err = targetFile.Close(); err != nil {
+				return
 			}
 		}
 	}
-	return nil
+	return
 }
 
 func makeDirIfMissing(destDir string) error {
@@ -224,10 +228,7 @@ func unzipFile(f *zip.File, destination string) (err error) {
 		return err
 	}
 	defer func() {
-		if e := destinationFile.Close(); err == nil {
-			err = e
-			return
-		}
+		err = errors.Join(err, destinationFile.Close())
 	}()
 	// Unzip the content of a file and copy it to the destination file
 	zippedFile, err := f.Open()
@@ -235,19 +236,18 @@ func unzipFile(f *zip.File, destination string) (err error) {
 		return err
 	}
 	defer func() {
-		if e := zippedFile.Close(); err == nil {
-			err = e
-			return
-		}
+		err = errors.Join(err, zippedFile.Close())
 	}()
 	return safeCopy(destinationFile, zippedFile)
 }
 
 func CheckResponseStatusWithBody(resp *http.Response, expectedStatusCodes ...int) error {
-	for _, statusCode := range expectedStatusCodes {
-		if statusCode == resp.StatusCode {
-			return nil
-		}
+	if resp == nil {
+		return errors.New("received an empty response")
+	}
+
+	if slices.Contains(expectedStatusCodes, resp.StatusCode) {
+		return nil
 	}
 
 	body, err := io.ReadAll(resp.Body)
@@ -280,7 +280,7 @@ func generateErrorString(bodyArray []byte) string {
 // CreateDotGitFolderWithRemote creates a .git folder inside path with remote details of remoteName and remoteUrl
 func CreateDotGitFolderWithRemote(path, remoteName, remoteUrl string) error {
 	repo, err := git.PlainInit(path, false)
-	if err == git.ErrRepositoryAlreadyExists {
+	if errors.Is(err, git.ErrRepositoryAlreadyExists) {
 		// If the .git folder already exists, we can skip this function
 		return nil
 	}
@@ -326,4 +326,37 @@ func MapPullRequestState(state *PullRequestState) *string {
 		return nil
 	}
 	return &stateStringValue
+}
+
+func RemoveTempDir(dirPath string) error {
+	if err := os.RemoveAll(dirPath); err == nil {
+		return nil
+	}
+	// Sometimes removing the directory fails (in Windows) because it's locked by another process.
+	// That's a known issue, but its cause is unknown (golang.org/issue/30789).
+	// In this case, we'll only remove the contents of the directory, and let CleanOldDirs() remove the directory itself at a later time.
+	return RemoveDirContents(dirPath)
+}
+
+// RemoveDirContents removes the contents of the directory, without removing the directory itself.
+// If it encounters an error before removing all the files, it stops and returns that error.
+func RemoveDirContents(dirPath string) (err error) {
+	d, err := os.Open(dirPath)
+	if err != nil {
+		return
+	}
+	defer func() {
+		err = errors.Join(err, d.Close())
+	}()
+	names, err := d.Readdirnames(-1)
+	if err != nil {
+		return
+	}
+	for _, name := range names {
+		err = os.RemoveAll(filepath.Join(dirPath, name))
+		if err != nil {
+			return
+		}
+	}
+	return
 }

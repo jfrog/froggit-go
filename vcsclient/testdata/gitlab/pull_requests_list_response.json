@@ -44,7 +44,7 @@
       "username": "axel.block",
       "id": 12,
       "state": "active",
-      "avatar_url": "http://www.gravatar.com/avatar/46f6f7dc858ada7be1853f7fb96e81da?s=80&d=identicon",
+      "avatar_url": "https://www.gravatar.com/avatar/46f6f7dc858ada7be1853f7fb96e81da?s=80&d=identicon",
       "web_url": "https://gitlab.example.com/axel.block"
     }],
     "reviewers": [{
@@ -53,10 +53,10 @@
       "username": "kenyatta_oconnell",
       "state": "active",
       "avatar_url": "https://www.gravatar.com/avatar/956c92487c6f6f7616b536927e22c9a0?s=80&d=identicon",
-      "web_url": "http://gitlab.example.com//kenyatta_oconnell"
+      "web_url": "https://gitlab.example.com//kenyatta_oconnell"
     }],
     "source_project_id": 2,
-    "target_project_id": 3,
+    "target_project_id": 2,
     "labels": [
       "Community contribution",
       "Manage"
@@ -87,7 +87,7 @@
     "force_remove_source_branch": false,
     "allow_collaboration": false,
     "allow_maintainer_to_push": false,
-    "web_url": "http://gitlab.example.com/my-group/my-project/merge_requests/1",
+    "web_url": "https://gitlab.example.com/my-group/my-project/merge_requests/1",
     "references": {
       "short": "!1",
       "relative": "!1",

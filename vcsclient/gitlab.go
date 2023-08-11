@@ -178,7 +178,7 @@ func (client *GitLabClient) SetCommitStatus(ctx context.Context, commitStatus Co
 }
 
 // GetCommitStatuses on GitLab
-func (client *GitLabClient) GetCommitStatuses(ctx context.Context, owner, repository, ref string) (status []CommitStatusInfo, err error) {
+func (client *GitLabClient) GetCommitStatuses(ctx context.Context, _, repository, ref string) (status []CommitStatusInfo, err error) {
 	statuses, _, err := client.glClient.Commits.GetCommitStatuses(repository, ref, nil, gitlab.WithContext(ctx))
 	if err != nil {
 		return nil, err
@@ -248,29 +248,53 @@ func (client *GitLabClient) UpdatePullRequest(ctx context.Context, owner, reposi
 }
 
 // ListOpenPullRequestsWithBody on GitLab
-func (client *GitLabClient) ListOpenPullRequestsWithBody(ctx context.Context, _, repository string) ([]PullRequestInfo, error) {
-	return client.getOpenPullRequests(ctx, repository, true)
+func (client *GitLabClient) ListOpenPullRequestsWithBody(ctx context.Context, owner, repository string) ([]PullRequestInfo, error) {
+	return client.getOpenPullRequests(ctx, owner, repository, true)
 }
 
 // ListOpenPullRequests on GitLab
-func (client *GitLabClient) ListOpenPullRequests(ctx context.Context, _, repository string) ([]PullRequestInfo, error) {
-	return client.getOpenPullRequests(ctx, repository, false)
+func (client *GitLabClient) ListOpenPullRequests(ctx context.Context, owner, repository string) ([]PullRequestInfo, error) {
+	return client.getOpenPullRequests(ctx, owner, repository, false)
 }
 
-func (client *GitLabClient) getOpenPullRequests(ctx context.Context, repository string, withBody bool) ([]PullRequestInfo, error) {
+func (client *GitLabClient) getOpenPullRequests(ctx context.Context, owner, repository string, withBody bool) ([]PullRequestInfo, error) {
 	openState := "opened"
 	allScope := "all"
-	options := &gitlab.ListMergeRequestsOptions{
+	options := &gitlab.ListProjectMergeRequestsOptions{
 		State: &openState,
 		Scope: &allScope,
 	}
-	client.logger.Debug("fetching open merge requests in", repository)
-	mergeRequests, _, err := client.glClient.MergeRequests.ListMergeRequests(options,
-		gitlab.WithContext(ctx))
+	mergeRequests, _, err := client.glClient.MergeRequests.ListProjectMergeRequests(getProjectID(owner, repository), options, gitlab.WithContext(ctx))
 	if err != nil {
 		return []PullRequestInfo{}, err
 	}
-	return mapGitLabMergeRequestToPullRequestInfoList(mergeRequests, withBody), nil
+	return mapGitLabMergeRequestToPullRequestInfoList(mergeRequests, client, owner, repository, withBody)
+}
+
+// GetPullRequestInfoById on GitLab
+func (client *GitLabClient) GetPullRequestByID(_ context.Context, owner, repository string, pullRequestId int) (pullRequestInfo PullRequestInfo, err error) {
+	client.logger.Debug("fetching merge requests by ID in", repository)
+	mergeRequest, glResponse, err := client.glClient.MergeRequests.GetMergeRequest(getProjectID(owner, repository), pullRequestId, nil)
+	if err != nil {
+		return PullRequestInfo{}, err
+	}
+	if glResponse != nil {
+		if err = vcsutils.CheckResponseStatusWithBody(glResponse.Response, http.StatusOK); err != nil {
+			return PullRequestInfo{}, err
+		}
+	}
+	sourceOwner := owner
+	if mergeRequest.SourceProjectID != mergeRequest.TargetProjectID {
+		if sourceOwner, err = getProjectOwnerByID(mergeRequest.SourceProjectID, client); err != nil {
+			return PullRequestInfo{}, err
+		}
+	}
+	pullRequestInfo = PullRequestInfo{
+		ID:     int64(mergeRequest.ID),
+		Source: BranchInfo{Name: mergeRequest.SourceBranch, Repository: repository, Owner: sourceOwner},
+		Target: BranchInfo{Name: mergeRequest.TargetBranch, Repository: repository, Owner: owner},
+	}
+	return
 }
 
 // AddPullRequestComment on GitLab
@@ -300,6 +324,17 @@ func (client *GitLabClient) ListPullRequestComments(ctx context.Context, owner, 
 		return []CommentInfo{}, err
 	}
 	return mapGitLabNotesToCommentInfoList(commentsList), nil
+}
+
+// DeletePullRequestComment on GitLab
+func (client *GitLabClient) DeletePullRequestComment(ctx context.Context, owner, repository string, pullRequestID, commentID int) error {
+	if err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository}); err != nil {
+		return err
+	}
+	if _, err := client.glClient.Notes.DeleteMergeRequestNote(getProjectID(owner, repository), pullRequestID, commentID, gitlab.WithContext(ctx)); err != nil {
+		return fmt.Errorf("an error occurred while deleting pull request comment:\n%s", err.Error())
+	}
+	return nil
 }
 
 // GetLatestCommit on GitLab
@@ -438,13 +473,14 @@ func (client *GitLabClient) ListPullRequestLabels(ctx context.Context, owner, re
 }
 
 // UnlabelPullRequest on GitLab
-func (client *GitLabClient) UnlabelPullRequest(ctx context.Context, owner, repository, name string, pullRequestID int) error {
+func (client *GitLabClient) UnlabelPullRequest(ctx context.Context, owner, repository, label string, pullRequestID int) error {
 	err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository})
 	if err != nil {
 		return err
 	}
+	labels := gitlab.Labels{label}
 	_, _, err = client.glClient.MergeRequests.UpdateMergeRequest(getProjectID(owner, repository), pullRequestID, &gitlab.UpdateMergeRequestOptions{
-		RemoveLabels: gitlab.Labels{name},
+		RemoveLabels: &labels,
 	}, gitlab.WithContext(ctx))
 	return err
 }
@@ -461,20 +497,22 @@ func (client *GitLabClient) GetRepositoryEnvironmentInfo(_ context.Context, _, _
 
 // DownloadFileFromRepo on GitLab
 func (client *GitLabClient) DownloadFileFromRepo(_ context.Context, owner, repository, branch, path string) ([]byte, int, error) {
-	file, response, err := client.glClient.RepositoryFiles.GetFile(getProjectID(owner, repository), path, &gitlab.GetFileOptions{Ref: &branch})
-	if response != nil && response.StatusCode != http.StatusOK {
-		return nil, response.StatusCode, fmt.Errorf("expected %d status code while received %d status code with error:\n%s", http.StatusOK, response.StatusCode, err)
+	file, glResponse, err := client.glClient.RepositoryFiles.GetFile(getProjectID(owner, repository), path, &gitlab.GetFileOptions{Ref: &branch})
+	var statusCode int
+	if glResponse != nil && glResponse.Response != nil {
+		statusCode = glResponse.Response.StatusCode
 	}
 	if err != nil {
-		return nil, 0, err
+		return nil, statusCode, err
 	}
-
-	content, err := base64.StdEncoding.DecodeString(file.Content)
-	if err != nil {
-		return nil, response.StatusCode, err
+	if statusCode != http.StatusOK {
+		return nil, statusCode, fmt.Errorf("expected %d status code while received %d status code", http.StatusOK, glResponse.StatusCode)
 	}
-
-	return content, response.StatusCode, err
+	var content []byte
+	if file != nil {
+		content, err = base64.StdEncoding.DecodeString(file.Content)
+	}
+	return content, statusCode, err
 }
 
 func (client *GitLabClient) GetModifiedFiles(_ context.Context, owner, repository, refBefore, refAfter string) ([]string, error) {
@@ -577,18 +615,48 @@ func mapGitLabNotesToCommentInfoList(notes []*gitlab.Note) (res []CommentInfo) {
 	return
 }
 
-func mapGitLabMergeRequestToPullRequestInfoList(mergeRequests []*gitlab.MergeRequest, withBody bool) (res []PullRequestInfo) {
+func mapGitLabMergeRequestToPullRequestInfoList(mergeRequests []*gitlab.MergeRequest, client *GitLabClient, owner, repository string, withBody bool) (res []PullRequestInfo, err error) {
 	for _, mergeRequest := range mergeRequests {
 		var body string
 		if withBody {
 			body = mergeRequest.Description
 		}
+		sourceOwner := owner
+		if mergeRequest.SourceProjectID != mergeRequest.TargetProjectID {
+			if sourceOwner, err = getProjectOwnerByID(mergeRequest.SourceProjectID, client); err != nil {
+				return
+			}
+		}
 		res = append(res, PullRequestInfo{
-			ID:     int64(mergeRequest.IID),
-			Body:   body,
-			Source: BranchInfo{Name: mergeRequest.SourceBranch},
-			Target: BranchInfo{Name: mergeRequest.TargetBranch},
+			ID:   int64(mergeRequest.IID),
+			Body: body,
+			Source: BranchInfo{
+				Name:       mergeRequest.SourceBranch,
+				Repository: repository,
+				Owner:      sourceOwner,
+			},
+			Target: BranchInfo{
+				Name:       mergeRequest.TargetBranch,
+				Repository: repository,
+				Owner:      owner,
+			},
 		})
 	}
 	return
+}
+
+func getProjectOwnerByID(projectID int, client *GitLabClient) (string, error) {
+	project, glResponse, err := client.glClient.Projects.GetProject(projectID, &gitlab.GetProjectOptions{})
+	if err != nil {
+		return "", err
+	}
+	if glResponse != nil {
+		if err = vcsutils.CheckResponseStatusWithBody(glResponse.Response, http.StatusOK); err != nil {
+			return "", err
+		}
+	}
+	if project.Namespace == nil {
+		return "", fmt.Errorf("could not fetch the name of the project owner. Project ID: %d", projectID)
+	}
+	return project.Namespace.Name, nil
 }

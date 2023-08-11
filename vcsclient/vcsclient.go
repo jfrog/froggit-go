@@ -170,6 +170,14 @@ type VcsClient interface {
 	// pullRequestID  - Pull request ID
 	ListPullRequestComments(ctx context.Context, owner, repository string, pullRequestID int) ([]CommentInfo, error)
 
+	// DeletePullRequestComment deleted a specific comment in a pull request.
+	// owner          - User or organization
+	// repository     - VCS repository name
+	// pullRequestID  - Pull request ID
+	// commentID 	  - The ID of the comment
+	// commentVersion - The version of the comment
+	DeletePullRequestComment(ctx context.Context, owner, repository string, pullRequestID, commentID int) error
+
 	// ListOpenPullRequestsWithBody Gets all open pull requests ids and the pull request body.
 	// owner          - User or organization
 	// repository     - VCS repository name
@@ -179,6 +187,12 @@ type VcsClient interface {
 	// owner          - User or organization
 	// repository     - VCS repository name
 	ListOpenPullRequests(ctx context.Context, owner, repository string) ([]PullRequestInfo, error)
+
+	// GetPullRequestByID Gets pull request info by ID.
+	// owner          - User or organization
+	// repository     - VCS repository name
+	// pullRequestId  - ID of the pull request
+	GetPullRequestByID(ctx context.Context, owner, repository string, pullRequestId int) (PullRequestInfo, error)
 
 	// GetLatestCommit Gets the most recent commit of a branch
 	// owner      - User or organization
@@ -288,6 +302,7 @@ type CommentInfo struct {
 	ID      int64
 	Content string
 	Created time.Time
+	Version int
 }
 
 type PullRequestInfo struct {
@@ -300,6 +315,7 @@ type PullRequestInfo struct {
 type BranchInfo struct {
 	Name       string
 	Repository string
+	Owner      string
 }
 
 // RepositoryInfo contains general information about repository.

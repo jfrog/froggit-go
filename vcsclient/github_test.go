@@ -3,7 +3,6 @@ package vcsclient
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"math"
@@ -12,13 +11,10 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
-	"reflect"
 	"strconv"
 	"strings"
 	"testing"
 	"time"
-
-	"github.com/stretchr/testify/require"
 
 	"github.com/google/go-github/v45/github"
 	"github.com/jfrog/froggit-go/vcsutils"
@@ -86,7 +82,7 @@ func TestGitHubClient_ListRepositoriesWithPagination(t *testing.T) {
 	}
 
 	client, cleanUp := createBodyHandlingServerAndClient(t, vcsutils.GitHub, false, repos, "/user/repos",
-		http.StatusOK, nil, "GET", createGitHubWithPaginationHandler)
+		http.StatusOK, nil, http.MethodGet, createGitHubWithPaginationHandler)
 	defer cleanUp()
 
 	actualRepositories, err := client.ListRepositories(ctx)
@@ -97,7 +93,7 @@ func TestGitHubClient_ListRepositoriesWithPagination(t *testing.T) {
 	// Test Case 2 - No Items to return
 	repos = make([]github.Repository, 0)
 	client, cleanUp = createBodyHandlingServerAndClient(t, vcsutils.GitHub, false, repos, "/user/repos",
-		http.StatusOK, nil, "GET", createGitHubWithPaginationHandler)
+		http.StatusOK, nil, http.MethodGet, createGitHubWithPaginationHandler)
 	defer cleanUp()
 
 	actualRepositories, err = client.ListRepositories(ctx)
@@ -200,7 +196,7 @@ func TestGitHubClient_DownloadRepository(t *testing.T) {
 	ctx := context.Background()
 	dir, err := os.MkdirTemp("", "")
 	assert.NoError(t, err)
-	defer func() { _ = os.RemoveAll(dir) }()
+	defer func() { assert.NoError(t, vcsutils.RemoveTempDir(dir)) }()
 
 	client, cleanUp := createServerAndClientReturningStatus(t, vcsutils.GitHub, false,
 		[]byte("https://github.com/octocat/Hello-World/archive/refs/heads/master.tar.gz"),
@@ -209,9 +205,9 @@ func TestGitHubClient_DownloadRepository(t *testing.T) {
 	assert.NoError(t, err)
 
 	err = client.DownloadRepository(ctx, owner, "Hello-World", "test", dir)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	fileinfo, err := os.ReadDir(dir)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	assert.Len(t, fileinfo, 2)
 	assert.Equal(t, ".git", fileinfo[0].Name())
 	assert.Equal(t, "README", fileinfo[1].Name())
@@ -292,7 +288,7 @@ func TestGitHubClient_GetLatestCommit(t *testing.T) {
 
 	result, err := client.GetLatestCommit(ctx, owner, repo1, "master")
 
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	assert.Equal(t, CommitInfo{
 		Hash:          "6dcb09b5b57875f334f61aebed695e2e4193db5e",
 		AuthorName:    "Monalisa Octocat",
@@ -359,7 +355,7 @@ func TestGitHubClient_GetLatestCommitNotFound(t *testing.T) {
 
 	result, err := client.GetLatestCommit(ctx, owner, "unknown", "master")
 
-	require.Error(t, err)
+	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "404 Not Found")
 	assert.Empty(t, result)
 }
@@ -378,7 +374,7 @@ func TestGitHubClient_GetLatestCommitUnknownBranch(t *testing.T) {
 
 	result, err := client.GetLatestCommit(ctx, owner, repo1, "unknown")
 
-	require.Error(t, err)
+	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "404 Not Found")
 	assert.Empty(t, result)
 }
@@ -403,7 +399,7 @@ func TestGitHubClient_AddSshKeyToRepository(t *testing.T) {
 	defer closeServer()
 
 	err := client.AddSshKeyToRepository(ctx, owner, repo1, "My deploy key", "ssh-rsa AAAA...", Read)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
 	err = createBadGitHubClient(t).AddSshKeyToRepository(ctx, owner, repo1, "My deploy key", "ssh-rsa AAAA...", Read)
 	assert.Error(t, err)
@@ -430,7 +426,7 @@ func TestGitHubClient_AddSshKeyToRepositoryReadWrite(t *testing.T) {
 
 	err := client.AddSshKeyToRepository(ctx, owner, repo1, "My deploy key", "ssh-rsa AAAA...", ReadWrite)
 
-	require.NoError(t, err)
+	assert.NoError(t, err)
 }
 
 func TestGitHubClient_GetCommitBySha(t *testing.T) {
@@ -445,7 +441,7 @@ func TestGitHubClient_GetCommitBySha(t *testing.T) {
 
 	result, err := client.GetCommitBySha(ctx, owner, repo1, sha)
 
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	assert.Equal(t, CommitInfo{
 		Hash:          sha,
 		AuthorName:    "Monalisa Octocat",
@@ -473,7 +469,7 @@ func TestGitHubClient_GetCommitByWrongSha(t *testing.T) {
 	defer cleanUp()
 
 	result, err := client.GetCommitBySha(ctx, owner, repo1, sha)
-	require.Error(t, err)
+	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "No commit found for SHA: 5dcb09b5b57875f334f61aebed695e2e4193db5e")
 	assert.Empty(t, result)
 }
@@ -487,8 +483,8 @@ func TestGitHubClient_GetRepositoryInfo(t *testing.T) {
 	defer cleanUp()
 
 	info, err := client.GetRepositoryInfo(ctx, "octocat", "Hello-World")
-	require.NoError(t, err)
-	require.Equal(t,
+	assert.NoError(t, err)
+	assert.Equal(t,
 		RepositoryInfo{
 			RepositoryVisibility: Public,
 			CloneInfo:            CloneInfo{HTTP: "https://github.com/octocat/Hello-World.git", SSH: "git@github.com:octocat/Hello-World.git"},
@@ -541,7 +537,7 @@ func TestGitGubClient_GetLabelNotExisted(t *testing.T) {
 	ctx := context.Background()
 
 	client, cleanUp := createBodyHandlingServerAndClient(t, vcsutils.GitHub, false, github.Label{},
-		fmt.Sprintf("/repos/jfrog/%s/labels/%s", repo1, "not-existed"), http.StatusNotFound, []byte{}, "GET", createGitHubWithBodyHandler)
+		fmt.Sprintf("/repos/jfrog/%s/labels/%s", repo1, "not-existed"), http.StatusNotFound, []byte{}, http.MethodGet, createGitHubWithBodyHandler)
 	defer cleanUp()
 
 	actualLabel, err := client.GetLabel(ctx, owner, repo1, "not-existed")
@@ -572,32 +568,75 @@ func TestGitHubClient_ListOpenPullRequests(t *testing.T) {
 	defer cleanUp()
 
 	result, err := client.ListOpenPullRequests(ctx, owner, repo1)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	assert.Len(t, result, 1)
 	assert.NoError(t, err)
-	assert.True(t, reflect.DeepEqual(PullRequestInfo{
+	assert.EqualValues(t, PullRequestInfo{
 		ID:     1,
-		Source: BranchInfo{Name: "new-topic", Repository: "Hello-World"},
-		Target: BranchInfo{Name: "master", Repository: "Hello-World"},
-	}, result[0]))
+		Source: BranchInfo{Name: "new-topic", Repository: "Hello-World", Owner: owner},
+		Target: BranchInfo{Name: "master", Repository: "Hello-World", Owner: owner},
+	}, result[0])
 
 	_, err = createBadGitHubClient(t).ListPullRequestComments(ctx, owner, repo1, 1)
 	assert.Error(t, err)
 
 	// With body:
 	result, err = client.ListOpenPullRequestsWithBody(ctx, owner, repo1)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	assert.Len(t, result, 1)
 	assert.NoError(t, err)
-	assert.True(t, reflect.DeepEqual(PullRequestInfo{
+	assert.EqualValues(t, PullRequestInfo{
 		ID:     1,
 		Body:   "hello world",
-		Source: BranchInfo{Name: "new-topic", Repository: "Hello-World"},
-		Target: BranchInfo{Name: "master", Repository: "Hello-World"},
-	}, result[0]))
+		Source: BranchInfo{Name: "new-topic", Repository: "Hello-World", Owner: owner},
+		Target: BranchInfo{Name: "master", Repository: "Hello-World", Owner: owner},
+	}, result[0])
 
 	_, err = createBadGitHubClient(t).ListPullRequestComments(ctx, owner, repo1, 1)
 	assert.Error(t, err)
+}
+
+func TestGitHubClient_GetPullRequestByID(t *testing.T) {
+	ctx := context.Background()
+	pullRequestId := 1
+	repoName := "Hello-World"
+	forkedOwner := owner + "Forked"
+
+	// Successful response
+	// This response mimics a pull request from a forked source
+	response, err := os.ReadFile(filepath.Join("testdata", "github", "pull_request_info_response.json"))
+	assert.NoError(t, err)
+	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, response,
+		fmt.Sprintf("/repos/%s/%s/pulls/%d", owner, repoName, pullRequestId), createGitHubHandler)
+	defer cleanUp()
+	result, err := client.GetPullRequestByID(ctx, owner, repoName, pullRequestId)
+	assert.NoError(t, err)
+	assert.EqualValues(t, PullRequestInfo{
+		ID:     int64(pullRequestId),
+		Source: BranchInfo{Name: "new-topic", Repository: "Hello-World", Owner: owner},
+		Target: BranchInfo{Name: "master", Repository: "Hello-World", Owner: forkedOwner},
+	}, result)
+
+	// Bad Labels
+	badLabels, err := os.ReadFile(filepath.Join("testdata", "github", "pull_request_info_response_bad_labels.json"))
+	assert.NoError(t, err)
+	badLabelsClient, badLabelClientCleanUp := createServerAndClient(t, vcsutils.GitHub, false, badLabels,
+		fmt.Sprintf("/repos/%s/%s/pulls/%d", owner, repoName, pullRequestId), createGitHubHandler)
+	defer badLabelClientCleanUp()
+	_, err = badLabelsClient.GetPullRequestByID(ctx, owner, repoName, pullRequestId)
+	assert.Error(t, err)
+
+	// Bad client
+	_, err = createBadGitHubClient(t).GetPullRequestByID(ctx, owner, repoName, pullRequestId)
+	assert.Error(t, err)
+
+	// Bad Response
+	badResponseClient, badResponseCleanUp := createServerAndClient(t, vcsutils.GitHub, false, "{",
+		fmt.Sprintf("/repos/%s/%s/pulls/%d", owner, repoName, pullRequestId), createGitHubHandler)
+	defer badResponseCleanUp()
+	_, err = badResponseClient.GetPullRequestByID(ctx, owner, repoName, pullRequestId)
+	assert.Error(t, err)
+
 }
 
 func TestGitHubClient_ListPullRequestComments(t *testing.T) {
@@ -609,7 +648,7 @@ func TestGitHubClient_ListPullRequestComments(t *testing.T) {
 	defer cleanUp()
 
 	result, err := client.ListPullRequestComments(ctx, owner, repo1, 1)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	assert.Len(t, result, 2)
 	expectedCreated, err := time.Parse(time.RFC3339, "2011-04-14T16:00:49Z")
 	assert.NoError(t, err)
@@ -732,13 +771,13 @@ func TestGitHubClient_GetModifiedFiles(t *testing.T) {
 	t.Run("validation fails", func(t *testing.T) {
 		client := GitHubClient{}
 		_, err := client.GetModifiedFiles(ctx, "", repo1, "sha-1", "sha-2")
-		require.Equal(t, errors.New("validation failed: required parameter 'owner' is missing"), err)
+		assert.EqualError(t, err, "validation failed: required parameter 'owner' is missing")
 		_, err = client.GetModifiedFiles(ctx, owner, "", "sha-1", "sha-2")
-		require.Equal(t, errors.New("validation failed: required parameter 'repository' is missing"), err)
+		assert.EqualError(t, err, "validation failed: required parameter 'repository' is missing")
 		_, err = client.GetModifiedFiles(ctx, owner, repo1, "", "sha-2")
-		require.Equal(t, errors.New("validation failed: required parameter 'refBefore' is missing"), err)
+		assert.EqualError(t, err, "validation failed: required parameter 'refBefore' is missing")
 		_, err = client.GetModifiedFiles(ctx, owner, repo1, "sha-1", "")
-		require.Equal(t, errors.New("validation failed: required parameter 'refAfter' is missing"), err)
+		assert.EqualError(t, err, "validation failed: required parameter 'refAfter' is missing")
 	})
 
 	t.Run("failed request", func(t *testing.T) {
@@ -753,8 +792,8 @@ func TestGitHubClient_GetModifiedFiles(t *testing.T) {
 		)
 		defer cleanUp()
 		_, err := client.GetModifiedFiles(ctx, owner, repo1, "sha-1", "sha-2")
-		require.Error(t, err)
-		require.Contains(t, err.Error(), "repos/jfrog/repo-1/compare/sha-1...sha-2?per_page=1: 500  []")
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "repos/jfrog/repo-1/compare/sha-1...sha-2?per_page=1: 500  []")
 	})
 }
 
@@ -776,11 +815,11 @@ func TestGitHubClient_TestGetCommitStatus(t *testing.T) {
 		defer cleanUp()
 		commitStatuses, err := client.GetCommitStatuses(ctx, owner, repo1, ref)
 		assert.NoError(t, err)
-		assert.True(t, len(commitStatuses) == 4)
-		assert.True(t, commitStatuses[0].State == Pass)
-		assert.True(t, commitStatuses[1].State == InProgress)
-		assert.True(t, commitStatuses[2].State == Fail)
-		assert.True(t, commitStatuses[3].State == Error)
+		assert.Len(t, commitStatuses, 4)
+		assert.Equal(t, Pass, commitStatuses[0].State)
+		assert.Equal(t, InProgress, commitStatuses[1].State)
+		assert.Equal(t, Fail, commitStatuses[2].State)
+		assert.Equal(t, Error, commitStatuses[3].State)
 	})
 	t.Run("Bad response format", func(t *testing.T) {
 		response, err := os.ReadFile(filepath.Join("testdata", "github", "commits_statuses_bad_json.json"))
@@ -834,9 +873,20 @@ func TestGitHubClient_getGitHubGitRemoteUrl(t *testing.T) {
 	}
 }
 
+func TestGitHubClient_DeletePullRequestComment(t *testing.T) {
+	ctx := context.Background()
+	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, nil, fmt.Sprintf("/repos/%v/%v/issues/comments/1", owner, repo1), createGitHubHandler)
+	defer cleanUp()
+	err := client.DeletePullRequestComment(ctx, owner, repo1, 1, 1)
+	assert.NoError(t, err)
+	client = createBadGitHubClient(t)
+	err = client.DeletePullRequestComment(ctx, owner, repo1, 1, 1)
+	assert.Error(t, err)
+}
+
 func createBadGitHubClient(t *testing.T) VcsClient {
 	client, err := NewClientBuilder(vcsutils.GitHub).ApiEndpoint("https://bad^endpoint").Build()
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	return client
 }
 
@@ -848,7 +898,7 @@ func createGitHubWithBodyHandler(t *testing.T, expectedURI string, response []by
 		assert.Equal(t, "Bearer "+token, request.Header.Get("Authorization"))
 
 		b, err := io.ReadAll(request.Body)
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		assert.Equal(t, expectedRequestBody, b)
 
 		writer.WriteHeader(expectedStatusCode)
@@ -921,7 +971,7 @@ func createGitHubHandler(t *testing.T, expectedURI string, response []byte, expe
 		}
 		w.WriteHeader(expectedStatusCode)
 		_, err := w.Write(response)
-		require.NoError(t, err)
+		assert.NoError(t, err)
 	}
 }
 
@@ -929,28 +979,29 @@ func createGitHubSarifUploadHandler(t *testing.T, _ string, _ []byte, _ int) htt
 	resultSHA := "66d9a06b02a9f3f5fb47bb026a6fa5577647d96e"
 	return func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, "Bearer "+token, r.Header.Get("Authorization"))
-		if r.RequestURI == "/repos/jfrog/repo-1/commits?page=1&per_page=1&sha=master" {
-			w.WriteHeader(200)
+		switch r.RequestURI {
+		case "/repos/jfrog/repo-1/commits?page=1&per_page=1&sha=master":
+			w.WriteHeader(http.StatusOK)
 			repositoryCommits := []*github.RepositoryCommit{
 				{
 					SHA: &resultSHA,
 				},
 			}
 			jsonRepositoryCommits, err := json.Marshal(repositoryCommits)
-			require.NoError(t, err)
+			assert.NoError(t, err)
 			_, err = w.Write(jsonRepositoryCommits)
-			require.NoError(t, err)
-		} else if r.RequestURI == "/repos/jfrog/repo-1/code-scanning/sarifs" {
+			assert.NoError(t, err)
+		case "/repos/jfrog/repo-1/code-scanning/sarifs":
 			body, err := io.ReadAll(r.Body)
-			require.NoError(t, err)
+			assert.NoError(t, err)
 			bodyAsString := string(body)
 			if !strings.Contains(bodyAsString, resultSHA) {
 				assert.Fail(t, "Unexpected Commit SHA")
 			}
-			w.WriteHeader(200)
+			w.WriteHeader(http.StatusOK)
 			_, err = w.Write([]byte(`{"id" : "b16b0368-01b9-11ed-90a3-cabff0b8ad31", "url": ""}`))
-			require.NoError(t, err)
-		} else {
+			assert.NoError(t, err)
+		default:
 			assert.Fail(t, "Unexpected Request URI", r.RequestURI)
 		}
 	}

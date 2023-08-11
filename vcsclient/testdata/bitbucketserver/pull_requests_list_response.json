@@ -16,10 +16,10 @@
             "fromRef": {
                 "id": "refs/heads/feature-ABC-123",
                 "repository": {
-                    "slug": "my-repo",
+                    "slug": "repo-1",
                     "name": null,
                     "project": {
-                        "key": "PRJ"
+                        "key": "jfrogForked"
                     }
                 },
                 "displayId": "feature-ABC-123"
@@ -27,10 +27,10 @@
             "toRef": {
                 "id": "refs/heads/master",
                 "repository": {
-                    "slug": "my-repo",
+                    "slug": "repo-1",
                     "name": null,
                     "project": {
-                        "key": "PRJ"
+                        "key": "jfrog"
                     }
                 },
                 "displayId": "master"
@@ -100,7 +100,7 @@
             "links": {
                 "self": [
                     {
-                        "href": "http://link/to/pullrequest"
+                        "href": "https://link/to/pullrequest"
                     }
                 ]
             }

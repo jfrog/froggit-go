@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/jfrog/gofrog/datastructures"
+	"github.com/ktrysmt/go-bitbucket"
 	"net/http"
 	"net/url"
 	"sort"
@@ -16,7 +18,6 @@ import (
 	"github.com/mitchellh/mapstructure"
 
 	"github.com/jfrog/froggit-go/vcsutils"
-	"github.com/ktrysmt/go-bitbucket"
 )
 
 // BitbucketCloudClient API version 2.0
@@ -93,15 +94,15 @@ func (client *BitbucketCloudClient) ListBranches(ctx context.Context, owner, rep
 }
 
 // AddSshKeyToRepository on Bitbucket cloud, the deploy-key is always read-only.
-func (client *BitbucketCloudClient) AddSshKeyToRepository(ctx context.Context, owner, repository, keyName, publicKey string, _ Permission) error {
-	err := validateParametersNotBlank(map[string]string{
+func (client *BitbucketCloudClient) AddSshKeyToRepository(ctx context.Context, owner, repository, keyName, publicKey string, _ Permission) (err error) {
+	err = validateParametersNotBlank(map[string]string{
 		"owner":      owner,
 		"repository": repository,
 		"key name":   keyName,
 		"public key": publicKey,
 	})
 	if err != nil {
-		return err
+		return
 	}
 	endpoint := client.vcsInfo.APIEndpoint
 	if endpoint == "" {
@@ -116,11 +117,11 @@ func (client *BitbucketCloudClient) AddSshKeyToRepository(ctx context.Context, o
 	body := new(bytes.Buffer)
 	err = json.NewEncoder(body).Encode(addKeyRequest)
 	if err != nil {
-		return err
+		return
 	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, u, body)
 	if err != nil {
-		return err
+		return
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.SetBasicAuth(client.vcsInfo.Username, client.vcsInfo.Token)
@@ -128,17 +129,16 @@ func (client *BitbucketCloudClient) AddSshKeyToRepository(ctx context.Context, o
 	bitbucketClient := client.buildBitbucketCloudClient(ctx)
 	response, err := bitbucketClient.HttpClient.Do(req)
 	if err != nil {
-		return err
+		return
 	}
 	defer func() {
-		_ = vcsutils.DiscardResponseBody(response)
-		_ = response.Body.Close()
+		err = errors.Join(err, vcsutils.DiscardResponseBody(response), response.Body.Close())
 	}()
 
 	if response.StatusCode >= 300 {
-		return fmt.Errorf(response.Status)
+		err = fmt.Errorf(response.Status)
 	}
-	return nil
+	return
 }
 
 type bitbucketCloudAddSSHKeyRequest struct {
@@ -253,7 +253,7 @@ func (client *BitbucketCloudClient) DownloadRepository(ctx context.Context, owne
 		return err
 	}
 	client.logger.Debug("received archive url:", downloadLink)
-	getRequest, err := http.NewRequestWithContext(ctx, "GET", downloadLink, nil)
+	getRequest, err := http.NewRequestWithContext(ctx, http.MethodGet, downloadLink, nil)
 	if err != nil {
 		return err
 	}
@@ -348,6 +348,47 @@ func (client *BitbucketCloudClient) getOpenPullRequests(ctx context.Context, own
 	return mapBitbucketCloudPullRequestToPullRequestInfo(&parsedPullRequests, withBody), nil
 }
 
+func (client *BitbucketCloudClient) GetPullRequestByID(ctx context.Context, owner, repository string, pullRequestId int) (pullRequestInfo PullRequestInfo, err error) {
+	err = validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository})
+	if err != nil {
+		return
+	}
+	bitbucketClient := client.buildBitbucketCloudClient(ctx)
+	client.logger.Debug(fetchingPullRequestById, repository)
+	prIdStr := strconv.Itoa(pullRequestId)
+	options := &bitbucket.PullRequestsOptions{
+		Owner:    owner,
+		RepoSlug: repository,
+		ID:       prIdStr,
+	}
+	pullRequestRaw, err := bitbucketClient.Repositories.PullRequests.Get(options)
+	if err != nil {
+		return
+	}
+	pullRequestDetails, err := vcsutils.RemapFields[pullRequestsDetails](pullRequestRaw, "json")
+	if err != nil {
+		return
+	}
+
+	sourceOwner, sourceRepository := splitBitbucketCloudRepoName(pullRequestDetails.Source.Repository.Name)
+	targetOwner, targetRepository := splitBitbucketCloudRepoName(pullRequestDetails.Target.Repository.Name)
+
+	pullRequestInfo = PullRequestInfo{
+		ID: pullRequestDetails.ID,
+		Source: BranchInfo{
+			Name:       pullRequestDetails.Source.Name.Str,
+			Repository: sourceRepository,
+			Owner:      sourceOwner,
+		},
+		Target: BranchInfo{
+			Name:       pullRequestDetails.Target.Name.Str,
+			Repository: targetRepository,
+			Owner:      targetOwner,
+		},
+	}
+	return
+}
+
 // AddPullRequestComment on Bitbucket cloud
 func (client *BitbucketCloudClient) AddPullRequestComment(ctx context.Context, owner, repository, content string, pullRequestID int) error {
 	err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository, "content": content})
@@ -386,6 +427,11 @@ func (client *BitbucketCloudClient) ListPullRequestComments(ctx context.Context,
 		return
 	}
 	return mapBitbucketCloudCommentToCommentInfo(&parsedComments), nil
+}
+
+// DeletePullRequestComment on Bitbucket cloud
+func (client *BitbucketCloudClient) DeletePullRequestComment(_ context.Context, _, _ string, _, _ int) error {
+	return nil
 }
 
 // GetLatestCommit on Bitbucket cloud
@@ -751,4 +797,14 @@ func getBitbucketCloudRepositoryVisibility(repo *bitbucket.Repository) Repositor
 		return Private
 	}
 	return Public
+}
+
+// Bitbucket cloud repository name is a combination of workspace/repository
+// Return the two separate elements
+func splitBitbucketCloudRepoName(name string) (string, string) {
+	split := strings.Split(name, "/")
+	if len(split) < 2 {
+		return "", ""
+	}
+	return split[0], split[1]
 }

@@ -1,0 +1,258 @@
+{
+  "id": 6,
+  "version": 0,
+  "title": "New vul 2",
+  "description": "* add vul\n* test",
+  "state": "OPEN",
+  "open": true,
+  "closed": false,
+  "createdDate": 1686651080688,
+  "updatedDate": 1686651080688,
+  "fromRef": {
+    "id": "refs/heads/new_vul_2",
+    "displayId": "new_vul_2",
+    "latestCommit": "7121b72f7c2a4bdd953bcddd80c037cb598db690",
+    "type": "BRANCH",
+    "repository": {
+      "slug": "repoName",
+      "id": 35731,
+      "name": "repoName",
+      "hierarchyId": "38d6f6b604eee2af0b68",
+      "scmId": "git",
+      "state": "AVAILABLE",
+      "statusMessage": "Available",
+      "forkable": true,
+      "origin": {
+        "slug": "repoName",
+        "id": 115,
+        "name": "repoName",
+        "hierarchyId": "38d6f3b609eee2af0b68",
+        "scmId": "git",
+        "state": "AVAILABLE",
+        "statusMessage": "Available",
+        "forkable": true,
+        "project": {
+          "key": "repoName",
+          "id": 100,
+          "name": "repoName",
+          "description": "repoName",
+          "public": false,
+          "type": "NORMAL",
+          "links": {
+            "self": [
+              {
+                "href": "https://git.bbServerHost.info/projects/repoName"
+              }
+            ]
+          }
+        },
+        "public": false,
+        "archived": false,
+        "links": {
+          "clone": [
+            {
+              "href": "https://git.bbServerHost.info/scm/repoName/repoName.git",
+              "name": "http"
+            },
+            {
+              "href": "ssh://git@git.bbServerHost.info/repoName/repoName.git",
+              "name": "ssh"
+            }
+          ],
+          "self": [
+            {
+              "href": "https://git.bbServerHost.info/projects/repoName/repos/repoName/browse"
+            }
+          ]
+        }
+      },
+      "project": {
+        "key": "~fromOwner",
+        "id": 2424,
+        "name": "some name",
+        "type": "PERSONAL",
+        "owner": {
+          "name": "owner",
+          "emailAddress": "owner@bbServerHost.com",
+          "active": true,
+          "displayName": "some name",
+          "id": 2118757,
+          "slug": "owner",
+          "type": "NORMAL",
+          "links": {
+            "self": [
+              {
+                "href": "https://git.bbServerHost.info/users/owner"
+              }
+            ]
+          }
+        },
+        "links": {
+          "self": [
+            {
+              "href": "https://git.bbServerHost.info/users/owner"
+            }
+          ]
+        }
+      },
+      "public": false,
+      "archived": false,
+      "links": {
+        "clone": [
+          {
+            "href": "ssh://git@git.bbServerHost.info/~owner/repoName.git",
+            "name": "ssh"
+          },
+          {
+            "href": "https://git.bbServerHost.info/scm/~owner/repoName.git",
+            "name": "http"
+          }
+        ],
+        "self": [
+          {
+            "href": "https://git.bbServerHost.info/users/owner/repos/repoName/browse"
+          }
+        ]
+      }
+    }
+  },
+  "toRef": {
+    "id": "refs/heads/master",
+    "displayId": "master",
+    "latestCommit": "49ee0968441e2cae00e714c1d7852a6565ce12c7",
+    "type": "BRANCH",
+    "repository": {
+      "slug": "repoName",
+      "id": 32731,
+      "name": "repoName",
+      "hierarchyId": "38d6f4b609eee2af0b68",
+      "scmId": "git",
+      "state": "AVAILABLE",
+      "statusMessage": "Available",
+      "forkable": true,
+      "origin": {
+        "slug": "repoName",
+        "id": 1215,
+        "name": "repoName",
+        "hierarchyId": "38f6f6b609eee2af0b68",
+        "scmId": "git",
+        "state": "AVAILABLE",
+        "statusMessage": "Available",
+        "forkable": true,
+        "project": {
+          "key": "repoName",
+          "id": 1210,
+          "name": "repoName",
+          "description": "repoName",
+          "public": false,
+          "type": "NORMAL",
+          "links": {
+            "self": [
+              {
+                "href": "https://git.bbServerHost.info/projects/repoName"
+              }
+            ]
+          }
+        },
+        "public": false,
+        "archived": false,
+        "links": {
+          "clone": [
+            {
+              "href": "https://git.bbServerHost.info/scm/repoName/repoName.git",
+              "name": "http"
+            },
+            {
+              "href": "ssh://git@git.bbServerHost.info/repoName/repoName.git",
+              "name": "ssh"
+            }
+          ],
+          "self": [
+            {
+              "href": "https://git.bbServerHost.info/projects/repoName/repos/repoName/browse"
+            }
+          ]
+        }
+      },
+      "project": {
+        "key": "~targetOwner",
+        "id": 2424,
+        "name": "some name",
+        "type": "PERSONAL",
+        "owner": {
+          "name": "owner",
+          "emailAddress": "owner@bbServerHost.com",
+          "active": true,
+          "displayName": "some name",
+          "id": 2198757,
+          "slug": "owner",
+          "type": "NORMAL",
+          "links": {
+            "self": [
+              {
+                "href": "https://git.bbServerHost.info/users/owner"
+              }
+            ]
+          }
+        },
+        "links": {
+          "self": [
+            {
+              "href": "https://git.bbServerHost.info/users/owner"
+            }
+          ]
+        }
+      },
+      "public": false,
+      "archived": false,
+      "links": {
+        "clone": [
+          {
+            "href": "ssh://git@git.bbServerHost.info/~owner/repoName.git",
+            "name": "ssh"
+          },
+          {
+            "href": "https://git.bbServerHost.info/scm/~owner/repoName.git",
+            "name": "http"
+          }
+        ],
+        "self": [
+          {
+            "href": "https://git.bbServerHost.info/users/owner/repos/repoName/browse"
+          }
+        ]
+      }
+    }
+  },
+  "locked": false,
+  "author": {
+    "user": {
+      "name": "owner",
+      "emailAddress": "owner@bbServerHost.com",
+      "active": true,
+      "displayName": "some name",
+      "id": 2114757,
+      "slug": "owner",
+      "type": "NORMAL",
+      "links": {
+        "self": [
+          {
+            "href": "https://git.bbServerHost.info/users/owner"
+          }
+        ]
+      }
+    },
+    "role": "AUTHOR",
+    "approved": false,
+    "status": "UNAPPROVED"
+  },
+  "reviewers": [],
+  "participants": [],
+  "links": {
+    "self": [
+      {
+        "href": "https://git.bbServerHost.info/users/owner/repos/repoName/pull-requests/6"
+      }
+    ]
+  }
+}
