@@ -303,7 +303,7 @@ func TestGitLabClient_GetCommits(t *testing.T) {
 
 	result, err := client.GetCommits(ctx, owner, repo1, "master")
 
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	assert.Equal(t, CommitInfo{
 		Hash:          "ed899a2f4b50b4370feeea94676502b42383c746",
 		AuthorName:    "Example User",

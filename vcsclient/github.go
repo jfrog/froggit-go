@@ -458,7 +458,7 @@ func (client *GitHubClient) GetCommits(ctx context.Context, owner, repository, b
 		SHA: branch,
 		ListOptions: github.ListOptions{
 			Page:    1,
-			PerPage: 50,
+			PerPage: vcsutils.NumberOfCommitsToFetch,
 		},
 	}
 	commits, _, err := ghClient.Repositories.ListCommits(ctx, owner, repository, listOptions)

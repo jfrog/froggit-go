@@ -500,7 +500,7 @@ func (client *BitbucketServerClient) GetCommits(ctx context.Context, owner, repo
 	}
 
 	options := map[string]interface{}{
-		"limit": 50,
+		"limit": vcsutils.NumberOfCommitsToFetch,
 		"until": branch,
 	}
 	bitbucketClient := client.buildBitbucketClient(ctx)

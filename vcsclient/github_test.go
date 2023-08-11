@@ -315,7 +315,7 @@ func TestGitHubClient_GetCommits(t *testing.T) {
 
 	result, err := client.GetCommits(ctx, owner, repo1, "master")
 
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	assert.Equal(t, CommitInfo{
 		Hash:          "6dcb09b5b57875f334f61aebed695e2e4193db5e",
 		AuthorName:    "Monalisa Octocat",

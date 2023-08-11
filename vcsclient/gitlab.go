@@ -366,7 +366,7 @@ func (client *GitLabClient) GetCommits(ctx context.Context, owner, repository, b
 		RefName: &branch,
 		ListOptions: gitlab.ListOptions{
 			Page:    1,
-			PerPage: 50,
+			PerPage: vcsutils.NumberOfCommitsToFetch,
 		},
 	}
 
