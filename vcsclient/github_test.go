@@ -601,7 +601,7 @@ func TestGitHubClient_ListOpenPullRequests(t *testing.T) {
 
 func TestGitHubClient_GetPullRequestByID(t *testing.T) {
 	ctx := context.Background()
-	pullRequestId := 1
+	pullRequestId := 1347
 	repoName := "Hello-World"
 	forkedOwner := owner + "Forked"
 
