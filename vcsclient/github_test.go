@@ -573,7 +573,7 @@ func TestGitHubClient_ListOpenPullRequests(t *testing.T) {
 	assert.Len(t, result, 1)
 	assert.NoError(t, err)
 	assert.EqualValues(t, PullRequestInfo{
-		ID:     1347,
+		ID:     1,
 		Source: BranchInfo{Name: "new-topic", Repository: "Hello-World", Owner: owner},
 		Target: BranchInfo{Name: "master", Repository: "Hello-World", Owner: owner},
 		URL:    "https://github.com/octocat/Hello-World/pull/1347",
@@ -588,7 +588,7 @@ func TestGitHubClient_ListOpenPullRequests(t *testing.T) {
 	assert.Len(t, result, 1)
 	assert.NoError(t, err)
 	assert.EqualValues(t, PullRequestInfo{
-		ID:     1347,
+		ID:     1,
 		Body:   "hello world",
 		Source: BranchInfo{Name: "new-topic", Repository: "Hello-World", Owner: owner},
 		Target: BranchInfo{Name: "master", Repository: "Hello-World", Owner: owner},
