@@ -200,6 +200,12 @@ type VcsClient interface {
 	// branch     - The name of the branch
 	GetLatestCommit(ctx context.Context, owner, repository, branch string) (CommitInfo, error)
 
+	// GetCommits Gets the most recent commit of a branch
+	// owner      - User or organization
+	// repository - VCS repository name
+	// branch     - The name of the branch
+	GetCommits(ctx context.Context, owner, repository, branch string) ([]CommitInfo, error)
+
 	// AddSshKeyToRepository Adds a public ssh key to a repository
 	// owner      - User or organization
 	// repository - VCS repository name
@@ -288,6 +294,8 @@ type CommitInfo struct {
 	Message string
 	// The SHA-1 hashes of the parent commits
 	ParentHashes []string
+	// The email of the commit author
+	AuthorEmail string
 }
 
 type CommentInfo struct {

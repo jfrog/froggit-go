@@ -1,8 +1,9 @@
 package vcsutils
 
 const (
-	branchPrefix = "refs/heads/"
-	TagPrefix    = "refs/tags/"
+	branchPrefix           = "refs/heads/"
+	TagPrefix              = "refs/tags/"
+	NumberOfCommitsToFetch = 50
 )
 
 // VcsProvider is an enum represents the VCS provider type

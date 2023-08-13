@@ -326,33 +326,66 @@ func (client *AzureReposClient) GetPullRequestByID(ctx context.Context, owner, r
 
 // GetLatestCommit on Azure Repos
 func (client *AzureReposClient) GetLatestCommit(ctx context.Context, _, repository, branch string) (CommitInfo, error) {
-	azureReposGitClient, err := client.buildAzureReposClient(ctx)
+	commitsInfo, err := client.GetCommits(ctx, "", repository, branch)
 	if err != nil {
 		return CommitInfo{}, err
 	}
-	latestCommitInfo := CommitInfo{}
+
+	var latestCommit CommitInfo
+	if len(commitsInfo) > 0 {
+		latestCommit = commitsInfo[0]
+	}
+	return latestCommit, nil
+}
+
+// GetCommits on Azure Repos
+func (client *AzureReposClient) GetCommits(ctx context.Context, _, repository, branch string) ([]CommitInfo, error) {
+	azureReposGitClient, err := client.buildAzureReposClient(ctx)
+	if err != nil {
+		return nil, err
+	}
 	commits, err := azureReposGitClient.GetCommits(ctx, git.GetCommitsArgs{
 		RepositoryId:   &repository,
 		Project:        &client.vcsInfo.Project,
 		SearchCriteria: &git.GitQueryCommitsCriteria{ItemVersion: &git.GitVersionDescriptor{Version: &branch, VersionType: &git.GitVersionTypeValues.Branch}},
 	})
 	if err != nil {
-		return latestCommitInfo, err
+		return nil, err
 	}
-	if len(*commits) > 0 {
-		// The latest commit is the first in the list
-		latestCommit := (*commits)[0]
-		latestCommitInfo = CommitInfo{
-			Hash:          vcsutils.DefaultIfNotNil(latestCommit.CommitId),
-			AuthorName:    vcsutils.DefaultIfNotNil(latestCommit.Author.Name),
-			CommitterName: vcsutils.DefaultIfNotNil(latestCommit.Committer.Name),
-			Url:           vcsutils.DefaultIfNotNil(latestCommit.Url),
-			Timestamp:     latestCommit.Committer.Date.Time.Unix(),
-			Message:       vcsutils.DefaultIfNotNil(latestCommit.Comment),
-			ParentHashes:  vcsutils.DefaultIfNotNil(latestCommit.Parents),
-		}
+	if commits == nil {
+		return nil, fmt.Errorf("could not retrieve commits for <%s/%s>", repository, branch)
 	}
-	return latestCommitInfo, nil
+
+	var commitsInfo []CommitInfo
+	for _, commit := range *commits {
+		commitInfo := mapAzureReposCommitsToCommitInfo(commit)
+		commitsInfo = append(commitsInfo, commitInfo)
+	}
+	return commitsInfo, nil
+}
+
+func mapAzureReposCommitsToCommitInfo(commit git.GitCommitRef) CommitInfo {
+	var authorName, authorEmail string
+	if commit.Author != nil {
+		authorName = vcsutils.DefaultIfNotNil(commit.Author.Name)
+		authorEmail = vcsutils.DefaultIfNotNil(commit.Author.Email)
+	}
+	var committerName string
+	var timestamp int64
+	if commit.Committer != nil {
+		committerName = vcsutils.DefaultIfNotNil(commit.Committer.Name)
+		timestamp = vcsutils.DefaultIfNotNil(commit.Committer.Date).Time.Unix()
+	}
+	return CommitInfo{
+		Hash:          vcsutils.DefaultIfNotNil(commit.CommitId),
+		AuthorName:    authorName,
+		CommitterName: committerName,
+		Url:           vcsutils.DefaultIfNotNil(commit.Url),
+		Timestamp:     timestamp,
+		Message:       vcsutils.DefaultIfNotNil(commit.Comment),
+		ParentHashes:  vcsutils.DefaultIfNotNil(commit.Parents),
+		AuthorEmail:   authorEmail,
+	}
 }
 
 func getUnsupportedInAzureError(functionName string) error {

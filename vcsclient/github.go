@@ -462,35 +462,49 @@ func (client *GitHubClient) DeletePullRequestComment(ctx context.Context, owner,
 
 // GetLatestCommit on GitHub
 func (client *GitHubClient) GetLatestCommit(ctx context.Context, owner, repository, branch string) (CommitInfo, error) {
+	commits, err := client.GetCommits(ctx, owner, repository, branch)
+	if err != nil {
+		return CommitInfo{}, err
+	}
+	latestCommit := CommitInfo{}
+	if len(commits) > 0 {
+		latestCommit = commits[0]
+	}
+	return latestCommit, nil
+}
+
+// GetCommits on GitHub
+func (client *GitHubClient) GetCommits(ctx context.Context, owner, repository, branch string) ([]CommitInfo, error) {
 	err := validateParametersNotBlank(map[string]string{
 		"owner":      owner,
 		"repository": repository,
 		"branch":     branch,
 	})
 	if err != nil {
-		return CommitInfo{}, err
+		return nil, err
 	}
 
 	ghClient, err := client.buildGithubClient(ctx)
 	if err != nil {
-		return CommitInfo{}, err
+		return nil, err
 	}
 	listOptions := &github.CommitsListOptions{
 		SHA: branch,
 		ListOptions: github.ListOptions{
 			Page:    1,
-			PerPage: 1,
+			PerPage: vcsutils.NumberOfCommitsToFetch,
 		},
 	}
 	commits, _, err := ghClient.Repositories.ListCommits(ctx, owner, repository, listOptions)
 	if err != nil {
-		return CommitInfo{}, err
+		return nil, err
 	}
-	if len(commits) > 0 {
-		latestCommit := commits[0]
-		return mapGitHubCommitToCommitInfo(latestCommit), nil
+	var commitsInfo []CommitInfo
+	for _, commit := range commits {
+		commitInfo := mapGitHubCommitToCommitInfo(commit)
+		commitsInfo = append(commitsInfo, commitInfo)
 	}
-	return CommitInfo{}, nil
+	return commitsInfo, nil
 }
 
 // GetRepositoryInfo on GitHub
@@ -849,6 +863,7 @@ func mapGitHubCommitToCommitInfo(commit *github.RepositoryCommit) CommitInfo {
 		Timestamp:     details.GetCommitter().GetDate().UTC().Unix(),
 		Message:       details.GetMessage(),
 		ParentHashes:  parents,
+		AuthorEmail:   details.GetAuthor().GetEmail(),
 	}
 }
 
