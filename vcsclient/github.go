@@ -353,21 +353,23 @@ func mapGitHubPullRequestToPullRequestInfo(ghPullRequest *github.PullRequest, wi
 
 	var sourceRepoName, sourceRepoOwner string
 	if ghPullRequest.Head.Repo == nil {
-		return PullRequestInfo{}, errors.New("the target repository information is missing when fetching the pull request details")
+		return PullRequestInfo{}, errors.New("the source repository information is missing when fetching the pull request details")
 	}
 	if ghPullRequest.Head.Repo.Owner == nil {
-		return PullRequestInfo{}, errors.New("the target repository owner name is missing when fetching the pull request details")
+		return PullRequestInfo{}, errors.New("the source repository owner name is missing when fetching the pull request details")
 	}
 	sourceRepoName = vcsutils.DefaultIfNotNil(ghPullRequest.Head.Repo.Name)
 	sourceRepoOwner = vcsutils.DefaultIfNotNil(ghPullRequest.Head.Repo.Owner.Login)
 
 	var targetRepoName, targetRepoOwner string
 	if ghPullRequest.Base.Repo == nil {
-		return PullRequestInfo{}, errors.New("the source repository information is missing when fetching the pull request details")
+		return PullRequestInfo{}, errors.New("the target repository information is missing when fetching the pull request details")
 	}
 	if ghPullRequest.Base.Repo.Owner == nil {
-		return PullRequestInfo{}, errors.New("the source repository owner name is missing when fetching the pull request details")
+		return PullRequestInfo{}, errors.New("the target repository owner name is missing when fetching the pull request details")
 	}
+	targetRepoName = vcsutils.DefaultIfNotNil(ghPullRequest.Base.Repo.Name)
+	targetRepoOwner = vcsutils.DefaultIfNotNil(ghPullRequest.Base.Repo.Owner.Login)
 
 	var body string
 	if withBody {
