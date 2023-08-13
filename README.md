@@ -46,6 +46,7 @@ Currently supported providers are: [GitHub](#github), [Bitbucket Server](#bitbuc
       - [List Open Pull Requests With Body](#list-open-pull-requests-with-body)
       - [Add Pull Request Comment](#add-pull-request-comment)
       - [List Pull Request Comments](#list-pull-request-comments)
+      - [Get Commits](#get-commits)
       - [Get Latest Commit](#get-latest-commit)
       - [Get Commit By SHA](#get-commit-by-sha)
       - [Get List of Modified Files](#get-list-of-modified-files)
@@ -429,6 +430,22 @@ repository := "jfrog-cli"
 pullRequestID := 5
 
 pullRequestComments, err := client.ListPullRequestComment(ctx, owner, repository, pullRequestID)
+```
+
+#### Get Commits
+
+```go
+// Go context
+ctx := context.Background()
+// Organization or username
+owner := "jfrog"
+// VCS repository
+repository := "jfrog-cli"
+// VCS branch
+branch := "dev"
+
+// Commits information of the latest branch commits 
+commitInfo, err := client.GetCommits(ctx, owner, repository, branch)
 ```
 
 #### Get Latest Commit
