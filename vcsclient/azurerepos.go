@@ -586,7 +586,7 @@ func parsePullRequestDetails(client *AzureReposClient, pullRequest git.GitPullRe
 		prBody = *bodyPtr
 	}
 
-	// When a pull request is from a forked repository,extract the owner.
+	// When a pull request is from a forked repository, extract the owner.
 	sourceRepoOwner := owner
 	if pullRequest.ForkSource != nil {
 		if sourceRepoOwner = extractOwnerFromForkedRepoUrl(pullRequest.ForkSource); sourceRepoOwner == "" {
@@ -597,6 +597,7 @@ func parsePullRequestDetails(client *AzureReposClient, pullRequest git.GitPullRe
 	return PullRequestInfo{
 		ID:   int64(*pullRequest.PullRequestId),
 		Body: prBody,
+		URL:  vcsutils.DefaultIfNotNil(pullRequest.Url),
 		Source: BranchInfo{
 			Name:       shortSourceName,
 			Repository: repository,

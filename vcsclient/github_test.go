@@ -534,9 +534,10 @@ func TestGitHubClient_ListOpenPullRequests(t *testing.T) {
 	assert.Len(t, result, 1)
 	assert.NoError(t, err)
 	assert.EqualValues(t, PullRequestInfo{
-		ID:     1,
+		ID:     1347,
 		Source: BranchInfo{Name: "new-topic", Repository: "Hello-World", Owner: owner},
 		Target: BranchInfo{Name: "master", Repository: "Hello-World", Owner: owner},
+		URL:    "https://github.com/octocat/Hello-World/pull/1347",
 	}, result[0])
 
 	_, err = createBadGitHubClient(t).ListPullRequestComments(ctx, owner, repo1, 1)
@@ -548,10 +549,11 @@ func TestGitHubClient_ListOpenPullRequests(t *testing.T) {
 	assert.Len(t, result, 1)
 	assert.NoError(t, err)
 	assert.EqualValues(t, PullRequestInfo{
-		ID:     1,
+		ID:     1347,
 		Body:   "hello world",
 		Source: BranchInfo{Name: "new-topic", Repository: "Hello-World", Owner: owner},
 		Target: BranchInfo{Name: "master", Repository: "Hello-World", Owner: owner},
+		URL:    "https://github.com/octocat/Hello-World/pull/1347",
 	}, result[0])
 
 	_, err = createBadGitHubClient(t).ListPullRequestComments(ctx, owner, repo1, 1)
@@ -577,6 +579,7 @@ func TestGitHubClient_GetPullRequestByID(t *testing.T) {
 		ID:     int64(pullRequestId),
 		Source: BranchInfo{Name: "new-topic", Repository: "Hello-World", Owner: owner},
 		Target: BranchInfo{Name: "master", Repository: "Hello-World", Owner: forkedOwner},
+		URL:    "https://github.com/octocat/Hello-World/pull/1347",
 	}, result)
 
 	// Bad Labels

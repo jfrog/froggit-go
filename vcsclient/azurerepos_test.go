@@ -185,6 +185,7 @@ func TestAzureRepos_TestListOpenPullRequests(t *testing.T) {
 		Count int
 	}
 	pullRequestId := 1
+	url := "https://dev.azure.com/owner/project/_git/repo/pullrequest/47"
 	res := ListOpenPullRequestsResponse{
 		Value: []git.GitPullRequest{
 			{
@@ -192,6 +193,7 @@ func TestAzureRepos_TestListOpenPullRequests(t *testing.T) {
 				Repository:    &git.GitRepository{Name: &repo1},
 				SourceRefName: &branch1,
 				TargetRefName: &branch2,
+				Url:           &url,
 			},
 		},
 		Count: 1,
@@ -203,7 +205,14 @@ func TestAzureRepos_TestListOpenPullRequests(t *testing.T) {
 	defer cleanUp()
 	pullRequestsInfo, err := client.ListOpenPullRequests(ctx, "", repo1)
 	assert.NoError(t, err)
-	assert.EqualValues(t, pullRequestsInfo, []PullRequestInfo{{ID: 1, Source: BranchInfo{Name: branch1, Repository: repo1}, Target: BranchInfo{Name: branch2, Repository: repo1}}})
+	assert.EqualValues(t, pullRequestsInfo, []PullRequestInfo{
+		{
+			ID:     1,
+			Source: BranchInfo{Name: branch1, Repository: repo1},
+			Target: BranchInfo{Name: branch2, Repository: repo1},
+			URL:    url,
+		},
+	})
 
 	badClient, cleanUp := createBadAzureReposClient(t, []byte{})
 	defer cleanUp()
@@ -217,6 +226,7 @@ func TestAzureRepos_TestListOpenPullRequests(t *testing.T) {
 			{
 				PullRequestId: &pullRequestId,
 				Description:   &prBody,
+				Url:           &url,
 				Repository:    &git.GitRepository{Name: &repo1},
 				SourceRefName: &branch1,
 				TargetRefName: &branch2,
@@ -231,7 +241,15 @@ func TestAzureRepos_TestListOpenPullRequests(t *testing.T) {
 	defer cleanUp()
 	pullRequestsInfo, err = client.ListOpenPullRequestsWithBody(ctx, "", repo1)
 	assert.NoError(t, err)
-	assert.EqualValues(t, pullRequestsInfo, []PullRequestInfo{{ID: 1, Body: prBody, Source: BranchInfo{Name: branch1, Repository: repo1}, Target: BranchInfo{Name: branch2, Repository: repo1}}})
+	assert.EqualValues(t, pullRequestsInfo, []PullRequestInfo{
+		{
+			ID:     1,
+			Body:   prBody,
+			Source: BranchInfo{Name: branch1, Repository: repo1},
+			Target: BranchInfo{Name: branch2, Repository: repo1},
+			URL:    url,
+		},
+	})
 
 	badClient, cleanUp = createBadAzureReposClient(t, []byte{})
 	defer cleanUp()
@@ -246,6 +264,7 @@ func TestAzureReposClient_GetPullRequest(t *testing.T) {
 	targetName := "master"
 	forkedOwner := "jfrogForked"
 	forkedSourceUrl := fmt.Sprintf("https://dev.azure.com/%s/201f2c7f-305a-446c-a1d6-a04ec811093b/_apis/git/repositories/82d33a66-8971-4279-9687-19c69e66e114", forkedOwner)
+	url := "https://dev.azure.com/owner/project/_git/repo/pullrequest/47"
 	res := git.GitPullRequest{
 		SourceRefName: &sourceName,
 		TargetRefName: &targetName,
@@ -253,6 +272,7 @@ func TestAzureReposClient_GetPullRequest(t *testing.T) {
 		ForkSource: &git.GitForkRef{
 			Repository: &git.GitRepository{Url: &forkedSourceUrl},
 		},
+		Url: &url,
 	}
 	jsonRes, err := json.Marshal(res)
 	assert.NoError(t, err)
@@ -261,9 +281,12 @@ func TestAzureReposClient_GetPullRequest(t *testing.T) {
 	defer cleanUp()
 	pullRequestsInfo, err := client.GetPullRequestByID(ctx, owner, repoName, pullRequestId)
 	assert.NoError(t, err)
-	assert.EqualValues(t, pullRequestsInfo, PullRequestInfo{ID: 1,
+	assert.EqualValues(t, pullRequestsInfo, PullRequestInfo{
+		ID:     1,
 		Source: BranchInfo{Name: sourceName, Repository: repoName, Owner: forkedOwner},
-		Target: BranchInfo{Name: targetName, Repository: repoName, Owner: owner}})
+		Target: BranchInfo{Name: targetName, Repository: repoName, Owner: owner},
+		URL:    url,
+	})
 
 	// Fail source repository owner extraction, should be empty string and not fail the process.
 	res = git.GitPullRequest{
@@ -273,15 +296,20 @@ func TestAzureReposClient_GetPullRequest(t *testing.T) {
 		ForkSource: &git.GitForkRef{
 			Repository: &git.GitRepository{Url: &repoName},
 		},
+		Url: &url,
 	}
 	jsonRes, err = json.Marshal(res)
 	assert.NoError(t, err)
 	client, _ = createServerAndClient(t, vcsutils.AzureRepos, true, jsonRes, fmt.Sprintf("getPullRequests/%d", pullRequestId), createAzureReposHandler)
 	pullRequestsInfo, err = client.GetPullRequestByID(ctx, owner, repoName, pullRequestId)
 	assert.NoError(t, err)
-	assert.EqualValues(t, pullRequestsInfo, PullRequestInfo{ID: 1,
+	assert.EqualValues(t, pullRequestsInfo, PullRequestInfo{
+		ID:     1,
 		Source: BranchInfo{Name: sourceName, Repository: repoName, Owner: ""},
-		Target: BranchInfo{Name: targetName, Repository: repoName, Owner: owner}})
+		Target: BranchInfo{Name: targetName, Repository: repoName, Owner: owner},
+		URL:    url,
+	},
+	)
 
 	// Bad client
 	badClient, cleanUp := createBadAzureReposClient(t, []byte{})
