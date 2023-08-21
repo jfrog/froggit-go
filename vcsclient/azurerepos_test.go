@@ -221,6 +221,8 @@ func TestAzureRepos_TestListOpenPullRequests(t *testing.T) {
 
 	// Test with body
 	prBody := "hello world"
+	branch1WithPrefix := "refs/heads/" + branch1
+	branch2WithPrefix := "refs/heads/" + branch2
 	res = ListOpenPullRequestsResponse{
 		Value: []git.GitPullRequest{
 			{
@@ -228,8 +230,8 @@ func TestAzureRepos_TestListOpenPullRequests(t *testing.T) {
 				Description:   &prBody,
 				Url:           &url,
 				Repository:    &git.GitRepository{Name: &repo1},
-				SourceRefName: &branch1,
-				TargetRefName: &branch2,
+				SourceRefName: &branch1WithPrefix,
+				TargetRefName: &branch2WithPrefix,
 			},
 		},
 		Count: 1,
