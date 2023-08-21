@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/jfrog/froggit-go/vcsutils"
 	"github.com/jfrog/gofrog/datastructures"
 	"github.com/microsoft/azure-devops-go-api/azuredevops"
@@ -610,8 +611,8 @@ func (client *AzureReposClient) GetModifiedFiles(ctx context.Context, _, reposit
 
 func parsePullRequestDetails(client *AzureReposClient, pullRequest git.GitPullRequest, owner, repository string, withBody bool) PullRequestInfo {
 	// Trim the branches prefix and get the actual branches name
-	shortSourceName := (*pullRequest.SourceRefName)[strings.LastIndex(*pullRequest.SourceRefName, "/")+1:]
-	shortTargetName := (*pullRequest.TargetRefName)[strings.LastIndex(*pullRequest.TargetRefName, "/")+1:]
+	shortSourceName := plumbing.ReferenceName(*pullRequest.SourceRefName).Short()
+	shortTargetName := plumbing.ReferenceName(*pullRequest.TargetRefName).Short()
 
 	var prBody string
 	bodyPtr := pullRequest.Description
