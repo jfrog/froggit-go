@@ -467,6 +467,11 @@ func TestAzureReposClient_GetRepositoryInfo(t *testing.T) {
 		RepositoryVisibility: 2,
 	}, repo)
 	assert.NoError(t, err)
+
+	badClient, cleanUp := createBadAzureReposClient(t, []byte{})
+	defer cleanUp()
+	_, err = badClient.GetRepositoryInfo(ctx, "project", "test")
+	assert.Error(t, err)
 }
 
 func TestAzureReposClient_GetCommitBySha(t *testing.T) {

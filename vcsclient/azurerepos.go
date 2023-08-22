@@ -421,13 +421,10 @@ func (client *AzureReposClient) GetRepositoryInfo(ctx context.Context, project, 
 }
 
 func getAzureDevOpsVisibility(visibility core.ProjectVisibility) RepositoryVisibility {
-	switch visibility {
-	case "private":
+	if visibility == "private" {
 		return Private
-	case "public":
-		return Public
 	}
-	return Private
+	return Public
 }
 
 // GetCommitBySha on Azure Repos
