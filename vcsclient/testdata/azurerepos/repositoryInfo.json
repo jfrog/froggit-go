@@ -1,0 +1,15 @@
+{
+  "id": "2f3d611a-f012-4b39-b157-8db63f380226",
+  "name": "FabrikamCloud",
+  "url": "https://dev.azure.com/fabrikam/_apis/git/repositories/2f3d611a-f012-4b39-b157-8db63f380226",
+  "project": {
+    "id": "3b3ae425-0079-421f-9101-bcf15d6df041",
+    "name": "FabrikamCloud",
+    "url": "https://dev.azure.com/fabrikam/_apis/projects/3b3ae425-0079-421f-9101-bcf15d6df041",
+    "state": "",
+    "revision": 411518573,
+    "visibility": "private"
+  },
+  "remoteUrl": "https://dev.azure.com/fabrikam/FabrikamCloud/_git/FabrikamCloud",
+  "sshUrl": "ssh://dev.azure.com/fabrikam/_apis/projects/3b3ae425-0079-421f-9101-bcf15d6df041"
+}

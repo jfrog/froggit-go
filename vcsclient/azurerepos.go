@@ -9,6 +9,7 @@ import (
 	"github.com/jfrog/froggit-go/vcsutils"
 	"github.com/jfrog/gofrog/datastructures"
 	"github.com/microsoft/azure-devops-go-api/azuredevops"
+	"github.com/microsoft/azure-devops-go-api/azuredevops/core"
 	"github.com/microsoft/azure-devops-go-api/azuredevops/git"
 	"io"
 	"net/http"
@@ -399,8 +400,34 @@ func (client *AzureReposClient) AddSshKeyToRepository(ctx context.Context, owner
 }
 
 // GetRepositoryInfo on Azure Repos
-func (client *AzureReposClient) GetRepositoryInfo(ctx context.Context, owner, repository string) (RepositoryInfo, error) {
-	return RepositoryInfo{}, getUnsupportedInAzureError("get repository info")
+// Notice how Owner is replaced here with Project
+func (client *AzureReposClient) GetRepositoryInfo(ctx context.Context, project, repository string) (RepositoryInfo, error) {
+	azureReposGitClient, err := client.buildAzureReposClient(ctx)
+	if err != nil {
+		return RepositoryInfo{}, err
+	}
+	repo, err := azureReposGitClient.GetRepository(ctx, git.GetRepositoryArgs{
+		RepositoryId: &repository, Project: &project,
+	})
+	if err != nil {
+		return RepositoryInfo{}, err
+	}
+	return RepositoryInfo{
+		CloneInfo: CloneInfo{
+			HTTP: *repo.RemoteUrl,
+			SSH:  *repo.SshUrl,
+		}, RepositoryVisibility: getAzureDevOpsVisibility(*repo.Project.Visibility),
+	}, nil
+}
+
+func getAzureDevOpsVisibility(visibility core.ProjectVisibility) RepositoryVisibility {
+	switch visibility {
+	case "private":
+		return Private
+	case "public":
+		return Public
+	}
+	return Private
 }
 
 // GetCommitBySha on Azure Repos

@@ -451,10 +451,22 @@ func TestAzureReposClient_CreateLabel(t *testing.T) {
 
 func TestAzureReposClient_GetRepositoryInfo(t *testing.T) {
 	ctx := context.Background()
-	client, cleanUp := createServerAndClient(t, vcsutils.AzureRepos, true, "", "unsupportedTest", createAzureReposHandler)
+	// listRepositories and GetRepositoryInfo has the same location ID in azuredevops
+	expectedUri := "listRepositories"
+	response, err := os.ReadFile(filepath.Join("testdata", "azurerepos", "repositoryInfo.json"))
+	assert.NoError(t, err)
+	client, cleanUp := createServerAndClient(t, vcsutils.AzureRepos, true, response, expectedUri, createAzureReposHandler)
 	defer cleanUp()
-	_, err := client.GetRepositoryInfo(ctx, owner, repo1)
-	assert.Error(t, err)
+	repo, err := client.GetRepositoryInfo(ctx, owner, repo1)
+	assert.NoError(t, err)
+	assert.Equal(t, RepositoryInfo{
+		CloneInfo: CloneInfo{
+			HTTP: "https://dev.azure.com/fabrikam/FabrikamCloud/_git/FabrikamCloud",
+			SSH:  "ssh://dev.azure.com/fabrikam/_apis/projects/3b3ae425-0079-421f-9101-bcf15d6df041",
+		},
+		RepositoryVisibility: 2,
+	}, repo)
+	assert.NoError(t, err)
 }
 
 func TestAzureReposClient_GetCommitBySha(t *testing.T) {
