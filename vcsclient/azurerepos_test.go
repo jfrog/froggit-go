@@ -749,3 +749,8 @@ func createBadAzureReposClient(t *testing.T, response []byte) (VcsClient, func()
 		createAzureReposHandler)
 	return client, cleanUp
 }
+
+func TestAzureReposClient_getAzureDevOpsVisibility(t *testing.T) {
+	assert.Equal(t, Public, getAzureDevOpsVisibility("public"))
+	assert.Equal(t, Private, getAzureDevOpsVisibility("private"))
+}
