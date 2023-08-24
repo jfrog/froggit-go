@@ -182,6 +182,7 @@ func TestGitHubClient_getRepositoryVisibility(t *testing.T) {
 	assert.Equal(t, Internal, getGitHubRepositoryVisibility(&github.Repository{Visibility: &visibility}))
 	visibility = "private"
 	assert.Equal(t, Private, getGitHubRepositoryVisibility(&github.Repository{Visibility: &visibility}))
+	assert.Equal(t, Private, getGitHubRepositoryVisibility(&github.Repository{}))
 }
 
 func TestGitHubClient_getGitHubCommitState(t *testing.T) {
