@@ -826,7 +826,7 @@ func getGitHubWebhookEvents(webhookEvents ...vcsutils.WebhookEvent) []string {
 
 func getGitHubRepositoryVisibility(repo *github.Repository) RepositoryVisibility {
 	if repo == nil || repo.Visibility == nil {
-		// Return default value private is this is most restricted visibility
+		// Return default value private as this is most restricted visibility.
 		return Private
 	}
 	switch *repo.Visibility {
