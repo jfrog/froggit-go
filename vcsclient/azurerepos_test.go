@@ -39,7 +39,7 @@ func TestAzureRepos_ListRepositories(t *testing.T) {
 	jsonRes, err := json.Marshal(res)
 	assert.NoError(t, err)
 	ctx := context.Background()
-	client, cleanUp := createServerAndClient(t, vcsutils.AzureRepos, true, jsonRes, "listRepositories", createAzureReposHandler)
+	client, cleanUp := createServerAndClient(t, vcsutils.AzureRepos, true, jsonRes, "getRepository", createAzureReposHandler)
 	defer cleanUp()
 	reposMap, err := client.ListRepositories(ctx)
 	assert.NoError(t, err)
@@ -92,7 +92,7 @@ func TestAzureRepos_TestDownloadRepository(t *testing.T) {
 		repo1,
 		branch1)
 	client, cleanUp := createServerAndClient(t, vcsutils.AzureRepos, true,
-		repoFile, downloadURL, createAzureReposHandler)
+		repoFile, downloadURL, createGetRepositoryAzureReposHandler)
 	defer cleanUp()
 	err = client.DownloadRepository(ctx, "", repo1, branch1, dir)
 	assert.NoError(t, err)
@@ -449,11 +449,11 @@ func TestAzureReposClient_CreateLabel(t *testing.T) {
 	assert.Error(t, client.CreateLabel(ctx, owner, repo1, LabelInfo{}))
 }
 
-func TestAzureReposClient_GetRepositoryInfo(t *testing.T) {
+func TestAzureReposClient_GetRepositoryEnvironmentInfo(t *testing.T) {
 	ctx := context.Background()
 	client, cleanUp := createServerAndClient(t, vcsutils.AzureRepos, true, "", "unsupportedTest", createAzureReposHandler)
 	defer cleanUp()
-	_, err := client.GetRepositoryInfo(ctx, owner, repo1)
+	_, err := client.GetRepositoryEnvironmentInfo(ctx, owner, repo1, "")
 	assert.Error(t, err)
 }
 
@@ -547,19 +547,22 @@ func TestAzureReposClient_SetCommitStatus(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestAzureReposClient_GetRepositoryInfo(t *testing.T) {
+	ctx := context.Background()
+	client, cleanUp := createServerAndClient(t, vcsutils.AzureRepos, true, "", "/_apis/ResourceAreas/getRepository", createGetRepositoryAzureReposHandler)
+	defer cleanUp()
+	repositoryInfo, err := client.GetRepositoryInfo(ctx, "jfrog", "froggit-go")
+	assert.NoError(t, err)
+	assert.Equal(t, repositoryInfo.CloneInfo.HTTP, "https://jfrog@dev.azure.com/jfrog/froggit-go/_git/froggit-go")
+	assert.Equal(t, repositoryInfo.CloneInfo.SSH, "git@ssh.dev.azure.com:v3/jfrog/froggit-go/froggit-go")
+	assert.Equal(t, repositoryInfo.RepositoryVisibility, Public)
+}
+
 func TestAzureReposClient_GetLabel(t *testing.T) {
 	ctx := context.Background()
 	client, cleanUp := createServerAndClient(t, vcsutils.AzureRepos, true, "", "unsupportedTest", createAzureReposHandler)
 	defer cleanUp()
 	_, err := client.GetLabel(ctx, owner, repo1, "")
-	assert.Error(t, err)
-}
-
-func TestAzureReposClient_GetRepositoryEnvironmentInfo(t *testing.T) {
-	ctx := context.Background()
-	client, cleanUp := createServerAndClient(t, vcsutils.AzureRepos, true, "", "unsupportedTest", createAzureReposHandler)
-	defer cleanUp()
-	_, err := client.GetRepositoryEnvironmentInfo(ctx, owner, repo1, envName)
 	assert.Error(t, err)
 }
 
@@ -719,6 +722,38 @@ func createAzureReposHandler(t *testing.T, expectedURI string, response []byte, 
 	}
 }
 
+func createGetRepositoryAzureReposHandler(t *testing.T, expectedURI string, response []byte, expectedStatusCode int) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		base64Token := base64.StdEncoding.EncodeToString([]byte(":" + token))
+		assert.Equal(t, "Basic "+base64Token, r.Header.Get("Authorization"))
+		if r.RequestURI == "/_apis" {
+			jsonVal, err := os.ReadFile(filepath.Join("./", "testdata", "azurerepos", "resourcesResponse.json"))
+			assert.NoError(t, err)
+			_, err = w.Write(jsonVal)
+			assert.NoError(t, err)
+			return
+		} else if r.RequestURI == "/_apis/ResourceAreas" {
+			jsonVal := `{"value": [],"count": 0}`
+			_, err := w.Write([]byte(jsonVal))
+			assert.NoError(t, err)
+			return
+		} else if r.RequestURI == "/_apis/ResourceAreas/getRepository" {
+			jsonVal := `{"id":"23d122fb-c6c1-4f03-8117-a10a08f8b0d6","name":"froggit-go","url":"https://dev.azure.com/jfrog/638e3921-f5e3-46e6-a11f-a139cb9bd511/_apis/git/repositories/23d122fb-c6c1-4f03-8117-a10a08f8b0d6","project":{"id":"638e3921-f5e3-46e6-a11f-a139cb9bd511","name":"froggit-go","visibility":"public"},"defaultBranch":"refs/heads/main","remoteUrl":"https://jfrog@dev.azure.com/jfrog/froggit-go/_git/froggit-go","sshUrl":"git@ssh.dev.azure.com:v3/jfrog/froggit-go/froggit-go","isDisabled":false,"isInMaintenance":false}`
+			_, err := w.Write([]byte(jsonVal))
+			assert.NoError(t, err)
+			return
+		}
+
+		if !strings.Contains(expectedURI, "bad^endpoint") {
+			assert.Contains(t, r.RequestURI, expectedURI)
+			w.WriteHeader(expectedStatusCode)
+			_, err := w.Write(response)
+			assert.NoError(t, err)
+			return
+		}
+		w.WriteHeader(http.StatusNotFound)
+	}
+}
 func createBadAzureReposClient(t *testing.T, response []byte) (VcsClient, func()) {
 	client, cleanUp := createServerAndClient(
 		t,
@@ -731,24 +766,4 @@ func createBadAzureReposClient(t *testing.T, response []byte) (VcsClient, func()
 			branch1),
 		createAzureReposHandler)
 	return client, cleanUp
-}
-
-func TestAzureReposClient_GetGitRemoteUrl(t *testing.T) {
-	testCase := struct {
-		name           string
-		apiEndpoint    string
-		owner          string
-		repo           string
-		expectedResult string
-	}{
-		name:           "Azure Repos Cloud",
-		apiEndpoint:    "https://dev.azure.com/my-org",
-		owner:          "my-org",
-		repo:           "my-repo",
-		expectedResult: "https://my-org@dev.azure.com/my-org/project/_git/my-repo",
-	}
-	info := VcsInfo{APIEndpoint: testCase.apiEndpoint, Project: "project"}
-	client, err := NewAzureReposClient(info, nil)
-	assert.NoError(t, err)
-	assert.Equal(t, testCase.expectedResult, client.GetGitRemoteURL(testCase.owner, testCase.repo))
 }

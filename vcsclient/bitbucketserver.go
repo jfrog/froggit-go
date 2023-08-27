@@ -266,16 +266,15 @@ func (client *BitbucketServerClient) DownloadRepository(ctx context.Context, own
 		return err
 	}
 	client.logger.Info(successfulRepoExtraction)
+	repositoryInfo, err := client.GetRepositoryInfo(ctx, owner, repository)
+	if err != nil {
+		return err
+	}
 	// Generate .git folder with remote details
 	return vcsutils.CreateDotGitFolderWithRemote(
 		localPath,
 		vcsutils.RemoteName,
-		client.GetGitRemoteURL(owner, repository))
-}
-
-// GetGitRemoteURL on Bitbucket Server
-func (client *BitbucketServerClient) GetGitRemoteURL(owner, repository string) string {
-	return vcsutils.GetGenericGitRemoteUrl(fmt.Sprintf("%s/scm", strings.TrimSuffix(client.vcsInfo.APIEndpoint, "/rest")), owner, repository)
+		repositoryInfo.CloneInfo.HTTP)
 }
 
 // CreatePullRequest on Bitbucket server

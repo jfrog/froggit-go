@@ -135,7 +135,7 @@ func TestGitLabClient_DownloadRepository(t *testing.T) {
 	assert.NoError(t, err)
 
 	ref := "5fbf81b31ff7a3b06bd362d1891e2f01bdb2be69"
-	client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, repoFile, fmt.Sprintf("/api/v4/projects/%s/repository/archive.tar.gz?sha=%s", url.PathEscape(owner+"/"+repo1), ref), createGitLabHandler)
+	client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, repoFile, fmt.Sprintf("/api/v4/projects/%s/repository/archive.tar.gz?sha=%s", url.PathEscape(owner+"/"+repo1), ref), createDownloadRepositoryGitLabHandler)
 	defer cleanUp()
 
 	err = client.DownloadRepository(ctx, owner, repo1, ref, dir)
@@ -633,6 +633,28 @@ func createGitLabHandler(t *testing.T, expectedURI string, response []byte, expe
 		assert.Equal(t, token, r.Header.Get("Private-Token"))
 	}
 }
+
+func createDownloadRepositoryGitLabHandler(t *testing.T, expectedURI string, response []byte, expectedStatusCode int) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.RequestURI == "/api/v4/" {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+		if r.RequestURI == "/api/v4/projects/jfrog%2Frepo-1" {
+			repositoryResponse, err := os.ReadFile(filepath.Join("testdata", "gitlab", "repository_response.json"))
+			assert.NoError(t, err)
+			_, err = w.Write(repositoryResponse)
+			assert.NoError(t, err)
+			return
+		}
+		w.WriteHeader(expectedStatusCode)
+		_, err := w.Write(response)
+		assert.NoError(t, err)
+		assert.Equal(t, expectedURI, r.RequestURI)
+		assert.Equal(t, token, r.Header.Get("Private-Token"))
+	}
+}
+
 func createGitLabWithPaginationHandler(t *testing.T, _ string, response []byte, _ []byte, expectedStatusCode int, expectedHttpMethod string) http.HandlerFunc {
 	var repos []gitlab.Project
 	err := json.Unmarshal(response, &repos)
@@ -785,37 +807,4 @@ func TestGitLabClient_getProjectOwnerByID(t *testing.T) {
 	projectOwner, err = badGlClient.getProjectOwnerByID(projectID)
 	assert.Error(t, err)
 	assert.NotEqual(t, "test", projectOwner)
-}
-
-func TestGitLabClient_GetGitRemoteUrl(t *testing.T) {
-	testCases := []struct {
-		name           string
-		apiEndpoint    string
-		owner          string
-		repo           string
-		expectedResult string
-	}{
-		{
-			name:           "GitLab Cloud",
-			apiEndpoint:    "https://gitlab.com",
-			owner:          "my-org",
-			repo:           "my-repo",
-			expectedResult: "https://gitlab.com/my-org/my-repo.git",
-		},
-		{
-			name:           "GitLab On-Premises",
-			apiEndpoint:    "https://gitlab.example.com/",
-			owner:          "my-org",
-			repo:           "my-repo",
-			expectedResult: "https://gitlab.example.com/my-org/my-repo.git",
-		},
-	}
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			info := VcsInfo{APIEndpoint: tc.apiEndpoint}
-			client, err := NewGitLabClient(info, nil)
-			assert.NoError(t, err)
-			assert.Equal(t, tc.expectedResult, client.GetGitRemoteURL(tc.owner, tc.repo))
-		})
-	}
 }

@@ -291,21 +291,6 @@ func CreateDotGitFolderWithRemote(path, remoteName, remoteUrl string) error {
 	return err
 }
 
-func GetBaseURLFromApiEndpoint(apiEndpoint, providerCloudBaseUrl, apiVersion string) string {
-	var baseUrl string
-	if apiEndpoint == "" {
-		baseUrl = providerCloudBaseUrl
-	} else {
-		apiEndpoint = strings.TrimSuffix(apiEndpoint, "/")
-		baseUrl = strings.TrimSuffix(apiEndpoint, apiVersion)
-	}
-	return baseUrl
-}
-
-func GetGenericGitRemoteUrl(baseUrl, owner, repo string) string {
-	return fmt.Sprintf("%s/%s/%s.git", strings.TrimSuffix(baseUrl, "/"), owner, repo)
-}
-
 // RemapFields creates an instance of the T type and copies data from src parameter to it
 // by mapping fields based on the tags with tagName (if not provided 'mapstructure' tag is used)
 // using 'mapstructure' library.

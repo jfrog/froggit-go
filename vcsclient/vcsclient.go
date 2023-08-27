@@ -276,11 +276,6 @@ type VcsClient interface {
 	// refBefore     - A VCS reference: commit SHA, branch name, tag name
 	// refAfter      - A VCS reference: commit SHA, branch name, tag name
 	GetModifiedFiles(ctx context.Context, owner, repository, refBefore, refAfter string) ([]string, error)
-
-	// GetGitRemoteURL returns the relevant remote git repository URL in HTTPS protocol (example: "https://github.com/jfrog/froggit-go.git")
-	// owner         - User or organization
-	// repository    - VCS repository name
-	GetGitRemoteURL(owner, repository string) string
 }
 
 // CommitInfo contains the details of a commit
