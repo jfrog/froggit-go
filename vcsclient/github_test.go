@@ -854,7 +854,7 @@ func TestGitHubClient_GetGitRemoteUrl(t *testing.T) {
 	}{
 		{
 			name:           "GitHub Cloud",
-			apiEndpoint:    "https://api.github.com",
+			apiEndpoint:    "",
 			owner:          "my-org",
 			repo:           "my-repo",
 			expectedResult: "https://github.com/my-org/my-repo.git",
