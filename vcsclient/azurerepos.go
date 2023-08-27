@@ -9,6 +9,7 @@ import (
 	"github.com/jfrog/froggit-go/vcsutils"
 	"github.com/jfrog/gofrog/datastructures"
 	"github.com/microsoft/azure-devops-go-api/azuredevops"
+	"github.com/microsoft/azure-devops-go-api/azuredevops/core"
 	"github.com/microsoft/azure-devops-go-api/azuredevops/git"
 	"io"
 	"net/http"
@@ -114,16 +115,16 @@ func (client *AzureReposClient) DownloadRepository(ctx context.Context, owner, r
 		return err
 	}
 	client.logger.Info(successfulRepoExtraction)
+	repoInfo, err := client.GetRepositoryInfo(ctx, owner, repository)
+	if err != nil {
+		return err
+	}
+	httpsCloneUrl := repoInfo.CloneInfo.HTTP
 	// Generate .git folder with remote details
 	return vcsutils.CreateDotGitFolderWithRemote(
 		localPath,
 		vcsutils.RemoteName,
-		client.GetGitRemoteURL(owner, repository))
-}
-
-// GetGitRemoteURL on Azure Repos
-func (client *AzureReposClient) GetGitRemoteURL(owner, repository string) string {
-	return fmt.Sprintf("https://%s@%s/%s/_git/%s", owner, strings.TrimPrefix(client.connectionDetails.BaseUrl, "https://"), client.vcsInfo.Project, repository)
+		httpsCloneUrl)
 }
 
 func (client *AzureReposClient) sendDownloadRepoRequest(ctx context.Context, repository string, branch string) (res *http.Response, err error) {
@@ -405,7 +406,33 @@ func (client *AzureReposClient) AddSshKeyToRepository(ctx context.Context, owner
 
 // GetRepositoryInfo on Azure Repos
 func (client *AzureReposClient) GetRepositoryInfo(ctx context.Context, owner, repository string) (RepositoryInfo, error) {
-	return RepositoryInfo{}, getUnsupportedInAzureError("get repository info")
+	azureReposGitClient, err := client.buildAzureReposClient(ctx)
+	if err != nil {
+		return RepositoryInfo{}, err
+	}
+	response, err := azureReposGitClient.GetRepository(ctx, git.GetRepositoryArgs{
+		RepositoryId: &repository,
+		Project:      &client.vcsInfo.Project,
+	})
+	if err != nil {
+		return RepositoryInfo{}, fmt.Errorf("an error occured while retrieving <%s/%s/%s> repository info:\n%s", owner, client.vcsInfo.Project, repository, err.Error())
+	}
+	if response == nil {
+		return RepositoryInfo{}, fmt.Errorf("failed to retreive <%s/%s/%s> repository info, received empty response", owner, client.vcsInfo.Project, repository)
+	}
+	if response.Project == nil {
+		return RepositoryInfo{}, fmt.Errorf("failed to retreive <%s/%s/%s> repository info, received empty project info", owner, client.vcsInfo.Project, repository)
+	}
+
+	visibility := Private
+	visibilityFromResponse := *response.Project.Visibility
+	if visibilityFromResponse == core.ProjectVisibilityValues.Public {
+		visibility = Public
+	}
+	return RepositoryInfo{
+		CloneInfo:            CloneInfo{HTTP: *response.RemoteUrl, SSH: *response.SshUrl},
+		RepositoryVisibility: visibility,
+	}, nil
 }
 
 // GetCommitBySha on Azure Repos

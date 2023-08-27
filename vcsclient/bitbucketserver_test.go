@@ -158,7 +158,7 @@ func TestBitbucketServer_DownloadRepository(t *testing.T) {
 	assert.NoError(t, err)
 
 	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, false, repoFile,
-		fmt.Sprintf("/rest/api/1.0/projects/%s/repos/%s/archive?format=tgz", owner, repo1), createBitbucketServerHandler)
+		fmt.Sprintf("/rest/api/1.0/projects/%s/repos/%s/archive?format=tgz", owner, repo1), createBitbucketServerDownloadRepositoryHandler)
 	defer cleanUp()
 	err = client.DownloadRepository(ctx, owner, repo1, "", dir)
 	assert.NoError(t, err)
@@ -718,6 +718,22 @@ func createBitbucketServerHandler(t *testing.T, expectedURI string, response []b
 	}
 }
 
+func createBitbucketServerDownloadRepositoryHandler(t *testing.T, expectedURI string, response []byte, expectedStatusCode int) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.RequestURI == "/rest/api/1.0/projects/jfrog/repos/repo-1" {
+			repositoryResponse, err := os.ReadFile(filepath.Join("testdata", "bitbucketserver", "repository_response.json"))
+			assert.NoError(t, err)
+			_, err = w.Write(repositoryResponse)
+			assert.NoError(t, err)
+		}
+		w.WriteHeader(expectedStatusCode)
+		_, err := w.Write(response)
+		assert.NoError(t, err)
+		assert.Contains(t, expectedURI, r.RequestURI)
+		assert.Equal(t, "Bearer "+token, r.Header.Get("Authorization"))
+	}
+}
+
 func createBitbucketServerListRepositoriesHandler(t *testing.T, _ string, _ []byte, expectedStatusCode int) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var responseObj interface{}
@@ -833,25 +849,4 @@ func createBadBitbucketServerClient(t *testing.T) VcsClient {
 	client, err := NewClientBuilder(vcsutils.BitbucketServer).ApiEndpoint("https://bad^endpoint").Build()
 	assert.NoError(t, err)
 	return client
-}
-
-func TestBitbucketServerClient_GetGitRemoteUrl(t *testing.T) {
-	testCase := struct {
-		name           string
-		apiEndpoint    string
-		owner          string
-		repo           string
-		expectedResult string
-	}{
-		name:           "Bitbucket On-Premises",
-		apiEndpoint:    "https://git.example.com",
-		owner:          "my-org",
-		repo:           "my-repo",
-		expectedResult: "https://git.example.com/scm/my-org/my-repo.git",
-	}
-	info := VcsInfo{APIEndpoint: testCase.apiEndpoint}
-	client, err := NewBitbucketServerClient(info, nil)
-	assert.NoError(t, err)
-	assert.Equal(t, testCase.expectedResult, client.GetGitRemoteURL(testCase.owner, testCase.repo))
-
 }

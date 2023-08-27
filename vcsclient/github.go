@@ -20,11 +20,6 @@ import (
 	"golang.org/x/oauth2"
 )
 
-const (
-	GitHubApiVersion   = "/api/v3"
-	GitHubCloudBaseUrl = "https://github.com"
-)
-
 // GitHubClient API version 3
 type GitHubClient struct {
 	vcsInfo VcsInfo
@@ -251,15 +246,13 @@ func (client *GitHubClient) DownloadRepository(ctx context.Context, owner, repos
 		return
 	}
 
+	repositoryInfo, err := client.GetRepositoryInfo(ctx, owner, repository)
+	if err != nil {
+		return err
+	}
 	client.logger.Info(successfulRepoExtraction)
-	err = vcsutils.CreateDotGitFolderWithRemote(localPath, vcsutils.RemoteName, client.GetGitRemoteURL(owner, repository))
+	err = vcsutils.CreateDotGitFolderWithRemote(localPath, vcsutils.RemoteName, repositoryInfo.CloneInfo.HTTP)
 	return
-}
-
-// GetGitRemoteURL on GitHub
-func (client *GitHubClient) GetGitRemoteURL(owner, repository string) string {
-	baseUrl := vcsutils.GetBaseURLFromApiEndpoint(client.vcsInfo.APIEndpoint, GitHubCloudBaseUrl, GitHubApiVersion)
-	return vcsutils.GetGenericGitRemoteUrl(baseUrl, owner, repository)
 }
 
 // CreatePullRequest on GitHub

@@ -200,7 +200,7 @@ func TestGitHubClient_DownloadRepository(t *testing.T) {
 
 	client, cleanUp := createServerAndClientReturningStatus(t, vcsutils.GitHub, false,
 		[]byte("https://github.com/octocat/Hello-World/archive/refs/heads/master.tar.gz"),
-		"/repos/jfrog/Hello-World/tarball/test", http.StatusFound, createGitHubHandler)
+		"/repos/jfrog/Hello-World/tarball/test", http.StatusFound, createDownloadRepositoryGitHubHandler)
 	defer cleanUp()
 	assert.NoError(t, err)
 
@@ -844,39 +844,6 @@ func TestGitHubClient_TestGetCommitStatus(t *testing.T) {
 	})
 }
 
-func TestGitHubClient_GetGitRemoteUrl(t *testing.T) {
-	testCases := []struct {
-		name           string
-		apiEndpoint    string
-		owner          string
-		repo           string
-		expectedResult string
-	}{
-		{
-			name:           "GitHub Cloud",
-			apiEndpoint:    "",
-			owner:          "my-org",
-			repo:           "my-repo",
-			expectedResult: "https://github.com/my-org/my-repo.git",
-		},
-		{
-			name:           "GitHub On-Premises",
-			apiEndpoint:    "https://github.example.com",
-			owner:          "my-org",
-			repo:           "my-repo",
-			expectedResult: "https://github.example.com/my-org/my-repo.git",
-		},
-	}
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			info := VcsInfo{APIEndpoint: tc.apiEndpoint}
-			client, err := NewGitHubClient(info, nil)
-			assert.NoError(t, err)
-			assert.Equal(t, tc.expectedResult, client.GetGitRemoteURL(tc.owner, tc.repo))
-		})
-	}
-}
-
 func TestGitHubClient_DeletePullRequestComment(t *testing.T) {
 	ctx := context.Background()
 	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, nil, fmt.Sprintf("/repos/%v/%v/issues/comments/1", owner, repo1), createGitHubHandler)
@@ -966,6 +933,28 @@ func createGitHubWithPaginationHandler(t *testing.T, _ string, response []byte, 
 
 func createGitHubHandler(t *testing.T, expectedURI string, response []byte, expectedStatusCode int) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, expectedURI, r.RequestURI)
+		assert.Equal(t, "Bearer "+token, r.Header.Get("Authorization"))
+		if strings.Contains(r.RequestURI, "tarball") {
+			w.Header().Add("Location", string(response))
+			w.WriteHeader(expectedStatusCode)
+			return
+		}
+		w.WriteHeader(expectedStatusCode)
+		_, err := w.Write(response)
+		assert.NoError(t, err)
+	}
+}
+
+func createDownloadRepositoryGitHubHandler(t *testing.T, expectedURI string, response []byte, expectedStatusCode int) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.RequestURI == "/repos/jfrog/Hello-World" {
+			repositoryResponse, err := os.ReadFile(filepath.Join("testdata", "github", "repository_response.json"))
+			assert.NoError(t, err)
+			_, err = w.Write(repositoryResponse)
+			assert.NoError(t, err)
+			return
+		}
 		assert.Equal(t, expectedURI, r.RequestURI)
 		assert.Equal(t, "Bearer "+token, r.Header.Get("Authorization"))
 		if strings.Contains(r.RequestURI, "tarball") {

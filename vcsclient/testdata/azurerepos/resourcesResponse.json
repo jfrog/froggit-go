@@ -11,16 +11,6 @@
       "releasedVersion": "0.0"
     },
     {
-      "id": "225f7195-f9c7-4d14-ab28-a83f7ff77e1f",
-      "area": "Location",
-      "resourceName": "ResourceAreas",
-      "routeTemplate": "_apis/{resource}/{areaId}/listRepositories",
-      "resourceVersion": 1,
-      "minVersion": "3.2",
-      "maxVersion": "7.1",
-      "releasedVersion": "0.0"
-    },
-    {
       "id": "d5b216de-d8d5-4d32-ae76-51df755b16d3",
       "area": "Location",
       "resourceName": "ResourceAreas",
@@ -105,6 +95,16 @@
 	  "area": "Location",
 	  "resourceName": "ResourceAreas",
 	  "routeTemplate": "_apis/{resource}/deletePullRequestComments",
+	  "resourceVersion": 1,
+	  "minVersion": "3.2",
+	  "maxVersion": "7.1",
+	  "releasedVersion": "0.0"
+	},
+	{
+	  "id": "225f7195-f9c7-4d14-ab28-a83f7ff77e1f",
+	  "area": "Location",
+	  "resourceName": "ResourceAreas",
+	  "routeTemplate": "_apis/{resource}/getRepository",
 	  "resourceVersion": 1,
 	  "minVersion": "3.2",
 	  "maxVersion": "7.1",
