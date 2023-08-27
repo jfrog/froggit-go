@@ -844,7 +844,7 @@ func TestGitHubClient_TestGetCommitStatus(t *testing.T) {
 	})
 }
 
-func TestGitHubClient_getGitHubGitRemoteUrl(t *testing.T) {
+func TestGitHubClient_GetGitRemoteUrl(t *testing.T) {
 	testCases := []struct {
 		name           string
 		apiEndpoint    string
@@ -854,17 +854,17 @@ func TestGitHubClient_getGitHubGitRemoteUrl(t *testing.T) {
 	}{
 		{
 			name:           "GitHub Cloud",
-			apiEndpoint:    "https://api.github.com",
+			apiEndpoint:    "",
 			owner:          "my-org",
 			repo:           "my-repo",
 			expectedResult: "https://github.com/my-org/my-repo.git",
 		},
 		{
 			name:           "GitHub On-Premises",
-			apiEndpoint:    "https://github.example.com/api/v3",
+			apiEndpoint:    "https://github.example.com",
 			owner:          "my-org",
 			repo:           "my-repo",
-			expectedResult: "https://github.example.com/api/v3/my-org/my-repo.git",
+			expectedResult: "https://github.example.com/my-org/my-repo.git",
 		},
 	}
 	for _, tc := range testCases {
@@ -872,7 +872,7 @@ func TestGitHubClient_getGitHubGitRemoteUrl(t *testing.T) {
 			info := VcsInfo{APIEndpoint: tc.apiEndpoint}
 			client, err := NewGitHubClient(info, nil)
 			assert.NoError(t, err)
-			assert.Equal(t, tc.expectedResult, getGitHubGitRemoteUrl(client, tc.owner, tc.repo))
+			assert.Equal(t, tc.expectedResult, client.GetGitRemoteURL(tc.owner, tc.repo))
 		})
 	}
 }

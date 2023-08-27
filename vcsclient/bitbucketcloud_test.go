@@ -151,6 +151,26 @@ func TestBitbucketCloud_CreatePullRequest(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestBitbucketCloudClient_GetGitRemoteUrl(t *testing.T) {
+	testCase := struct {
+		name           string
+		apiEndpoint    string
+		owner          string
+		repo           string
+		expectedResult string
+	}{
+		name:           "Bitbucket Cloud",
+		apiEndpoint:    "https://bitbucket.org",
+		owner:          "my-org",
+		repo:           "my-repo",
+		expectedResult: "https://bitbucket.org/my-org/my-repo.git",
+	}
+	info := VcsInfo{APIEndpoint: testCase.apiEndpoint}
+	client, err := NewBitbucketCloudClient(info, nil)
+	assert.NoError(t, err)
+	assert.Equal(t, testCase.expectedResult, client.GetGitRemoteURL(testCase.owner, testCase.repo))
+}
+
 func TestBitbucketCloudClient_UpdatePullRequest(t *testing.T) {
 	ctx := context.Background()
 	prId := 3

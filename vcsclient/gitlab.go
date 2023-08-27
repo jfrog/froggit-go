@@ -14,6 +14,11 @@ import (
 	"strings"
 )
 
+const (
+	GitLabApiVersion   = "/api/v4"
+	GitLabCloudBaseUrl = "https://gitlab.com"
+)
+
 // GitLabClient API version 4
 type GitLabClient struct {
 	glClient *gitlab.Client
@@ -216,7 +221,13 @@ func (client *GitLabClient) DownloadRepository(ctx context.Context, owner, repos
 	}
 
 	client.logger.Info(successfulRepoExtraction)
-	return vcsutils.CreateDotGitFolderWithRemote(localPath, vcsutils.RemoteName, vcsutils.GetGenericGitRemoteUrl(client.vcsInfo.APIEndpoint, owner, repository))
+	return vcsutils.CreateDotGitFolderWithRemote(localPath, vcsutils.RemoteName, client.GetGitRemoteURL(owner, repository))
+}
+
+// GetGitRemoteURL on GitLab
+func (client *GitLabClient) GetGitRemoteURL(owner, repository string) string {
+	baseUrl := vcsutils.GetBaseURLFromApiEndpoint(client.vcsInfo.APIEndpoint, GitLabCloudBaseUrl, GitLabApiVersion)
+	return vcsutils.GetGenericGitRemoteUrl(baseUrl, owner, repository)
 }
 
 // CreatePullRequest on GitLab

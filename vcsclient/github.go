@@ -21,8 +21,8 @@ import (
 )
 
 const (
-	GitHubCloudApiEndpoint = "https://api.github.com"
-	GitHubCloneUrl         = "https://github.com"
+	GitHubApiVersion   = "/api/v3"
+	GitHubCloudBaseUrl = "https://github.com"
 )
 
 // GitHubClient API version 3
@@ -252,8 +252,14 @@ func (client *GitHubClient) DownloadRepository(ctx context.Context, owner, repos
 	}
 
 	client.logger.Info(successfulRepoExtraction)
-	err = vcsutils.CreateDotGitFolderWithRemote(localPath, vcsutils.RemoteName, getGitHubGitRemoteUrl(client, owner, repository))
+	err = vcsutils.CreateDotGitFolderWithRemote(localPath, vcsutils.RemoteName, client.GetGitRemoteURL(owner, repository))
 	return
+}
+
+// GetGitRemoteURL on GitHub
+func (client *GitHubClient) GetGitRemoteURL(owner, repository string) string {
+	baseUrl := vcsutils.GetBaseURLFromApiEndpoint(client.vcsInfo.APIEndpoint, GitHubCloudBaseUrl, GitHubApiVersion)
+	return vcsutils.GetGenericGitRemoteUrl(baseUrl, owner, repository)
 }
 
 // CreatePullRequest on GitHub
@@ -897,13 +903,6 @@ func packScanningResult(data string) (string, error) {
 	}
 
 	return compressedScan, err
-}
-
-func getGitHubGitRemoteUrl(client *GitHubClient, owner, repo string) string {
-	if client.vcsInfo.APIEndpoint == GitHubCloudApiEndpoint {
-		return fmt.Sprintf("%s/%s/%s.git", GitHubCloneUrl, owner, repo)
-	}
-	return fmt.Sprintf("%s/%s/%s.git", client.vcsInfo.APIEndpoint, owner, repo)
 }
 
 type repositoryEnvironmentReviewer struct {
