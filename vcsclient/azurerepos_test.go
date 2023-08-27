@@ -553,8 +553,8 @@ func TestAzureReposClient_GetRepositoryInfo(t *testing.T) {
 	defer cleanUp()
 	repositoryInfo, err := client.GetRepositoryInfo(ctx, "jfrog", "froggit-go")
 	assert.NoError(t, err)
-	assert.Equal(t, repositoryInfo.CloneInfo.HTTP, "https://jfrog@dev.azure.com/jfrog/froggit-go/_git/froggit-go")
-	assert.Equal(t, repositoryInfo.CloneInfo.SSH, "git@ssh.dev.azure.com:v3/jfrog/froggit-go/froggit-go")
+	assert.Equal(t, "https://jfrog@dev.azure.com/jfrog/froggit-go/_git/froggit-go", repositoryInfo.CloneInfo.HTTP)
+	assert.Equal(t, "git@ssh.dev.azure.com:v3/jfrog/froggit-go/froggit-go", repositoryInfo.CloneInfo.SSH)
 	assert.Equal(t, repositoryInfo.RepositoryVisibility, Public)
 }
 
@@ -698,13 +698,14 @@ func createAzureReposHandler(t *testing.T, expectedURI string, response []byte, 
 	return func(w http.ResponseWriter, r *http.Request) {
 		base64Token := base64.StdEncoding.EncodeToString([]byte(":" + token))
 		assert.Equal(t, "Basic "+base64Token, r.Header.Get("Authorization"))
-		if r.RequestURI == "/_apis" {
+		switch r.RequestURI {
+		case "/_apis":
 			jsonVal, err := os.ReadFile(filepath.Join("./", "testdata", "azurerepos", "resourcesResponse.json"))
 			assert.NoError(t, err)
 			_, err = w.Write(jsonVal)
 			assert.NoError(t, err)
 			return
-		} else if r.RequestURI == "/_apis/ResourceAreas" {
+		case "/_apis/ResourceAreas":
 			jsonVal := `{"value": [],"count": 0}`
 			_, err := w.Write([]byte(jsonVal))
 			assert.NoError(t, err)
@@ -726,18 +727,19 @@ func createGetRepositoryAzureReposHandler(t *testing.T, expectedURI string, resp
 	return func(w http.ResponseWriter, r *http.Request) {
 		base64Token := base64.StdEncoding.EncodeToString([]byte(":" + token))
 		assert.Equal(t, "Basic "+base64Token, r.Header.Get("Authorization"))
-		if r.RequestURI == "/_apis" {
+		switch r.RequestURI {
+		case "/_apis":
 			jsonVal, err := os.ReadFile(filepath.Join("./", "testdata", "azurerepos", "resourcesResponse.json"))
 			assert.NoError(t, err)
 			_, err = w.Write(jsonVal)
 			assert.NoError(t, err)
 			return
-		} else if r.RequestURI == "/_apis/ResourceAreas" {
+		case "/_apis/ResourceAreas":
 			jsonVal := `{"value": [],"count": 0}`
 			_, err := w.Write([]byte(jsonVal))
 			assert.NoError(t, err)
 			return
-		} else if r.RequestURI == "/_apis/ResourceAreas/getRepository" {
+		case "/_apis/ResourceAreas/getRepository":
 			jsonVal := `{"id":"23d122fb-c6c1-4f03-8117-a10a08f8b0d6","name":"froggit-go","url":"https://dev.azure.com/jfrog/638e3921-f5e3-46e6-a11f-a139cb9bd511/_apis/git/repositories/23d122fb-c6c1-4f03-8117-a10a08f8b0d6","project":{"id":"638e3921-f5e3-46e6-a11f-a139cb9bd511","name":"froggit-go","visibility":"public"},"defaultBranch":"refs/heads/main","remoteUrl":"https://jfrog@dev.azure.com/jfrog/froggit-go/_git/froggit-go","sshUrl":"git@ssh.dev.azure.com:v3/jfrog/froggit-go/froggit-go","isDisabled":false,"isInMaintenance":false}`
 			_, err := w.Write([]byte(jsonVal))
 			assert.NoError(t, err)

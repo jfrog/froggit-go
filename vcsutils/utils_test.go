@@ -210,44 +210,6 @@ func TestPointerOf(t *testing.T) {
 	assert.Equal(t, "some", *PointerOf("some"))
 }
 
-func TestGetGenericGitRemoteUrl(t *testing.T) {
-	testCases := []struct {
-		name           string
-		apiEndpoint    string
-		owner          string
-		repo           string
-		expectedResult string
-	}{
-		{
-			name:           "Bitbucket Server",
-			apiEndpoint:    "https://bitbucket.example.com/scm",
-			owner:          "my-org",
-			repo:           "my-repo",
-			expectedResult: "https://bitbucket.example.com/scm/my-org/my-repo.git",
-		},
-		{
-			name:           "GitLab",
-			apiEndpoint:    "https://gitlab.com/",
-			owner:          "my-org",
-			repo:           "my-repo",
-			expectedResult: "https://gitlab.com/my-org/my-repo.git",
-		},
-		{
-			name:           "GitLab On-Premises",
-			apiEndpoint:    "https://gitlab.example.com/api/v4",
-			owner:          "my-org",
-			repo:           "my-repo",
-			expectedResult: "https://gitlab.example.com/api/v4/my-org/my-repo.git",
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			assert.Equal(t, tc.expectedResult, GetGenericGitRemoteUrl(tc.apiEndpoint, tc.owner, tc.repo))
-		})
-	}
-}
-
 func TestRemapFields(t *testing.T) {
 	type destination struct {
 		Name      string    `some:"n_ame"`
@@ -274,50 +236,6 @@ func TestMapPullRequestState(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("%s-%s", tc.gitProvider.String(), tc.state), func(t *testing.T) {
 			assert.Equal(t, tc.expected, *MapPullRequestState(&tc.state))
-		})
-	}
-}
-
-func TestGetBaseURLFromApiEndpoint(t *testing.T) {
-	testCases := []struct {
-		name                 string
-		apiEndpoint          string
-		providerCloudBaseUrl string
-		apiVersion           string
-		expectedBaseURL      string
-	}{
-		{
-			name:                 "GitHub Cloud",
-			providerCloudBaseUrl: "https://github.com",
-			apiVersion:           "/api/v3",
-			expectedBaseURL:      "https://github.com",
-		},
-		{
-			name:                 "GitLab On-Premises",
-			apiEndpoint:          "https://gitlab.example.com/api/v4/",
-			providerCloudBaseUrl: "https://gitlab.example.com",
-			apiVersion:           "/api/v4",
-			expectedBaseURL:      "https://gitlab.example.com",
-		},
-		{
-			name:                 "GitHub On-Premises",
-			apiEndpoint:          "https://github.internal.com/api/v3/",
-			providerCloudBaseUrl: "https://github.internal.com",
-			apiVersion:           "/api/v3",
-			expectedBaseURL:      "https://github.internal.com",
-		},
-		{
-			name:                 "GitLab Cloud",
-			providerCloudBaseUrl: "https://gitlab.com",
-			apiVersion:           "/api/v4",
-			expectedBaseURL:      "https://gitlab.com",
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			actualBaseURL := GetBaseURLFromApiEndpoint(tc.apiEndpoint, tc.providerCloudBaseUrl, tc.apiVersion)
-			assert.Equal(t, tc.expectedBaseURL, actualBaseURL)
 		})
 	}
 }
