@@ -277,3 +277,47 @@ func TestMapPullRequestState(t *testing.T) {
 		})
 	}
 }
+
+func TestGetBaseURLFromApiEndpoint(t *testing.T) {
+	testCases := []struct {
+		name                 string
+		apiEndpoint          string
+		providerCloudBaseUrl string
+		apiVersion           string
+		expectedBaseURL      string
+	}{
+		{
+			name:                 "GitHub Cloud",
+			providerCloudBaseUrl: "https://github.com",
+			apiVersion:           "/api/v3",
+			expectedBaseURL:      "https://github.com",
+		},
+		{
+			name:                 "GitLab On-Premises",
+			apiEndpoint:          "https://gitlab.example.com/api/v4/",
+			providerCloudBaseUrl: "https://gitlab.example.com",
+			apiVersion:           "/api/v4",
+			expectedBaseURL:      "https://gitlab.example.com",
+		},
+		{
+			name:                 "GitHub On-Premises",
+			apiEndpoint:          "https://github.internal.com/api/v3/",
+			providerCloudBaseUrl: "https://github.internal.com",
+			apiVersion:           "/api/v3",
+			expectedBaseURL:      "https://github.internal.com",
+		},
+		{
+			name:                 "GitLab Cloud",
+			providerCloudBaseUrl: "https://gitlab.com",
+			apiVersion:           "/api/v4",
+			expectedBaseURL:      "https://gitlab.com",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			actualBaseURL := GetBaseURLFromApiEndpoint(tc.apiEndpoint, tc.providerCloudBaseUrl, tc.apiVersion)
+			assert.Equal(t, tc.expectedBaseURL, actualBaseURL)
+		})
+	}
+}

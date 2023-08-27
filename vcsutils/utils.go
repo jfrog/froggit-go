@@ -23,9 +23,6 @@ import (
 
 const (
 	RemoteName = "origin"
-	GitHubUrl  = "https://github.com"
-	GitlabUrl  = "https://gitlab.com"
-	AzureUrl   = "https://dev.azure.com"
 )
 
 // CreateToken create a random UUID
@@ -294,8 +291,19 @@ func CreateDotGitFolderWithRemote(path, remoteName, remoteUrl string) error {
 	return err
 }
 
-func GetGenericGitRemoteUrl(apiEndpoint, owner, repo string) string {
-	return fmt.Sprintf("%s/%s/%s.git", strings.TrimSuffix(apiEndpoint, "/"), owner, repo)
+func GetBaseURLFromApiEndpoint(apiEndpoint, providerCloudBaseUrl, apiVersion string) string {
+	var baseUrl string
+	if apiEndpoint == "" {
+		baseUrl = providerCloudBaseUrl
+	} else {
+		apiEndpoint = strings.TrimSuffix(apiEndpoint, "/")
+		baseUrl = strings.TrimSuffix(apiEndpoint, apiVersion)
+	}
+	return baseUrl
+}
+
+func GetGenericGitRemoteUrl(baseUrl, owner, repo string) string {
+	return fmt.Sprintf("%s/%s/%s.git", strings.TrimSuffix(baseUrl, "/"), owner, repo)
 }
 
 // RemapFields creates an instance of the T type and copies data from src parameter to it

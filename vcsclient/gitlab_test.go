@@ -786,3 +786,36 @@ func TestGitLabClient_getProjectOwnerByID(t *testing.T) {
 	assert.Error(t, err)
 	assert.NotEqual(t, "test", projectOwner)
 }
+
+func TestGitLabClient_GetGitRemoteUrl(t *testing.T) {
+	testCases := []struct {
+		name           string
+		apiEndpoint    string
+		owner          string
+		repo           string
+		expectedResult string
+	}{
+		{
+			name:           "GitLab Cloud",
+			apiEndpoint:    "https://gitlab.com",
+			owner:          "my-org",
+			repo:           "my-repo",
+			expectedResult: "https://gitlab.com/my-org/my-repo.git",
+		},
+		{
+			name:           "GitLab On-Premises",
+			apiEndpoint:    "https://gitlab.example.com/",
+			owner:          "my-org",
+			repo:           "my-repo",
+			expectedResult: "https://gitlab.example.com/my-org/my-repo.git",
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			info := VcsInfo{APIEndpoint: tc.apiEndpoint}
+			client, err := NewGitLabClient(info, nil)
+			assert.NoError(t, err)
+			assert.Equal(t, tc.expectedResult, client.GetGitRemoteURL(tc.owner, tc.repo))
+		})
+	}
+}

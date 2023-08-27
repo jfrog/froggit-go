@@ -834,3 +834,24 @@ func createBadBitbucketServerClient(t *testing.T) VcsClient {
 	assert.NoError(t, err)
 	return client
 }
+
+func TestBitbucketServerClient_GetGitRemoteUrl(t *testing.T) {
+	testCase := struct {
+		name           string
+		apiEndpoint    string
+		owner          string
+		repo           string
+		expectedResult string
+	}{
+		name:           "Bitbucket On-Premises",
+		apiEndpoint:    "https://git.example.com",
+		owner:          "my-org",
+		repo:           "my-repo",
+		expectedResult: "https://git.example.com/scm/my-org/my-repo.git",
+	}
+	info := VcsInfo{APIEndpoint: testCase.apiEndpoint}
+	client, err := NewBitbucketServerClient(info, nil)
+	assert.NoError(t, err)
+	assert.Equal(t, testCase.expectedResult, client.GetGitRemoteURL(testCase.owner, testCase.repo))
+
+}

@@ -732,3 +732,23 @@ func createBadAzureReposClient(t *testing.T, response []byte) (VcsClient, func()
 		createAzureReposHandler)
 	return client, cleanUp
 }
+
+func TestAzureReposClient_GetGitRemoteUrl(t *testing.T) {
+	testCase := struct {
+		name           string
+		apiEndpoint    string
+		owner          string
+		repo           string
+		expectedResult string
+	}{
+		name:           "Azure Repos Cloud",
+		apiEndpoint:    "https://dev.azure.com/my-org",
+		owner:          "my-org",
+		repo:           "my-repo",
+		expectedResult: "https://my-org@dev.azure.com/my-org/project/_git/my-repo",
+	}
+	info := VcsInfo{APIEndpoint: testCase.apiEndpoint, Project: "project"}
+	client, err := NewAzureReposClient(info, nil)
+	assert.NoError(t, err)
+	assert.Equal(t, testCase.expectedResult, client.GetGitRemoteURL(testCase.owner, testCase.repo))
+}
