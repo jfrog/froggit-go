@@ -1003,6 +1003,7 @@ func createAddPullRequestReviewCommentHandler(t *testing.T, expectedURI string, 
 			commits, err := os.ReadFile(filepath.Join("testdata", "github", "commit_list_response.json"))
 			assert.NoError(t, err)
 			_, err = w.Write(commits)
+			assert.NoError(t, err)
 			return
 		}
 		assert.Equal(t, expectedURI, r.RequestURI)

@@ -445,7 +445,7 @@ func (client *BitbucketServerClient) addPullRequestComment(ctx context.Context, 
 
 // ListPullRequestReviewComments on Bitbucket server
 func (client *BitbucketServerClient) ListPullRequestReviewComments(ctx context.Context, owner, repository string, pullRequestID int) ([]CommentInfo, error) {
-	return client.ListPullRequestReviewComments(ctx, owner, repository, pullRequestID)
+	return client.ListPullRequestComments(ctx, owner, repository, pullRequestID)
 }
 
 // ListPullRequestComments on Bitbucket server
