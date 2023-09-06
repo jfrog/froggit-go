@@ -179,6 +179,67 @@ func TestAzureRepos_TestAddPullRequestComment(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestAzureRepos_TestAddPullRequestReviewComments(t *testing.T) {
+	type AddPullRequestCommentResponse struct {
+		Value git.GitPullRequestCommentThread
+		Count int
+	}
+	id := 123
+	pom := "/pom.xml"
+	startLine := 1
+	endLine := 5
+	startColumn := 1
+	endColumn := 13
+	res := AddPullRequestCommentResponse{
+		Value: git.GitPullRequestCommentThread{Id: &id, ThreadContext: &git.CommentThreadContext{
+			FilePath: &pom,
+			LeftFileEnd: &git.CommentPosition{
+				Line:   &endLine,
+				Offset: &endColumn,
+			},
+			LeftFileStart: &git.CommentPosition{
+				Line:   &startLine,
+				Offset: &startColumn,
+			},
+			RightFileEnd: &git.CommentPosition{
+				Line:   &endLine,
+				Offset: &endColumn,
+			},
+			RightFileStart: &git.CommentPosition{
+				Line:   &startLine,
+				Offset: &startColumn,
+			},
+		}},
+		Count: 1,
+	}
+	jsonRes, err := json.Marshal(res)
+	assert.NoError(t, err)
+	ctx := context.Background()
+	client, cleanUp := createServerAndClient(t, vcsutils.AzureRepos, true, jsonRes, "pullRequestComments", createAzureReposHandler)
+	defer cleanUp()
+	err = client.AddPullRequestReviewComments(ctx, "", repo1, 2, PullRequestComment{
+		CommentInfo: CommentInfo{Content: "test"},
+		PullRequestDiff: PullRequestDiff{
+			originalFilePath:    pom,
+			originalStartLine:   startLine,
+			originalEndLine:     endLine,
+			originalStartColumn: startColumn,
+			originalEndColumn:   startColumn,
+			newFilePath:         pom,
+			newStartLine:        startLine,
+			newEndLine:          endLine,
+			newStartColumn:      startColumn,
+			newEndColumn:        endColumn,
+		},
+	})
+	assert.NoError(t, err)
+
+	badClient, cleanUp := createBadAzureReposClient(t, []byte{})
+	defer cleanUp()
+	err = badClient.AddPullRequestReviewComments(ctx, "", repo1, 2, PullRequestComment{CommentInfo: CommentInfo{Content: "test"}})
+	assert.Error(t, err)
+}
+
 func TestAzureRepos_TestListOpenPullRequests(t *testing.T) {
 	type ListOpenPullRequestsResponse struct {
 		Value []git.GitPullRequest

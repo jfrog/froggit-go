@@ -9,11 +9,14 @@ import (
 )
 
 var (
-	errLabelsNotSupported                          = errors.New("labels are not supported on Bitbucket")
-	errBitbucketCodeScanningNotSupported           = errors.New("code scanning is not supported on Bitbucket")
-	errBitbucketDownloadFileFromRepoNotSupported   = errors.New("download file from repo is currently not supported on Bitbucket")
-	errBitbucketGetCommitsNotSupported             = errors.New("get commits is currently not supported on Bitbucket")
-	errBitbucketGetRepoEnvironmentInfoNotSupported = errors.New("get repository environment info is currently not supported on Bitbucket")
+	errLabelsNotSupported                                 = errors.New("labels are not supported on Bitbucket")
+	errBitbucketCodeScanningNotSupported                  = errors.New("code scanning is not supported on Bitbucket")
+	errBitbucketDownloadFileFromRepoNotSupported          = errors.New("download file from repo is currently not supported on Bitbucket")
+	errBitbucketGetCommitsNotSupported                    = errors.New("get commits is currently not supported on Bitbucket")
+	errBitbucketGetRepoEnvironmentInfoNotSupported        = errors.New("get repository environment info is currently not supported on Bitbucket")
+	errBitbucketListPullRequestReviewCommentsNotSupported = errors.New("list pull request review comments is currently not supported on Bitbucket")
+	errBitbucketAddPullRequestReviewCommentsNotSupported  = errors.New("add pull request review comment is currently not supported on Bitbucket")
+	errBitbucketDeletePullRequestComment                  = errors.New("delete pull request comment is currently not supported on Bitbucket")
 )
 
 type BitbucketCommitInfo struct {

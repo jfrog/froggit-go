@@ -4,6 +4,7 @@ const (
 	branchPrefix           = "refs/heads/"
 	TagPrefix              = "refs/tags/"
 	NumberOfCommitsToFetch = 50
+	ErrNoCommentsProvided  = "could not add a pull request review comment, no comments were provided"
 )
 
 // VcsProvider is an enum represents the VCS provider type

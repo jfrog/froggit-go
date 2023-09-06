@@ -277,6 +277,57 @@ func TestGitHubClient_AddPullRequestComment(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestGitHubClient_AddPullRequestReviewComments(t *testing.T) {
+	ctx := context.Background()
+	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, github.PullRequestReview{}, "/repos/jfrog/repo-1/pulls/1/comments", createAddPullRequestReviewCommentHandler)
+	defer cleanUp()
+
+	err := client.AddPullRequestReviewComments(ctx, owner, repo1, 1, []PullRequestComment{
+		{
+			CommentInfo: CommentInfo{Content: "test1"},
+			PullRequestDiff: PullRequestDiff{
+				newFilePath:  "requirements.txt",
+				newStartLine: 3,
+			},
+		},
+		{
+			CommentInfo: CommentInfo{Content: "test2"},
+			PullRequestDiff: PullRequestDiff{
+				newFilePath:  "requirements.txt",
+				newStartLine: 1,
+			},
+		},
+	}...)
+	assert.NoError(t, err)
+
+	err = createBadGitHubClient(t).AddPullRequestReviewComments(ctx, owner, repo1, 1, PullRequestComment{
+		CommentInfo: CommentInfo{Content: "test1"},
+		PullRequestDiff: PullRequestDiff{
+			newFilePath:  "requirements.txt",
+			newStartLine: 3,
+		},
+	})
+	assert.Error(t, err)
+}
+
+func TestGitHubClient_ListPullRequestReviewComments(t *testing.T) {
+	ctx := context.Background()
+	id := int64(1)
+	body := "test"
+	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, []*github.PullRequestReview{{ID: &id, Body: &body}}, "/repos/jfrog/repo-1/pulls/1/reviews", createGitHubHandler)
+	defer cleanUp()
+
+	commentInfo, err := client.ListPullRequestReviewComments(ctx, owner, repo1, 1)
+	assert.NoError(t, err)
+	assert.Len(t, commentInfo, 1)
+	assert.Equal(t, id, commentInfo[0].ID)
+	assert.Equal(t, body, commentInfo[0].Content)
+
+	commentInfo, err = createBadGitHubClient(t).ListPullRequestReviewComments(ctx, owner, repo1, 1)
+	assert.Nil(t, commentInfo)
+	assert.Error(t, err)
+}
+
 func TestGitHubClient_GetLatestCommit(t *testing.T) {
 	ctx := context.Background()
 	response, err := os.ReadFile(filepath.Join("testdata", "github", "commit_list_response.json"))
@@ -940,6 +991,21 @@ func createGitHubHandler(t *testing.T, expectedURI string, response []byte, expe
 			w.WriteHeader(expectedStatusCode)
 			return
 		}
+		w.WriteHeader(expectedStatusCode)
+		_, err := w.Write(response)
+		assert.NoError(t, err)
+	}
+}
+
+func createAddPullRequestReviewCommentHandler(t *testing.T, expectedURI string, response []byte, expectedStatusCode int) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.RequestURI == "/repos/jfrog/repo-1/pulls/1/commits" {
+			commits, err := os.ReadFile(filepath.Join("testdata", "github", "commit_list_response.json"))
+			assert.NoError(t, err)
+			_, err = w.Write(commits)
+			return
+		}
+		assert.Equal(t, expectedURI, r.RequestURI)
 		w.WriteHeader(expectedStatusCode)
 		_, err := w.Write(response)
 		assert.NoError(t, err)

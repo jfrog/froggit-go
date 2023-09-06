@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"github.com/jfrog/froggit-go/vcsutils"
 	"github.com/jfrog/gofrog/datastructures"
@@ -307,18 +308,173 @@ func (client *GitLabClient) AddPullRequestComment(ctx context.Context, owner, re
 	return err
 }
 
+// AddPullRequestReviewComments adds comments to a pull request on GitLab.
+func (client *GitLabClient) AddPullRequestReviewComments(ctx context.Context, owner, repository string, pullRequestID int, comments ...PullRequestComment) error {
+	// Validate parameters
+	if err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository}); err != nil {
+		return err
+	}
+
+	// Check if comments are provided
+	if len(comments) == 0 {
+		return errors.New("could not add merge request review comments, no comments provided")
+	}
+
+	projectID := getProjectID(owner, repository)
+
+	// Get merge request diff versions
+	versions, err := client.getMergeRequestDiffVersions(ctx, projectID, pullRequestID)
+	if err != nil {
+		return fmt.Errorf("could not get merge request diff versions: %w", err)
+	}
+
+	// Get merge request details
+	mergeRequestChanges, err := client.getMergeRequestChanges(ctx, projectID, pullRequestID)
+	if err != nil {
+		return fmt.Errorf("could not get merge request changes: %w", err)
+	}
+
+	// The GitLab REST API for creating a merge request discussion has peculiar behavior:
+	// If the API call is not constructed precisely according to these rules, it may fail with an unclear error.
+	// In all cases, 'new_path' and 'new_line' parameters are required.
+	// - When commenting on a new file, do not include 'old_path' and 'old_line' parameters.
+	// - When commenting on an existing file that has changed in the diff, omit 'old_path' and 'old_line' parameters.
+	// - When commenting on an existing file that hasn't changed in the diff, include 'old_path' and 'old_line' parameters.
+	for _, comment := range comments {
+		if err = client.addPullRequestReviewComment(ctx, projectID, pullRequestID, comment, versions, mergeRequestChanges); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (client *GitLabClient) getMergeRequestDiffVersions(ctx context.Context, projectID string, pullRequestID int) ([]*gitlab.MergeRequestDiffVersion, error) {
+	versions, _, err := client.glClient.MergeRequests.GetMergeRequestDiffVersions(projectID, pullRequestID, &gitlab.GetMergeRequestDiffVersionsOptions{}, gitlab.WithContext(ctx))
+	return versions, err
+}
+
+func (client *GitLabClient) getMergeRequestChanges(ctx context.Context, projectID string, pullRequestID int) (*gitlab.MergeRequest, error) {
+	mergeRequestChanges, _, err := client.glClient.MergeRequests.GetMergeRequestChanges(projectID, pullRequestID, &gitlab.GetMergeRequestChangesOptions{}, gitlab.WithContext(ctx))
+	return mergeRequestChanges, err
+}
+
+func (client *GitLabClient) addPullRequestReviewComment(ctx context.Context, projectID string, pullRequestID int, comment PullRequestComment, versions []*gitlab.MergeRequestDiffVersion, mergeRequestChanges *gitlab.MergeRequest) error {
+	// Find the corresponding change in merge request
+	var newPath, oldPath string
+	var newLine, oldLine int
+	var diffFound bool
+
+	for _, diff := range mergeRequestChanges.Changes {
+		if diff.NewPath != comment.newFilePath {
+			continue
+		}
+
+		diffFound = true
+		newLine = comment.newStartLine
+		newPath = diff.NewPath
+
+		// New files don't have old data
+		if !diff.NewFile {
+			oldPath = diff.OldPath
+			oldLine = comment.originalStartLine
+		}
+		break
+	}
+
+	// If no matching change is found, return an error
+	if !diffFound {
+		return fmt.Errorf("could not find changes to %s in the current merge request", comment.newFilePath)
+	}
+
+	// Create a NotePosition for the comment
+	latestVersion := versions[0]
+	diffPosition := &gitlab.NotePosition{
+		StartSHA:     latestVersion.StartCommitSHA,
+		HeadSHA:      latestVersion.HeadCommitSHA,
+		BaseSHA:      latestVersion.BaseCommitSHA,
+		PositionType: "text",
+		NewLine:      newLine,
+		NewPath:      newPath,
+		OldLine:      oldLine,
+		OldPath:      oldPath,
+	}
+
+	// Attempt to create a merge request discussion thread
+	_, _, err := client.createMergeRequestDiscussion(ctx, projectID, comment.Content, pullRequestID, diffPosition)
+
+	// Retry without oldLine and oldPath if the GitLab API call fails
+	if err != nil {
+		diffPosition.OldLine = 0
+		diffPosition.OldPath = ""
+		_, _, err = client.createMergeRequestDiscussion(ctx, projectID, comment.Content, pullRequestID, diffPosition)
+	}
+
+	// If the comment creation still fails, return an error
+	if err != nil {
+		return fmt.Errorf("could not create a merge request discussion thread: %w", err)
+	}
+
+	return nil
+}
+
+func (client *GitLabClient) createMergeRequestDiscussion(ctx context.Context, projectID, content string, pullRequestID int, position *gitlab.NotePosition) (*gitlab.Discussion, *gitlab.Response, error) {
+	return client.glClient.Discussions.CreateMergeRequestDiscussion(projectID, pullRequestID, &gitlab.CreateMergeRequestDiscussionOptions{
+		Body:     &content,
+		Position: position,
+	}, gitlab.WithContext(ctx))
+}
+
+// ListPullRequestReviewComments on GitLab
+func (client *GitLabClient) ListPullRequestReviewComments(ctx context.Context, owner, repository string, pullRequestID int) ([]CommentInfo, error) {
+	// Validate parameters
+	if err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository, "pullRequestID": strconv.Itoa(pullRequestID)}); err != nil {
+		return nil, err
+	}
+
+	projectID := getProjectID(owner, repository)
+
+	discussions, _, err := client.glClient.Discussions.ListMergeRequestDiscussions(projectID, pullRequestID, &gitlab.ListMergeRequestDiscussionsOptions{}, gitlab.WithContext(ctx))
+	if err != nil {
+		return nil, fmt.Errorf("failed fetching the list of merge requests discussions: %w", err)
+	}
+
+	var commentsInfo []CommentInfo
+	for _, discussion := range discussions {
+		commentsInfo = append(commentsInfo, mapGitLabNotesToCommentInfoList(discussion.Notes, discussion.ID)...)
+	}
+
+	return commentsInfo, nil
+}
+
 // ListPullRequestComments on GitLab
 func (client *GitLabClient) ListPullRequestComments(ctx context.Context, owner, repository string, pullRequestID int) ([]CommentInfo, error) {
-	err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository})
-	if err != nil {
-		return []CommentInfo{}, err
+	if err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository, "pullRequestID": strconv.Itoa(pullRequestID)}); err != nil {
+		return nil, err
 	}
 	commentsList, _, err := client.glClient.Notes.ListMergeRequestNotes(getProjectID(owner, repository), pullRequestID, &gitlab.ListMergeRequestNotesOptions{},
 		gitlab.WithContext(ctx))
 	if err != nil {
 		return []CommentInfo{}, err
 	}
-	return mapGitLabNotesToCommentInfoList(commentsList), nil
+	return mapGitLabNotesToCommentInfoList(commentsList, ""), nil
+}
+
+// DeletePullRequestReviewComment on GitLab
+func (client *GitLabClient) DeletePullRequestReviewComment(ctx context.Context, owner, repository string, pullRequestID int, comment *CommentInfo) error {
+	var commentID int64
+	if err := validateParametersNotBlank(map[string]string{
+		"owner":         owner,
+		"repository":    repository,
+		"pullRequestID": strconv.Itoa(pullRequestID),
+		"commentID":     strconv.FormatInt(commentID, 10),
+		"discussionID":  comment.ThreadID}); err != nil {
+		return err
+	}
+	if _, err := client.glClient.Discussions.DeleteMergeRequestDiscussionNote(getProjectID(owner, repository), pullRequestID, comment.ThreadID, int(commentID), gitlab.WithContext(ctx)); err != nil {
+		return fmt.Errorf("an error occurred while deleting pull request review comment: %w", err)
+	}
+	return nil
 }
 
 // DeletePullRequestComment on GitLab
@@ -599,12 +755,13 @@ func mapGitLabCommitToCommitInfo(commit *gitlab.Commit) CommitInfo {
 	}
 }
 
-func mapGitLabNotesToCommentInfoList(notes []*gitlab.Note) (res []CommentInfo) {
+func mapGitLabNotesToCommentInfoList(notes []*gitlab.Note, discussionId string) (res []CommentInfo) {
 	for _, note := range notes {
 		res = append(res, CommentInfo{
-			ID:      int64(note.ID),
-			Content: note.Body,
-			Created: *note.CreatedAt,
+			ID:       int64(note.ID),
+			ThreadID: discussionId,
+			Content:  note.Body,
+			Created:  *note.CreatedAt,
 		})
 	}
 	return

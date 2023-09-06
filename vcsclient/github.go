@@ -5,19 +5,18 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/google/go-github/v45/github"
+	"github.com/grokify/mogo/encoding/base64"
+	"github.com/jfrog/froggit-go/vcsutils"
 	"github.com/jfrog/gofrog/datastructures"
+	"github.com/mitchellh/mapstructure"
+	"golang.org/x/oauth2"
 	"io"
 	"net/http"
 	"net/url"
 	"sort"
 	"strconv"
 	"strings"
-
-	"github.com/google/go-github/v45/github"
-	"github.com/grokify/mogo/encoding/base64"
-	"github.com/jfrog/froggit-go/vcsutils"
-	"github.com/mitchellh/mapstructure"
-	"golang.org/x/oauth2"
 )
 
 // GitHubClient API version 3
@@ -418,6 +417,69 @@ func (client *GitHubClient) AddPullRequestComment(ctx context.Context, owner, re
 	return err
 }
 
+// AddPullRequestReviewComment on GitHub
+func (client *GitHubClient) AddPullRequestReviewComments(ctx context.Context, owner, repository string, pullRequestID int, comments ...PullRequestComment) error {
+	prID := strconv.Itoa(pullRequestID)
+	if err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository, "pullRequestID": prID}); err != nil {
+		return err
+	}
+	if len(comments) == 0 {
+		return errors.New(vcsutils.ErrNoCommentsProvided)
+	}
+	ghClient, err := client.buildGithubClient(ctx)
+	if err != nil {
+		return err
+	}
+
+	commits, _, err := ghClient.PullRequests.ListCommits(ctx, owner, repository, pullRequestID, nil)
+	if err != nil {
+		return err
+	}
+	if len(commits) == 0 {
+		return errors.New("could not fetch the commits list for pull request " + prID)
+	}
+
+	latestCommitSHA := commits[len(commits)-1].GetSHA()
+
+	for _, comment := range comments {
+		if _, _, err = ghClient.PullRequests.CreateComment(ctx, owner, repository, pullRequestID, &github.PullRequestComment{
+			CommitID: &latestCommitSHA,
+			Body:     &comment.Content,
+			Line:     &comment.newStartLine,
+			Path:     &comment.newFilePath,
+		}); err != nil {
+			return fmt.Errorf("could not create a code review comment for <%s/%s> in pull request %s. error received: %w",
+				owner, repository, prID, err)
+		}
+	}
+	return nil
+}
+
+// ListPullRequestReviewComments on GitHub
+func (client *GitHubClient) ListPullRequestReviewComments(ctx context.Context, owner, repository string, pullRequestID int) ([]CommentInfo, error) {
+	err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository})
+	if err != nil {
+		return nil, err
+	}
+	ghClient, err := client.buildGithubClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+	commentsList, _, err := ghClient.PullRequests.ListReviews(ctx, owner, repository, pullRequestID, nil)
+	if err != nil {
+		return []CommentInfo{}, err
+	}
+	commentsInfoList := []CommentInfo{}
+	for _, comment := range commentsList {
+		commentsInfoList = append(commentsInfoList, CommentInfo{
+			ID:      comment.GetID(),
+			Content: comment.GetBody(),
+			Created: comment.GetSubmittedAt(),
+		})
+	}
+	return commentsInfoList, nil
+}
+
 // ListPullRequestComments on GitHub
 func (client *GitHubClient) ListPullRequestComments(ctx context.Context, owner, repository string, pullRequestID int) ([]CommentInfo, error) {
 	err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository})
@@ -432,7 +494,23 @@ func (client *GitHubClient) ListPullRequestComments(ctx context.Context, owner, 
 	if err != nil {
 		return []CommentInfo{}, err
 	}
-	return mapGitHubCommentToCommentInfoList(commentsList)
+	return mapGitHubIssuesCommentToCommentInfoList(commentsList)
+}
+
+// DeletePullRequestReviewComment on GitHub
+func (client *GitHubClient) DeletePullRequestReviewComment(ctx context.Context, owner, repository string, _ int, comment *CommentInfo) error {
+	commentID := comment.ID
+	if err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository, "commentID": strconv.FormatInt(commentID, 10)}); err != nil {
+		return err
+	}
+	ghClient, err := client.buildGithubClient(ctx)
+	if err != nil {
+		return err
+	}
+	if _, err = ghClient.PullRequests.DeleteComment(ctx, owner, repository, commentID); err != nil {
+		return fmt.Errorf("could not delete pull request review comment: %w", err)
+	}
+	return nil
 }
 
 // DeletePullRequestComment on GitHub
@@ -866,7 +944,7 @@ func mapGitHubCommitToCommitInfo(commit *github.RepositoryCommit) CommitInfo {
 	}
 }
 
-func mapGitHubCommentToCommentInfoList(commentsList []*github.IssueComment) (res []CommentInfo, err error) {
+func mapGitHubIssuesCommentToCommentInfoList(commentsList []*github.IssueComment) (res []CommentInfo, err error) {
 	for _, comment := range commentsList {
 		res = append(res, CommentInfo{
 			ID:      *comment.ID,

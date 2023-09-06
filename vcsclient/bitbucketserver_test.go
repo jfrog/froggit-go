@@ -209,6 +209,18 @@ func TestBitbucketServer_AddPullRequestComment(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestBitbucketServer_AddPullRequestReviewComment(t *testing.T) {
+	ctx := context.Background()
+	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, true, nil, "/rest/api/1.0/projects/jfrog/repos/repo-1/pull-requests/1/comments", createBitbucketServerHandler)
+	defer cleanUp()
+
+	err := client.AddPullRequestReviewComments(ctx, owner, repo1, 1, PullRequestComment{CommentInfo: CommentInfo{Content: "Comment content"}, PullRequestDiff: PullRequestDiff{originalStartLine: 7, newStartLine: 7}})
+	assert.NoError(t, err)
+
+	err = createBadBitbucketServerClient(t).AddPullRequestReviewComments(ctx, owner, repo1, 1, PullRequestComment{CommentInfo: CommentInfo{Content: "Comment content"}, PullRequestDiff: PullRequestDiff{originalStartLine: 7, newStartLine: 7}})
+	assert.Error(t, err)
+}
+
 func TestBitbucketServer_ListOpenPullRequests(t *testing.T) {
 	ctx := context.Background()
 	response, err := os.ReadFile(filepath.Join("testdata", "bitbucketserver", "pull_requests_list_response.json"))

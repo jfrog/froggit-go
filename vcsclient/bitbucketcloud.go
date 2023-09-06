@@ -409,6 +409,16 @@ func (client *BitbucketCloudClient) AddPullRequestComment(ctx context.Context, o
 	return err
 }
 
+// AddPullRequestReviewComments on Bitbucket cloud
+func (client *BitbucketCloudClient) AddPullRequestReviewComments(_ context.Context, _, _ string, _ int, _ ...PullRequestComment) error {
+	return errBitbucketAddPullRequestReviewCommentsNotSupported
+}
+
+// ListPullRequestReviewComments on Bitbucket cloud
+func (client *BitbucketCloudClient) ListPullRequestReviewComments(_ context.Context, _, _ string, _ int) ([]CommentInfo, error) {
+	return nil, errBitbucketListPullRequestReviewCommentsNotSupported
+}
+
 // ListPullRequestComments on Bitbucket cloud
 func (client *BitbucketCloudClient) ListPullRequestComments(ctx context.Context, owner, repository string, pullRequestID int) (res []CommentInfo, err error) {
 	err = validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository})
@@ -432,9 +442,14 @@ func (client *BitbucketCloudClient) ListPullRequestComments(ctx context.Context,
 	return mapBitbucketCloudCommentToCommentInfo(&parsedComments), nil
 }
 
+// DeletePullRequestReviewComment on Bitbucket cloud
+func (client *BitbucketCloudClient) DeletePullRequestReviewComment(_ context.Context, _, _ string, _ int, _ *CommentInfo) error {
+	return errBitbucketDeletePullRequestComment
+}
+
 // DeletePullRequestComment on Bitbucket cloud
 func (client *BitbucketCloudClient) DeletePullRequestComment(_ context.Context, _, _ string, _, _ int) error {
-	return nil
+	return errBitbucketDeletePullRequestComment
 }
 
 // GetLatestCommit on Bitbucket cloud
