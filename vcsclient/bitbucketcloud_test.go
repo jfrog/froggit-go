@@ -478,7 +478,7 @@ func TestBitbucketCloudClient_ListPullRequestReviewComments(t *testing.T) {
 	client, err := NewClientBuilder(vcsutils.BitbucketCloud).Build()
 	assert.NoError(t, err)
 
-	err = client.AddPullRequestReviewComments(ctx, owner, repo1, 1)
+	_, err = client.ListPullRequestReviewComments(ctx, owner, repo1, 1)
 	assert.ErrorIs(t, err, errBitbucketListPullRequestReviewCommentsNotSupported)
 }
 
