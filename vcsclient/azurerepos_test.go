@@ -381,6 +381,10 @@ func TestAzureReposClient_GetPullRequest(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestListPullRequestReviewComments(t *testing.T) {
+	TestListPullRequestComments(t)
+}
+
 func TestListPullRequestComments(t *testing.T) {
 	type ListPullRequestCommentsResponse struct {
 		Value []git.GitPullRequestCommentThread
@@ -694,6 +698,10 @@ func TestAzureReposClient_GetModifiedFiles(t *testing.T) {
 		_, err := client.GetModifiedFiles(ctx, "", repo1, "sha-1", "sha-2")
 		assert.EqualError(t, err, "null")
 	})
+}
+
+func TestAzureReposClient_DeletePullRequestReviewComment(t *testing.T) {
+	TestAzureReposClient_DeletePullRequestComment(t)
 }
 
 func TestAzureReposClient_DeletePullRequestComment(t *testing.T) {

@@ -294,6 +294,10 @@ func TestBitbucketServerClient_GetPullRequest(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestBitbucketServer_ListPullRequestReviewComments(t *testing.T) {
+	TestBitbucketServer_ListPullRequestComments(t)
+}
+
 func TestBitbucketServer_ListPullRequestComments(t *testing.T) {
 	ctx := context.Background()
 	response, err := os.ReadFile(filepath.Join("testdata", "bitbucketserver", "pull_request_comments_list_response.json"))
@@ -839,6 +843,10 @@ func TestBitbucketServer_TestGetCommitStatus(t *testing.T) {
 		_, err := client.GetCommitStatuses(ctx, owner, repo1, ref)
 		assert.Error(t, err)
 	})
+}
+
+func TestBitbucketServerClient_DeletePullRequestReviewComment(t *testing.T) {
+	TestBitbucketServerClient_DeletePullRequestComment(t)
 }
 
 func TestBitbucketServerClient_DeletePullRequestComment(t *testing.T) {
