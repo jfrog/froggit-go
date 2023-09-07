@@ -243,31 +243,24 @@ func TestMapPullRequestState(t *testing.T) {
 func TestRemoveDirContents(t *testing.T) {
 	// Create a temporary directory for testing
 	tmpDir := t.TempDir()
+	defer func() {
+		assert.NoError(t, os.Remove(tmpDir))
+	}()
 
 	// Create some test files and directories inside the temporary directory
 	testFiles := []string{"file1.txt", "file2.txt"}
 	testDirs := []string{"dir1", "dir2"}
 
 	for _, fileName := range testFiles {
-		func() {
-			filePath := filepath.Join(tmpDir, fileName)
-			_, err := os.Create(filePath)
-			assert.NoError(t, err)
-			defer func() {
-				assert.NoError(t, os.Remove(filePath))
-			}()
-		}()
+		filePath := filepath.Join(tmpDir, fileName)
+		_, err := os.Create(filePath)
+		assert.NoError(t, err)
 	}
 
 	for _, dirName := range testDirs {
-		func() {
-			dirPath := filepath.Join(tmpDir, dirName)
-			err := os.Mkdir(dirPath, os.ModeDir)
-			assert.NoError(t, err)
-			defer func() {
-				assert.NoError(t, os.RemoveAll(dirPath))
-			}()
-		}()
+		dirPath := filepath.Join(tmpDir, dirName)
+		err := os.Mkdir(dirPath, os.ModeDir)
+		assert.NoError(t, err)
 	}
 
 	// Test the RemoveDirContents function
