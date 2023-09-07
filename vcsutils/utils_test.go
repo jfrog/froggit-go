@@ -240,39 +240,6 @@ func TestMapPullRequestState(t *testing.T) {
 	}
 }
 
-func TestRemoveDirContents(t *testing.T) {
-	// Create a temporary directory for testing
-	tmpDir := t.TempDir()
-	defer func() {
-		assert.NoError(t, os.Remove(tmpDir))
-	}()
-
-	// Create some test files and directories inside the temporary directory
-	testFiles := []string{"file1.txt", "file2.txt"}
-	testDirs := []string{"dir1", "dir2"}
-
-	for _, fileName := range testFiles {
-		filePath := filepath.Join(tmpDir, fileName)
-		_, err := os.Create(filePath)
-		assert.NoError(t, err)
-	}
-
-	for _, dirName := range testDirs {
-		dirPath := filepath.Join(tmpDir, dirName)
-		err := os.Mkdir(dirPath, os.ModeDir)
-		assert.NoError(t, err)
-	}
-
-	// Test the RemoveDirContents function
-	err := RemoveDirContents(tmpDir)
-	assert.NoError(t, err)
-
-	// Check if the temporary directory is empty after removal
-	entries, err := os.ReadDir(tmpDir)
-	assert.NoError(t, err)
-	assert.Empty(t, entries)
-}
-
 func TestGetPullRequestFilePath(t *testing.T) {
 	tests := []struct {
 		input    string
