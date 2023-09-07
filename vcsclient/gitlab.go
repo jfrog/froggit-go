@@ -334,12 +334,6 @@ func (client *GitLabClient) AddPullRequestReviewComments(ctx context.Context, ow
 		return fmt.Errorf("could not get merge request changes: %w", err)
 	}
 
-	// The GitLab REST API for creating a merge request discussion has peculiar behavior:
-	// If the API call is not constructed precisely according to these rules, it may fail with an unclear error.
-	// In all cases, 'new_path' and 'new_line' parameters are required.
-	// - When commenting on a new file, do not include 'old_path' and 'old_line' parameters.
-	// - When commenting on an existing file that has changed in the diff, omit 'old_path' and 'old_line' parameters.
-	// - When commenting on an existing file that hasn't changed in the diff, include 'old_path' and 'old_line' parameters.
 	for _, comment := range comments {
 		if err = client.addPullRequestReviewComment(ctx, projectID, pullRequestID, comment, versions, mergeRequestChanges); err != nil {
 			return err
@@ -400,11 +394,22 @@ func (client *GitLabClient) addPullRequestReviewComment(ctx context.Context, pro
 		OldPath:      oldPath,
 	}
 
+	// The GitLab REST API for creating a merge request discussion has strange behavior:
+	// If the API call is not constructed precisely according to these rules, it may fail with an unclear error.
+	// In all cases, 'new_path' and 'new_line' parameters are required.
+	// - When commenting on a new file, do not include 'old_path' and 'old_line' parameters.
+	// - When commenting on an existing file that has changed in the diff, omit 'old_path' and 'old_line' parameters.
+	// - When commenting on an existing file that hasn't changed in the diff, include 'old_path' and 'old_line' parameters.
+
+	client.logger.Debug(fmt.Sprintf("Create merge request discussion sent. newPath: %v newLine: %v oldPath: %v, oldLine: %v",
+		newPath, newLine, oldPath, oldLine))
 	// Attempt to create a merge request discussion thread
 	_, _, err := client.createMergeRequestDiscussion(ctx, projectID, comment.Content, pullRequestID, diffPosition)
 
 	// Retry without oldLine and oldPath if the GitLab API call fails
 	if err != nil {
+		client.logger.Debug(fmt.Sprintf("Create merge request discussion second attempt sent. newPath: %v newLine: %v oldPath: %v, oldLine: %v",
+			newPath, newLine, oldPath, oldLine))
 		diffPosition.OldLine = 0
 		diffPosition.OldPath = ""
 		_, _, err = client.createMergeRequestDiscussion(ctx, projectID, comment.Content, pullRequestID, diffPosition)
