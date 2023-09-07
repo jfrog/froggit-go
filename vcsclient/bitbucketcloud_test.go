@@ -496,7 +496,7 @@ func TestBitbucketCloudClient_DeletePullRequestReviewComment(t *testing.T) {
 	client, err := NewClientBuilder(vcsutils.BitbucketCloud).Build()
 	assert.NoError(t, err)
 
-	err = client.DeletePullRequestReviewComment(ctx, owner, repo1, 1, &CommentInfo{})
+	err = client.DeletePullRequestReviewComments(ctx, owner, repo1, 1, CommentInfo{})
 	assert.ErrorIs(t, err, errBitbucketDeletePullRequestComment)
 }
 

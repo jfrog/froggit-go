@@ -461,18 +461,18 @@ func (client *GitLabClient) ListPullRequestComments(ctx context.Context, owner, 
 }
 
 // DeletePullRequestReviewComment on GitLab
-func (client *GitLabClient) DeletePullRequestReviewComment(ctx context.Context, owner, repository string, pullRequestID int, comment *CommentInfo) error {
-	var commentID int64
-	if err := validateParametersNotBlank(map[string]string{
-		"owner":         owner,
-		"repository":    repository,
-		"pullRequestID": strconv.Itoa(pullRequestID),
-		"commentID":     strconv.FormatInt(commentID, 10),
-		"discussionID":  comment.ThreadID}); err != nil {
+func (client *GitLabClient) DeletePullRequestReviewComments(ctx context.Context, owner, repository string, pullRequestID int, comments ...CommentInfo) error {
+	if err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository, "pullRequestID": strconv.Itoa(pullRequestID)}); err != nil {
 		return err
 	}
-	if _, err := client.glClient.Discussions.DeleteMergeRequestDiscussionNote(getProjectID(owner, repository), pullRequestID, comment.ThreadID, int(commentID), gitlab.WithContext(ctx)); err != nil {
-		return fmt.Errorf("an error occurred while deleting pull request review comment: %w", err)
+	for _, comment := range comments {
+		var commentID int64
+		if err := validateParametersNotBlank(map[string]string{"commentID": strconv.FormatInt(commentID, 10), "discussionID": comment.ThreadID}); err != nil {
+			return err
+		}
+		if _, err := client.glClient.Discussions.DeleteMergeRequestDiscussionNote(getProjectID(owner, repository), pullRequestID, comment.ThreadID, int(commentID), gitlab.WithContext(ctx)); err != nil {
+			return fmt.Errorf("an error occurred while deleting pull request review comment: %w", err)
+		}
 	}
 	return nil
 }

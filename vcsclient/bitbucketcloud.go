@@ -442,8 +442,8 @@ func (client *BitbucketCloudClient) ListPullRequestComments(ctx context.Context,
 	return mapBitbucketCloudCommentToCommentInfo(&parsedComments), nil
 }
 
-// DeletePullRequestReviewComment on Bitbucket cloud
-func (client *BitbucketCloudClient) DeletePullRequestReviewComment(_ context.Context, _, _ string, _ int, _ *CommentInfo) error {
+// DeletePullRequestReviewComments on Bitbucket cloud
+func (client *BitbucketCloudClient) DeletePullRequestReviewComments(_ context.Context, _, _ string, _ int, _ ...CommentInfo) error {
 	return errBitbucketDeletePullRequestComment
 }
 

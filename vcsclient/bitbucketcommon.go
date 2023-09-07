@@ -1,22 +1,23 @@
 package vcsclient
 
 import (
-	"errors"
 	"fmt"
 	"github.com/jfrog/froggit-go/vcsutils"
 	"github.com/mitchellh/mapstructure"
 	"time"
 )
 
+const notSupportedOnBitbucket = "currently not supported on Bitbucket"
+
 var (
-	errLabelsNotSupported                                 = errors.New("labels are not supported on Bitbucket")
-	errBitbucketCodeScanningNotSupported                  = errors.New("code scanning is not supported on Bitbucket")
-	errBitbucketDownloadFileFromRepoNotSupported          = errors.New("download file from repo is currently not supported on Bitbucket")
-	errBitbucketGetCommitsNotSupported                    = errors.New("get commits is currently not supported on Bitbucket")
-	errBitbucketGetRepoEnvironmentInfoNotSupported        = errors.New("get repository environment info is currently not supported on Bitbucket")
-	errBitbucketListPullRequestReviewCommentsNotSupported = errors.New("list pull request review comments is currently not supported on Bitbucket")
-	errBitbucketAddPullRequestReviewCommentsNotSupported  = errors.New("add pull request review comment is currently not supported on Bitbucket")
-	errBitbucketDeletePullRequestComment                  = errors.New("delete pull request comment is currently not supported on Bitbucket")
+	errLabelsNotSupported                                 = fmt.Errorf("labels are %s", notSupportedOnBitbucket)
+	errBitbucketCodeScanningNotSupported                  = fmt.Errorf("code scanning is %s", notSupportedOnBitbucket)
+	errBitbucketDownloadFileFromRepoNotSupported          = fmt.Errorf("download file from repo is %s", notSupportedOnBitbucket)
+	errBitbucketGetCommitsNotSupported                    = fmt.Errorf("get commits is %s", notSupportedOnBitbucket)
+	errBitbucketGetRepoEnvironmentInfoNotSupported        = fmt.Errorf("get repository environment info is %s", notSupportedOnBitbucket)
+	errBitbucketListPullRequestReviewCommentsNotSupported = fmt.Errorf("list pull request review comments is %s", notSupportedOnBitbucket)
+	errBitbucketAddPullRequestReviewCommentsNotSupported  = fmt.Errorf("add pull request review comment is %s", notSupportedOnBitbucket)
+	errBitbucketDeletePullRequestComment                  = fmt.Errorf("delete pull request comment is %s", notSupportedOnBitbucket)
 )
 
 type BitbucketCommitInfo struct {

@@ -615,6 +615,19 @@ func TestGitlabClient_GetRepositoryEnvironmentInfo(t *testing.T) {
 	assert.ErrorIs(t, err, errGitLabGetRepoEnvironmentInfoNotSupported)
 }
 
+func TestGitLabClient_DeletePullRequestReviewComment(t *testing.T) {
+	ctx := context.Background()
+	client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, "",
+		"", createGitLabHandlerWithoutExpectedURI)
+	defer cleanUp()
+	err := client.DeletePullRequestReviewComments(ctx, owner, "", 1, CommentInfo{})
+	assert.Error(t, err)
+	err = client.DeletePullRequestReviewComments(ctx, owner, "test", 1, CommentInfo{})
+	assert.Error(t, err)
+	err = client.DeletePullRequestReviewComments(ctx, owner, repo1, 1, []CommentInfo{{ThreadID: "ab22", ID: 2}, {ThreadID: "ba22", ID: 3}}...)
+	assert.NoError(t, err)
+}
+
 func TestGitLabClient_DeletePullRequestComment(t *testing.T) {
 	ctx := context.Background()
 	client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, "",
@@ -689,6 +702,19 @@ func createGitLabHandler(t *testing.T, expectedURI string, response []byte, expe
 		_, err := w.Write(response)
 		assert.NoError(t, err)
 		assert.Equal(t, expectedURI, r.RequestURI)
+		assert.Equal(t, token, r.Header.Get("Private-Token"))
+	}
+}
+
+func createGitLabHandlerWithoutExpectedURI(t *testing.T, _ string, response []byte, expectedStatusCode int) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.RequestURI == "/api/v4/" {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+		w.WriteHeader(expectedStatusCode)
+		_, err := w.Write(response)
+		assert.NoError(t, err)
 		assert.Equal(t, token, r.Header.Get("Private-Token"))
 	}
 }

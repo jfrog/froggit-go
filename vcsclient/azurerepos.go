@@ -300,9 +300,14 @@ func (client *AzureReposClient) ListPullRequestComments(ctx context.Context, _, 
 	return commentInfo, nil
 }
 
-// DeletePullRequestReviewComment on Azure Repos
-func (client *AzureReposClient) DeletePullRequestReviewComment(ctx context.Context, owner, repository string, pullRequestID int, comment *CommentInfo) error {
-	return client.DeletePullRequestComment(ctx, owner, repository, pullRequestID, int(comment.ID))
+// DeletePullRequestReviewComments on Azure Repos
+func (client *AzureReposClient) DeletePullRequestReviewComments(ctx context.Context, owner, repository string, pullRequestID int, comments ...CommentInfo) error {
+	for _, comment := range comments {
+		if err := client.DeletePullRequestComment(ctx, owner, repository, pullRequestID, int(comment.ID)); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // DeletePullRequestComment on Azure Repos

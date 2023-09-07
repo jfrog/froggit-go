@@ -478,9 +478,14 @@ func (client *BitbucketServerClient) ListPullRequestComments(ctx context.Context
 	return results, nil
 }
 
-// DeletePullRequestReviewComment on Bitbucket server
-func (client *BitbucketServerClient) DeletePullRequestReviewComment(ctx context.Context, owner, repository string, pullRequestID int, comment *CommentInfo) error {
-	return client.DeletePullRequestComment(ctx, owner, repository, pullRequestID, int(comment.ID))
+// DeletePullRequestReviewComments on Bitbucket server
+func (client *BitbucketServerClient) DeletePullRequestReviewComments(ctx context.Context, owner, repository string, pullRequestID int, comments ...CommentInfo) error {
+	for _, comment := range comments {
+		if err := client.DeletePullRequestComment(ctx, owner, repository, pullRequestID, int(comment.ID)); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // DeletePullRequestComment on Bitbucket Server

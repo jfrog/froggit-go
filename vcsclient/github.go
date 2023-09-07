@@ -497,18 +497,20 @@ func (client *GitHubClient) ListPullRequestComments(ctx context.Context, owner, 
 	return mapGitHubIssuesCommentToCommentInfoList(commentsList)
 }
 
-// DeletePullRequestReviewComment on GitHub
-func (client *GitHubClient) DeletePullRequestReviewComment(ctx context.Context, owner, repository string, _ int, comment *CommentInfo) error {
-	commentID := comment.ID
-	if err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository, "commentID": strconv.FormatInt(commentID, 10)}); err != nil {
-		return err
-	}
-	ghClient, err := client.buildGithubClient(ctx)
-	if err != nil {
-		return err
-	}
-	if _, err = ghClient.PullRequests.DeleteComment(ctx, owner, repository, commentID); err != nil {
-		return fmt.Errorf("could not delete pull request review comment: %w", err)
+// DeletePullRequestReviewComments on GitHub
+func (client *GitHubClient) DeletePullRequestReviewComments(ctx context.Context, owner, repository string, _ int, comments ...CommentInfo) error {
+	for _, comment := range comments {
+		commentID := comment.ID
+		if err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository, "commentID": strconv.FormatInt(commentID, 10)}); err != nil {
+			return err
+		}
+		ghClient, err := client.buildGithubClient(ctx)
+		if err != nil {
+			return err
+		}
+		if _, err = ghClient.PullRequests.DeleteComment(ctx, owner, repository, commentID); err != nil {
+			return fmt.Errorf("could not delete pull request review comment: %w", err)
+		}
 	}
 	return nil
 }

@@ -845,8 +845,20 @@ func TestBitbucketServer_TestGetCommitStatus(t *testing.T) {
 	})
 }
 
-func TestBitbucketServerClient_DeletePullRequestReviewComment(t *testing.T) {
-	TestBitbucketServerClient_DeletePullRequestComment(t)
+func TestBitbucketServerClient_DeletePullRequestReviewComments(t *testing.T) {
+	ctx := context.Background()
+	prId := 4
+	commentId := 10
+	version := 0
+	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, true, nil, fmt.Sprintf("/rest/api/1.0/projects/jfrog/repos/repo-1/pull-requests/%v/activities?start=%v", prId, version)+
+		fmt.Sprintf("/rest/api/1.0/projects/jfrog/repos/repo-1/pull-requests/%v/comments/%v?version=%v", prId, commentId, version), createBitbucketServerHandler)
+	defer cleanUp()
+
+	err := client.DeletePullRequestReviewComments(ctx, owner, repo1, prId, CommentInfo{ID: int64(commentId)})
+	assert.NoError(t, err)
+
+	err = createBadBitbucketServerClient(t).DeletePullRequestReviewComments(ctx, owner, repo1, prId, CommentInfo{ID: int64(commentId)})
+	assert.Error(t, err)
 }
 
 func TestBitbucketServerClient_DeletePullRequestComment(t *testing.T) {

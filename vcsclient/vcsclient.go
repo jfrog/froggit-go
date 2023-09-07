@@ -177,12 +177,12 @@ type VcsClient interface {
 	// pullRequestID  - Pull request ID
 	ListPullRequestReviewComments(ctx context.Context, owner, repository string, pullRequestID int) ([]CommentInfo, error)
 
-	// DeletePullRequestReviewComment Gets all comments assigned to a pull request.
+	// DeletePullRequestReviewComments Gets all comments assigned to a pull request.
 	// owner          - User or organization
 	// repository     - VCS repository name
 	// pullRequestID  - Pull request ID
 	// commentID 	  - The ID of the comment
-	DeletePullRequestReviewComment(ctx context.Context, owner, repository string, pullRequestID int, comment *CommentInfo) error
+	DeletePullRequestReviewComments(ctx context.Context, owner, repository string, pullRequestID int, comments ...CommentInfo) error
 
 	// ListPullRequestComments Gets all comments assigned to a pull request.
 	// owner          - User or organization
