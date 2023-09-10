@@ -234,17 +234,17 @@ func (client *AzureReposClient) addPullRequestComment(ctx context.Context, repos
 }
 
 func getThreadArgs(repository, project string, prId int, comment PullRequestComment) git.CreateThreadArgs {
-	filePath := vcsutils.GetPullRequestFilePath(comment.newFilePath)
+	filePath := vcsutils.GetPullRequestFilePath(comment.NewFilePath)
 	return git.CreateThreadArgs{
 		CommentThread: &git.GitPullRequestCommentThread{
 			Comments: &[]git.Comment{{Content: &comment.Content}},
 			Status:   &git.CommentThreadStatusValues.Active,
 			ThreadContext: &git.CommentThreadContext{
 				FilePath:       &filePath,
-				LeftFileStart:  &git.CommentPosition{Line: &comment.originalStartLine, Offset: &comment.originalStartColumn},
-				LeftFileEnd:    &git.CommentPosition{Line: &comment.originalEndLine, Offset: &comment.originalEndColumn},
-				RightFileStart: &git.CommentPosition{Line: &comment.newStartLine, Offset: &comment.newStartColumn},
-				RightFileEnd:   &git.CommentPosition{Line: &comment.newEndLine, Offset: &comment.newEndColumn},
+				LeftFileStart:  &git.CommentPosition{Line: &comment.OriginalStartLine, Offset: &comment.OriginalStartColumn},
+				LeftFileEnd:    &git.CommentPosition{Line: &comment.OriginalEndLine, Offset: &comment.OriginalEndColumn},
+				RightFileStart: &git.CommentPosition{Line: &comment.NewStartLine, Offset: &comment.NewStartColumn},
+				RightFileEnd:   &git.CommentPosition{Line: &comment.NewEndLine, Offset: &comment.NewEndColumn},
 			},
 		},
 		RepositoryId:  &repository,

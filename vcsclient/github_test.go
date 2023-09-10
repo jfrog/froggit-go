@@ -286,15 +286,15 @@ func TestGitHubClient_AddPullRequestReviewComments(t *testing.T) {
 		{
 			CommentInfo: CommentInfo{Content: "test1"},
 			PullRequestDiff: PullRequestDiff{
-				newFilePath:  "requirements.txt",
-				newStartLine: 3,
+				NewFilePath:  "requirements.txt",
+				NewStartLine: 3,
 			},
 		},
 		{
 			CommentInfo: CommentInfo{Content: "test2"},
 			PullRequestDiff: PullRequestDiff{
-				newFilePath:  "requirements.txt",
-				newStartLine: 1,
+				NewFilePath:  "requirements.txt",
+				NewStartLine: 1,
 			},
 		},
 	}...)
@@ -303,8 +303,8 @@ func TestGitHubClient_AddPullRequestReviewComments(t *testing.T) {
 	err = createBadGitHubClient(t).AddPullRequestReviewComments(ctx, owner, repo1, 1, PullRequestComment{
 		CommentInfo: CommentInfo{Content: "test1"},
 		PullRequestDiff: PullRequestDiff{
-			newFilePath:  "requirements.txt",
-			newStartLine: 3,
+			NewFilePath:  "requirements.txt",
+			NewStartLine: 3,
 		},
 	})
 	assert.Error(t, err)

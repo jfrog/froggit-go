@@ -220,16 +220,16 @@ func TestAzureRepos_TestAddPullRequestReviewComments(t *testing.T) {
 	err = client.AddPullRequestReviewComments(ctx, "", repo1, 2, PullRequestComment{
 		CommentInfo: CommentInfo{Content: "test"},
 		PullRequestDiff: PullRequestDiff{
-			originalFilePath:    pom,
-			originalStartLine:   startLine,
-			originalEndLine:     endLine,
-			originalStartColumn: startColumn,
-			originalEndColumn:   startColumn,
-			newFilePath:         pom,
-			newStartLine:        startLine,
-			newEndLine:          endLine,
-			newStartColumn:      startColumn,
-			newEndColumn:        endColumn,
+			OriginalFilePath:    pom,
+			OriginalStartLine:   startLine,
+			OriginalEndLine:     endLine,
+			OriginalStartColumn: startColumn,
+			OriginalEndColumn:   startColumn,
+			NewFilePath:         pom,
+			NewStartLine:        startLine,
+			NewEndLine:          endLine,
+			NewStartColumn:      startColumn,
+			NewEndColumn:        endColumn,
 		},
 	})
 	assert.NoError(t, err)

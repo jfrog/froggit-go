@@ -425,10 +425,10 @@ func (client *BitbucketServerClient) addPullRequestComment(ctx context.Context, 
 	}
 	bitbucketClient := client.buildBitbucketClient(ctx)
 	anchor := &bitbucketv1.Anchor{}
-	filePath := vcsutils.GetPullRequestFilePath(comment.newFilePath)
+	filePath := vcsutils.GetPullRequestFilePath(comment.NewFilePath)
 	if filePath != "" {
 		anchor = &bitbucketv1.Anchor{
-			Line:     comment.newStartLine,
+			Line:     comment.NewStartLine,
 			LineType: "CONTEXT",
 			FileType: "FROM",
 			Path:     filePath,

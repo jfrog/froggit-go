@@ -360,25 +360,25 @@ func (client *GitLabClient) addPullRequestReviewComment(ctx context.Context, pro
 	var diffFound bool
 
 	for _, diff := range mergeRequestChanges.Changes {
-		if diff.NewPath != comment.newFilePath {
+		if diff.NewPath != comment.NewFilePath {
 			continue
 		}
 
 		diffFound = true
-		newLine = comment.newStartLine
+		newLine = comment.NewStartLine
 		newPath = diff.NewPath
 
 		// New files don't have old data
 		if !diff.NewFile {
 			oldPath = diff.OldPath
-			oldLine = comment.originalStartLine
+			oldLine = comment.OriginalStartLine
 		}
 		break
 	}
 
 	// If no matching change is found, return an error
 	if !diffFound {
-		return fmt.Errorf("could not find changes to %s in the current merge request", comment.newFilePath)
+		return fmt.Errorf("could not find changes to %s in the current merge request", comment.NewFilePath)
 	}
 
 	// Create a NotePosition for the comment

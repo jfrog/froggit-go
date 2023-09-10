@@ -197,10 +197,10 @@ func TestGitLabClient_AddPullRequestReviewComment(t *testing.T) {
 		{
 			CommentInfo: CommentInfo{Content: "test1"},
 			PullRequestDiff: PullRequestDiff{
-				originalFilePath:  "oldPath",
-				originalStartLine: 1,
-				newFilePath:       "newPath",
-				newStartLine:      2,
+				OriginalFilePath:  "oldPath",
+				OriginalStartLine: 1,
+				NewFilePath:       "newPath",
+				NewStartLine:      2,
 			},
 		},
 	}
@@ -211,10 +211,10 @@ func TestGitLabClient_AddPullRequestReviewComment(t *testing.T) {
 		{
 			CommentInfo: CommentInfo{Content: "test1"},
 			PullRequestDiff: PullRequestDiff{
-				originalFilePath:  "VERSION",
-				originalStartLine: 1,
-				newFilePath:       "VERSION",
-				newStartLine:      2,
+				OriginalFilePath:  "VERSION",
+				OriginalStartLine: 1,
+				NewFilePath:       "VERSION",
+				NewStartLine:      2,
 			},
 		},
 	}

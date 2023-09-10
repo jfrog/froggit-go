@@ -348,27 +348,27 @@ type PullRequestComment struct {
 }
 
 // PullRequestDiff contains the details of the pull request diff
-// originalFilePath   - the original file path
-// originalStartLine  - the original start line number
-// originalEndLine    - the original end line number
+// OriginalFilePath   - the original file path
+// OriginalStartLine  - the original start line number
+// OriginalEndLine    - the original end line number
 // originalStartColum - the original start column number
-// originalEndColumn  - the original end column number
-// newFilePath        - the new file path
-// newStartLine       - the new start line number
-// newEndLine         - the new end line number
-// newStartColumn     - the new start column number
-// newEndColumn       - the new end column number
+// OriginalEndColumn  - the original end column number
+// NewFilePath        - the new file path
+// NewStartLine       - the new start line number
+// NewEndLine         - the new end line number
+// NewStartColumn     - the new start column number
+// NewEndColumn       - the new end column number
 type PullRequestDiff struct {
-	originalFilePath    string
-	originalStartLine   int
-	originalEndLine     int
-	originalStartColumn int
-	originalEndColumn   int
-	newFilePath         string
-	newStartLine        int
-	newEndLine          int
-	newStartColumn      int
-	newEndColumn        int
+	OriginalFilePath    string
+	OriginalStartLine   int
+	OriginalEndLine     int
+	OriginalStartColumn int
+	OriginalEndColumn   int
+	NewFilePath         string
+	NewStartLine        int
+	NewEndLine          int
+	NewStartColumn      int
+	NewEndColumn        int
 }
 
 // RepositoryInfo contains general information about the repository.

@@ -214,10 +214,10 @@ func TestBitbucketServer_AddPullRequestReviewComment(t *testing.T) {
 	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, true, nil, "/rest/api/1.0/projects/jfrog/repos/repo-1/pull-requests/1/comments", createBitbucketServerHandler)
 	defer cleanUp()
 
-	err := client.AddPullRequestReviewComments(ctx, owner, repo1, 1, PullRequestComment{CommentInfo: CommentInfo{Content: "Comment content"}, PullRequestDiff: PullRequestDiff{originalStartLine: 7, newStartLine: 7}})
+	err := client.AddPullRequestReviewComments(ctx, owner, repo1, 1, PullRequestComment{CommentInfo: CommentInfo{Content: "Comment content"}, PullRequestDiff: PullRequestDiff{OriginalStartLine: 7, NewStartLine: 7}})
 	assert.NoError(t, err)
 
-	err = createBadBitbucketServerClient(t).AddPullRequestReviewComments(ctx, owner, repo1, 1, PullRequestComment{CommentInfo: CommentInfo{Content: "Comment content"}, PullRequestDiff: PullRequestDiff{originalStartLine: 7, newStartLine: 7}})
+	err = createBadBitbucketServerClient(t).AddPullRequestReviewComments(ctx, owner, repo1, 1, PullRequestComment{CommentInfo: CommentInfo{Content: "Comment content"}, PullRequestDiff: PullRequestDiff{OriginalStartLine: 7, NewStartLine: 7}})
 	assert.Error(t, err)
 }
 
