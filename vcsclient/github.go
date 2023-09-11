@@ -452,7 +452,7 @@ func (client *GitHubClient) AddPullRequestReviewComments(ctx context.Context, ow
 		if _, _, err = ghClient.PullRequests.CreateComment(ctx, owner, repository, pullRequestID, &github.PullRequestComment{
 			CommitID:  &latestCommitSHA,
 			Body:      &comment.Content,
-			StartLine: &comment.NewStartLine,
+			StartLine: startLine,
 			Line:      &comment.NewEndLine,
 			Path:      &filePath,
 		}); err != nil {
