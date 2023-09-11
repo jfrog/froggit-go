@@ -444,6 +444,11 @@ func (client *GitHubClient) AddPullRequestReviewComments(ctx context.Context, ow
 
 	for _, comment := range comments {
 		filePath := strings.TrimPrefix(comment.NewFilePath, string(os.PathSeparator))
+		startLine := &comment.NewStartLine
+		// GitHub API won't accept 'start_line' if it equals the end line
+		if *startLine == comment.NewEndLine {
+			startLine = nil
+		}
 		if _, _, err = ghClient.PullRequests.CreateComment(ctx, owner, repository, pullRequestID, &github.PullRequestComment{
 			CommitID:  &latestCommitSHA,
 			Body:      &comment.Content,
