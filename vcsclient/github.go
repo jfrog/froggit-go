@@ -14,6 +14,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"os"
 	"sort"
 	"strconv"
 	"strings"
@@ -442,11 +443,12 @@ func (client *GitHubClient) AddPullRequestReviewComments(ctx context.Context, ow
 	latestCommitSHA := commits[len(commits)-1].GetSHA()
 
 	for _, comment := range comments {
+		filePath := strings.TrimPrefix(comment.NewFilePath, string(os.PathSeparator))
 		if _, _, err = ghClient.PullRequests.CreateComment(ctx, owner, repository, pullRequestID, &github.PullRequestComment{
 			CommitID: &latestCommitSHA,
 			Body:     &comment.Content,
 			Line:     &comment.NewStartLine,
-			Path:     &comment.NewFilePath,
+			Path:     &filePath,
 		}); err != nil {
 			return fmt.Errorf("could not create a code review comment for <%s/%s> in pull request %s. error received: %w",
 				owner, repository, prID, err)
