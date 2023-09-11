@@ -445,10 +445,11 @@ func (client *GitHubClient) AddPullRequestReviewComments(ctx context.Context, ow
 	for _, comment := range comments {
 		filePath := strings.TrimPrefix(comment.NewFilePath, string(os.PathSeparator))
 		if _, _, err = ghClient.PullRequests.CreateComment(ctx, owner, repository, pullRequestID, &github.PullRequestComment{
-			CommitID: &latestCommitSHA,
-			Body:     &comment.Content,
-			Line:     &comment.NewStartLine,
-			Path:     &filePath,
+			CommitID:  &latestCommitSHA,
+			Body:      &comment.Content,
+			StartLine: &comment.NewStartLine,
+			Line:      &comment.NewEndLine,
+			Path:      &filePath,
 		}); err != nil {
 			return fmt.Errorf("could not create a code review comment for <%s/%s> in pull request %s. error received: %w",
 				owner, repository, prID, err)
