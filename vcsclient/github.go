@@ -14,7 +14,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"os"
+	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -443,7 +443,7 @@ func (client *GitHubClient) AddPullRequestReviewComments(ctx context.Context, ow
 	latestCommitSHA := commits[len(commits)-1].GetSHA()
 
 	for _, comment := range comments {
-		filePath := strings.TrimPrefix(comment.NewFilePath, string(os.PathSeparator))
+		filePath := filepath.Clean(comment.NewFilePath)
 		startLine := &comment.NewStartLine
 		// GitHub API won't accept 'start_line' if it equals the end line
 		if *startLine == comment.NewEndLine {

@@ -356,7 +356,7 @@ func (client *GitLabClient) getMergeRequestChanges(ctx context.Context, projectI
 func (client *GitLabClient) addPullRequestReviewComment(ctx context.Context, projectID string, pullRequestID int, comment PullRequestComment, versions []*gitlab.MergeRequestDiffVersion, mergeRequestChanges *gitlab.MergeRequest) error {
 	// Find the corresponding change in merge request
 	var newPath, oldPath string
-	var newLine, oldLine int
+	var newLine int
 	var diffFound bool
 
 	for _, diff := range mergeRequestChanges.Changes {
@@ -371,7 +371,6 @@ func (client *GitLabClient) addPullRequestReviewComment(ctx context.Context, pro
 		// New files don't have old data
 		if !diff.NewFile {
 			oldPath = diff.OldPath
-			oldLine = comment.OriginalStartLine
 		}
 		break
 	}
@@ -390,7 +389,7 @@ func (client *GitLabClient) addPullRequestReviewComment(ctx context.Context, pro
 		PositionType: "text",
 		NewLine:      newLine,
 		NewPath:      newPath,
-		OldLine:      oldLine,
+		OldLine:      newLine,
 		OldPath:      oldPath,
 	}
 
@@ -402,16 +401,16 @@ func (client *GitLabClient) addPullRequestReviewComment(ctx context.Context, pro
 	// - When commenting on an existing file that hasn't changed in the diff, include 'old_path' and 'old_line' parameters.
 
 	client.logger.Debug(fmt.Sprintf("Create merge request discussion sent. newPath: %v newLine: %v oldPath: %v, oldLine: %v",
-		newPath, newLine, oldPath, oldLine))
+		newPath, newLine, oldPath, newLine))
 	// Attempt to create a merge request discussion thread
 	_, _, err := client.createMergeRequestDiscussion(ctx, projectID, comment.Content, pullRequestID, diffPosition)
 
 	// Retry without oldLine and oldPath if the GitLab API call fails
 	if err != nil {
-		client.logger.Debug(fmt.Sprintf("Create merge request discussion second attempt sent. newPath: %v newLine: %v oldPath: %v, oldLine: %v",
-			newPath, newLine, oldPath, oldLine))
 		diffPosition.OldLine = 0
 		diffPosition.OldPath = ""
+		client.logger.Debug(fmt.Sprintf("Create merge request discussion second attempt sent. newPath: %v newLine: %v oldPath: %v, oldLine: %v",
+			newPath, newLine, oldPath, newLine))
 		_, _, err = client.createMergeRequestDiscussion(ctx, projectID, comment.Content, pullRequestID, diffPosition)
 	}
 
