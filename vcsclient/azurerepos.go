@@ -207,24 +207,58 @@ func (client *AzureReposClient) UpdatePullRequest(ctx context.Context, owner, re
 
 // AddPullRequestComment on Azure Repos
 func (client *AzureReposClient) AddPullRequestComment(ctx context.Context, _, repository, content string, pullRequestID int) error {
+	return client.addPullRequestComment(ctx, repository, pullRequestID, PullRequestComment{CommentInfo: CommentInfo{Content: content}})
+}
+
+// AddPullRequestReviewComments on Azure Repos
+func (client *AzureReposClient) AddPullRequestReviewComments(ctx context.Context, _, repository string, pullRequestID int, comments ...PullRequestComment) error {
+	if len(comments) == 0 {
+		return errors.New(vcsutils.ErrNoCommentsProvided)
+	}
+	for _, comment := range comments {
+		if err := client.addPullRequestComment(ctx, repository, pullRequestID, comment); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (client *AzureReposClient) addPullRequestComment(ctx context.Context, repository string, pullRequestID int, comment PullRequestComment) error {
 	azureReposGitClient, err := client.buildAzureReposClient(ctx)
 	if err != nil {
 		return err
 	}
-	// To add a new comment to the pull request, we need to open a new thread, and add a comment inside this thread.
-	_, err = azureReposGitClient.CreateThread(ctx, git.CreateThreadArgs{
-		CommentThread: &git.GitPullRequestCommentThread{
-			Comments: &[]git.Comment{{Content: &content}},
-			Status:   &git.CommentThreadStatusValues.Active,
-		},
-		RepositoryId:  &repository,
-		PullRequestId: &pullRequestID,
-		Project:       &client.vcsInfo.Project,
-	})
+	threadArgs := getThreadArgs(repository, client.vcsInfo.Project, pullRequestID, comment)
+	_, err = azureReposGitClient.CreateThread(ctx, threadArgs)
 	return err
 }
 
-// ListPullRequestComments returns all the pull request threads with their comments.
+func getThreadArgs(repository, project string, prId int, comment PullRequestComment) git.CreateThreadArgs {
+	filePath := vcsutils.GetPullRequestFilePath(comment.NewFilePath)
+	return git.CreateThreadArgs{
+		CommentThread: &git.GitPullRequestCommentThread{
+			Comments: &[]git.Comment{{Content: &comment.Content}},
+			Status:   &git.CommentThreadStatusValues.Active,
+			ThreadContext: &git.CommentThreadContext{
+				FilePath:       &filePath,
+				LeftFileStart:  &git.CommentPosition{Line: &comment.OriginalStartLine, Offset: &comment.OriginalStartColumn},
+				LeftFileEnd:    &git.CommentPosition{Line: &comment.OriginalEndLine, Offset: &comment.OriginalEndColumn},
+				RightFileStart: &git.CommentPosition{Line: &comment.NewStartLine, Offset: &comment.NewStartColumn},
+				RightFileEnd:   &git.CommentPosition{Line: &comment.NewEndLine, Offset: &comment.NewEndColumn},
+			},
+		},
+		RepositoryId:  &repository,
+		PullRequestId: &prId,
+		Project:       &project,
+	}
+}
+
+// ListPullRequestReviewComments on Azure Repos
+func (client *AzureReposClient) ListPullRequestReviewComments(ctx context.Context, owner, repository string, pullRequestID int) ([]CommentInfo, error) {
+	return client.ListPullRequestComments(ctx, owner, repository, pullRequestID)
+}
+
+// ListPullRequestComments on Azure Repos
 func (client *AzureReposClient) ListPullRequestComments(ctx context.Context, _, repository string, pullRequestID int) ([]CommentInfo, error) {
 	azureReposGitClient, err := client.buildAzureReposClient(ctx)
 	if err != nil {
@@ -264,6 +298,16 @@ func (client *AzureReposClient) ListPullRequestComments(ctx context.Context, _, 
 		})
 	}
 	return commentInfo, nil
+}
+
+// DeletePullRequestReviewComments on Azure Repos
+func (client *AzureReposClient) DeletePullRequestReviewComments(ctx context.Context, owner, repository string, pullRequestID int, comments ...CommentInfo) error {
+	for _, comment := range comments {
+		if err := client.DeletePullRequestComment(ctx, owner, repository, pullRequestID, int(comment.ID)); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // DeletePullRequestComment on Azure Repos
@@ -314,6 +358,7 @@ func (client *AzureReposClient) getOpenPullRequests(ctx context.Context, owner, 
 	return pullRequestsInfo, nil
 }
 
+// GetPullRequestById in Azure Repos
 func (client *AzureReposClient) GetPullRequestByID(ctx context.Context, owner, repository string, pullRequestId int) (pullRequestInfo PullRequestInfo, err error) {
 	azureReposGitClient, err := client.buildAzureReposClient(ctx)
 	if err != nil {

@@ -402,16 +402,52 @@ func mapBitbucketServerPullRequestToPullRequestInfo(pullRequest bitbucketv1.Pull
 
 // AddPullRequestComment on Bitbucket server
 func (client *BitbucketServerClient) AddPullRequestComment(ctx context.Context, owner, repository, content string, pullRequestID int) error {
-	err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository, "content": content})
+	return client.addPullRequestComment(ctx, owner, repository, pullRequestID, PullRequestComment{CommentInfo: CommentInfo{Content: content}})
+}
+
+// AddPullRequestReviewComments on Bitbucket server
+func (client *BitbucketServerClient) AddPullRequestReviewComments(ctx context.Context, owner, repository string, pullRequestID int, comments ...PullRequestComment) error {
+	if len(comments) == 0 {
+		return errors.New(vcsutils.ErrNoCommentsProvided)
+	}
+	for _, comment := range comments {
+		if err := client.addPullRequestComment(ctx, owner, repository, pullRequestID, comment); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (client *BitbucketServerClient) addPullRequestComment(ctx context.Context, owner, repository string, pullRequestID int, comment PullRequestComment) error {
+	err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository, "content": comment.Content})
 	if err != nil {
 		return err
 	}
 	bitbucketClient := client.buildBitbucketClient(ctx)
-	_, err = bitbucketClient.CreatePullRequestComment(owner, repository, pullRequestID, bitbucketv1.Comment{
-		Text: content,
-	}, []string{"application/json"})
+	// Determine the file path and anchor
+	var anchor *bitbucketv1.Anchor
+	if filePath := vcsutils.GetPullRequestFilePath(comment.NewFilePath); filePath != "" {
+		anchor = &bitbucketv1.Anchor{
+			Line:     comment.NewStartLine,
+			LineType: "CONTEXT",
+			FileType: "FROM",
+			Path:     filePath,
+			SrcPath:  filePath,
+		}
+	}
 
+	// Create the pull request comment
+	commentData := bitbucketv1.Comment{
+		Text:   comment.Content,
+		Anchor: anchor,
+	}
+	_, err = bitbucketClient.CreatePullRequestComment(owner, repository, pullRequestID, commentData, []string{"application/json"})
 	return err
+}
+
+// ListPullRequestReviewComments on Bitbucket server
+func (client *BitbucketServerClient) ListPullRequestReviewComments(ctx context.Context, owner, repository string, pullRequestID int) ([]CommentInfo, error) {
+	return client.ListPullRequestComments(ctx, owner, repository, pullRequestID)
 }
 
 // ListPullRequestComments on Bitbucket server
@@ -442,6 +478,16 @@ func (client *BitbucketServerClient) ListPullRequestComments(ctx context.Context
 		}
 	}
 	return results, nil
+}
+
+// DeletePullRequestReviewComments on Bitbucket server
+func (client *BitbucketServerClient) DeletePullRequestReviewComments(ctx context.Context, owner, repository string, pullRequestID int, comments ...CommentInfo) error {
+	for _, comment := range comments {
+		if err := client.DeletePullRequestComment(ctx, owner, repository, pullRequestID, int(comment.ID)); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // DeletePullRequestComment on Bitbucket Server

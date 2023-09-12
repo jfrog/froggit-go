@@ -464,6 +464,42 @@ func TestBitbucketCloud_CreateLabel(t *testing.T) {
 	assert.ErrorIs(t, err, errLabelsNotSupported)
 }
 
+func TestBitbucketCloud_AddPullRequestReviewComments(t *testing.T) {
+	ctx := context.Background()
+	client, err := NewClientBuilder(vcsutils.BitbucketCloud).Build()
+	assert.NoError(t, err)
+
+	err = client.AddPullRequestReviewComments(ctx, owner, repo1, 1)
+	assert.ErrorIs(t, err, errBitbucketAddPullRequestReviewCommentsNotSupported)
+}
+
+func TestBitbucketCloudClient_ListPullRequestReviewComments(t *testing.T) {
+	ctx := context.Background()
+	client, err := NewClientBuilder(vcsutils.BitbucketCloud).Build()
+	assert.NoError(t, err)
+
+	_, err = client.ListPullRequestReviewComments(ctx, owner, repo1, 1)
+	assert.ErrorIs(t, err, errBitbucketListPullRequestReviewCommentsNotSupported)
+}
+
+func TestBitbucketCloudClient_DeletePullRequestComment(t *testing.T) {
+	ctx := context.Background()
+	client, err := NewClientBuilder(vcsutils.BitbucketCloud).Build()
+	assert.NoError(t, err)
+
+	err = client.DeletePullRequestComment(ctx, owner, repo1, 1, 1)
+	assert.ErrorIs(t, err, errBitbucketDeletePullRequestComment)
+}
+
+func TestBitbucketCloudClient_DeletePullRequestReviewComment(t *testing.T) {
+	ctx := context.Background()
+	client, err := NewClientBuilder(vcsutils.BitbucketCloud).Build()
+	assert.NoError(t, err)
+
+	err = client.DeletePullRequestReviewComments(ctx, owner, repo1, 1, CommentInfo{})
+	assert.ErrorIs(t, err, errBitbucketDeletePullRequestComment)
+}
+
 func TestBitbucketCloudClient_DownloadFileFromRepo(t *testing.T) {
 	ctx := context.Background()
 	client, err := NewClientBuilder(vcsutils.BitbucketCloud).Build()

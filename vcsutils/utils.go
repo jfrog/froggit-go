@@ -353,3 +353,10 @@ func RemoveDirContents(dirPath string) (err error) {
 	}
 	return
 }
+
+func GetPullRequestFilePath(filePath string) string {
+	if filePath == "" {
+		return ""
+	}
+	return fmt.Sprintf("/%s", strings.TrimPrefix(filePath, "/"))
+}

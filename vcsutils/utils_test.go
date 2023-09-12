@@ -239,3 +239,20 @@ func TestMapPullRequestState(t *testing.T) {
 		})
 	}
 }
+
+func TestGetPullRequestFilePath(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected string
+	}{
+		{"", ""},
+		{"file.txt", "/file.txt"},
+		{"/path/to/file.txt", "/path/to/file.txt"},
+		{"dir/file.txt", "/dir/file.txt"},
+	}
+
+	for _, test := range tests {
+		result := GetPullRequestFilePath(test.input)
+		assert.Equal(t, test.expected, result)
+	}
+}

@@ -45,7 +45,11 @@ Currently supported providers are: [GitHub](#github), [Bitbucket Server](#bitbuc
       - [List Open Pull Requests](#list-open-pull-requests)
       - [List Open Pull Requests With Body](#list-open-pull-requests-with-body)
       - [Add Pull Request Comment](#add-pull-request-comment)
+      - [Add Pull Request Review Comments](#add-pull-request-review-comments)
       - [List Pull Request Comments](#list-pull-request-comments)
+      - [List Pull Request Review Comments](#list-pull-request-review-comments)
+      - [Delete Pull Request Comment](#delete-pull-request-comment)
+      - [Delete Pull Request Review Comments](#delete-pull-request-review-comments)
       - [Get Commits](#get-commits)
       - [Get Latest Commit](#get-latest-commit)
       - [Get Commit By SHA](#get-commit-by-sha)
@@ -417,6 +421,42 @@ pullRequestID := 5
 err := client.AddPullRequestComment(ctx, owner, repository, content, pullRequestID)
 ```
 
+##### Add Pull Request Review Comments
+
+```go
+// Go context
+ctx := context.Background()
+// Organization or username
+owner := "jfrog"
+// VCS repository
+repository := "jfrog-cli"
+// Pull Request ID
+pullRequestID := 5
+// Pull Request Comment
+comments := []PullRequestComment{
+  {
+    CommentInfo: CommentInfo{
+      Content: "content",
+    },
+    PullRequestDiff: PullRequestDiff{
+      OriginalFilePath: index.js   
+      OriginalStartLine: 1
+      OriginalEndLine: 1
+      OriginalStartColumn: 1
+      OriginalEndColumn: 1  
+      NewFilePath: index.js        
+      NewStartLine: 1       
+      NewEndLine: 1         
+      NewStartColumn: 1     
+      NewEndColumn: 1       
+    },
+  }
+}
+
+
+err := client.AddPullRequestReviewComments(ctx, owner, repository, pullRequestID, comments...)
+```
+
 ##### List Pull Request Comments
 
 ```go
@@ -431,6 +471,62 @@ pullRequestID := 5
 
 pullRequestComments, err := client.ListPullRequestComment(ctx, owner, repository, pullRequestID)
 ```
+
+##### List Pull Request Review Comments
+
+```go
+// Go context
+ctx := context.Background()
+// Organization or username
+owner := "jfrog"
+// VCS repository
+repository := "jfrog-cli"
+// Pull Request ID
+pullRequestID := 5
+
+pullRequestComments, err := client.ListPullRequestReviewComments(ctx, owner, repository, pullRequestID)
+```
+
+##### Delete Pull Request Comment
+
+```go
+// Go context
+ctx := context.Background()
+// Organization or username
+owner := "jfrog"
+// VCS repository
+repository := "jfrog-cli"
+// Pull Request ID
+pullRequestID := 5
+// Comment ID
+commentID := 17
+
+err := client.DeletePullRequestComment(ctx, owner, repository, pullRequestID, commentID)
+```
+
+##### Delete Pull Request Review Comments
+
+```go
+// Go context
+ctx := context.Background()
+// Organization or username
+owner := "jfrog"
+// VCS repository
+repository := "jfrog-cli"
+// Pull Request ID
+pullRequestID := 5
+// Comment ID
+comments := []CommentInfo{
+  {
+    ID: 2
+    // For GitLab
+    ThreadID: 7
+  }
+}
+
+err := client.DeletePullRequestComment(ctx, owner, repository, pullRequestID, comments...)
+```
+
 
 #### Get Commits
 

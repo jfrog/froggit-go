@@ -12,6 +12,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -185,6 +186,64 @@ func TestGitLabClient_AddPullRequestComment(t *testing.T) {
 
 	err := client.AddPullRequestComment(ctx, owner, repo1, "Comment content", 1)
 	assert.NoError(t, err)
+}
+
+func TestGitLabClient_AddPullRequestReviewComment(t *testing.T) {
+	ctx := context.Background()
+	client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, "",
+		fmt.Sprintf("/api/v4/projects/%s/merge_requests/1/notes", url.PathEscape(owner+"/"+repo1)), createAddPullRequestReviewCommentGitLabHandler)
+	defer cleanUp()
+	comments := []PullRequestComment{
+		{
+			CommentInfo: CommentInfo{Content: "test1"},
+			PullRequestDiff: PullRequestDiff{
+				OriginalFilePath:  "oldPath",
+				OriginalStartLine: 1,
+				NewFilePath:       "newPath",
+				NewStartLine:      2,
+			},
+		},
+	}
+	err := client.AddPullRequestReviewComments(ctx, owner, repo1, 7, comments...)
+	// No diff found
+	assert.Error(t, err)
+	comments = []PullRequestComment{
+		{
+			CommentInfo: CommentInfo{Content: "test1"},
+			PullRequestDiff: PullRequestDiff{
+				OriginalFilePath:  "VERSION",
+				OriginalStartLine: 1,
+				NewFilePath:       "VERSION",
+				NewStartLine:      2,
+			},
+		},
+	}
+	err = client.AddPullRequestReviewComments(ctx, owner, repo1, 7, comments...)
+	assert.NoError(t, err)
+}
+
+func TestGitLabClient_ListPullRequestReviewComments(t *testing.T) {
+	ctx := context.Background()
+	response, err := os.ReadFile(filepath.Join("testdata", "gitlab", "merge_request_discussion_items.json"))
+	assert.NoError(t, err)
+
+	client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, response,
+		fmt.Sprintf("/api/v4/projects/%s/merge_requests/1/discussions", url.PathEscape(owner+"/"+repo1)), createGitLabHandler)
+	defer cleanUp()
+
+	result, err := client.ListPullRequestReviewComments(ctx, owner, repo1, 1)
+	assert.NoError(t, err)
+	assert.NoError(t, err)
+	assert.Len(t, result, 3)
+	assert.Equal(t, int64(1126), result[0].ID)
+	assert.Equal(t, "discussion text", result[0].Content)
+	assert.Equal(t, "2018-03-03 21:54:39.668 +0000 UTC", result[0].Created.String())
+	assert.Equal(t, int64(1129), result[1].ID)
+	assert.Equal(t, "reply to the discussion", result[1].Content)
+	assert.Equal(t, "2018-03-04 13:38:02.127 +0000 UTC", result[1].Created.String())
+	assert.Equal(t, int64(1128), result[2].ID)
+	assert.Equal(t, "a single comment", result[2].Content)
+	assert.Equal(t, "2018-03-04 09:17:22.52 +0000 UTC", result[2].Created.String())
 }
 
 func TestGitLabClient_ListPullRequestComments(t *testing.T) {
@@ -556,6 +615,19 @@ func TestGitlabClient_GetRepositoryEnvironmentInfo(t *testing.T) {
 	assert.ErrorIs(t, err, errGitLabGetRepoEnvironmentInfoNotSupported)
 }
 
+func TestGitLabClient_DeletePullRequestReviewComment(t *testing.T) {
+	ctx := context.Background()
+	client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, "",
+		"", createGitLabHandlerWithoutExpectedURI)
+	defer cleanUp()
+	err := client.DeletePullRequestReviewComments(ctx, owner, "", 1, CommentInfo{})
+	assert.Error(t, err)
+	err = client.DeletePullRequestReviewComments(ctx, owner, "test", 1, CommentInfo{})
+	assert.Error(t, err)
+	err = client.DeletePullRequestReviewComments(ctx, owner, repo1, 1, []CommentInfo{{ThreadID: "ab22", ID: 2}, {ThreadID: "ba22", ID: 3}}...)
+	assert.NoError(t, err)
+}
+
 func TestGitLabClient_DeletePullRequestComment(t *testing.T) {
 	ctx := context.Background()
 	client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, "",
@@ -631,6 +703,49 @@ func createGitLabHandler(t *testing.T, expectedURI string, response []byte, expe
 		assert.NoError(t, err)
 		assert.Equal(t, expectedURI, r.RequestURI)
 		assert.Equal(t, token, r.Header.Get("Private-Token"))
+	}
+}
+
+func createGitLabHandlerWithoutExpectedURI(t *testing.T, _ string, response []byte, expectedStatusCode int) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.RequestURI == "/api/v4/" {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+		w.WriteHeader(expectedStatusCode)
+		_, err := w.Write(response)
+		assert.NoError(t, err)
+		assert.Equal(t, token, r.Header.Get("Private-Token"))
+	}
+}
+
+func createAddPullRequestReviewCommentGitLabHandler(t *testing.T, _ string, _ []byte, _ int) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		switch r.RequestURI {
+		case "/api/v4/projects/jfrog%2Frepo-1/merge_requests/7/versions":
+			versionsDiff, err := os.ReadFile(filepath.Join("testdata", "gitlab", "merge_request_diff_versions.json"))
+			assert.NoError(t, err)
+			_, err = w.Write(versionsDiff)
+			assert.NoError(t, err)
+			assert.Equal(t, token, r.Header.Get("Private-Token"))
+		case "/api/v4/projects/jfrog%2Frepo-1/merge_requests/7/changes":
+			mergeRequestChanges, err := os.ReadFile(filepath.Join("testdata", "gitlab", "merge_request_changes.json"))
+			assert.NoError(t, err)
+			_, err = w.Write(mergeRequestChanges)
+			assert.NoError(t, err)
+			assert.Equal(t, token, r.Header.Get("Private-Token"))
+		case "/api/v4/projects/jfrog%2Frepo-1/merge_requests/7/discussions":
+			body, err := io.ReadAll(r.Body)
+			assert.NoError(t, err)
+			if strings.Contains(string(body), "old_path") {
+				w.WriteHeader(http.StatusNotFound)
+			}
+			newMergeRequestThreadResponse, err := os.ReadFile(filepath.Join("testdata", "gitlab", "new_merge_request_thread.json"))
+			assert.NoError(t, err)
+			w.WriteHeader(http.StatusOK)
+			_, err = w.Write(newMergeRequestThreadResponse)
+			assert.NoError(t, err)
+		}
 	}
 }
 

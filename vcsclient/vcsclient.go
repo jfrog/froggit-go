@@ -164,6 +164,26 @@ type VcsClient interface {
 	// pullRequestID  - Pull request ID
 	AddPullRequestComment(ctx context.Context, owner, repository, content string, pullRequestID int) error
 
+	// AddPullRequestReviewComments Adds a new review comment on the requested pull request
+	// owner          - User or organization
+	// repository     - VCS repository name
+	// pullRequestID  - Pull request ID
+	// comment        - The new comment details defined in PullRequestComment
+	AddPullRequestReviewComments(ctx context.Context, owner, repository string, pullRequestID int, comments ...PullRequestComment) error
+
+	// ListPullRequestReviewComments Gets all pull request review comments
+	// owner          - User or organization
+	// repository     - VCS repository name
+	// pullRequestID  - Pull request ID
+	ListPullRequestReviewComments(ctx context.Context, owner, repository string, pullRequestID int) ([]CommentInfo, error)
+
+	// DeletePullRequestReviewComments Gets all comments assigned to a pull request.
+	// owner          - User or organization
+	// repository     - VCS repository name
+	// pullRequestID  - Pull request ID
+	// commentID 	  - The ID of the comment
+	DeletePullRequestReviewComments(ctx context.Context, owner, repository string, pullRequestID int, comments ...CommentInfo) error
+
 	// ListPullRequestComments Gets all comments assigned to a pull request.
 	// owner          - User or organization
 	// repository     - VCS repository name
@@ -175,7 +195,6 @@ type VcsClient interface {
 	// repository     - VCS repository name
 	// pullRequestID  - Pull request ID
 	// commentID 	  - The ID of the comment
-	// commentVersion - The version of the comment
 	DeletePullRequestComment(ctx context.Context, owner, repository string, pullRequestID, commentID int) error
 
 	// ListOpenPullRequestsWithBody Gets all open pull requests ids and the pull request body.
@@ -299,10 +318,11 @@ type CommitInfo struct {
 }
 
 type CommentInfo struct {
-	ID      int64
-	Content string
-	Created time.Time
-	Version int
+	ID       int64
+	ThreadID string
+	Content  string
+	Created  time.Time
+	Version  int
 }
 
 type PullRequestInfo struct {
@@ -319,7 +339,39 @@ type BranchInfo struct {
 	Owner      string
 }
 
-// RepositoryInfo contains general information about repository.
+// PullRequestInfo contains the details of a pull request comment
+// content - the content of the pull request comment
+// PullRequestDiff - the content of the pull request diff
+type PullRequestComment struct {
+	CommentInfo
+	PullRequestDiff
+}
+
+// PullRequestDiff contains the details of the pull request diff
+// OriginalFilePath   - the original file path
+// OriginalStartLine  - the original start line number
+// OriginalEndLine    - the original end line number
+// originalStartColum - the original start column number
+// OriginalEndColumn  - the original end column number
+// NewFilePath        - the new file path
+// NewStartLine       - the new start line number
+// NewEndLine         - the new end line number
+// NewStartColumn     - the new start column number
+// NewEndColumn       - the new end column number
+type PullRequestDiff struct {
+	OriginalFilePath    string
+	OriginalStartLine   int
+	OriginalEndLine     int
+	OriginalStartColumn int
+	OriginalEndColumn   int
+	NewFilePath         string
+	NewStartLine        int
+	NewEndLine          int
+	NewStartColumn      int
+	NewEndColumn        int
+}
+
+// RepositoryInfo contains general information about the repository.
 type RepositoryInfo struct {
 	CloneInfo            CloneInfo
 	RepositoryVisibility RepositoryVisibility

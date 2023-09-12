@@ -209,6 +209,18 @@ func TestBitbucketServer_AddPullRequestComment(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestBitbucketServer_AddPullRequestReviewComment(t *testing.T) {
+	ctx := context.Background()
+	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, true, nil, "/rest/api/1.0/projects/jfrog/repos/repo-1/pull-requests/1/comments", createBitbucketServerHandler)
+	defer cleanUp()
+
+	err := client.AddPullRequestReviewComments(ctx, owner, repo1, 1, PullRequestComment{CommentInfo: CommentInfo{Content: "Comment content"}, PullRequestDiff: PullRequestDiff{OriginalStartLine: 7, NewStartLine: 7}})
+	assert.NoError(t, err)
+
+	err = createBadBitbucketServerClient(t).AddPullRequestReviewComments(ctx, owner, repo1, 1, PullRequestComment{CommentInfo: CommentInfo{Content: "Comment content"}, PullRequestDiff: PullRequestDiff{OriginalStartLine: 7, NewStartLine: 7}})
+	assert.Error(t, err)
+}
+
 func TestBitbucketServer_ListOpenPullRequests(t *testing.T) {
 	ctx := context.Background()
 	response, err := os.ReadFile(filepath.Join("testdata", "bitbucketserver", "pull_requests_list_response.json"))
@@ -280,6 +292,10 @@ func TestBitbucketServerClient_GetPullRequest(t *testing.T) {
 	// Bad Client
 	_, err = createBadBitbucketServerClient(t).GetPullRequestByID(ctx, owner, repo1, pullRequestId)
 	assert.Error(t, err)
+}
+
+func TestBitbucketServer_ListPullRequestReviewComments(t *testing.T) {
+	TestBitbucketServer_ListPullRequestComments(t)
 }
 
 func TestBitbucketServer_ListPullRequestComments(t *testing.T) {
@@ -827,6 +843,22 @@ func TestBitbucketServer_TestGetCommitStatus(t *testing.T) {
 		_, err := client.GetCommitStatuses(ctx, owner, repo1, ref)
 		assert.Error(t, err)
 	})
+}
+
+func TestBitbucketServerClient_DeletePullRequestReviewComments(t *testing.T) {
+	ctx := context.Background()
+	prId := 4
+	commentId := 10
+	version := 0
+	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, true, nil, fmt.Sprintf("/rest/api/1.0/projects/jfrog/repos/repo-1/pull-requests/%v/activities?start=%v", prId, version)+
+		fmt.Sprintf("/rest/api/1.0/projects/jfrog/repos/repo-1/pull-requests/%v/comments/%v?version=%v", prId, commentId, version), createBitbucketServerHandler)
+	defer cleanUp()
+
+	err := client.DeletePullRequestReviewComments(ctx, owner, repo1, prId, CommentInfo{ID: int64(commentId)})
+	assert.NoError(t, err)
+
+	err = createBadBitbucketServerClient(t).DeletePullRequestReviewComments(ctx, owner, repo1, prId, CommentInfo{ID: int64(commentId)})
+	assert.Error(t, err)
 }
 
 func TestBitbucketServerClient_DeletePullRequestComment(t *testing.T) {

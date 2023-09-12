@@ -277,6 +277,57 @@ func TestGitHubClient_AddPullRequestComment(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestGitHubClient_AddPullRequestReviewComments(t *testing.T) {
+	ctx := context.Background()
+	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, github.PullRequestReview{}, "/repos/jfrog/repo-1/pulls/1/comments", createAddPullRequestReviewCommentHandler)
+	defer cleanUp()
+
+	err := client.AddPullRequestReviewComments(ctx, owner, repo1, 1, []PullRequestComment{
+		{
+			CommentInfo: CommentInfo{Content: "test1"},
+			PullRequestDiff: PullRequestDiff{
+				NewFilePath:  "requirements.txt",
+				NewStartLine: 3,
+			},
+		},
+		{
+			CommentInfo: CommentInfo{Content: "test2"},
+			PullRequestDiff: PullRequestDiff{
+				NewFilePath:  "requirements.txt",
+				NewStartLine: 1,
+			},
+		},
+	}...)
+	assert.NoError(t, err)
+
+	err = createBadGitHubClient(t).AddPullRequestReviewComments(ctx, owner, repo1, 1, PullRequestComment{
+		CommentInfo: CommentInfo{Content: "test1"},
+		PullRequestDiff: PullRequestDiff{
+			NewFilePath:  "requirements.txt",
+			NewStartLine: 3,
+		},
+	})
+	assert.Error(t, err)
+}
+
+func TestGitHubClient_ListPullRequestReviewComments(t *testing.T) {
+	ctx := context.Background()
+	id := int64(1)
+	body := "test"
+	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, []*github.PullRequestReview{{ID: &id, Body: &body}}, "/repos/jfrog/repo-1/pulls/1/reviews", createGitHubHandler)
+	defer cleanUp()
+
+	commentInfo, err := client.ListPullRequestReviewComments(ctx, owner, repo1, 1)
+	assert.NoError(t, err)
+	assert.Len(t, commentInfo, 1)
+	assert.Equal(t, id, commentInfo[0].ID)
+	assert.Equal(t, body, commentInfo[0].Content)
+
+	commentInfo, err = createBadGitHubClient(t).ListPullRequestReviewComments(ctx, owner, repo1, 1)
+	assert.Nil(t, commentInfo)
+	assert.Error(t, err)
+}
+
 func TestGitHubClient_GetLatestCommit(t *testing.T) {
 	ctx := context.Background()
 	response, err := os.ReadFile(filepath.Join("testdata", "github", "commit_list_response.json"))
@@ -844,6 +895,17 @@ func TestGitHubClient_TestGetCommitStatus(t *testing.T) {
 	})
 }
 
+func TestGitHubClient_DeletePullRequestReviewComments(t *testing.T) {
+	ctx := context.Background()
+	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, nil, "", createGitHubHandlerWithoutExpectedURI)
+	defer cleanUp()
+	err := client.DeletePullRequestReviewComments(ctx, owner, repo1, 1, []CommentInfo{{ID: 1}, {ID: 2}}...)
+	assert.NoError(t, err)
+	client = createBadGitHubClient(t)
+	err = client.DeletePullRequestReviewComments(ctx, owner, repo1, 1, CommentInfo{ID: 1})
+	assert.Error(t, err)
+}
+
 func TestGitHubClient_DeletePullRequestComment(t *testing.T) {
 	ctx := context.Background()
 	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, nil, fmt.Sprintf("/repos/%v/%v/issues/comments/1", owner, repo1), createGitHubHandler)
@@ -940,6 +1002,36 @@ func createGitHubHandler(t *testing.T, expectedURI string, response []byte, expe
 			w.WriteHeader(expectedStatusCode)
 			return
 		}
+		w.WriteHeader(expectedStatusCode)
+		_, err := w.Write(response)
+		assert.NoError(t, err)
+	}
+}
+
+func createGitHubHandlerWithoutExpectedURI(t *testing.T, _ string, response []byte, expectedStatusCode int) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "Bearer "+token, r.Header.Get("Authorization"))
+		if strings.Contains(r.RequestURI, "tarball") {
+			w.Header().Add("Location", string(response))
+			w.WriteHeader(expectedStatusCode)
+			return
+		}
+		w.WriteHeader(expectedStatusCode)
+		_, err := w.Write(response)
+		assert.NoError(t, err)
+	}
+}
+
+func createAddPullRequestReviewCommentHandler(t *testing.T, expectedURI string, response []byte, expectedStatusCode int) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.RequestURI == "/repos/jfrog/repo-1/pulls/1/commits" {
+			commits, err := os.ReadFile(filepath.Join("testdata", "github", "commit_list_response.json"))
+			assert.NoError(t, err)
+			_, err = w.Write(commits)
+			assert.NoError(t, err)
+			return
+		}
+		assert.Equal(t, expectedURI, r.RequestURI)
 		w.WriteHeader(expectedStatusCode)
 		_, err := w.Write(response)
 		assert.NoError(t, err)
