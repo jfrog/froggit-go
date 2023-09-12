@@ -424,9 +424,9 @@ func (client *BitbucketServerClient) addPullRequestComment(ctx context.Context, 
 		return err
 	}
 	bitbucketClient := client.buildBitbucketClient(ctx)
-	anchor := &bitbucketv1.Anchor{}
-	filePath := vcsutils.GetPullRequestFilePath(comment.NewFilePath)
-	if filePath != "" {
+	// Determine the file path and anchor
+	var anchor *bitbucketv1.Anchor
+	if filePath := vcsutils.GetPullRequestFilePath(comment.NewFilePath); filePath != "" {
 		anchor = &bitbucketv1.Anchor{
 			Line:     comment.NewStartLine,
 			LineType: "CONTEXT",
@@ -435,11 +435,13 @@ func (client *BitbucketServerClient) addPullRequestComment(ctx context.Context, 
 			SrcPath:  filePath,
 		}
 	}
-	_, err = bitbucketClient.CreatePullRequestComment(owner, repository, pullRequestID, bitbucketv1.Comment{
+
+	// Create the pull request comment
+	commentData := bitbucketv1.Comment{
 		Text:   comment.Content,
 		Anchor: anchor,
-	}, []string{"application/json"})
-
+	}
+	_, err = bitbucketClient.CreatePullRequestComment(owner, repository, pullRequestID, commentData, []string{"application/json"})
 	return err
 }
 
