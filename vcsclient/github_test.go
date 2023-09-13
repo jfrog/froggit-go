@@ -314,7 +314,8 @@ func TestGitHubClient_ListPullRequestReviewComments(t *testing.T) {
 	ctx := context.Background()
 	id := int64(1)
 	body := "test"
-	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, []*github.PullRequestReview{{ID: &id, Body: &body}}, "/repos/jfrog/repo-1/pulls/1/reviews", createGitHubHandler)
+	created := time.Date(1970, time.January, 1, 0, 0, 0, 0, time.UTC)
+	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, []*github.PullRequestComment{{ID: &id, Body: &body, CreatedAt: &created}}, "/repos/jfrog/repo-1/pulls/1/comments", createGitHubHandler)
 	defer cleanUp()
 
 	commentInfo, err := client.ListPullRequestReviewComments(ctx, owner, repo1, 1)
@@ -322,6 +323,7 @@ func TestGitHubClient_ListPullRequestReviewComments(t *testing.T) {
 	assert.Len(t, commentInfo, 1)
 	assert.Equal(t, id, commentInfo[0].ID)
 	assert.Equal(t, body, commentInfo[0].Content)
+	assert.Equal(t, created, commentInfo[0].Created)
 
 	commentInfo, err = createBadGitHubClient(t).ListPullRequestReviewComments(ctx, owner, repo1, 1)
 	assert.Nil(t, commentInfo)
