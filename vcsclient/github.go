@@ -473,7 +473,7 @@ func (client *GitHubClient) ListPullRequestReviewComments(ctx context.Context, o
 	if err != nil {
 		return nil, err
 	}
-	commentsList, _, err := ghClient.PullRequests.ListReviews(ctx, owner, repository, pullRequestID, nil)
+	commentsList, _, err := ghClient.PullRequests.ListComments(ctx, owner, repository, pullRequestID, nil)
 	if err != nil {
 		return []CommentInfo{}, err
 	}
@@ -482,7 +482,7 @@ func (client *GitHubClient) ListPullRequestReviewComments(ctx context.Context, o
 		commentsInfoList = append(commentsInfoList, CommentInfo{
 			ID:      comment.GetID(),
 			Content: comment.GetBody(),
-			Created: comment.GetSubmittedAt(),
+			Created: comment.GetCreatedAt(),
 		})
 	}
 	return commentsInfoList, nil

@@ -314,7 +314,7 @@ func TestGitHubClient_ListPullRequestReviewComments(t *testing.T) {
 	ctx := context.Background()
 	id := int64(1)
 	body := "test"
-	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, []*github.PullRequestReview{{ID: &id, Body: &body}}, "/repos/jfrog/repo-1/pulls/1/reviews", createGitHubHandler)
+	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, []*github.PullRequestReview{{ID: &id, Body: &body}}, "/repos/jfrog/repo-1/pulls/1/comments", createGitHubHandler)
 	defer cleanUp()
 
 	commentInfo, err := client.ListPullRequestReviewComments(ctx, owner, repo1, 1)
