@@ -181,6 +181,8 @@ func TestGitLabClient_UpdatePullRequest(t *testing.T) {
 	assert.NoError(t, err)
 	err = client.UpdatePullRequest(ctx, owner, repo1, "PR title", "PR body", "", prId, vcsutils.Closed)
 	assert.NoError(t, err)
+	err = client.UpdatePullRequest(ctx, owner, repo1, "PR title", "PR body", "", prId, "default")
+	assert.NoError(t, err)
 }
 
 func TestGitLabClient_AddPullRequestComment(t *testing.T) {
