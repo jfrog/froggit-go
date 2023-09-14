@@ -230,7 +230,7 @@ func TestMapPullRequestState(t *testing.T) {
 		expected    string
 		gitProvider VcsProvider
 	}{
-		{state: Open, expected: "reopen", gitProvider: GitHub},
+		{state: Open, expected: "open", gitProvider: GitHub},
 		{state: Closed, expected: "closed", gitProvider: GitHub},
 	}
 	for _, tc := range testCases {

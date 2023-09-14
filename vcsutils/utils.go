@@ -312,7 +312,7 @@ func MapPullRequestState(state *PullRequestState) *string {
 	var stateStringValue string
 	switch *state {
 	case Open:
-		stateStringValue = "reopen"
+		stateStringValue = "open"
 	case Closed:
 		stateStringValue = "closed"
 	default:
