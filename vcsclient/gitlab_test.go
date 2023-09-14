@@ -177,6 +177,12 @@ func TestGitLabClient_UpdatePullRequest(t *testing.T) {
 
 	err := client.UpdatePullRequest(ctx, owner, repo1, "PR title", "PR body", "master", prId, vcsutils.Open)
 	assert.NoError(t, err)
+	err = client.UpdatePullRequest(ctx, owner, repo1, "PR title", "PR body", "", prId, vcsutils.Open)
+	assert.NoError(t, err)
+	err = client.UpdatePullRequest(ctx, owner, repo1, "PR title", "PR body", "", prId, vcsutils.Closed)
+	assert.NoError(t, err)
+	err = client.UpdatePullRequest(ctx, owner, repo1, "PR title", "PR body", "", prId, "default")
+	assert.NoError(t, err)
 }
 
 func TestGitLabClient_AddPullRequestComment(t *testing.T) {

@@ -246,7 +246,7 @@ func (client *GitLabClient) UpdatePullRequest(ctx context.Context, owner, reposi
 		Title:        &title,
 		Description:  &body,
 		TargetBranch: &targetBranchName,
-		StateEvent:   vcsutils.MapPullRequestState(&state),
+		StateEvent:   mapGitLabPullRequestState(&state),
 	}
 	client.logger.Debug("updating details of merge request ID:", prId)
 	_, _, err := client.glClient.MergeRequests.UpdateMergeRequest(getProjectID(owner, repository), prId, options, gitlab.WithContext(ctx))
@@ -826,4 +826,17 @@ func (client *GitLabClient) getProjectOwnerByID(projectID int) (string, error) {
 		return "", fmt.Errorf("could not fetch the name of the project owner. Project ID: %d", projectID)
 	}
 	return project.Namespace.Name, nil
+}
+
+func mapGitLabPullRequestState(state *vcsutils.PullRequestState) *string {
+	var stateStringValue string
+	switch *state {
+	case vcsutils.Open:
+		stateStringValue = "reopen"
+	case vcsutils.Closed:
+		stateStringValue = "closed"
+	default:
+		return nil
+	}
+	return &stateStringValue
 }
