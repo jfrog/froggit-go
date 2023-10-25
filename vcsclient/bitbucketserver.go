@@ -752,7 +752,7 @@ func (client *BitbucketServerClient) mapBitbucketServerCommitToCommitInfo(commit
 	for i, p := range commit.Parents {
 		parents[i] = p.ID
 	}
-	url := fmt.Sprintf("%s/api/1.0/projects/%s/repos/%s/commits/%s",
+	url := fmt.Sprintf("%s/projects/%s/repos/%s/commits/%s",
 		client.vcsInfo.APIEndpoint, owner, repo, commit.ID)
 	return CommitInfo{
 		Hash:          commit.ID,
