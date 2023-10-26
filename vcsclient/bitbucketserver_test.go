@@ -333,7 +333,7 @@ func TestBitbucketServer_GetLatestCommit(t *testing.T) {
 	result, err := client.GetLatestCommit(ctx, owner, repo1, "master")
 
 	assert.NoError(t, err)
-	expectedUrl := fmt.Sprintf("%s/rest/api/1.0/projects/jfrog/repos/repo-1"+
+	expectedUrl := fmt.Sprintf("%s/projects/jfrog/repos/repo-1"+
 		"/commits/def0123abcdef4567abcdef8987abcdef6543abc", serverUrl)
 	assert.Equal(t, CommitInfo{
 		Hash:          "def0123abcdef4567abcdef8987abcdef6543abc",
@@ -364,7 +364,7 @@ func TestBitbucketServer_GetCommits(t *testing.T) {
 	result, err := client.GetCommits(ctx, owner, repo1, "master")
 
 	assert.NoError(t, err)
-	expectedUrl := fmt.Sprintf("%s/rest/api/1.0/projects/jfrog/repos/repo-1"+
+	expectedUrl := fmt.Sprintf("%s/projects/jfrog/repos/repo-1"+
 		"/commits/def0123abcdef4567abcdef8987abcdef6543abc", serverUrl)
 	assert.Equal(t, CommitInfo{
 		Hash:          "def0123abcdef4567abcdef8987abcdef6543abc",
@@ -596,7 +596,7 @@ func TestBitbucketServer_GetCommitBySha(t *testing.T) {
 	result, err := client.GetCommitBySha(ctx, owner, repo1, sha)
 
 	assert.NoError(t, err)
-	expectedUrl := fmt.Sprintf("%s/rest/api/1.0/projects/jfrog/repos/repo-1"+
+	expectedUrl := fmt.Sprintf("%s/projects/jfrog/repos/repo-1"+
 		"/commits/abcdef0123abcdef4567abcdef8987abcdef6543", serverUrl)
 	assert.Equal(t, CommitInfo{
 		Hash:          sha,
