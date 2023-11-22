@@ -181,26 +181,23 @@ func (client *AzureReposClient) CreatePullRequest(ctx context.Context, _, reposi
 }
 
 // UpdatePullRequest on Azure Repos
-func (client *AzureReposClient) UpdatePullRequest(ctx context.Context, owner, repository, title, body, targetBranchName string, prId int, state vcsutils.PullRequestState) error {
+func (client *AzureReposClient) UpdatePullRequest(ctx context.Context, _, repository, title, body, targetBranchName string, prId int, state vcsutils.PullRequestState) error {
 	azureReposGitClient, err := client.buildAzureReposClient(ctx)
 	if err != nil {
 		return err
 	}
-	// If the string is empty,do not add a prefix,as it indicates that the user does not intend to update the target branch.
-	if targetBranchName != "" {
-		targetBranchName = vcsutils.AddBranchPrefix(targetBranchName)
-	}
+	targetBranchName = vcsutils.AddBranchPrefix(targetBranchName)
 	client.logger.Debug(updatingPullRequest, prId)
 	_, err = azureReposGitClient.UpdatePullRequest(ctx, git.UpdatePullRequestArgs{
 		GitPullRequestToUpdate: &git.GitPullRequest{
-			Description:   &body,
+			Description:   vcsutils.GetNilIfZeroVal(body),
 			Status:        azureMapPullRequestState(state),
-			TargetRefName: &targetBranchName,
-			Title:         &title,
+			TargetRefName: vcsutils.GetNilIfZeroVal(body),
+			Title:         vcsutils.GetNilIfZeroVal(title),
 		},
-		RepositoryId:  &repository,
-		PullRequestId: &prId,
-		Project:       &client.vcsInfo.Project,
+		RepositoryId:  vcsutils.GetNilIfZeroVal(repository),
+		PullRequestId: vcsutils.GetNilIfZeroVal(prId),
+		Project:       vcsutils.GetNilIfZeroVal(client.vcsInfo.Project),
 	})
 	return err
 }
@@ -364,7 +361,7 @@ func (client *AzureReposClient) GetPullRequestByID(ctx context.Context, owner, r
 	if err != nil {
 		return
 	}
-	client.logger.Debug(fetchingPullRequestById, repository)
+	client.logger.Debug(fetchingOpenPullRequests, repository)
 	pullRequest, err := azureReposGitClient.GetPullRequestById(ctx, git.GetPullRequestByIdArgs{
 		PullRequestId: &pullRequestId,
 		Project:       &client.vcsInfo.Project,
