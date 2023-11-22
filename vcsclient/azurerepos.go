@@ -192,7 +192,7 @@ func (client *AzureReposClient) UpdatePullRequest(ctx context.Context, _, reposi
 		GitPullRequestToUpdate: &git.GitPullRequest{
 			Description:   vcsutils.GetNilIfZeroVal(body),
 			Status:        azureMapPullRequestState(state),
-			TargetRefName: vcsutils.GetNilIfZeroVal(body),
+			TargetRefName: vcsutils.GetNilIfZeroVal(targetBranchName),
 			Title:         vcsutils.GetNilIfZeroVal(title),
 		},
 		RepositoryId:  vcsutils.GetNilIfZeroVal(repository),
