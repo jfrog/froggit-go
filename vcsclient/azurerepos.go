@@ -361,7 +361,7 @@ func (client *AzureReposClient) GetPullRequestByID(ctx context.Context, owner, r
 	if err != nil {
 		return
 	}
-	client.logger.Debug(fetchingOpenPullRequests, repository)
+	client.logger.Debug(fetchingPullRequestById, repository)
 	pullRequest, err := azureReposGitClient.GetPullRequestById(ctx, git.GetPullRequestByIdArgs{
 		PullRequestId: &pullRequestId,
 		Project:       &client.vcsInfo.Project,
