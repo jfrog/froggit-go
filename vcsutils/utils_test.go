@@ -256,3 +256,14 @@ func TestGetPullRequestFilePath(t *testing.T) {
 		assert.Equal(t, test.expected, result)
 	}
 }
+
+func TestGetNilIfZeroVal(t *testing.T) {
+	integerZeroVal := 0
+	stringZeroVal := ""
+	integerVal := 42
+	stringVal := "Hello"
+	assert.Nil(t, GetNilIfZeroVal(integerZeroVal))
+	assert.Nil(t, GetNilIfZeroVal(stringZeroVal))
+	assert.Equal(t, integerVal, *GetNilIfZeroVal(integerVal))
+	assert.Equal(t, stringVal, *GetNilIfZeroVal(stringVal))
+}

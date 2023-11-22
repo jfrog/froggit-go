@@ -157,6 +157,11 @@ func GetZeroValue[T any]() T {
 	return *new(T)
 }
 
+func isZeroValue[T comparable](val T) bool {
+	zeroValue := GetZeroValue[T]()
+	return zeroValue == val
+}
+
 // DefaultIfNotNil checks:
 // 1. If the pointer is nil, return the zero value of the type
 // 2. If the pointer isn't nil, return the value of the pointer.
@@ -167,6 +172,13 @@ func DefaultIfNotNil[T any](val *T) T {
 	return *val
 }
 
+func GetNilIfZeroVal[T comparable](val T) *T {
+	if isZeroValue(val) {
+		return nil
+	}
+	return &val
+}
+
 // PointerOf returns pointer to the provided value if it is not nil.
 func PointerOf[T any](v T) *T {
 	return &v
@@ -174,7 +186,7 @@ func PointerOf[T any](v T) *T {
 
 // AddBranchPrefix adds a branchPrefix to a branch name if it is not already present.
 func AddBranchPrefix(branch string) string {
-	if !strings.HasPrefix(branch, branchPrefix) {
+	if branch != "" && !strings.HasPrefix(branch, branchPrefix) {
 		branch = fmt.Sprintf("%s%s", branchPrefix, branch)
 	}
 	return branch
