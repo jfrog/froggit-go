@@ -23,11 +23,11 @@ import (
 // BitbucketServerClient API version 1.0
 type BitbucketServerClient struct {
 	vcsInfo VcsInfo
-	logger  Log
+	logger  vcsutils.Log
 }
 
 // NewBitbucketServerClient create a new BitbucketServerClient
-func NewBitbucketServerClient(vcsInfo VcsInfo, logger Log) (*BitbucketServerClient, error) {
+func NewBitbucketServerClient(vcsInfo VcsInfo, logger vcsutils.Log) (*BitbucketServerClient, error) {
 	bitbucketServerClient := &BitbucketServerClient{
 		vcsInfo: vcsInfo,
 		logger:  logger,
@@ -260,12 +260,12 @@ func (client *BitbucketServerClient) DownloadRepository(ctx context.Context, own
 	if err != nil {
 		return err
 	}
-	client.logger.Info(repository, successfulRepoDownload)
+	client.logger.Info(repository, vcsutils.SuccessfulRepoDownload)
 	err = vcsutils.Untar(localPath, bytes.NewReader(response.Payload), false)
 	if err != nil {
 		return err
 	}
-	client.logger.Info(successfulRepoExtraction)
+	client.logger.Info(vcsutils.SuccessfulRepoExtraction)
 	repositoryInfo, err := client.GetRepositoryInfo(ctx, owner, repository)
 	if err != nil {
 		return err

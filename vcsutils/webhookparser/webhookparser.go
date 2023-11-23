@@ -5,7 +5,6 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/jfrog/froggit-go/vcsclient"
 	"github.com/jfrog/froggit-go/vcsutils"
 )
 
@@ -154,7 +153,7 @@ type webhookParser interface {
 // logger - Used to log any trace about the parsing
 // origin - Information about the hook origin
 // request - Received HTTP request
-func ParseIncomingWebhook(ctx context.Context, logger vcsclient.Log, origin WebhookOrigin, request *http.Request) (*WebhookInfo, error) {
+func ParseIncomingWebhook(ctx context.Context, logger vcsutils.Log, origin WebhookOrigin, request *http.Request) (*WebhookInfo, error) {
 	parser := createWebhookParser(logger, origin)
 	return validateAndParseHttpRequest(ctx, parser, origin.Token, request)
 }

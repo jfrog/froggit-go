@@ -15,7 +15,6 @@ import (
 
 	bitbucketv1 "github.com/gfleury/go-bitbucket-v1"
 
-	"github.com/jfrog/froggit-go/vcsclient"
 	"github.com/jfrog/froggit-go/vcsutils"
 )
 
@@ -24,12 +23,12 @@ const bitbucketServerEventHeader = "X-Event-Key"
 
 // bitbucketServerWebhookParser represents an incoming webhook on Bitbucket server
 type bitbucketServerWebhookParser struct {
-	logger   vcsclient.Log
+	logger   vcsutils.Log
 	endpoint string
 }
 
 // newBitbucketServerWebhookParser create a new bitbucketServerWebhookParser instance
-func newBitbucketServerWebhookParser(logger vcsclient.Log, endpoint string) *bitbucketServerWebhookParser {
+func newBitbucketServerWebhookParser(logger vcsutils.Log, endpoint string) *bitbucketServerWebhookParser {
 	return &bitbucketServerWebhookParser{
 		logger:   logger,
 		endpoint: endpoint,

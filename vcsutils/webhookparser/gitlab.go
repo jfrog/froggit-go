@@ -10,7 +10,6 @@ import (
 
 	"github.com/xanzy/go-gitlab"
 
-	"github.com/jfrog/froggit-go/vcsclient"
 	"github.com/jfrog/froggit-go/vcsutils"
 )
 
@@ -18,11 +17,11 @@ const gitLabKeyHeader = "X-GitLab-Token"
 
 // gitLabWebhookParser represents an incoming webhook on GitLab
 type gitLabWebhookParser struct {
-	logger vcsclient.Log
+	logger vcsutils.Log
 }
 
 // newGitLabWebhookParser create a new gitLabWebhookParser instance
-func newGitLabWebhookParser(logger vcsclient.Log) *gitLabWebhookParser {
+func newGitLabWebhookParser(logger vcsutils.Log) *gitLabWebhookParser {
 	return &gitLabWebhookParser{
 		logger: logger,
 	}

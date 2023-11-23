@@ -8,12 +8,12 @@ import (
 type ClientBuilder struct {
 	vcsProvider vcsutils.VcsProvider
 	vcsInfo     VcsInfo
-	logger      Log
+	logger      vcsutils.Log
 }
 
 // NewClientBuilder creates new ClientBuilder
 func NewClientBuilder(vcsProvider vcsutils.VcsProvider) *ClientBuilder {
-	return &ClientBuilder{vcsProvider: vcsProvider, logger: EmptyLogger{}}
+	return &ClientBuilder{vcsProvider: vcsProvider, logger: vcsutils.EmptyLogger{}}
 }
 
 // ApiEndpoint sets the API endpoint
@@ -35,7 +35,7 @@ func (builder *ClientBuilder) Token(token string) *ClientBuilder {
 }
 
 // Logger sets the logger
-func (builder *ClientBuilder) Logger(logger Log) *ClientBuilder {
+func (builder *ClientBuilder) Logger(logger vcsutils.Log) *ClientBuilder {
 	builder.logger = logger
 	return builder
 }

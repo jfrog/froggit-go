@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/google/go-github/v45/github"
+	"github.com/google/go-github/v56/github"
 	"github.com/grokify/mogo/encoding/base64"
 	"github.com/jfrog/froggit-go/vcsutils"
 	"github.com/jfrog/gofrog/datastructures"
@@ -22,13 +22,21 @@ import (
 
 // GitHubClient API version 3
 type GitHubClient struct {
-	vcsInfo VcsInfo
-	logger  Log
+	vcsInfo       VcsInfo
+	retryExecuter vcsutils.RetryExecutor
+	logger        vcsutils.Log
 }
 
 // NewGitHubClient create a new GitHubClient
-func NewGitHubClient(vcsInfo VcsInfo, logger Log) (*GitHubClient, error) {
-	return &GitHubClient{vcsInfo: vcsInfo, logger: logger}, nil
+func NewGitHubClient(vcsInfo VcsInfo, logger vcsutils.Log) (*GitHubClient, error) {
+	return &GitHubClient{
+		vcsInfo: vcsInfo,
+		logger:  logger,
+		retryExecuter: vcsutils.RetryExecutor{
+			Logger:                   logger,
+			MaxRetries:               3,
+			RetriesIntervalMilliSecs: 60000},
+	}, nil
 }
 
 // TestConnection on GitHub
@@ -37,7 +45,7 @@ func (client *GitHubClient) TestConnection(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	_, _, err = ghClient.Zen(ctx)
+	_, _, err = ghClient.Meta.Zen(ctx)
 	return err
 }
 
@@ -52,6 +60,7 @@ func (client *GitHubClient) buildGithubClient(ctx context.Context) (*github.Clie
 		if err != nil {
 			return nil, err
 		}
+		client.logger.Info("Using API endpoint:", baseURL)
 		ghClient.BaseURL = baseURL
 	}
 	return ghClient, nil
@@ -82,49 +91,79 @@ func (client *GitHubClient) AddSshKeyToRepository(ctx context.Context, owner, re
 		Title:    &keyName,
 		ReadOnly: &readOnly,
 	}
-	_, _, err = ghClient.Repositories.CreateKey(ctx, owner, repository, &key)
-	return err
+	client.retryExecuter.ExecutionHandler = func() (bool, error) {
+		var ghResponse *github.Response
+		_, ghResponse, err = ghClient.Repositories.CreateKey(ctx, owner, repository, &key)
+		return shouldRetryIfRateLimitExceeded(ghResponse, err), err
+	}
+	return client.retryExecuter.Execute()
 }
 
 // ListRepositories on GitHub
-func (client *GitHubClient) ListRepositories(ctx context.Context) (map[string][]string, error) {
-	ghClient, err := client.buildGithubClient(ctx)
-	if err != nil {
-		return nil, err
-	}
-	results := make(map[string][]string)
+func (client *GitHubClient) ListRepositories(ctx context.Context) (results map[string][]string, err error) {
+	results = make(map[string][]string)
 	for nextPage := 1; ; nextPage++ {
-		options := &github.RepositoryListOptions{ListOptions: github.ListOptions{Page: nextPage}}
-		repos, response, err := ghClient.Repositories.List(ctx, "", options)
-		if err != nil {
-			return nil, err
+		var repositoriesInPage []*github.Repository
+		var ghResponse *github.Response
+		client.retryExecuter.ExecutionHandler = func() (bool, error) {
+			repositoriesInPage, ghResponse, err = client.executeListRepositoriesInPage(ctx, nextPage)
+			return shouldRetryIfRateLimitExceeded(ghResponse, err), err
 		}
-		for _, repo := range repos {
+		if err = client.retryExecuter.Execute(); err != nil {
+			return
+		}
+
+		for _, repo := range repositoriesInPage {
 			results[*repo.Owner.Login] = append(results[*repo.Owner.Login], *repo.Name)
 		}
-		if nextPage+1 > response.LastPage {
+		if nextPage+1 > ghResponse.LastPage {
 			break
 		}
 	}
-	return results, nil
+	return
+}
+
+func (client *GitHubClient) executeListRepositoriesInPage(ctx context.Context, page int) ([]*github.Repository, *github.Response, error) {
+	ghClient, err := client.buildGithubClient(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	options := &github.RepositoryListOptions{ListOptions: github.ListOptions{Page: page}}
+	repos, ghResponse, err := ghClient.Repositories.List(ctx, "", options)
+	if err != nil {
+		return nil, ghResponse, err
+	}
+	return repos, ghResponse, nil
 }
 
 // ListBranches on GitHub
-func (client *GitHubClient) ListBranches(ctx context.Context, owner, repository string) ([]string, error) {
+func (client *GitHubClient) ListBranches(ctx context.Context, owner, repository string) (branchList []string, err error) {
+	client.retryExecuter.ExecutionHandler = func() (bool, error) {
+		var ghResponse *github.Response
+		branchList, ghResponse, err = client.executeListBranch(ctx, owner, repository)
+		return shouldRetryIfRateLimitExceeded(ghResponse, err), err
+	}
+	err = client.retryExecuter.Execute()
+	return
+}
+
+func (client *GitHubClient) executeListBranch(ctx context.Context, owner, repository string) ([]string, *github.Response, error) {
 	ghClient, err := client.buildGithubClient(ctx)
 	if err != nil {
-		return nil, err
-	}
-	branches, _, err := ghClient.Repositories.ListBranches(ctx, owner, repository, nil)
-	if err != nil {
-		return []string{}, err
+		return nil, nil, err
 	}
 
-	results := make([]string, 0, len(branches))
-	for _, repo := range branches {
-		results = append(results, *repo.Name)
+	branches, ghResponse, err := ghClient.Repositories.ListBranches(ctx, owner, repository, nil)
+	if err != nil {
+		return []string{}, ghResponse, err
 	}
-	return results, nil
+
+	branchList := make([]string, 0, len(branches))
+	for _, branch := range branches {
+		branchList = append(branchList, *branch.Name)
+	}
+	return branchList, ghResponse, nil
 }
 
 // CreateWebhook on GitHub
@@ -136,11 +175,18 @@ func (client *GitHubClient) CreateWebhook(ctx context.Context, owner, repository
 	}
 	token := vcsutils.CreateToken()
 	hook := createGitHubHook(token, payloadURL, webhookEvents...)
-	responseHook, _, err := ghClient.Repositories.CreateHook(ctx, owner, repository, hook)
-	if err != nil {
+	var ghResponseHook *github.Hook
+	client.retryExecuter.ExecutionHandler = func() (bool, error) {
+		var ghResponse *github.Response
+		ghResponseHook, ghResponse, err = ghClient.Repositories.CreateHook(ctx, owner, repository, hook)
+		return shouldRetryIfRateLimitExceeded(ghResponse, err), err
+	}
+
+	if err = client.retryExecuter.Execute(); err != nil {
 		return "", "", err
 	}
-	return strconv.FormatInt(*responseHook.ID, 10), token, err
+
+	return strconv.FormatInt(*ghResponseHook.ID, 10), token, nil
 }
 
 // UpdateWebhook on GitHub
@@ -150,13 +196,20 @@ func (client *GitHubClient) UpdateWebhook(ctx context.Context, owner, repository
 	if err != nil {
 		return err
 	}
+
 	webhookIDInt64, err := strconv.ParseInt(webhookID, 10, 64)
 	if err != nil {
 		return err
 	}
+
 	hook := createGitHubHook(token, payloadURL, webhookEvents...)
-	_, _, err = ghClient.Repositories.EditHook(ctx, owner, repository, webhookIDInt64, hook)
-	return err
+	client.retryExecuter.ExecutionHandler = func() (bool, error) {
+		var ghResponse *github.Response
+		_, ghResponse, err = ghClient.Repositories.EditHook(ctx, owner, repository, webhookIDInt64, hook)
+		return shouldRetryIfRateLimitExceeded(ghResponse, err), err
+	}
+
+	return client.retryExecuter.Execute()
 }
 
 // DeleteWebhook on GitHub
@@ -165,12 +218,19 @@ func (client *GitHubClient) DeleteWebhook(ctx context.Context, owner, repository
 	if err != nil {
 		return err
 	}
+
 	webhookIDInt64, err := strconv.ParseInt(webhookID, 10, 64)
 	if err != nil {
 		return err
 	}
-	_, err = ghClient.Repositories.DeleteHook(ctx, owner, repository, webhookIDInt64)
-	return err
+
+	client.retryExecuter.ExecutionHandler = func() (bool, error) {
+		var ghResponse *github.Response
+		ghResponse, err = ghClient.Repositories.DeleteHook(ctx, owner, repository, webhookIDInt64)
+		return shouldRetryIfRateLimitExceeded(ghResponse, err), err
+	}
+
+	return client.retryExecuter.Execute()
 }
 
 // SetCommitStatus on GitHub
@@ -180,6 +240,7 @@ func (client *GitHubClient) SetCommitStatus(ctx context.Context, commitStatus Co
 	if err != nil {
 		return err
 	}
+
 	state := getGitHubCommitState(commitStatus)
 	status := &github.RepoStatus{
 		Context:     &title,
@@ -187,90 +248,135 @@ func (client *GitHubClient) SetCommitStatus(ctx context.Context, commitStatus Co
 		State:       &state,
 		Description: &description,
 	}
-	_, _, err = ghClient.Repositories.CreateStatus(ctx, owner, repository, ref, status)
-	return err
+
+	client.retryExecuter.ExecutionHandler = func() (bool, error) {
+		var ghResponse *github.Response
+		_, ghResponse, err = ghClient.Repositories.CreateStatus(ctx, owner, repository, ref, status)
+		return shouldRetryIfRateLimitExceeded(ghResponse, err), err
+	}
+
+	return client.retryExecuter.Execute()
 }
 
 // GetCommitStatuses on GitHub
-func (client *GitHubClient) GetCommitStatuses(ctx context.Context, owner, repository, ref string) (status []CommitStatusInfo, err error) {
+func (client *GitHubClient) GetCommitStatuses(ctx context.Context, owner, repository, ref string) (statusInfoList []CommitStatusInfo, err error) {
+	client.retryExecuter.ExecutionHandler = func() (bool, error) {
+		var ghResponse *github.Response
+		statusInfoList, ghResponse, err = client.executeGetCommitStatuses(ctx, owner, repository, ref)
+		return shouldRetryIfRateLimitExceeded(ghResponse, err), err
+	}
+	err = client.retryExecuter.Execute()
+	return
+}
+
+func (client *GitHubClient) executeGetCommitStatuses(ctx context.Context, owner, repository, ref string) (statusInfoList []CommitStatusInfo, ghResponse *github.Response, err error) {
 	ghClient, err := client.buildGithubClient(ctx)
 	if err != nil {
-		return nil, err
+		return
 	}
-	statuses, _, err := ghClient.Repositories.GetCombinedStatus(ctx, owner, repository, ref, nil)
+	statuses, ghResponse, err := ghClient.Repositories.GetCombinedStatus(ctx, owner, repository, ref, nil)
 	if err != nil {
-		return nil, err
+		return
 	}
-	results := make([]CommitStatusInfo, 0)
+
 	for _, singleStatus := range statuses.Statuses {
-		results = append(results, CommitStatusInfo{
+		statusInfoList = append(statusInfoList, CommitStatusInfo{
 			State:         commitStatusAsStringToStatus(*singleStatus.State),
 			Description:   singleStatus.GetDescription(),
 			DetailsUrl:    singleStatus.GetTargetURL(),
 			Creator:       singleStatus.GetCreator().GetName(),
-			LastUpdatedAt: singleStatus.GetUpdatedAt(),
-			CreatedAt:     singleStatus.GetCreatedAt(),
+			LastUpdatedAt: singleStatus.GetUpdatedAt().Time,
+			CreatedAt:     singleStatus.GetCreatedAt().Time,
 		})
 	}
-	return results, err
+	return
 }
 
 // DownloadRepository on GitHub
 func (client *GitHubClient) DownloadRepository(ctx context.Context, owner, repository, branch, localPath string) (err error) {
+	// Get the archive download link from GitHub
+	var baseURL *url.URL
+	client.retryExecuter.ExecutionHandler = func() (bool, error) {
+		var ghResponse *github.Response
+		baseURL, ghResponse, err = client.executeGetArchiveLink(ctx, owner, repository, branch)
+		return shouldRetryIfRateLimitExceeded(ghResponse, err), err
+	}
+	if err = client.retryExecuter.Execute(); err != nil {
+		return
+	}
+
+	// Download the archive
+	httpResponse, err := executeDownloadArchiveFromLink(baseURL.String())
+	if err != nil {
+		return
+	}
+	defer func() { err = errors.Join(err, httpResponse.Body.Close()) }()
+	client.logger.Info(repository, vcsutils.SuccessfulRepoDownload)
+
+	// Untar the archive
+	if err = vcsutils.Untar(localPath, httpResponse.Body, true); err != nil {
+		return
+	}
+	client.logger.Info(vcsutils.SuccessfulRepoExtraction)
+
+	repositoryInfo, err := client.GetRepositoryInfo(ctx, owner, repository)
+	if err != nil {
+		return
+	}
+	// Create a .git folder in the archive with the remote repository HTTP clone url
+	err = vcsutils.CreateDotGitFolderWithRemote(localPath, vcsutils.RemoteName, repositoryInfo.CloneInfo.HTTP)
+	return
+}
+
+func (client *GitHubClient) executeGetArchiveLink(ctx context.Context, owner, repository, branch string) (baseURL *url.URL, ghResponse *github.Response, err error) {
 	ghClient, err := client.buildGithubClient(ctx)
 	if err != nil {
 		return
 	}
 	client.logger.Debug("Getting GitHub archive link to download")
-	baseURL, _, err := ghClient.Repositories.GetArchiveLink(ctx, owner, repository, github.Tarball,
-		&github.RepositoryContentGetOptions{Ref: branch}, true)
-	if err != nil {
-		return
-	}
-	httpClient := &http.Client{}
-	req, err := http.NewRequest(http.MethodGet, baseURL.String(), nil)
-	if err != nil {
-		return
-	}
-	resp, err := httpClient.Do(req)
-	if err != nil {
-		return
-	}
-	defer func() { err = errors.Join(err, resp.Body.Close()) }()
-	if err = vcsutils.CheckResponseStatusWithBody(resp, http.StatusOK); err != nil {
-		return
-	}
-	client.logger.Info(repository, successfulRepoDownload)
-	err = vcsutils.Untar(localPath, resp.Body, true)
-	if err != nil {
-		return
-	}
+	return ghClient.Repositories.GetArchiveLink(ctx, owner, repository, github.Tarball,
+		&github.RepositoryContentGetOptions{Ref: branch}, 5)
+}
 
-	repositoryInfo, err := client.GetRepositoryInfo(ctx, owner, repository)
+func executeDownloadArchiveFromLink(baseURL string) (*http.Response, error) {
+	httpClient := &http.Client{}
+	req, err := http.NewRequest(http.MethodGet, baseURL, nil)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	client.logger.Info(successfulRepoExtraction)
-	err = vcsutils.CreateDotGitFolderWithRemote(localPath, vcsutils.RemoteName, repositoryInfo.CloneInfo.HTTP)
-	return
+	httpResponse, err := httpClient.Do(req)
+	if err != nil {
+		return httpResponse, err
+	}
+	return httpResponse, vcsutils.CheckResponseStatusWithBody(httpResponse, http.StatusOK)
 }
 
 // CreatePullRequest on GitHub
-func (client *GitHubClient) CreatePullRequest(ctx context.Context, owner, repository, sourceBranch, targetBranch,
-	title, description string) error {
+func (client *GitHubClient) CreatePullRequest(ctx context.Context, owner, repository, sourceBranch, targetBranch, title, description string) error {
+	client.retryExecuter.ExecutionHandler = func() (bool, error) {
+		var ghResponse *github.Response
+		var err error
+		ghResponse, err = client.executeCreatePullRequest(ctx, owner, repository, sourceBranch, targetBranch, title, description)
+		return shouldRetryIfRateLimitExceeded(ghResponse, err), err
+	}
+	return client.retryExecuter.Execute()
+}
+
+func (client *GitHubClient) executeCreatePullRequest(ctx context.Context, owner, repository, sourceBranch, targetBranch, title, description string) (*github.Response, error) {
 	ghClient, err := client.buildGithubClient(ctx)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	head := owner + ":" + sourceBranch
-	client.logger.Debug(creatingPullRequest, title)
-	_, _, err = ghClient.PullRequests.Create(ctx, owner, repository, &github.NewPullRequest{
+	client.logger.Debug(vcsutils.CreatingPullRequest, title)
+
+	_, ghResponse, err := ghClient.PullRequests.Create(ctx, owner, repository, &github.NewPullRequest{
 		Title: &title,
 		Body:  &description,
 		Head:  &head,
 		Base:  &targetBranch,
 	})
-	return err
+	return ghResponse, err
 }
 
 // UpdatePullRequest on GitHub
@@ -279,7 +385,7 @@ func (client *GitHubClient) UpdatePullRequest(ctx context.Context, owner, reposi
 	if err != nil {
 		return err
 	}
-	client.logger.Debug(updatingPullRequest, id)
+	client.logger.Debug(vcsutils.UpdatingPullRequest, id)
 	var baseRef *github.PullRequestBranch
 	if targetBranchName != "" {
 		baseRef = &github.PullRequestBranch{Ref: &targetBranchName}
@@ -290,8 +396,13 @@ func (client *GitHubClient) UpdatePullRequest(ctx context.Context, owner, reposi
 		State: vcsutils.MapPullRequestState(&state),
 		Base:  baseRef,
 	}
-	_, _, err = ghClient.PullRequests.Edit(ctx, owner, repository, id, pullRequest)
-	return err
+
+	client.retryExecuter.ExecutionHandler = func() (bool, error) {
+		var ghResponse *github.Response
+		_, ghResponse, err = ghClient.PullRequests.Edit(ctx, owner, repository, id, pullRequest)
+		return shouldRetryIfRateLimitExceeded(ghResponse, err), err
+	}
+	return client.retryExecuter.Execute()
 }
 
 // ListOpenPullRequestsWithBody on GitHub
@@ -309,13 +420,19 @@ func (client *GitHubClient) getOpenPullRequests(ctx context.Context, owner, repo
 	if err != nil {
 		return nil, err
 	}
-	client.logger.Debug(fetchingOpenPullRequests, repository)
-	pullRequests, _, err := ghClient.PullRequests.List(ctx, owner, repository, &github.PullRequestListOptions{
-		State: "open",
-	})
-	if err != nil {
+
+	var pullRequests []*github.PullRequest
+	client.logger.Debug(vcsutils.FetchingOpenPullRequests, repository)
+	client.retryExecuter.ExecutionHandler = func() (bool, error) {
+		var ghResponse *github.Response
+		pullRequests, ghResponse, err = ghClient.PullRequests.List(ctx, owner, repository, &github.PullRequestListOptions{State: "open"})
+		return shouldRetryIfRateLimitExceeded(ghResponse, err), err
+	}
+
+	if err = client.retryExecuter.Execute(); err != nil {
 		return []PullRequestInfo{}, err
 	}
+
 	return mapGitHubPullRequestToPullRequestInfoList(pullRequests, withBody)
 }
 
@@ -324,15 +441,21 @@ func (client *GitHubClient) GetPullRequestByID(ctx context.Context, owner, repos
 	if err != nil {
 		return PullRequestInfo{}, err
 	}
-	client.logger.Debug(fetchingPullRequestById, repository)
-	pullRequest, ghResponse, err := ghClient.PullRequests.Get(ctx, owner, repository, pullRequestId)
-	if err != nil {
+
+	var pullRequest *github.PullRequest
+	var ghResponse *github.Response
+	client.logger.Debug(vcsutils.FetchingPullRequestById, repository)
+	client.retryExecuter.ExecutionHandler = func() (bool, error) {
+		pullRequest, ghResponse, err = ghClient.PullRequests.Get(ctx, owner, repository, pullRequestId)
+		return shouldRetryIfRateLimitExceeded(ghResponse, err), err
+	}
+
+	if err = client.retryExecuter.Execute(); err != nil {
 		return PullRequestInfo{}, err
 	}
-	if ghResponse != nil {
-		if err = vcsutils.CheckResponseStatusWithBody(ghResponse.Response, http.StatusOK); err != nil {
-			return PullRequestInfo{}, err
-		}
+
+	if err = vcsutils.CheckResponseStatusWithBody(ghResponse.Response, http.StatusOK); err != nil {
+		return PullRequestInfo{}, err
 	}
 
 	return mapGitHubPullRequestToPullRequestInfo(pullRequest, false)
@@ -411,11 +534,15 @@ func (client *GitHubClient) AddPullRequestComment(ctx context.Context, owner, re
 	if err != nil {
 		return err
 	}
-	// We use the Issues API to add a regular comment. The PullRequests API adds a code review comment.
-	_, _, err = ghClient.Issues.CreateComment(ctx, owner, repository, pullRequestID, &github.IssueComment{
-		Body: &content,
-	})
-	return err
+
+	client.retryExecuter.ExecutionHandler = func() (bool, error) {
+		var ghResponse *github.Response
+		// We use the Issues API to add a regular comment. The PullRequests API adds a code review comment.
+		_, ghResponse, err = ghClient.Issues.CreateComment(ctx, owner, repository, pullRequestID, &github.IssueComment{Body: &content})
+		return shouldRetryIfRateLimitExceeded(ghResponse, err), err
+	}
+
+	return client.retryExecuter.Execute()
 }
 
 // AddPullRequestReviewComment on GitHub
@@ -432,35 +559,52 @@ func (client *GitHubClient) AddPullRequestReviewComments(ctx context.Context, ow
 		return err
 	}
 
-	commits, _, err := ghClient.PullRequests.ListCommits(ctx, owner, repository, pullRequestID, nil)
-	if err != nil {
+	var commits []*github.RepositoryCommit
+	var ghResponse *github.Response
+	client.retryExecuter.ExecutionHandler = func() (bool, error) {
+		commits, ghResponse, err = ghClient.PullRequests.ListCommits(ctx, owner, repository, pullRequestID, nil)
+		return shouldRetryIfRateLimitExceeded(ghResponse, err), err
+	}
+	if err = client.retryExecuter.Execute(); err != nil || len(commits) == 0 {
 		return err
 	}
+
 	if len(commits) == 0 {
 		return errors.New("could not fetch the commits list for pull request " + prID)
 	}
-
 	latestCommitSHA := commits[len(commits)-1].GetSHA()
 
 	for _, comment := range comments {
-		filePath := filepath.Clean(comment.NewFilePath)
-		startLine := &comment.NewStartLine
-		// GitHub API won't accept 'start_line' if it equals the end line
-		if *startLine == comment.NewEndLine {
-			startLine = nil
+		client.retryExecuter.ExecutionHandler = func() (bool, error) {
+			ghResponse, err = client.executeCreatePullRequestReviewComment(ctx, ghClient, owner, repository, latestCommitSHA, pullRequestID, comment)
+			return shouldRetryIfRateLimitExceeded(ghResponse, err), err
 		}
-		if _, _, err = ghClient.PullRequests.CreateComment(ctx, owner, repository, pullRequestID, &github.PullRequestComment{
-			CommitID:  &latestCommitSHA,
-			Body:      &comment.Content,
-			StartLine: startLine,
-			Line:      &comment.NewEndLine,
-			Path:      &filePath,
-		}); err != nil {
-			return fmt.Errorf("could not create a code review comment for <%s/%s> in pull request %s. error received: %w",
-				owner, repository, prID, err)
+		if err = client.retryExecuter.Execute(); err != nil {
+			return err
 		}
 	}
 	return nil
+}
+
+func (client *GitHubClient) executeCreatePullRequestReviewComment(ctx context.Context, ghClient *github.Client, owner, repository, latestCommitSHA string, pullRequestID int, comment PullRequestComment) (*github.Response, error) {
+	filePath := filepath.Clean(comment.NewFilePath)
+	startLine := &comment.NewStartLine
+	// GitHub API won't accept 'start_line' if it equals the end line
+	if *startLine == comment.NewEndLine {
+		startLine = nil
+	}
+	_, ghResponse, err := ghClient.PullRequests.CreateComment(ctx, owner, repository, pullRequestID, &github.PullRequestComment{
+		CommitID:  &latestCommitSHA,
+		Body:      &comment.Content,
+		StartLine: startLine,
+		Line:      &comment.NewEndLine,
+		Path:      &filePath,
+	})
+	if err != nil {
+		err = fmt.Errorf("could not create a code review comment for <%s/%s> in pull request %d. error received: %w",
+			owner, repository, pullRequestID, err)
+	}
+	return ghResponse, err
 }
 
 // ListPullRequestReviewComments on GitHub
@@ -469,23 +613,36 @@ func (client *GitHubClient) ListPullRequestReviewComments(ctx context.Context, o
 	if err != nil {
 		return nil, err
 	}
+
+	commentsInfoList := []CommentInfo{}
+	client.retryExecuter.ExecutionHandler = func() (bool, error) {
+		var ghResponse *github.Response
+		commentsInfoList, ghResponse, err = client.executeListPullRequestReviewComments(ctx, owner, repository, pullRequestID)
+		return shouldRetryIfRateLimitExceeded(ghResponse, err), err
+	}
+	err = client.retryExecuter.Execute()
+
+	return commentsInfoList, err
+}
+
+func (client *GitHubClient) executeListPullRequestReviewComments(ctx context.Context, owner, repository string, pullRequestID int) ([]CommentInfo, *github.Response, error) {
 	ghClient, err := client.buildGithubClient(ctx)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	commentsList, _, err := ghClient.PullRequests.ListComments(ctx, owner, repository, pullRequestID, nil)
+	commentsList, ghResponse, err := ghClient.PullRequests.ListComments(ctx, owner, repository, pullRequestID, nil)
 	if err != nil {
-		return []CommentInfo{}, err
+		return []CommentInfo{}, ghResponse, err
 	}
 	commentsInfoList := []CommentInfo{}
 	for _, comment := range commentsList {
 		commentsInfoList = append(commentsInfoList, CommentInfo{
 			ID:      comment.GetID(),
 			Content: comment.GetBody(),
-			Created: comment.GetCreatedAt(),
+			Created: comment.GetCreatedAt().Time,
 		})
 	}
-	return commentsInfoList, nil
+	return commentsInfoList, ghResponse, nil
 }
 
 // ListPullRequestComments on GitHub
@@ -494,14 +651,23 @@ func (client *GitHubClient) ListPullRequestComments(ctx context.Context, owner, 
 	if err != nil {
 		return []CommentInfo{}, err
 	}
+
 	ghClient, err := client.buildGithubClient(ctx)
 	if err != nil {
 		return []CommentInfo{}, err
 	}
-	commentsList, _, err := ghClient.Issues.ListComments(ctx, owner, repository, pullRequestID, &github.IssueListCommentsOptions{})
-	if err != nil {
+
+	var commentsList []*github.IssueComment
+	client.retryExecuter.ExecutionHandler = func() (bool, error) {
+		var ghResponse *github.Response
+		commentsList, ghResponse, err = ghClient.Issues.ListComments(ctx, owner, repository, pullRequestID, &github.IssueListCommentsOptions{})
+		return shouldRetryIfRateLimitExceeded(ghResponse, err), err
+	}
+
+	if err = client.retryExecuter.Execute(); err != nil {
 		return []CommentInfo{}, err
 	}
+
 	return mapGitHubIssuesCommentToCommentInfoList(commentsList)
 }
 
@@ -509,18 +675,34 @@ func (client *GitHubClient) ListPullRequestComments(ctx context.Context, owner, 
 func (client *GitHubClient) DeletePullRequestReviewComments(ctx context.Context, owner, repository string, _ int, comments ...CommentInfo) error {
 	for _, comment := range comments {
 		commentID := comment.ID
-		if err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository, "commentID": strconv.FormatInt(commentID, 10)}); err != nil {
-			return err
-		}
-		ghClient, err := client.buildGithubClient(ctx)
+		err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository, "commentID": strconv.FormatInt(commentID, 10)})
 		if err != nil {
 			return err
 		}
-		if _, err = ghClient.PullRequests.DeleteComment(ctx, owner, repository, commentID); err != nil {
-			return fmt.Errorf("could not delete pull request review comment: %w", err)
+
+		client.retryExecuter.ExecutionHandler = func() (bool, error) {
+			var ghResponse *github.Response
+			ghResponse, err = client.executeDeletePullRequestReviewComment(ctx, owner, repository, commentID)
+			return shouldRetryIfRateLimitExceeded(ghResponse, err), err
 		}
+		if err = client.retryExecuter.Execute(); err != nil {
+			return err
+		}
+
 	}
 	return nil
+}
+
+func (client *GitHubClient) executeDeletePullRequestReviewComment(ctx context.Context, owner, repository string, commentID int64) (*github.Response, error) {
+	ghClient, err := client.buildGithubClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var ghResponse *github.Response
+	if ghResponse, err = ghClient.PullRequests.DeleteComment(ctx, owner, repository, commentID); err != nil {
+		return ghResponse, fmt.Errorf("could not delete pull request review comment: %w", err)
+	}
+	return ghResponse, nil
 }
 
 // DeletePullRequestComment on GitHub
@@ -529,22 +711,34 @@ func (client *GitHubClient) DeletePullRequestComment(ctx context.Context, owner,
 	if err != nil {
 		return err
 	}
+	client.retryExecuter.ExecutionHandler = func() (bool, error) {
+		var ghResponse *github.Response
+		ghResponse, err = client.executeDeletePullRequestComment(ctx, owner, repository, commentID)
+		return shouldRetryIfRateLimitExceeded(ghResponse, err), err
+	}
+	return client.retryExecuter.Execute()
+}
+
+func (client *GitHubClient) executeDeletePullRequestComment(ctx context.Context, owner, repository string, commentID int) (*github.Response, error) {
 	ghClient, err := client.buildGithubClient(ctx)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	resp, err := ghClient.Issues.DeleteComment(ctx, owner, repository, int64(commentID))
+
+	ghResponse, err := ghClient.Issues.DeleteComment(ctx, owner, repository, int64(commentID))
 	if err != nil {
-		return err
+		return ghResponse, err
 	}
+
 	var statusCode int
-	if resp.Response != nil {
-		statusCode = resp.Response.StatusCode
+	if ghResponse.Response != nil {
+		statusCode = ghResponse.Response.StatusCode
 	}
 	if statusCode != http.StatusNoContent && statusCode != http.StatusOK {
-		return fmt.Errorf("expected %d status code while received %d status code", http.StatusNoContent, resp.Response.StatusCode)
+		return ghResponse, fmt.Errorf("expected %d status code while received %d status code", http.StatusNoContent, ghResponse.Response.StatusCode)
 	}
-	return nil
+
+	return ghResponse, nil
 }
 
 // GetLatestCommit on GitHub
@@ -571,10 +765,23 @@ func (client *GitHubClient) GetCommits(ctx context.Context, owner, repository, b
 		return nil, err
 	}
 
+	var commitsInfo []CommitInfo
+	client.retryExecuter.ExecutionHandler = func() (bool, error) {
+		var ghResponse *github.Response
+		commitsInfo, ghResponse, err = client.executeGetCommits(ctx, owner, repository, branch)
+		return shouldRetryIfRateLimitExceeded(ghResponse, err), err
+	}
+
+	err = client.retryExecuter.Execute()
+	return commitsInfo, err
+}
+
+func (client *GitHubClient) executeGetCommits(ctx context.Context, owner, repository, branch string) ([]CommitInfo, *github.Response, error) {
 	ghClient, err := client.buildGithubClient(ctx)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
+
 	listOptions := &github.CommitsListOptions{
 		SHA: branch,
 		ListOptions: github.ListOptions{
@@ -582,16 +789,18 @@ func (client *GitHubClient) GetCommits(ctx context.Context, owner, repository, b
 			PerPage: vcsutils.NumberOfCommitsToFetch,
 		},
 	}
-	commits, _, err := ghClient.Repositories.ListCommits(ctx, owner, repository, listOptions)
+
+	commits, ghResponse, err := ghClient.Repositories.ListCommits(ctx, owner, repository, listOptions)
 	if err != nil {
-		return nil, err
+		return nil, ghResponse, err
 	}
+
 	var commitsInfo []CommitInfo
 	for _, commit := range commits {
 		commitInfo := mapGitHubCommitToCommitInfo(commit)
 		commitsInfo = append(commitsInfo, commitInfo)
 	}
-	return commitsInfo, nil
+	return commitsInfo, ghResponse, nil
 }
 
 // GetRepositoryInfo on GitHub
@@ -606,10 +815,17 @@ func (client *GitHubClient) GetRepositoryInfo(ctx context.Context, owner, reposi
 		return RepositoryInfo{}, err
 	}
 
-	repo, _, err := ghClient.Repositories.Get(ctx, owner, repository)
-	if err != nil {
+	var repo *github.Repository
+	client.retryExecuter.ExecutionHandler = func() (bool, error) {
+		var ghResponse *github.Response
+		repo, ghResponse, err = ghClient.Repositories.Get(ctx, owner, repository)
+		return shouldRetryIfRateLimitExceeded(ghResponse, err), err
+	}
+
+	if err = client.retryExecuter.Execute(); err != nil {
 		return RepositoryInfo{}, err
 	}
+
 	return RepositoryInfo{RepositoryVisibility: getGitHubRepositoryVisibility(repo), CloneInfo: CloneInfo{HTTP: repo.GetCloneURL(), SSH: repo.GetSSHURL()}}, nil
 }
 
@@ -629,8 +845,14 @@ func (client *GitHubClient) GetCommitBySha(ctx context.Context, owner, repositor
 		return CommitInfo{}, err
 	}
 
-	commit, _, err := ghClient.Repositories.GetCommit(ctx, owner, repository, sha, nil)
-	if err != nil {
+	var commit *github.RepositoryCommit
+	client.retryExecuter.ExecutionHandler = func() (bool, error) {
+		var ghResponse *github.Response
+		commit, ghResponse, err = ghClient.Repositories.GetCommit(ctx, owner, repository, sha, nil)
+		return shouldRetryIfRateLimitExceeded(ghResponse, err), err
+	}
+
+	if err = client.retryExecuter.Execute(); err != nil {
 		return CommitInfo{}, err
 	}
 
@@ -649,13 +871,17 @@ func (client *GitHubClient) CreateLabel(ctx context.Context, owner, repository s
 		return err
 	}
 
-	_, _, err = ghClient.Issues.CreateLabel(ctx, owner, repository, &github.Label{
-		Name:        &labelInfo.Name,
-		Description: &labelInfo.Description,
-		Color:       &labelInfo.Color,
-	})
+	client.retryExecuter.ExecutionHandler = func() (bool, error) {
+		var ghResponse *github.Response
+		_, ghResponse, err = ghClient.Issues.CreateLabel(ctx, owner, repository, &github.Label{
+			Name:        &labelInfo.Name,
+			Description: &labelInfo.Description,
+			Color:       &labelInfo.Color,
+		})
+		return shouldRetryIfRateLimitExceeded(ghResponse, err), err
+	}
 
-	return err
+	return client.retryExecuter.Execute()
 }
 
 // GetLabel on GitHub
@@ -665,24 +891,36 @@ func (client *GitHubClient) GetLabel(ctx context.Context, owner, repository, nam
 		return nil, err
 	}
 
+	labelInfo := &LabelInfo{}
+	client.retryExecuter.ExecutionHandler = func() (bool, error) {
+		var ghResponse *github.Response
+		labelInfo, ghResponse, err = client.executeGetLabel(ctx, owner, repository, name)
+		return shouldRetryIfRateLimitExceeded(ghResponse, err), err
+	}
+	err = client.retryExecuter.Execute()
+	return labelInfo, err
+}
+
+func (client *GitHubClient) executeGetLabel(ctx context.Context, owner, repository, name string) (*LabelInfo, *github.Response, error) {
 	ghClient, err := client.buildGithubClient(ctx)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	label, ghResponse, err := ghClient.Issues.GetLabel(ctx, owner, repository, name)
 	if err != nil {
 		if ghResponse.Response.StatusCode == http.StatusNotFound {
-			return nil, nil
+			return nil, ghResponse, nil
 		}
-		return nil, err
+		return nil, ghResponse, err
 	}
 
-	return &LabelInfo{
+	labelInfo := &LabelInfo{
 		Name:        *label.Name,
 		Description: *label.Description,
 		Color:       *label.Color,
-	}, err
+	}
+	return labelInfo, ghResponse, nil
 }
 
 // ListPullRequestLabels on GitHub
@@ -691,26 +929,36 @@ func (client *GitHubClient) ListPullRequestLabels(ctx context.Context, owner, re
 	if err != nil {
 		return nil, err
 	}
-	ghClient, err := client.buildGithubClient(ctx)
-	if err != nil {
-		return []string{}, err
-	}
 
 	results := []string{}
 	for nextPage := 0; ; nextPage++ {
 		options := &github.ListOptions{Page: nextPage}
-		labels, response, err := ghClient.Issues.ListLabelsByIssue(ctx, owner, repository, pullRequestID, options)
-		if err != nil {
-			return []string{}, err
+		var labels []*github.Label
+		var ghResponse *github.Response
+		client.retryExecuter.ExecutionHandler = func() (bool, error) {
+			labels, ghResponse, err = client.executeListPullRequestLabels(ctx, owner, repository, pullRequestID, options)
+			return shouldRetryIfRateLimitExceeded(ghResponse, err), err
+		}
+		if err = client.retryExecuter.Execute(); err != nil {
+			return nil, err
 		}
 		for _, label := range labels {
 			results = append(results, *label.Name)
 		}
-		if nextPage+1 >= response.LastPage {
+		if nextPage+1 >= ghResponse.LastPage {
 			break
 		}
 	}
 	return results, nil
+}
+
+func (client *GitHubClient) executeListPullRequestLabels(ctx context.Context, owner, repository string, pullRequestID int, options *github.ListOptions) ([]*github.Label, *github.Response, error) {
+	ghClient, err := client.buildGithubClient(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return ghClient.Issues.ListLabelsByIssue(ctx, owner, repository, pullRequestID, options)
 }
 
 // UnlabelPullRequest on GitHub
@@ -724,73 +972,111 @@ func (client *GitHubClient) UnlabelPullRequest(ctx context.Context, owner, repos
 		return err
 	}
 
-	_, err = ghClient.Issues.RemoveLabelForIssue(ctx, owner, repository, pullRequestID, name)
-	return err
+	client.retryExecuter.ExecutionHandler = func() (bool, error) {
+		var ghResponse *github.Response
+		ghResponse, err = ghClient.Issues.RemoveLabelForIssue(ctx, owner, repository, pullRequestID, name)
+		return shouldRetryIfRateLimitExceeded(ghResponse, err), err
+	}
+	return client.retryExecuter.Execute()
 }
 
 // UploadCodeScanning to GitHub Security tab
-func (client *GitHubClient) UploadCodeScanning(ctx context.Context, owner, repository, branch, scanResults string) (string, error) {
-	packagedScan, err := packScanningResult(scanResults)
-	if err != nil {
-		return "", err
-	}
+func (client *GitHubClient) UploadCodeScanning(ctx context.Context, owner, repository, branch, sarifContent string) (id string, err error) {
 	commit, err := client.GetLatestCommit(ctx, owner, repository, branch)
 	if err != nil {
-		return "", err
+		return
 	}
+
 	commitSHA := commit.Hash
 	branch = vcsutils.AddBranchPrefix(branch)
-	client.logger.Debug(uploadingCodeScanning, repository, "/", branch)
+	client.logger.Debug(vcsutils.UploadingCodeScanning, repository, "/", branch)
+
+	client.retryExecuter.ExecutionHandler = func() (bool, error) {
+		var ghResponse *github.Response
+		id, ghResponse, err = client.executeUploadCodeScanning(ctx, owner, repository, branch, commitSHA, sarifContent)
+		return shouldRetryIfRateLimitExceeded(ghResponse, err), err
+	}
+	err = client.retryExecuter.Execute()
+	return
+}
+
+func (client *GitHubClient) executeUploadCodeScanning(ctx context.Context, owner, repository, branch, commitSHA, sarifContent string) (id string, ghResponse *github.Response, err error) {
 	ghClient, err := client.buildGithubClient(ctx)
 	if err != nil {
-		return "", err
+		return
 	}
-	sarifID, resp, err := ghClient.CodeScanning.UploadSarif(ctx, owner, repository, &github.SarifAnalysis{
-		CommitSHA:   &commitSHA,
-		Ref:         &branch,
-		Sarif:       &packagedScan,
-		CheckoutURI: nil,
+
+	encodedSarif, err := encodeScanningResult(sarifContent)
+	if err != nil {
+		return
+	}
+
+	sarifID, ghResponse, err := ghClient.CodeScanning.UploadSarif(ctx, owner, repository, &github.SarifAnalysis{
+		CommitSHA: &commitSHA,
+		Ref:       &branch,
+		Sarif:     &encodedSarif,
 	})
-	// According to go-github API - successful response will return 202 status code
-	// The body of the response will appear in the error, and the Sarif struct will be empty.
-	if err != nil && resp.Response.StatusCode != 202 {
-		return "", err
+
+	// According to go-github API - successful ghResponse will return 202 status code
+	// The body of the ghResponse will appear in the error, and the Sarif struct will be empty.
+	if err != nil && ghResponse.Response.StatusCode != http.StatusAccepted {
+		return
 	}
-	// We are still using the Sarif struct because we need it for the unit-test of this function
+
+	id, err = handleGitHubUploadSarifID(sarifID, err)
+	return
+}
+
+func handleGitHubUploadSarifID(sarifID *github.SarifID, uploadSarifErr error) (id string, err error) {
 	if sarifID != nil && *sarifID.ID != "" {
-		return *sarifID.ID, err
+		id = *sarifID.ID
+		return
 	}
 	var result map[string]string
 	var ghAcceptedError *github.AcceptedError
-	if errors.As(err, &ghAcceptedError) {
+	if errors.As(uploadSarifErr, &ghAcceptedError) {
 		if err = json.Unmarshal(ghAcceptedError.Raw, &result); err != nil {
-			return "", err
+			return
 		}
-		return result["id"], nil
+		id = result["id"]
 	}
-
-	return "", nil
+	return
 }
 
 // DownloadFileFromRepo on GitHub
 func (client *GitHubClient) DownloadFileFromRepo(ctx context.Context, owner, repository, branch, path string) (content []byte, statusCode int, err error) {
+	client.retryExecuter.ExecutionHandler = func() (bool, error) {
+		var ghResponse *github.Response
+		content, statusCode, ghResponse, err = client.executeDownloadFileFromRepo(ctx, owner, repository, branch, path)
+		return shouldRetryIfRateLimitExceeded(ghResponse, err), err
+	}
+
+	err = client.retryExecuter.Execute()
+	return
+}
+
+func (client *GitHubClient) executeDownloadFileFromRepo(ctx context.Context, owner, repository, branch, path string) (content []byte, statusCode int, ghResponse *github.Response, err error) {
 	ghClient, err := client.buildGithubClient(ctx)
 	if err != nil {
-		return nil, 0, err
+		return
 	}
+
 	body, ghResponse, err := ghClient.Repositories.DownloadContents(ctx, owner, repository, path, &github.RepositoryContentGetOptions{Ref: branch})
 	defer func() {
 		if body != nil {
 			err = errors.Join(err, body.Close())
 		}
 	}()
+
 	if ghResponse != nil && ghResponse.Response != nil {
 		statusCode = ghResponse.StatusCode
 	}
+
 	if err != nil && statusCode != http.StatusOK {
 		err = fmt.Errorf("expected %d status code while received %d status code with error:\n%s", http.StatusOK, ghResponse.StatusCode, err)
 		return
 	}
+
 	if body != nil {
 		content, err = io.ReadAll(body)
 	}
@@ -803,44 +1089,71 @@ func (client *GitHubClient) GetRepositoryEnvironmentInfo(ctx context.Context, ow
 	if err != nil {
 		return RepositoryEnvironmentInfo{}, err
 	}
+
+	var repositoryEnvInfo *RepositoryEnvironmentInfo
+	client.retryExecuter.ExecutionHandler = func() (bool, error) {
+		var ghResponse *github.Response
+		repositoryEnvInfo, ghResponse, err = client.executeGetRepositoryEnvironmentInfo(ctx, owner, repository, name)
+		return shouldRetryIfRateLimitExceeded(ghResponse, err), err
+	}
+	err = client.retryExecuter.Execute()
+	return *repositoryEnvInfo, err
+}
+
+func (client *GitHubClient) executeGetRepositoryEnvironmentInfo(ctx context.Context, owner, repository, name string) (*RepositoryEnvironmentInfo, *github.Response, error) {
 	ghClient, err := client.buildGithubClient(ctx)
 	if err != nil {
-		return RepositoryEnvironmentInfo{}, err
+		return &RepositoryEnvironmentInfo{}, nil, err
 	}
 
-	environment, resp, err := ghClient.Repositories.GetEnvironment(ctx, owner, repository, name)
+	environment, ghResponse, err := ghClient.Repositories.GetEnvironment(ctx, owner, repository, name)
 	if err != nil {
-		return RepositoryEnvironmentInfo{}, err
+		return &RepositoryEnvironmentInfo{}, ghResponse, err
 	}
-	if err = vcsutils.CheckResponseStatusWithBody(resp.Response, http.StatusOK); err != nil {
-		return RepositoryEnvironmentInfo{}, err
+
+	if err = vcsutils.CheckResponseStatusWithBody(ghResponse.Response, http.StatusOK); err != nil {
+		return &RepositoryEnvironmentInfo{}, ghResponse, err
 	}
 
 	reviewers, err := extractGitHubEnvironmentReviewers(environment)
 	if err != nil {
-		return RepositoryEnvironmentInfo{}, err
+		return &RepositoryEnvironmentInfo{}, ghResponse, err
 	}
 
-	return RepositoryEnvironmentInfo{
-		Name:      *environment.Name,
-		Url:       *environment.URL,
-		Reviewers: reviewers,
-	}, err
+	return &RepositoryEnvironmentInfo{
+			Name:      environment.GetName(),
+			Url:       environment.GetURL(),
+			Reviewers: reviewers,
+		},
+		ghResponse,
+		nil
 }
 
 func (client *GitHubClient) GetModifiedFiles(ctx context.Context, owner, repository, refBefore, refAfter string) ([]string, error) {
-	if err := validateParametersNotBlank(map[string]string{
+	err := validateParametersNotBlank(map[string]string{
 		"owner":      owner,
 		"repository": repository,
 		"refBefore":  refBefore,
 		"refAfter":   refAfter,
-	}); err != nil {
+	})
+	if err != nil {
 		return nil, err
 	}
 
+	var fileNamesList []string
+	client.retryExecuter.ExecutionHandler = func() (bool, error) {
+		var ghResponse *github.Response
+		fileNamesList, ghResponse, err = client.executeGetModifiedFiles(ctx, owner, repository, refBefore, refAfter)
+		return shouldRetryIfRateLimitExceeded(ghResponse, err), err
+	}
+	err = client.retryExecuter.Execute()
+	return fileNamesList, err
+}
+
+func (client *GitHubClient) executeGetModifiedFiles(ctx context.Context, owner, repository, refBefore, refAfter string) ([]string, *github.Response, error) {
 	ghClient, err := client.buildGithubClient(ctx)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	// According to the https://docs.github.com/en/rest/commits/commits?apiVersion=2022-11-28#compare-two-commits
@@ -848,12 +1161,14 @@ func (client *GitHubClient) GetModifiedFiles(ctx context.Context, owner, reposit
 	// so we don't need to iterate over other pages to get additional info about the files.
 	// And we also do not need info about the change that is why we can limit only to a single entity.
 	listOptions := &github.ListOptions{PerPage: 1}
-	comparison, resp, err := ghClient.Repositories.CompareCommits(ctx, owner, repository, refBefore, refAfter, listOptions)
+
+	comparison, ghResponse, err := ghClient.Repositories.CompareCommits(ctx, owner, repository, refBefore, refAfter, listOptions)
 	if err != nil {
-		return nil, err
+		return nil, ghResponse, err
 	}
-	if err = vcsutils.CheckResponseStatusWithBody(resp.Response, http.StatusOK); err != nil {
-		return nil, err
+
+	if err = vcsutils.CheckResponseStatusWithBody(ghResponse.Response, http.StatusOK); err != nil {
+		return nil, ghResponse, err
 	}
 
 	fileNamesSet := datastructures.MakeSet[string]()
@@ -861,10 +1176,12 @@ func (client *GitHubClient) GetModifiedFiles(ctx context.Context, owner, reposit
 		fileNamesSet.Add(vcsutils.DefaultIfNotNil(file.Filename))
 		fileNamesSet.Add(vcsutils.DefaultIfNotNil(file.PreviousFilename))
 	}
+
 	_ = fileNamesSet.Remove("") // Make sure there are no blank filepath.
 	fileNamesList := fileNamesSet.ToSlice()
 	sort.Strings(fileNamesList)
-	return fileNamesList, nil
+
+	return fileNamesList, ghResponse, nil
 }
 
 // Extract code reviewers from environment
@@ -957,9 +1274,9 @@ func mapGitHubCommitToCommitInfo(commit *github.RepositoryCommit) CommitInfo {
 func mapGitHubIssuesCommentToCommentInfoList(commentsList []*github.IssueComment) (res []CommentInfo, err error) {
 	for _, comment := range commentsList {
 		res = append(res, CommentInfo{
-			ID:      *comment.ID,
-			Content: *comment.Body,
-			Created: *comment.CreatedAt,
+			ID:      comment.GetID(),
+			Content: comment.GetBody(),
+			Created: comment.GetCreatedAt().Time,
 		})
 	}
 	return
@@ -977,7 +1294,7 @@ func mapGitHubPullRequestToPullRequestInfoList(pullRequestList []*github.PullReq
 	return
 }
 
-func packScanningResult(data string) (string, error) {
+func encodeScanningResult(data string) (string, error) {
 	compressedScan, err := base64.EncodeGzip([]byte(data), 6)
 	if err != nil {
 		return "", err
@@ -988,4 +1305,32 @@ func packScanningResult(data string) (string, error) {
 
 type repositoryEnvironmentReviewer struct {
 	Login string `mapstructure:"login"`
+}
+
+func shouldRetryIfRateLimitExceeded(ghResponse *github.Response, requestError error) bool {
+	if ghResponse == nil || ghResponse.Response == nil {
+		return false
+	}
+
+	if ghResponse.StatusCode != http.StatusForbidden && ghResponse.StatusCode != http.StatusTooManyRequests {
+		return false
+	}
+
+	// In case of encountering a rate limit abuse, it's advisable to observe a considerate delay before attempting a retry.
+	// This prevents immediate retries within the current sequence, allowing a respectful interval before reattempting the request.
+	if requestError != nil && isRateLimitAbuseError(requestError) {
+		return false
+	}
+
+	body, err := io.ReadAll(ghResponse.Body)
+	if err != nil {
+		return false
+	}
+	return strings.Contains(string(body), "rate limit")
+}
+
+func isRateLimitAbuseError(requestError error) bool {
+	var abuseRateLimitError *github.AbuseRateLimitError
+	var rateLimitError *github.RateLimitError
+	return errors.As(requestError, &abuseRateLimitError) || errors.As(requestError, &rateLimitError)
 }

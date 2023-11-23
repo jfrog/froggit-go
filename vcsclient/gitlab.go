@@ -19,11 +19,11 @@ import (
 type GitLabClient struct {
 	glClient *gitlab.Client
 	vcsInfo  VcsInfo
-	logger   Log
+	logger   vcsutils.Log
 }
 
 // NewGitLabClient create a new GitLabClient
-func NewGitLabClient(vcsInfo VcsInfo, logger Log) (*GitLabClient, error) {
+func NewGitLabClient(vcsInfo VcsInfo, logger vcsutils.Log) (*GitLabClient, error) {
 	var client *gitlab.Client
 	var err error
 	if vcsInfo.APIEndpoint != "" {
@@ -210,7 +210,7 @@ func (client *GitLabClient) DownloadRepository(ctx context.Context, owner, repos
 	if err != nil {
 		return err
 	}
-	client.logger.Info(repository, successfulRepoDownload)
+	client.logger.Info(repository, vcsutils.SuccessfulRepoDownload)
 	err = vcsutils.Untar(localPath, bytes.NewReader(response), true)
 	if err != nil {
 		return err
@@ -221,7 +221,7 @@ func (client *GitLabClient) DownloadRepository(ctx context.Context, owner, repos
 		return err
 	}
 
-	client.logger.Info(successfulRepoExtraction)
+	client.logger.Info(vcsutils.SuccessfulRepoExtraction)
 	return vcsutils.CreateDotGitFolderWithRemote(localPath, vcsutils.RemoteName, repositoryInfo.CloneInfo.HTTP)
 }
 
@@ -382,15 +382,15 @@ func (client *GitLabClient) addPullRequestReviewComment(ctx context.Context, pro
 
 	// Create a NotePosition for the comment
 	latestVersion := versions[0]
-	diffPosition := &gitlab.NotePosition{
-		StartSHA:     latestVersion.StartCommitSHA,
-		HeadSHA:      latestVersion.HeadCommitSHA,
-		BaseSHA:      latestVersion.BaseCommitSHA,
-		PositionType: "text",
-		NewLine:      newLine,
-		NewPath:      newPath,
-		OldLine:      newLine,
-		OldPath:      oldPath,
+	diffPosition := &gitlab.PositionOptions{
+		StartSHA:     &latestVersion.StartCommitSHA,
+		HeadSHA:      &latestVersion.HeadCommitSHA,
+		BaseSHA:      &latestVersion.BaseCommitSHA,
+		PositionType: vcsutils.PointerOf("text"),
+		NewLine:      &newLine,
+		NewPath:      &newPath,
+		OldLine:      &newLine,
+		OldPath:      &oldPath,
 	}
 
 	// The GitLab REST API for creating a merge request discussion has strange behavior:
@@ -407,8 +407,8 @@ func (client *GitLabClient) addPullRequestReviewComment(ctx context.Context, pro
 
 	// Retry without oldLine and oldPath if the GitLab API call fails
 	if err != nil {
-		diffPosition.OldLine = 0
-		diffPosition.OldPath = ""
+		diffPosition.OldLine = nil
+		diffPosition.OldPath = nil
 		client.logger.Debug(fmt.Sprintf("Create merge request discussion second attempt sent. newPath: %v newLine: %v oldPath: %v, oldLine: %v",
 			newPath, newLine, oldPath, newLine))
 		_, _, err = client.createMergeRequestDiscussion(ctx, projectID, comment.Content, pullRequestID, diffPosition)
@@ -422,7 +422,7 @@ func (client *GitLabClient) addPullRequestReviewComment(ctx context.Context, pro
 	return nil
 }
 
-func (client *GitLabClient) createMergeRequestDiscussion(ctx context.Context, projectID, content string, pullRequestID int, position *gitlab.NotePosition) (*gitlab.Discussion, *gitlab.Response, error) {
+func (client *GitLabClient) createMergeRequestDiscussion(ctx context.Context, projectID, content string, pullRequestID int, position *gitlab.PositionOptions) (*gitlab.Discussion, *gitlab.Response, error) {
 	return client.glClient.Discussions.CreateMergeRequestDiscussion(projectID, pullRequestID, &gitlab.CreateMergeRequestDiscussionOptions{
 		Body:     &content,
 		Position: position,

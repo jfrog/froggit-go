@@ -5,7 +5,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/jfrog/froggit-go/vcsclient"
 	"github.com/jfrog/froggit-go/vcsutils"
 )
 
@@ -19,7 +18,7 @@ func TestCreateWebhookParser(t *testing.T) {
 
 func newParser(provider vcsutils.VcsProvider) webhookParser {
 	return createWebhookParser(
-		vcsclient.EmptyLogger{},
+		vcsutils.EmptyLogger{},
 		WebhookOrigin{
 			VcsProvider: provider,
 		})

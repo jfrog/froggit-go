@@ -24,11 +24,11 @@ import (
 type BitbucketCloudClient struct {
 	vcsInfo VcsInfo
 	url     *url.URL
-	logger  Log
+	logger  vcsutils.Log
 }
 
 // NewBitbucketCloudClient create a new BitbucketCloudClient
-func NewBitbucketCloudClient(vcsInfo VcsInfo, logger Log) (*BitbucketCloudClient, error) {
+func NewBitbucketCloudClient(vcsInfo VcsInfo, logger vcsutils.Log) (*BitbucketCloudClient, error) {
 	bitbucketClient := &BitbucketCloudClient{
 		vcsInfo: vcsInfo,
 		logger:  logger,
@@ -268,12 +268,12 @@ func (client *BitbucketCloudClient) DownloadRepository(ctx context.Context, owne
 	if err = vcsutils.CheckResponseStatusWithBody(response, http.StatusOK); err != nil {
 		return err
 	}
-	client.logger.Info(repository, successfulRepoDownload)
+	client.logger.Info(repository, vcsutils.SuccessfulRepoDownload)
 	err = vcsutils.Untar(localPath, response.Body, true)
 	if err != nil {
 		return err
 	}
-	client.logger.Info(successfulRepoExtraction)
+	client.logger.Info(vcsutils.SuccessfulRepoExtraction)
 	repositoryInfo, err := client.GetRepositoryInfo(ctx, owner, repository)
 	if err != nil {
 		return err
@@ -286,7 +286,7 @@ func (client *BitbucketCloudClient) DownloadRepository(ctx context.Context, owne
 func (client *BitbucketCloudClient) CreatePullRequest(ctx context.Context, owner, repository, sourceBranch,
 	targetBranch, title, description string) error {
 	bitbucketClient := client.buildBitbucketCloudClient(ctx)
-	client.logger.Debug(creatingPullRequest, title)
+	client.logger.Debug(vcsutils.CreatingPullRequest, title)
 	options := &bitbucket.PullRequestsOptions{
 		Owner:             owner,
 		SourceRepository:  owner + "/" + repository,
@@ -303,7 +303,7 @@ func (client *BitbucketCloudClient) CreatePullRequest(ctx context.Context, owner
 // UpdatePullRequest on Bitbucket cloud
 func (client *BitbucketCloudClient) UpdatePullRequest(ctx context.Context, owner, repository, title, body, targetBranchName string, prId int, state vcsutils.PullRequestState) error {
 	bitbucketClient := client.buildBitbucketCloudClient(ctx)
-	client.logger.Debug(creatingPullRequest, title)
+	client.logger.Debug(vcsutils.CreatingPullRequest, title)
 	options := &bitbucket.PullRequestsOptions{
 		Owner:             owner,
 		SourceRepository:  owner + "/" + repository,
@@ -334,7 +334,7 @@ func (client *BitbucketCloudClient) getOpenPullRequests(ctx context.Context, own
 		return nil, err
 	}
 	bitbucketClient := client.buildBitbucketCloudClient(ctx)
-	client.logger.Debug(fetchingOpenPullRequests, repository)
+	client.logger.Debug(vcsutils.FetchingOpenPullRequests, repository)
 	options := &bitbucket.PullRequestsOptions{
 		Owner:    owner,
 		RepoSlug: repository,
@@ -357,7 +357,7 @@ func (client *BitbucketCloudClient) GetPullRequestByID(ctx context.Context, owne
 		return
 	}
 	bitbucketClient := client.buildBitbucketCloudClient(ctx)
-	client.logger.Debug(fetchingPullRequestById, repository)
+	client.logger.Debug(vcsutils.FetchingPullRequestById, repository)
 	prIdStr := strconv.Itoa(pullRequestId)
 	options := &bitbucket.PullRequestsOptions{
 		Owner:    owner,
