@@ -329,7 +329,7 @@ func (client *GitLabClient) AddPullRequestReviewComments(ctx context.Context, ow
 	}
 
 	// Get merge request details
-	mergeRequestChanges, err := client.getMergeRequestChanges(ctx, projectID, pullRequestID)
+	mergeRequestChanges, err := client.getMergeRequestDiff(ctx, projectID, pullRequestID)
 	if err != nil {
 		return fmt.Errorf("could not get merge request changes: %w", err)
 	}
@@ -348,18 +348,18 @@ func (client *GitLabClient) getMergeRequestDiffVersions(ctx context.Context, pro
 	return versions, err
 }
 
-func (client *GitLabClient) getMergeRequestChanges(ctx context.Context, projectID string, pullRequestID int) (*gitlab.MergeRequest, error) {
-	mergeRequestChanges, _, err := client.glClient.MergeRequests.GetMergeRequestChanges(projectID, pullRequestID, &gitlab.GetMergeRequestChangesOptions{}, gitlab.WithContext(ctx))
+func (client *GitLabClient) getMergeRequestDiff(ctx context.Context, projectID string, pullRequestID int) ([]*gitlab.MergeRequestDiff, error) {
+	mergeRequestChanges, _, err := client.glClient.MergeRequests.ListMergeRequestDiffs(projectID, pullRequestID, nil, gitlab.WithContext(ctx))
 	return mergeRequestChanges, err
 }
 
-func (client *GitLabClient) addPullRequestReviewComment(ctx context.Context, projectID string, pullRequestID int, comment PullRequestComment, versions []*gitlab.MergeRequestDiffVersion, mergeRequestChanges *gitlab.MergeRequest) error {
+func (client *GitLabClient) addPullRequestReviewComment(ctx context.Context, projectID string, pullRequestID int, comment PullRequestComment, versions []*gitlab.MergeRequestDiffVersion, mergeRequestChanges []*gitlab.MergeRequestDiff) error {
 	// Find the corresponding change in merge request
 	var newPath, oldPath string
 	var newLine int
 	var diffFound bool
 
-	for _, diff := range mergeRequestChanges.Changes {
+	for _, diff := range mergeRequestChanges {
 		if diff.NewPath != comment.NewFilePath {
 			continue
 		}
