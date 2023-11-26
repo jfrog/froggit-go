@@ -48,9 +48,7 @@ func (runner *RetryExecutor) Execute() error {
 		}
 
 		// Print retry log message
-		if runner.Logger != nil {
-			runner.LogRetry(i, err)
-		}
+		runner.LogRetry(i, err)
 
 		// Going to sleep for RetryInterval milliseconds
 		if runner.RetriesIntervalMilliSecs > 0 && i < runner.MaxRetries {

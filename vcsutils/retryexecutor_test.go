@@ -22,6 +22,7 @@ func TestRetryExecutorSuccess(t *testing.T) {
 			}
 			return true, nil
 		},
+		Logger: EmptyLogger{},
 	}
 
 	assert.NoError(t, executor.Execute())
@@ -40,6 +41,7 @@ func TestRetryExecutorTimeoutWithDefaultError(t *testing.T) {
 			runCount++
 			return true, nil
 		},
+		Logger: EmptyLogger{},
 	}
 
 	assert.Equal(t, executor.Execute(), RetryExecutorTimeoutError{executor.getTimeoutErrorMsg()})
@@ -80,6 +82,7 @@ func TestRetryExecutorCancel(t *testing.T) {
 			runCount++
 			return true, nil
 		},
+		Logger: EmptyLogger{},
 	}
 
 	cancelFunc()
