@@ -62,6 +62,7 @@ func TestRetryExecutorTimeoutWithCustomError(t *testing.T) {
 			runCount++
 			return true, executionHandler
 		},
+		Logger: EmptyLogger{},
 	}
 
 	assert.Equal(t, executor.Execute(), executionHandler)
