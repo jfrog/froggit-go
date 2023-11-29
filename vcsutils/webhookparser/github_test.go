@@ -11,7 +11,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/jfrog/froggit-go/vcsclient"
 	"github.com/jfrog/froggit-go/vcsutils"
 )
 
@@ -56,7 +55,7 @@ func TestGitHubParseIncomingPushWebhook(t *testing.T) {
 
 	// Parse webhook
 	actual, err := ParseIncomingWebhook(context.Background(),
-		vcsclient.EmptyLogger{},
+		vcsutils.EmptyLogger{},
 		WebhookOrigin{
 			VcsProvider: vcsutils.GitHub,
 			Token:       token,
@@ -306,7 +305,7 @@ func TestGithubParseIncomingPrWebhook(t *testing.T) {
 
 			// Parse webhook
 			actual, err := ParseIncomingWebhook(context.Background(),
-				vcsclient.EmptyLogger{},
+				vcsutils.EmptyLogger{},
 				WebhookOrigin{
 					VcsProvider: vcsutils.GitHub,
 					Token:       token,
@@ -387,7 +386,7 @@ func TestGitHubParseIncomingWebhookTagEvents(t *testing.T) {
 
 			actual, err := ParseIncomingWebhook(
 				context.Background(),
-				vcsclient.EmptyLogger{},
+				vcsutils.EmptyLogger{},
 				WebhookOrigin{
 					VcsProvider: vcsutils.GitHub,
 					Token:       token,
@@ -403,7 +402,7 @@ func TestGitHubParseIncomingWebhookTagEvents(t *testing.T) {
 func TestGitHubParseIncomingWebhookError(t *testing.T) {
 	request := &http.Request{}
 	_, err := ParseIncomingWebhook(context.Background(),
-		vcsclient.EmptyLogger{},
+		vcsutils.EmptyLogger{},
 		WebhookOrigin{
 			VcsProvider: vcsutils.GitHub,
 			Token:       token,
@@ -411,7 +410,7 @@ func TestGitHubParseIncomingWebhookError(t *testing.T) {
 
 	assert.Error(t, err)
 
-	webhook := gitHubWebhookParser{logger: vcsclient.EmptyLogger{}}
+	webhook := gitHubWebhookParser{logger: vcsutils.EmptyLogger{}}
 	_, err = webhook.parseIncomingWebhook(context.Background(), request, []byte{})
 	assert.Error(t, err)
 }
@@ -434,7 +433,7 @@ func TestGitHubPayloadMismatchSignature(t *testing.T) {
 
 	// Parse webhook
 	_, err = ParseIncomingWebhook(context.Background(),
-		vcsclient.EmptyLogger{},
+		vcsutils.EmptyLogger{},
 		WebhookOrigin{
 			VcsProvider: vcsutils.GitHub,
 			Token:       token,
