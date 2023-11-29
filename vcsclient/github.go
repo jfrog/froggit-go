@@ -22,8 +22,8 @@ import (
 )
 
 const (
-	maxRetries               = 3
-	retriesIntervalMilliSecs = 60000
+	maxRetries               = 5
+	retriesIntervalMilliSecs = 90000
 )
 
 var rateLimitRetryStatuses = []int{http.StatusForbidden, http.StatusTooManyRequests}
