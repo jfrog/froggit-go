@@ -232,9 +232,6 @@ func TestGitHubClient_DownloadFileFromRepository(t *testing.T) {
 	_, _, err = client.DownloadFileFromRepo(ctx, owner, repo1, branch1, "hello-bald")
 	assert.Error(t, err)
 
-	_, _, err = client.DownloadFileFromRepo(ctx, owner, repo1, branch1, "hello-bald")
-	assert.Error(t, err)
-
 	_, _, err = createBadGitHubClient(t).DownloadFileFromRepo(ctx, owner, repo1, branch1, "hello")
 	assert.Error(t, err)
 }
@@ -328,7 +325,7 @@ func TestGitHubClient_ListPullRequestReviewComments(t *testing.T) {
 	assert.Equal(t, created, commentInfo[0].Created)
 
 	commentInfo, err = createBadGitHubClient(t).ListPullRequestReviewComments(ctx, owner, repo1, 1)
-	assert.Nil(t, commentInfo)
+	assert.Empty(t, commentInfo)
 	assert.Error(t, err)
 }
 
@@ -922,7 +919,7 @@ func TestGitHubClient_DeletePullRequestComment(t *testing.T) {
 }
 
 func createBadGitHubClient(t *testing.T) VcsClient {
-	client, err := NewClientBuilder(vcsutils.GitHub).ApiEndpoint("https://bad^endpoint").Build()
+	client, err := NewClientBuilder(vcsutils.GitHub).ApiEndpoint("https://badendpoint").Build()
 	assert.NoError(t, err)
 	return client
 }

@@ -789,7 +789,7 @@ func (client *GitHubClient) GetLabel(ctx context.Context, owner, repository, nam
 func (client *GitHubClient) executeGetLabel(ctx context.Context, owner, repository, name string) (*LabelInfo, *github.Response, error) {
 	label, ghResponse, err := client.ghClient.Issues.GetLabel(ctx, owner, repository, name)
 	if err != nil {
-		if ghResponse.Response.StatusCode == http.StatusNotFound {
+		if ghResponse != nil && ghResponse.Response != nil && ghResponse.Response.StatusCode == http.StatusNotFound {
 			return nil, ghResponse, nil
 		}
 		return nil, ghResponse, err
@@ -919,10 +919,11 @@ func (client *GitHubClient) executeDownloadFileFromRepo(ctx context.Context, own
 		}
 	}()
 
-	if ghResponse != nil && ghResponse.Response != nil {
-		statusCode = ghResponse.StatusCode
+	if ghResponse == nil || ghResponse.Response == nil {
+		return
 	}
 
+	statusCode = ghResponse.StatusCode
 	if err != nil && statusCode != http.StatusOK {
 		err = fmt.Errorf("expected %d status code while received %d status code with error:\n%s", http.StatusOK, ghResponse.StatusCode, err)
 		return
