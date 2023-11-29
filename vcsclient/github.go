@@ -23,7 +23,7 @@ import (
 
 const (
 	maxRetries               = 5
-	retriesIntervalMilliSecs = 90000
+	retriesIntervalMilliSecs = 60000
 )
 
 var rateLimitRetryStatuses = []int{http.StatusForbidden, http.StatusTooManyRequests}
@@ -485,7 +485,7 @@ func (client *GitHubClient) AddPullRequestComment(ctx context.Context, owner, re
 	})
 }
 
-// AddPullRequestReviewComment on GitHub
+// AddPullRequestReviewComments on GitHub
 func (client *GitHubClient) AddPullRequestReviewComments(ctx context.Context, owner, repository string, pullRequestID int, comments ...PullRequestComment) error {
 	prID := strconv.Itoa(pullRequestID)
 	err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository, "pullRequestID": prID})
