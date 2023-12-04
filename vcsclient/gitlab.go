@@ -834,7 +834,7 @@ func mapGitLabPullRequestState(state *vcsutils.PullRequestState) *string {
 	case vcsutils.Open:
 		stateStringValue = "reopen"
 	case vcsutils.Closed:
-		stateStringValue = "closed"
+		stateStringValue = "close"
 	default:
 		return nil
 	}
