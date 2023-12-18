@@ -8,9 +8,9 @@ import (
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/jfrog/froggit-go/vcsutils"
 	"github.com/jfrog/gofrog/datastructures"
-	"github.com/microsoft/azure-devops-go-api/azuredevops"
-	"github.com/microsoft/azure-devops-go-api/azuredevops/core"
-	"github.com/microsoft/azure-devops-go-api/azuredevops/git"
+	"github.com/microsoft/azure-devops-go-api/azuredevops/v7"
+	"github.com/microsoft/azure-devops-go-api/azuredevops/v7/core"
+	"github.com/microsoft/azure-devops-go-api/azuredevops/v7/git"
 	"io"
 	"net/http"
 	"os"
@@ -25,11 +25,11 @@ const defaultAzureBaseUrl = "https://dev.azure.com/"
 type AzureReposClient struct {
 	vcsInfo           VcsInfo
 	connectionDetails *azuredevops.Connection
-	logger            Log
+	logger            vcsutils.Log
 }
 
 // NewAzureReposClient create a new AzureReposClient
-func NewAzureReposClient(vcsInfo VcsInfo, logger Log) (*AzureReposClient, error) {
+func NewAzureReposClient(vcsInfo VcsInfo, logger vcsutils.Log) (*AzureReposClient, error) {
 	if vcsInfo.APIEndpoint == "" {
 		return nil, errors.New(vcsutils.ErrApiEndpointNotSet + "Azure Repos")
 	}
@@ -117,7 +117,7 @@ func (client *AzureReposClient) DownloadRepository(ctx context.Context, owner, r
 	if err != nil {
 		return err
 	}
-	client.logger.Info(successfulRepoExtraction)
+	client.logger.Info(vcsutils.SuccessfulRepoExtraction)
 	repoInfo, err := client.GetRepositoryInfo(ctx, owner, repository)
 	if err != nil {
 		return err
@@ -157,7 +157,7 @@ func (client *AzureReposClient) sendDownloadRepoRequest(ctx context.Context, rep
 	if err = vcsutils.CheckResponseStatusWithBody(res, http.StatusOK); err != nil {
 		return &http.Response{}, err
 	}
-	client.logger.Info(repository, successfulRepoDownload)
+	client.logger.Info(repository, vcsutils.SuccessfulRepoDownload)
 	return
 }
 
@@ -169,7 +169,7 @@ func (client *AzureReposClient) CreatePullRequest(ctx context.Context, _, reposi
 	}
 	sourceBranch = vcsutils.AddBranchPrefix(sourceBranch)
 	targetBranch = vcsutils.AddBranchPrefix(targetBranch)
-	client.logger.Debug(creatingPullRequest, title)
+	client.logger.Debug(vcsutils.CreatingPullRequest, title)
 	_, err = azureReposGitClient.CreatePullRequest(ctx, git.CreatePullRequestArgs{
 		GitPullRequestToCreate: &git.GitPullRequest{
 			Description:   &description,
@@ -190,7 +190,7 @@ func (client *AzureReposClient) UpdatePullRequest(ctx context.Context, _, reposi
 		return err
 	}
 	targetBranchName = vcsutils.AddBranchPrefix(targetBranchName)
-	client.logger.Debug(updatingPullRequest, prId)
+	client.logger.Debug(vcsutils.UpdatingPullRequest, prId)
 	_, err = azureReposGitClient.UpdatePullRequest(ctx, git.UpdatePullRequestArgs{
 		GitPullRequestToUpdate: &git.GitPullRequest{
 			Description:   vcsutils.GetNilIfZeroVal(body),
@@ -341,7 +341,7 @@ func (client *AzureReposClient) getOpenPullRequests(ctx context.Context, owner, 
 	if err != nil {
 		return nil, err
 	}
-	client.logger.Debug(fetchingOpenPullRequests, repository)
+	client.logger.Debug(vcsutils.FetchingOpenPullRequests, repository)
 	pullRequests, err := azureReposGitClient.GetPullRequests(ctx, git.GetPullRequestsArgs{
 		RepositoryId:   &repository,
 		Project:        &client.vcsInfo.Project,
@@ -364,7 +364,7 @@ func (client *AzureReposClient) GetPullRequestByID(ctx context.Context, owner, r
 	if err != nil {
 		return
 	}
-	client.logger.Debug(fetchingPullRequestById, repository)
+	client.logger.Debug(vcsutils.FetchingPullRequestById, repository)
 	pullRequest, err := azureReposGitClient.GetPullRequestById(ctx, git.GetPullRequestByIdArgs{
 		PullRequestId: &pullRequestId,
 		Project:       &client.vcsInfo.Project,
@@ -701,7 +701,7 @@ func parsePullRequestDetails(client *AzureReposClient, pullRequest git.GitPullRe
 	sourceRepoOwner := owner
 	if pullRequest.ForkSource != nil {
 		if sourceRepoOwner = extractOwnerFromForkedRepoUrl(pullRequest.ForkSource); sourceRepoOwner == "" {
-			client.logger.Warn(failedForkedRepositoryExtraction)
+			client.logger.Warn(vcsutils.FailedForkedRepositoryExtraction)
 		}
 	}
 

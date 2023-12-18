@@ -9,7 +9,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/jfrog/froggit-go/vcsclient"
 	"github.com/jfrog/froggit-go/vcsutils"
 	"github.com/stretchr/testify/assert"
 )
@@ -34,7 +33,7 @@ func TestBitbucketCloudParseIncomingPushWebhook(t *testing.T) {
 
 	// Parse webhook
 	actual, err := ParseIncomingWebhook(context.Background(),
-		vcsclient.EmptyLogger{},
+		vcsutils.EmptyLogger{},
 		WebhookOrigin{
 			VcsProvider: vcsutils.BitbucketCloud,
 			Token:       token,
@@ -225,7 +224,7 @@ func TestBitbucketCloudParseIncomingPrWebhook(t *testing.T) {
 
 			// Parse webhook
 			actual, err := ParseIncomingWebhook(context.Background(),
-				vcsclient.EmptyLogger{},
+				vcsutils.EmptyLogger{},
 				WebhookOrigin{
 					VcsProvider: vcsutils.BitbucketCloud,
 					Token:       token,
@@ -299,7 +298,7 @@ func TestBitbucketCloudParseIncomingWebhookTagEvents(t *testing.T) {
 
 			actual, err := ParseIncomingWebhook(
 				context.Background(),
-				vcsclient.EmptyLogger{},
+				vcsutils.EmptyLogger{},
 				WebhookOrigin{
 					VcsProvider: vcsutils.BitbucketCloud,
 					Token:       token,
@@ -315,7 +314,7 @@ func TestBitbucketCloudParseIncomingWebhookTagEvents(t *testing.T) {
 func TestBitbucketCloudParseIncomingWebhookError(t *testing.T) {
 	request := &http.Request{URL: &url.URL{RawQuery: "token=a"}}
 	_, err := ParseIncomingWebhook(context.Background(),
-		vcsclient.EmptyLogger{},
+		vcsutils.EmptyLogger{},
 		WebhookOrigin{
 			VcsProvider: vcsutils.BitbucketCloud,
 			Token:       token,
@@ -339,7 +338,7 @@ func TestBitbucketCloudPayloadMismatchToken(t *testing.T) {
 
 	// Parse webhook
 	_, err = ParseIncomingWebhook(context.Background(),
-		vcsclient.EmptyLogger{},
+		vcsutils.EmptyLogger{},
 		WebhookOrigin{
 			VcsProvider: vcsutils.BitbucketCloud,
 			Token:       token,

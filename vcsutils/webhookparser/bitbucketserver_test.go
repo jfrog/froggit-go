@@ -13,7 +13,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/jfrog/froggit-go/vcsclient"
 	"github.com/jfrog/froggit-go/vcsutils"
 )
 
@@ -53,7 +52,7 @@ func TestBitbucketServerParseIncomingPushWebhook(t *testing.T) {
 	request.Header.Add(sha256Signature, "sha256="+bitbucketServerPushSha256)
 
 	// Parse webhook
-	parser := newBitbucketServerWebhookParser(vcsclient.EmptyLogger{}, "https://bitbucket.test/rest")
+	parser := newBitbucketServerWebhookParser(vcsutils.EmptyLogger{}, "https://bitbucket.test/rest")
 	actual, err := validateAndParseHttpRequest(context.Background(), parser, token, request)
 	assert.NoError(t, err)
 
@@ -241,7 +240,7 @@ func TestBitbucketServerParseIncomingPrWebhook(t *testing.T) {
 
 			// Parse webhook
 			actual, err := ParseIncomingWebhook(context.Background(),
-				vcsclient.EmptyLogger{},
+				vcsutils.EmptyLogger{},
 				WebhookOrigin{
 					VcsProvider: vcsutils.BitbucketServer,
 					Token:       token,
@@ -324,7 +323,7 @@ func TestBitbucketServerParseIncomingWebhookTagEvents(t *testing.T) {
 
 			actual, err := ParseIncomingWebhook(
 				context.Background(),
-				vcsclient.EmptyLogger{},
+				vcsutils.EmptyLogger{},
 				WebhookOrigin{
 					VcsProvider: vcsutils.BitbucketServer,
 					Token:       token,
@@ -340,7 +339,7 @@ func TestBitbucketServerParseIncomingWebhookTagEvents(t *testing.T) {
 func TestBitbucketServerParseIncomingWebhookError(t *testing.T) {
 	request := &http.Request{Body: io.NopCloser(io.MultiReader())}
 	_, err := ParseIncomingWebhook(context.Background(),
-		vcsclient.EmptyLogger{},
+		vcsutils.EmptyLogger{},
 		WebhookOrigin{
 			VcsProvider: vcsutils.BitbucketServer,
 			Token:       token,
@@ -354,7 +353,7 @@ func TestBitbucketServerParseIncomingWebhookError(t *testing.T) {
 }
 
 func TestBitbucketServerParsePrEventsError(t *testing.T) {
-	webhook := bitbucketServerWebhookParser{logger: vcsclient.EmptyLogger{}}
+	webhook := bitbucketServerWebhookParser{logger: vcsutils.EmptyLogger{}}
 	_, err := webhook.parsePrEvents(&bitbucketServerWebHook{}, vcsutils.Push)
 	assert.Error(t, err)
 }
@@ -371,7 +370,7 @@ func TestBitbucketServerPayloadMismatchSignature(t *testing.T) {
 
 	// Parse webhook
 	_, err = ParseIncomingWebhook(context.Background(),
-		vcsclient.EmptyLogger{},
+		vcsutils.EmptyLogger{},
 		WebhookOrigin{
 			VcsProvider: vcsutils.BitbucketServer,
 			Token:       token,

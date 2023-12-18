@@ -11,17 +11,16 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jfrog/froggit-go/vcsclient"
 	"github.com/jfrog/froggit-go/vcsutils"
 )
 
 // bitbucketCloudWebhookParser represents an incoming webhook on Bitbucket cloud
 type bitbucketCloudWebhookParser struct {
-	logger vcsclient.Log
+	logger vcsutils.Log
 }
 
 // newBitbucketCloudWebhookParser create a new bitbucketCloudWebhookParser instance
-func newBitbucketCloudWebhookParser(logger vcsclient.Log) *bitbucketCloudWebhookParser {
+func newBitbucketCloudWebhookParser(logger vcsutils.Log) *bitbucketCloudWebhookParser {
 	return &bitbucketCloudWebhookParser{
 		logger: logger,
 	}
