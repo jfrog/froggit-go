@@ -5,6 +5,7 @@ const (
 	TagPrefix              = "refs/tags/"
 	NumberOfCommitsToFetch = 50
 	ErrNoCommentsProvided  = "could not add a pull request review comment, no comments were provided"
+	ErrApiEndpointNotSet   = "the API endpoint must be set for "
 )
 
 // VcsProvider is an enum represents the VCS provider type

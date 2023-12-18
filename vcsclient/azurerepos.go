@@ -30,6 +30,9 @@ type AzureReposClient struct {
 
 // NewAzureReposClient create a new AzureReposClient
 func NewAzureReposClient(vcsInfo VcsInfo, logger Log) (*AzureReposClient, error) {
+	if vcsInfo.APIEndpoint == "" {
+		return nil, errors.New(vcsutils.ErrApiEndpointNotSet + "Azure Repos")
+	}
 	client := &AzureReposClient{vcsInfo: vcsInfo, logger: logger}
 	baseUrl := strings.TrimSuffix(client.vcsInfo.APIEndpoint, "/")
 	client.connectionDetails = azuredevops.NewPatConnection(baseUrl, client.vcsInfo.Token)

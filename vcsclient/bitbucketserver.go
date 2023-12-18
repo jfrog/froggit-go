@@ -28,6 +28,9 @@ type BitbucketServerClient struct {
 
 // NewBitbucketServerClient create a new BitbucketServerClient
 func NewBitbucketServerClient(vcsInfo VcsInfo, logger Log) (*BitbucketServerClient, error) {
+	if vcsInfo.APIEndpoint == "" {
+		return nil, errors.New(vcsutils.ErrApiEndpointNotSet + "Bitbucket Server")
+	}
 	bitbucketServerClient := &BitbucketServerClient{
 		vcsInfo: vcsInfo,
 		logger:  logger,
