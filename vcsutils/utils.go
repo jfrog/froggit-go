@@ -252,7 +252,7 @@ func unzipFile(f *zip.File, destination string) (err error) {
 
 func CheckResponseStatusWithBody(resp *http.Response, expectedStatusCodes ...int) error {
 	if resp == nil {
-		return errors.New("received an empty response")
+		return nil
 	}
 
 	if slices.Contains(expectedStatusCodes, resp.StatusCode) {
@@ -371,4 +371,11 @@ func GetPullRequestFilePath(filePath string) string {
 		return ""
 	}
 	return fmt.Sprintf("/%s", strings.TrimPrefix(filePath, "/"))
+}
+
+func ValidateApiEndpointExist(apiEndpoint, vcsProvider string) error {
+	if apiEndpoint == "" {
+		return errors.New("the API endpoint must be set for " + vcsProvider)
+	}
+	return nil
 }

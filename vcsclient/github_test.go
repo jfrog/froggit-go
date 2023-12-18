@@ -1,8 +1,10 @@
 package vcsclient
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"math"
@@ -16,7 +18,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/go-github/v45/github"
+	"github.com/google/go-github/v56/github"
 	"github.com/jfrog/froggit-go/vcsutils"
 	"github.com/stretchr/testify/assert"
 )
@@ -230,9 +232,6 @@ func TestGitHubClient_DownloadFileFromRepository(t *testing.T) {
 	_, _, err = client.DownloadFileFromRepo(ctx, owner, repo1, branch1, "hello-bald")
 	assert.Error(t, err)
 
-	_, _, err = client.DownloadFileFromRepo(ctx, owner, repo1, branch1, "hello-bald")
-	assert.Error(t, err)
-
 	_, _, err = createBadGitHubClient(t).DownloadFileFromRepo(ctx, owner, repo1, branch1, "hello")
 	assert.Error(t, err)
 }
@@ -315,7 +314,7 @@ func TestGitHubClient_ListPullRequestReviewComments(t *testing.T) {
 	id := int64(1)
 	body := "test"
 	created := time.Date(1970, time.January, 1, 0, 0, 0, 0, time.UTC)
-	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, []*github.PullRequestComment{{ID: &id, Body: &body, CreatedAt: &created}}, "/repos/jfrog/repo-1/pulls/1/comments", createGitHubHandler)
+	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, []*github.PullRequestComment{{ID: &id, Body: &body, CreatedAt: &github.Timestamp{Time: created}}}, "/repos/jfrog/repo-1/pulls/1/comments", createGitHubHandler)
 	defer cleanUp()
 
 	commentInfo, err := client.ListPullRequestReviewComments(ctx, owner, repo1, 1)
@@ -326,7 +325,7 @@ func TestGitHubClient_ListPullRequestReviewComments(t *testing.T) {
 	assert.Equal(t, created, commentInfo[0].Created)
 
 	commentInfo, err = createBadGitHubClient(t).ListPullRequestReviewComments(ctx, owner, repo1, 1)
-	assert.Nil(t, commentInfo)
+	assert.Empty(t, commentInfo)
 	assert.Error(t, err)
 }
 
@@ -920,7 +919,7 @@ func TestGitHubClient_DeletePullRequestComment(t *testing.T) {
 }
 
 func createBadGitHubClient(t *testing.T) VcsClient {
-	client, err := NewClientBuilder(vcsutils.GitHub).ApiEndpoint("https://bad^endpoint").Build()
+	client, err := NewClientBuilder(vcsutils.GitHub).ApiEndpoint("https://badendpoint").Build()
 	assert.NoError(t, err)
 	return client
 }
@@ -1092,4 +1091,43 @@ func createGitHubSarifUploadHandler(t *testing.T, _ string, _ []byte, _ int) htt
 			assert.Fail(t, "Unexpected Request URI", r.RequestURI)
 		}
 	}
+}
+
+func TestShouldRetryIfRateLimitExceeded(t *testing.T) {
+	// Test case 1: ghResponse is nil
+	toRetry := shouldRetryIfRateLimitExceeded(nil, nil)
+	assert.False(t, toRetry)
+
+	// Test case 2: ghResponse StatusCode is not rate limit related
+	mockResponse := &github.Response{
+		Response: &http.Response{StatusCode: http.StatusOK, Body: io.NopCloser(bytes.NewReader([]byte("")))},
+	}
+	toRetry = shouldRetryIfRateLimitExceeded(mockResponse, nil)
+	assert.False(t, toRetry)
+
+	// Test case 3: Request error indicates rate limit abuse
+	mockResponse.StatusCode = http.StatusTooManyRequests
+	var abuseRateLimitErr *github.AbuseRateLimitError
+	toRetry = shouldRetryIfRateLimitExceeded(mockResponse, abuseRateLimitErr)
+	assert.False(t, toRetry)
+
+	// Test case 4: Response body contains 'rate limit'
+	mockResponse.StatusCode = http.StatusForbidden
+	mockResponse.Body = io.NopCloser(bytes.NewReader([]byte("This response contains rate limit")))
+	toRetry = shouldRetryIfRateLimitExceeded(mockResponse, nil)
+	assert.True(t, toRetry)
+}
+
+func TestIsRateLimitAbuseError(t *testing.T) {
+	// type `Error`, should return false
+	isRateLimitAbuseErr := isRateLimitAbuseError(errors.New("hello"))
+	assert.False(t, isRateLimitAbuseErr)
+
+	// type `RateLimitError`, should return true
+	isRateLimitAbuseErr = isRateLimitAbuseError(&github.RateLimitError{})
+	assert.True(t, isRateLimitAbuseErr)
+
+	// type `AbuseRateLimitError`, should return true
+	isRateLimitAbuseErr = isRateLimitAbuseError(&github.AbuseRateLimitError{})
+	assert.True(t, isRateLimitAbuseErr)
 }

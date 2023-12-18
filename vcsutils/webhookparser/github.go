@@ -7,21 +7,20 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/google/go-github/v45/github"
+	"github.com/google/go-github/v56/github"
 
-	"github.com/jfrog/froggit-go/vcsclient"
 	"github.com/jfrog/froggit-go/vcsutils"
 )
 
 // gitHubWebhookParser represents an incoming webhook on GitHub
 type gitHubWebhookParser struct {
-	logger vcsclient.Log
+	logger vcsutils.Log
 	// Used for GitHub On-prem
 	endpoint string
 }
 
 // newGitHubWebhookParser create a new gitHubWebhookParser instance
-func newGitHubWebhookParser(logger vcsclient.Log, endpoint string) *gitHubWebhookParser {
+func newGitHubWebhookParser(logger vcsutils.Log, endpoint string) *gitHubWebhookParser {
 	if endpoint == "" {
 		// Default to GitHub "Cloud"
 		endpoint = "https://github.com"

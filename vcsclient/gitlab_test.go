@@ -734,7 +734,7 @@ func createAddPullRequestReviewCommentGitLabHandler(t *testing.T, _ string, _ []
 			_, err = w.Write(versionsDiff)
 			assert.NoError(t, err)
 			assert.Equal(t, token, r.Header.Get("Private-Token"))
-		case "/api/v4/projects/jfrog%2Frepo-1/merge_requests/7/changes":
+		case "/api/v4/projects/jfrog%2Frepo-1/merge_requests/7/diffs":
 			mergeRequestChanges, err := os.ReadFile(filepath.Join("testdata", "gitlab", "merge_request_changes.json"))
 			assert.NoError(t, err)
 			_, err = w.Write(mergeRequestChanges)

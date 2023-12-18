@@ -3,11 +3,10 @@ package webhookparser
 import (
 	"strings"
 
-	"github.com/jfrog/froggit-go/vcsclient"
 	"github.com/jfrog/froggit-go/vcsutils"
 )
 
-func createWebhookParser(logger vcsclient.Log, origin WebhookOrigin) webhookParser {
+func createWebhookParser(logger vcsutils.Log, origin WebhookOrigin) webhookParser {
 	origin.OriginURL = strings.TrimSuffix(origin.OriginURL, "/")
 	switch origin.VcsProvider {
 	case vcsutils.GitHub:
