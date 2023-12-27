@@ -3,7 +3,7 @@ module github.com/jfrog/froggit-go
 go 1.20
 
 require (
-	github.com/gfleury/go-bitbucket-v1 v0.0.0-20230830121038-6e30c5760c87
+	github.com/gfleury/go-bitbucket-v1 v0.0.0-20230825095122-9bc1711434ab
 	github.com/go-git/go-git/v5 v5.11.0
 	github.com/google/go-github/v56 v56.0.0
 	github.com/google/uuid v1.5.0
@@ -16,6 +16,7 @@ require (
 	github.com/xanzy/go-gitlab v0.95.2
 	golang.org/x/exp v0.0.0-20231226003508-02704c960a9b
 	golang.org/x/oauth2 v0.15.0
+
 )
 
 require (
