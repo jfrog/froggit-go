@@ -633,7 +633,7 @@ func (client *GitLabClient) UnlabelPullRequest(ctx context.Context, owner, repos
 	if err != nil {
 		return err
 	}
-	labels := gitlab.Labels{label}
+	labels := gitlab.LabelOptions{label}
 	_, _, err = client.glClient.MergeRequests.UpdateMergeRequest(getProjectID(owner, repository), pullRequestID, &gitlab.UpdateMergeRequestOptions{
 		RemoveLabels: &labels,
 	}, gitlab.WithContext(ctx))
