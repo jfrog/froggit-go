@@ -295,6 +295,12 @@ type VcsClient interface {
 	// refBefore     - A VCS reference: commit SHA, branch name, tag name
 	// refAfter      - A VCS reference: commit SHA, branch name, tag name
 	GetModifiedFiles(ctx context.Context, owner, repository, refBefore, refAfter string) ([]string, error)
+
+	// GetPullRequestCommentSizeLimit returns the maximum size of a pull request comment
+	GetPullRequestCommentSizeLimit() int
+
+	// GetPullRequestDetailsSizeLimit returns the maximum size of a pull request details
+	GetPullRequestDetailsSizeLimit() int
 }
 
 // CommitInfo contains the details of a commit

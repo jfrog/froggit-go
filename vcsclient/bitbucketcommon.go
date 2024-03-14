@@ -7,7 +7,10 @@ import (
 	"time"
 )
 
-const notSupportedOnBitbucket = "currently not supported on Bitbucket"
+const (
+	notSupportedOnBitbucket     = "currently not supported on Bitbucket"
+	bitbucketPrContentSizeLimit = 32768
+)
 
 var (
 	errLabelsNotSupported                                 = fmt.Errorf("labels are %s", notSupportedOnBitbucket)

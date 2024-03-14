@@ -282,6 +282,14 @@ func (client *BitbucketCloudClient) DownloadRepository(ctx context.Context, owne
 	return vcsutils.CreateDotGitFolderWithRemote(localPath, "origin", repositoryInfo.CloneInfo.HTTP)
 }
 
+func (client *BitbucketCloudClient) GetPullRequestCommentSizeLimit() int {
+	return bitbucketPrContentSizeLimit
+}
+
+func (client *BitbucketCloudClient) GetPullRequestDetailsSizeLimit() int {
+	return bitbucketPrContentSizeLimit
+}
+
 // CreatePullRequest on Bitbucket cloud
 func (client *BitbucketCloudClient) CreatePullRequest(ctx context.Context, owner, repository, sourceBranch,
 	targetBranch, title, description string) error {
