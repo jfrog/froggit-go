@@ -277,6 +277,14 @@ func (client *BitbucketServerClient) DownloadRepository(ctx context.Context, own
 		repositoryInfo.CloneInfo.HTTP)
 }
 
+func (client *BitbucketServerClient) GetPullRequestCommentSizeLimit() int {
+	return bitbucketPrContentSizeLimit
+}
+
+func (client *BitbucketServerClient) GetPullRequestDetailsSizeLimit() int {
+	return bitbucketPrContentSizeLimit
+}
+
 // CreatePullRequest on Bitbucket server
 func (client *BitbucketServerClient) CreatePullRequest(ctx context.Context, owner, repository, sourceBranch, targetBranch,
 	title, description string) error {

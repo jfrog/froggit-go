@@ -19,7 +19,11 @@ import (
 	"time"
 )
 
-const defaultAzureBaseUrl = "https://dev.azure.com/"
+const (
+	defaultAzureBaseUrl              = "https://dev.azure.com/"
+	azurePullRequestDetailsSizeLimit = 4000
+	azurePullRequestCommentSizeLimit = 150000
+)
 
 // Azure Devops API version 6
 type AzureReposClient struct {
@@ -156,6 +160,14 @@ func (client *AzureReposClient) sendDownloadRepoRequest(ctx context.Context, rep
 	}
 	client.logger.Info(repository, vcsutils.SuccessfulRepoDownload)
 	return
+}
+
+func (client *AzureReposClient) GetPullRequestCommentSizeLimit() int {
+	return azurePullRequestCommentSizeLimit
+}
+
+func (client *AzureReposClient) GetPullRequestDetailsSizeLimit() int {
+	return azurePullRequestDetailsSizeLimit
 }
 
 // CreatePullRequest on Azure Repos

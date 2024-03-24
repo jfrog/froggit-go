@@ -24,6 +24,8 @@ import (
 const (
 	maxRetries               = 5
 	retriesIntervalMilliSecs = 60000
+	// https://github.com/orgs/community/discussions/27190
+	githubPrContentSizeLimit = 65536
 )
 
 var rateLimitRetryStatuses = []int{http.StatusForbidden, http.StatusTooManyRequests}
@@ -319,6 +321,14 @@ func executeDownloadArchiveFromLink(baseURL string) (*http.Response, error) {
 		return httpResponse, err
 	}
 	return httpResponse, vcsutils.CheckResponseStatusWithBody(httpResponse, http.StatusOK)
+}
+
+func (client *GitHubClient) GetPullRequestCommentSizeLimit() int {
+	return githubPrContentSizeLimit
+}
+
+func (client *GitHubClient) GetPullRequestDetailsSizeLimit() int {
+	return githubPrContentSizeLimit
 }
 
 // CreatePullRequest on GitHub

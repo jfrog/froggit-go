@@ -225,6 +225,14 @@ func (client *GitLabClient) DownloadRepository(ctx context.Context, owner, repos
 	return vcsutils.CreateDotGitFolderWithRemote(localPath, vcsutils.RemoteName, repositoryInfo.CloneInfo.HTTP)
 }
 
+func (client *GitLabClient) GetPullRequestCommentSizeLimit() int {
+	return gitlabMergeRequestCommentSizeLimit
+}
+
+func (client *GitLabClient) GetPullRequestDetailsSizeLimit() int {
+	return gitlabMergeRequestDetailsSizeLimit
+}
+
 // CreatePullRequest on GitLab
 func (client *GitLabClient) CreatePullRequest(ctx context.Context, owner, repository, sourceBranch, targetBranch,
 	title, description string) error {
