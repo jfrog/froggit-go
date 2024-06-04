@@ -393,6 +393,50 @@ func TestGitHubClient_GetCommits(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestGitHubClient_GetCommitsWithQueryOptions(t *testing.T) {
+	ctx := context.Background()
+	response, err := os.ReadFile(filepath.Join("testdata", "github", "commit_list_response.json"))
+	assert.NoError(t, err)
+
+	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, response,
+		fmt.Sprintf("/repos/%s/%s/commits?page=1&per_page=30&since=2021-01-01T00%%3A00%%3A00Z", owner, repo1), createGitHubHandler)
+	defer cleanUp()
+
+	options := GitCommitsQueryOptions{
+		Since: time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC),
+		ListOptions: ListOptions{
+			Page:    1,
+			PerPage: 30,
+		},
+	}
+	result, err := client.GetCommitsWithQueryOptions(ctx, owner, repo1, options)
+
+	assert.NoError(t, err)
+	assert.Equal(t, CommitInfo{
+		Hash:          "6dcb09b5b57875f334f61aebed695e2e4193db5e",
+		AuthorName:    "Monalisa Octocat",
+		CommitterName: "Joconde Octocat",
+		Url:           "https://api.github.com/repos/octocat/Hello-World/commits/6dcb09b5b57875f334f61aebed695e2e4193db5e",
+		Timestamp:     1302796850,
+		Message:       "Fix all the bugs",
+		ParentHashes:  []string{"6dcb09b5b57875f334f61aebed695e2e4193db5e"},
+		AuthorEmail:   "support@github.com",
+	}, result[0])
+	assert.Equal(t, CommitInfo{
+		Hash:          "6dcb09b5b57875f334f61aebed695e2e4193db5e",
+		AuthorName:    "Leonardo De Vinci",
+		CommitterName: "Leonardo De Vinci",
+		Url:           "https://api.github.com/repos/octocat/Hello-World/commits/6dcb09b5b57875f334f61aebed695e2e4193db5e",
+		Timestamp:     1302796850,
+		Message:       "Fix all the bugs",
+		ParentHashes:  []string{"6dcb09b5b57875f334f61aebed695e2e4193db5e"},
+		AuthorEmail:   "vinci@github.com",
+	}, result[1])
+
+	_, err = createBadGitHubClient(t).GetCommits(ctx, owner, repo1, "master")
+	assert.Error(t, err)
+}
+
 func TestGitHubClient_GetLatestCommitNotFound(t *testing.T) {
 	ctx := context.Background()
 	response := []byte(`{

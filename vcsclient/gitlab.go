@@ -532,8 +532,33 @@ func (client *GitLabClient) GetCommits(ctx context.Context, owner, repository, b
 			PerPage: vcsutils.NumberOfCommitsToFetch,
 		},
 	}
+	return client.getCommitsWithQueryOptions(ctx, owner, repository, listOptions)
+}
 
-	commits, _, err := client.glClient.Commits.ListCommits(getProjectID(owner, repository), listOptions, gitlab.WithContext(ctx))
+func (client *GitLabClient) GetCommitsWithQueryOptions(ctx context.Context, owner, repository string, listOptions GitCommitsQueryOptions) ([]CommitInfo, error) {
+	err := validateParametersNotBlank(map[string]string{
+		"owner":      owner,
+		"repository": repository,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return client.getCommitsWithQueryOptions(ctx, owner, repository, convertToListCommitsOptions(listOptions))
+}
+
+func convertToListCommitsOptions(options GitCommitsQueryOptions) *gitlab.ListCommitsOptions {
+	return &gitlab.ListCommitsOptions{
+		ListOptions: gitlab.ListOptions{
+			Page:    options.Page,
+			PerPage: options.PerPage,
+		},
+		Since: &options.Since,
+	}
+}
+
+func (client *GitLabClient) getCommitsWithQueryOptions(ctx context.Context, owner, repository string, options *gitlab.ListCommitsOptions) ([]CommitInfo, error) {
+	commits, _, err := client.glClient.Commits.ListCommits(getProjectID(owner, repository), options, gitlab.WithContext(ctx))
 	if err != nil {
 		return nil, err
 	}

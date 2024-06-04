@@ -394,6 +394,49 @@ func TestGitLabClient_GetCommits(t *testing.T) {
 	}, result[1])
 }
 
+func TestGitLabClient_GetCommitsWithQueryOptions(t *testing.T) {
+	ctx := context.Background()
+	response, err := os.ReadFile(filepath.Join("testdata", "gitlab", "commit_list_response.json"))
+	assert.NoError(t, err)
+
+	client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, response,
+		fmt.Sprintf("/api/v4/projects/%s/repository/commits?page=1&per_page=30&since=2021-01-01T00%%3A00%%3A00Z",
+			url.PathEscape(owner+"/"+repo1)), createGitLabHandler)
+	defer cleanUp()
+
+	options := GitCommitsQueryOptions{
+		Since: time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC),
+		ListOptions: ListOptions{
+			Page:    1,
+			PerPage: 30,
+		},
+	}
+
+	result, err := client.GetCommitsWithQueryOptions(ctx, owner, repo1, options)
+
+	assert.NoError(t, err)
+	assert.Equal(t, CommitInfo{
+		Hash:          "ed899a2f4b50b4370feeea94676502b42383c746",
+		AuthorName:    "Example User",
+		CommitterName: "Administrator",
+		Url:           "https://gitlab.example.com/thedude/gitlab-foss/-/commit/ed899a2f4b50b4370feeea94676502b42383c746",
+		Timestamp:     1348131022,
+		Message:       "Replace sanitize with escape once",
+		ParentHashes:  []string{"6104942438c14ec7bd21c6cd5bd995272b3faff6"},
+		AuthorEmail:   "user@example.com",
+	}, result[0])
+	assert.Equal(t, CommitInfo{
+		Hash:          "6104942438c14ec7bd21c6cd5bd995272b3faff6",
+		AuthorName:    "randx",
+		CommitterName: "ExampleName",
+		Url:           "https://gitlab.example.com/thedude/gitlab-foss/-/commit/ed899a2f4b50b4370feeea94676502b42383c746",
+		Timestamp:     1348131022,
+		Message:       "Sanitize for network graph",
+		ParentHashes:  []string{"ae1d9fb46aa2b07ee9836d49862ec4e2c46fbbba"},
+		AuthorEmail:   "user@example.com",
+	}, result[1])
+}
+
 func TestGitLabClient_GetLatestCommitNotFound(t *testing.T) {
 	ctx := context.Background()
 	response := []byte(`{

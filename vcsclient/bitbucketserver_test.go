@@ -391,6 +391,55 @@ func TestBitbucketServer_GetCommits(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestBitbucketServer_GetCommitsWithQueryOptions(t *testing.T) {
+	ctx := context.Background()
+	response, err := os.ReadFile(filepath.Join("testdata", "bitbucketserver", "commit_list_response.json"))
+	assert.NoError(t, err)
+
+	client, serverUrl, cleanUp := createServerWithUrlAndClientReturningStatus(t, vcsutils.BitbucketServer, false,
+		response,
+		fmt.Sprintf("/rest/api/1.0/projects/%s/repos/%s/commits?limit=30&limit=30&since=2021-01-01T00%%3A00%%3A00Z&start=1", owner, repo1),
+		http.StatusOK, createBitbucketServerHandler)
+	defer cleanUp()
+
+	options := GitCommitsQueryOptions{
+		Since: time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC),
+		ListOptions: ListOptions{
+			Page:    1,
+			PerPage: 30,
+		},
+	}
+
+	result, err := client.GetCommitsWithQueryOptions(ctx, owner, repo1, options)
+
+	assert.NoError(t, err)
+	expectedUrl := fmt.Sprintf("%s/projects/jfrog/repos/repo-1"+
+		"/commits/def0123abcdef4567abcdef8987abcdef6543abc", serverUrl)
+	assert.Equal(t, CommitInfo{
+		Hash:          "def0123abcdef4567abcdef8987abcdef6543abc",
+		AuthorName:    "charlie",
+		CommitterName: "mark",
+		Url:           expectedUrl,
+		Timestamp:     1548720847610,
+		Message:       "More work on feature 1",
+		ParentHashes:  []string{"abcdef0123abcdef4567abcdef8987abcdef6543", "qwerty0123abcdef4567abcdef8987abcdef6543"},
+		AuthorEmail:   "charlie@example.com",
+	}, result[0])
+	assert.Equal(t, CommitInfo{
+		Hash:          "def0123abcdef4567abcdef8987abcdef6543abc",
+		AuthorName:    "marly",
+		CommitterName: "marly",
+		Url:           expectedUrl,
+		Timestamp:     1548720847610,
+		Message:       "More work on feature 2",
+		ParentHashes:  []string{"abcdef0123abcdef4567abcdef8987abcdef6543", "qwerty0123abcdef4567abcdef8987abcdef6543"},
+		AuthorEmail:   "marly@example.com",
+	}, result[1])
+
+	_, err = createBadBitbucketServerClient(t).GetCommits(ctx, owner, repo1, "master")
+	assert.Error(t, err)
+}
+
 func TestBitbucketServer_GetLatestCommitNotFound(t *testing.T) {
 	ctx := context.Background()
 	response := []byte(`{

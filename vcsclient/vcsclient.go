@@ -225,6 +225,12 @@ type VcsClient interface {
 	// branch     - The name of the branch
 	GetCommits(ctx context.Context, owner, repository, branch string) ([]CommitInfo, error)
 
+	// GetCommitsWithQueryOptions Gets repository commits considering GitCommitsQueryOptions provided by the user.
+	// owner       - User or organization
+	// repository  - VCS repository name
+	// listOptions - Optional parameters for the 'ListCommits' method
+	GetCommitsWithQueryOptions(ctx context.Context, owner, repository string, options GitCommitsQueryOptions) ([]CommitInfo, error)
+
 	// AddSshKeyToRepository Adds a public ssh key to a repository
 	// owner      - User or organization
 	// repository - VCS repository name
@@ -397,6 +403,21 @@ type LabelInfo struct {
 	Description string
 	// Label color is a hexadecimal color code, for example: 4AB548
 	Color string
+}
+
+// GitCommitsQueryOptions specifies the optional parameters fot the commit list.
+type GitCommitsQueryOptions struct {
+	// Since when should Commits be included in the response.
+	Since time.Time
+	ListOptions
+}
+
+// ListOptions specifies the optional parameters to various List methods that support offset pagination.
+type ListOptions struct {
+	// For paginated result sets, page of results to retrieve.
+	Page int
+	// For paginated result sets, the number of results to include per page.
+	PerPage int
 }
 
 func validateParametersNotBlank(paramNameValueMap map[string]string) error {

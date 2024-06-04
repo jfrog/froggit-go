@@ -690,21 +690,48 @@ func (client *GitHubClient) GetCommits(ctx context.Context, owner, repository, b
 	var commitsInfo []CommitInfo
 	err = client.runWithRateLimitRetries(func() (*github.Response, error) {
 		var ghResponse *github.Response
-		commitsInfo, ghResponse, err = client.executeGetCommits(ctx, owner, repository, branch)
+		listOptions := &github.CommitsListOptions{
+			SHA: branch,
+			ListOptions: github.ListOptions{
+				Page:    1,
+				PerPage: vcsutils.NumberOfCommitsToFetch,
+			},
+		}
+		commitsInfo, ghResponse, err = client.executeGetCommits(ctx, owner, repository, listOptions)
 		return ghResponse, err
 	})
 	return commitsInfo, err
 }
 
-func (client *GitHubClient) executeGetCommits(ctx context.Context, owner, repository, branch string) ([]CommitInfo, *github.Response, error) {
-	listOptions := &github.CommitsListOptions{
-		SHA: branch,
+// GetCommitsWithQueryOptions on GitHub
+func (client *GitHubClient) GetCommitsWithQueryOptions(ctx context.Context, owner, repository string, listOptions GitCommitsQueryOptions) ([]CommitInfo, error) {
+	err := validateParametersNotBlank(map[string]string{
+		"owner":      owner,
+		"repository": repository,
+	})
+	if err != nil {
+		return nil, err
+	}
+	var commitsInfo []CommitInfo
+	err = client.runWithRateLimitRetries(func() (*github.Response, error) {
+		var ghResponse *github.Response
+		commitsInfo, ghResponse, err = client.executeGetCommits(ctx, owner, repository, convertToGitHubCommitsListOptions(listOptions))
+		return ghResponse, err
+	})
+	return commitsInfo, err
+}
+
+func convertToGitHubCommitsListOptions(listOptions GitCommitsQueryOptions) *github.CommitsListOptions {
+	return &github.CommitsListOptions{
+		Since: listOptions.Since,
 		ListOptions: github.ListOptions{
-			Page:    1,
-			PerPage: vcsutils.NumberOfCommitsToFetch,
+			Page:    listOptions.Page,
+			PerPage: listOptions.PerPage,
 		},
 	}
+}
 
+func (client *GitHubClient) executeGetCommits(ctx context.Context, owner, repository string, listOptions *github.CommitsListOptions) ([]CommitInfo, *github.Response, error) {
 	commits, ghResponse, err := client.ghClient.Repositories.ListCommits(ctx, owner, repository, listOptions)
 	if err != nil {
 		return nil, ghResponse, err

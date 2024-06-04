@@ -553,6 +553,22 @@ func (client *BitbucketServerClient) GetCommits(ctx context.Context, owner, repo
 		"limit": vcsutils.NumberOfCommitsToFetch,
 		"until": branch,
 	}
+	return client.getCommitsWithQueryOptions(ctx, owner, repository, options)
+}
+
+func (client *BitbucketServerClient) GetCommitsWithQueryOptions(ctx context.Context, owner, repository string, listOptions GitCommitsQueryOptions) ([]CommitInfo, error) {
+	err := validateParametersNotBlank(map[string]string{
+		"owner":      owner,
+		"repository": repository,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return client.getCommitsWithQueryOptions(ctx, owner, repository, convertToBitbucketOptionsMap(listOptions))
+}
+
+func (client *BitbucketServerClient) getCommitsWithQueryOptions(ctx context.Context, owner, repository string, options map[string]interface{}) ([]CommitInfo, error) {
 	bitbucketClient := client.buildBitbucketClient(ctx)
 
 	apiResponse, err := bitbucketClient.GetCommits(owner, repository, options)
@@ -569,6 +585,13 @@ func (client *BitbucketServerClient) GetCommits(ctx context.Context, owner, repo
 		commitsInfo = append(commitsInfo, commitInfo)
 	}
 	return commitsInfo, nil
+}
+func convertToBitbucketOptionsMap(listOptions GitCommitsQueryOptions) map[string]interface{} {
+	return map[string]interface{}{
+		"limit": listOptions.PerPage,
+		"since": listOptions.Since.Format(time.RFC3339),
+		"start": listOptions.Page,
+	}
 }
 
 // GetRepositoryInfo on Bitbucket server
