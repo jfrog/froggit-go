@@ -554,6 +554,7 @@ func convertToListCommitsOptions(options GitCommitsQueryOptions) *gitlab.ListCom
 			PerPage: options.PerPage,
 		},
 		Since: &options.Since,
+		Until: &options.Until,
 	}
 }
 

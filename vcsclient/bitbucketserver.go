@@ -590,6 +590,8 @@ func convertToBitbucketOptionsMap(listOptions GitCommitsQueryOptions) map[string
 	return map[string]interface{}{
 		"limit": listOptions.PerPage,
 		"since": listOptions.Since.Format(time.RFC3339),
+		// TODO is until?
+		"until": listOptions.Until.Format(time.RFC3339),
 		"start": listOptions.Page,
 	}
 }

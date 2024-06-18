@@ -409,6 +409,8 @@ type LabelInfo struct {
 type GitCommitsQueryOptions struct {
 	// Since when should Commits be included in the response.
 	Since time.Time
+	// Until when should Commits be included in the response.
+	Until time.Time
 	ListOptions
 }
 

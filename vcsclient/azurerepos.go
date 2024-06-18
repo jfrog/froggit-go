@@ -415,11 +415,13 @@ func (client *AzureReposClient) GetCommitsWithQueryOptions(ctx context.Context, 
 
 // TODO add pagination support
 func convertToGetCommitsArgs(repository, project string, options GitCommitsQueryOptions) git.GetCommitsArgs {
+	// TODO formting necessary?
 	since := options.Since.Format(time.RFC3339)
+	until := options.Until.Format(time.RFC3339)
 	return git.GetCommitsArgs{
 		RepositoryId:   &repository,
 		Project:        &project,
-		SearchCriteria: &git.GitQueryCommitsCriteria{FromDate: &since},
+		SearchCriteria: &git.GitQueryCommitsCriteria{FromDate: &since, ToDate: &until},
 	}
 }
 
