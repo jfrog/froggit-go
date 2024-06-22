@@ -498,7 +498,7 @@ func (client *BitbucketCloudClient) GetCommits(_ context.Context, _, _, _ string
 }
 
 func (client *BitbucketCloudClient) GetCommitsWithQueryOptions(ctx context.Context, owner, repository string, listOptions GitCommitsQueryOptions) ([]CommitInfo, error) {
-	return nil, nil
+	return nil, errBitbucketGetCommitsWithOptionsNotSupported
 }
 
 // GetRepositoryInfo on Bitbucket cloud

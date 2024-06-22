@@ -401,41 +401,20 @@ func (client *AzureReposClient) GetLatestCommit(ctx context.Context, _, reposito
 
 // GetCommits on Azure Repos
 func (client *AzureReposClient) GetCommits(ctx context.Context, _, repository, branch string) ([]CommitInfo, error) {
-	commitArgs := git.GetCommitsArgs{
-		RepositoryId:   &repository,
-		Project:        &client.vcsInfo.Project,
-		SearchCriteria: &git.GitQueryCommitsCriteria{ItemVersion: &git.GitVersionDescriptor{Version: &branch, VersionType: &git.GitVersionTypeValues.Branch}},
-	}
-	return client.getCommitsWithQueryOptions(ctx, commitArgs)
-}
-
-func (client *AzureReposClient) GetCommitsWithQueryOptions(ctx context.Context, _, repository string, listOptions GitCommitsQueryOptions) ([]CommitInfo, error) {
-	return client.getCommitsWithQueryOptions(ctx, convertToGetCommitsArgs(repository, client.vcsInfo.Project, listOptions))
-}
-
-// TODO add pagination support
-func convertToGetCommitsArgs(repository, project string, options GitCommitsQueryOptions) git.GetCommitsArgs {
-	// TODO formting necessary?
-	since := options.Since.Format(time.RFC3339)
-	until := options.Until.Format(time.RFC3339)
-	return git.GetCommitsArgs{
-		RepositoryId:   &repository,
-		Project:        &project,
-		SearchCriteria: &git.GitQueryCommitsCriteria{FromDate: &since, ToDate: &until},
-	}
-}
-
-func (client *AzureReposClient) getCommitsWithQueryOptions(ctx context.Context, commitArgs git.GetCommitsArgs) ([]CommitInfo, error) {
 	azureReposGitClient, err := client.buildAzureReposClient(ctx)
 	if err != nil {
 		return nil, err
 	}
-	commits, err := azureReposGitClient.GetCommits(ctx, commitArgs)
+	commits, err := azureReposGitClient.GetCommits(ctx, git.GetCommitsArgs{
+		RepositoryId:   &repository,
+		Project:        &client.vcsInfo.Project,
+		SearchCriteria: &git.GitQueryCommitsCriteria{ItemVersion: &git.GitVersionDescriptor{Version: &branch, VersionType: &git.GitVersionTypeValues.Branch}},
+	})
 	if err != nil {
 		return nil, err
 	}
 	if commits == nil {
-		return nil, fmt.Errorf("could not retrieve commits for <%s/%s>", *commitArgs.RepositoryId, *commitArgs.SearchCriteria.ItemVersion.Version)
+		return nil, fmt.Errorf("could not retrieve commits for <%s/%s>", repository, branch)
 	}
 
 	var commitsInfo []CommitInfo
@@ -444,6 +423,10 @@ func (client *AzureReposClient) getCommitsWithQueryOptions(ctx context.Context, 
 		commitsInfo = append(commitsInfo, commitInfo)
 	}
 	return commitsInfo, nil
+}
+
+func (client *AzureReposClient) GetCommitsWithQueryOptions(ctx context.Context, _, repository string, listOptions GitCommitsQueryOptions) ([]CommitInfo, error) {
+	return nil, errAzureGetCommitsWithOptionsNotSupported
 }
 
 func mapAzureReposCommitsToCommitInfo(commit git.GitCommitRef) CommitInfo {
