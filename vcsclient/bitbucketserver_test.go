@@ -398,12 +398,13 @@ func TestBitbucketServer_GetCommitsWithQueryOptions(t *testing.T) {
 
 	client, serverUrl, cleanUp := createServerWithUrlAndClientReturningStatus(t, vcsutils.BitbucketServer, false,
 		response,
-		fmt.Sprintf("/rest/api/1.0/projects/%s/repos/%s/commits?limit=30&limit=30&since=2021-01-01T00%%3A00%%3A00Z&start=1", owner, repo1),
+		fmt.Sprintf("/rest/api/1.0/projects/%s/repos/%s/commits?limit=30&limit=30&since=2021-01-01T00%%3A00%%3A00Z&start=1&until=2024-01-01T00%%3A00%%3A00Z", owner, repo1),
 		http.StatusOK, createBitbucketServerHandler)
 	defer cleanUp()
 
 	options := GitCommitsQueryOptions{
 		Since: time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC),
+		Until: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
 		ListOptions: ListOptions{
 			Page:    1,
 			PerPage: 30,

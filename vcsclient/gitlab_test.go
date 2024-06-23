@@ -400,12 +400,13 @@ func TestGitLabClient_GetCommitsWithQueryOptions(t *testing.T) {
 	assert.NoError(t, err)
 
 	client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, response,
-		fmt.Sprintf("/api/v4/projects/%s/repository/commits?page=1&per_page=30&since=2021-01-01T00%%3A00%%3A00Z",
+		fmt.Sprintf("/api/v4/projects/%s/repository/commits?page=1&per_page=30&since=2021-01-01T00%%3A00%%3A00Z&until=2024-01-01T00%%3A00%%3A00Z",
 			url.PathEscape(owner+"/"+repo1)), createGitLabHandler)
 	defer cleanUp()
 
 	options := GitCommitsQueryOptions{
 		Since: time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC),
+		Until: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
 		ListOptions: ListOptions{
 			Page:    1,
 			PerPage: 30,
