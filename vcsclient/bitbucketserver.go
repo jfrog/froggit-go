@@ -585,6 +585,7 @@ func (client *BitbucketServerClient) getCommitsWithQueryOptions(ctx context.Cont
 	}
 	return commitsInfo, nil
 }
+
 func convertToBitbucketOptionsMap(listOptions GitCommitsQueryOptions) map[string]interface{} {
 	return map[string]interface{}{
 		"limit": listOptions.PerPage,
