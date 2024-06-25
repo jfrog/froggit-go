@@ -13,6 +13,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // GitLabClient API version 4
@@ -548,13 +549,14 @@ func (client *GitLabClient) GetCommitsWithQueryOptions(ctx context.Context, owne
 }
 
 func convertToListCommitsOptions(options GitCommitsQueryOptions) *gitlab.ListCommitsOptions {
+	t := time.Now()
 	return &gitlab.ListCommitsOptions{
 		ListOptions: gitlab.ListOptions{
 			Page:    options.Page,
 			PerPage: options.PerPage,
 		},
 		Since: &options.Since,
-		Until: &options.Until,
+		Until: &t,
 	}
 }
 

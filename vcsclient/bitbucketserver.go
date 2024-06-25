@@ -564,7 +564,38 @@ func (client *BitbucketServerClient) GetCommitsWithQueryOptions(ctx context.Cont
 	if err != nil {
 		return nil, err
 	}
-	return client.getCommitsWithQueryOptions(ctx, owner, repository, convertToBitbucketOptionsMap(listOptions))
+	commits, err := client.getCommitsWithQueryOptions(ctx, owner, repository, convertToBitbucketOptionsMap(listOptions))
+	if err != nil {
+		return nil, err
+	}
+	return getCommitsInDateRate(commits, listOptions), nil
+}
+
+// Bitbucket doesn't support filtering by date, so we need to filter the commits by date ourselves.
+func getCommitsInDateRate(commits []CommitInfo, options GitCommitsQueryOptions) []CommitInfo {
+	commitsNumber := len(commits)
+	if commitsNumber == 0 {
+		return commits
+	}
+
+	firstCommit := time.Unix(0, commits[0].Timestamp*int64(time.Millisecond)).UTC()
+	lastCommit := time.Unix(0, commits[commitsNumber-1].Timestamp*int64(time.Millisecond)).UTC()
+
+	// If all commits are in the range return all.
+	if lastCommit.After(options.Since) || lastCommit.Equal(options.Since) {
+		return commits
+	}
+	// If the first commit is older than the "since" timestamp, all commits are out of range, return an empty list.
+	if firstCommit.Before(options.Since) {
+		return []CommitInfo{}
+	}
+	// Find the first commit that is older than the "since" timestamp.
+	for i, commit := range commits {
+		if time.Unix(0, commit.Timestamp*int64(time.Millisecond)).UTC().Before(options.Since) {
+			return commits[:i]
+		}
+	}
+	return []CommitInfo{}
 }
 
 func (client *BitbucketServerClient) getCommitsWithQueryOptions(ctx context.Context, owner, repository string, options map[string]interface{}) ([]CommitInfo, error) {
@@ -589,9 +620,7 @@ func (client *BitbucketServerClient) getCommitsWithQueryOptions(ctx context.Cont
 func convertToBitbucketOptionsMap(listOptions GitCommitsQueryOptions) map[string]interface{} {
 	return map[string]interface{}{
 		"limit": listOptions.PerPage,
-		"since": listOptions.Since.Format(time.RFC3339),
-		"until": listOptions.Until.Format(time.RFC3339),
-		"start": listOptions.Page,
+		"start": (listOptions.Page - 1) * listOptions.PerPage,
 	}
 }
 

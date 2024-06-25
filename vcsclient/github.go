@@ -19,6 +19,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 )
 
 const (
@@ -724,7 +725,7 @@ func (client *GitHubClient) GetCommitsWithQueryOptions(ctx context.Context, owne
 func convertToGitHubCommitsListOptions(listOptions GitCommitsQueryOptions) *github.CommitsListOptions {
 	return &github.CommitsListOptions{
 		Since: listOptions.Since,
-		Until: listOptions.Until,
+		Until: time.Now(),
 		ListOptions: github.ListOptions{
 			Page:    listOptions.Page,
 			PerPage: listOptions.PerPage,
