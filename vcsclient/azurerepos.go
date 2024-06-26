@@ -20,10 +20,13 @@ import (
 )
 
 const (
+	notSupportedOnAzure              = "currently not supported on Azure"
 	defaultAzureBaseUrl              = "https://dev.azure.com/"
 	azurePullRequestDetailsSizeLimit = 4000
 	azurePullRequestCommentSizeLimit = 150000
 )
+
+var errAzureGetCommitsWithOptionsNotSupported = fmt.Errorf("get commits with options is %s", notSupportedOnAzure)
 
 // Azure Devops API version 6
 type AzureReposClient struct {

@@ -9,7 +9,6 @@ import (
 
 const (
 	notSupportedOnBitbucket     = "currently not supported on Bitbucket"
-	notSupportedOnAzure         = "currently not supported on Azure"
 	bitbucketPrContentSizeLimit = 32768
 )
 
@@ -23,8 +22,6 @@ var (
 	errBitbucketListPullRequestReviewCommentsNotSupported = fmt.Errorf("list pull request review comments is %s", notSupportedOnBitbucket)
 	errBitbucketAddPullRequestReviewCommentsNotSupported  = fmt.Errorf("add pull request review comment is %s", notSupportedOnBitbucket)
 	errBitbucketDeletePullRequestComment                  = fmt.Errorf("delete pull request comment is %s", notSupportedOnBitbucket)
-
-	errAzureGetCommitsWithOptionsNotSupported = fmt.Errorf("get commits with options is %s", notSupportedOnAzure)
 )
 
 type BitbucketCommitInfo struct {
