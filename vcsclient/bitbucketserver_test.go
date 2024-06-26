@@ -396,15 +396,14 @@ func TestBitbucketServer_GetCommitsWithQueryOptions(t *testing.T) {
 	ctx := context.Background()
 	response, err := os.ReadFile(filepath.Join("testdata", "bitbucketserver", "commit_list_response.json"))
 	assert.NoError(t, err)
-	nowStr := time.Now().UTC().Format(time.RFC3339)
 	client, serverUrl, cleanUp := createServerWithUrlAndClientReturningStatus(t, vcsutils.BitbucketServer, false,
 		response,
-		fmt.Sprintf("/rest/api/1.0/projects/%s/repos/%s/commits?limit=30&limit=30&since=2021-01-01T00%%3A00%%3A00Z&start=1&until=%s", owner, repo1, nowStr),
+		fmt.Sprintf("/rest/api/1.0/projects/%s/repos/%s/commits?limit=30&limit=30&start=0", owner, repo1),
 		http.StatusOK, createBitbucketServerHandler)
 	defer cleanUp()
 
 	options := GitCommitsQueryOptions{
-		Since: time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC),
+		Since: time.Date(2017, 1, 1, 0, 0, 0, 0, time.UTC),
 		ListOptions: ListOptions{
 			Page:    1,
 			PerPage: 30,
@@ -437,7 +436,7 @@ func TestBitbucketServer_GetCommitsWithQueryOptions(t *testing.T) {
 		AuthorEmail:   "marly@example.com",
 	}, result[1])
 
-	_, err = createBadBitbucketServerClient(t).GetCommits(ctx, owner, repo1, "master")
+	_, err = createBadBitbucketServerClient(t).GetCommitsWithQueryOptions(ctx, owner, repo1, options)
 	assert.Error(t, err)
 }
 

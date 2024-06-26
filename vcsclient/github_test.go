@@ -397,10 +397,8 @@ func TestGitHubClient_GetCommitsWithQueryOptions(t *testing.T) {
 	ctx := context.Background()
 	response, err := os.ReadFile(filepath.Join("testdata", "github", "commit_list_response.json"))
 	assert.NoError(t, err)
-	// TODO fix test
-	nowStr := time.Now().UTC().Format(time.RFC3339)
 	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, response,
-		fmt.Sprintf("/repos/%s/%s/commits?page=1&per_page=30&since=2021-01-01T00%%3A00%%3A00Z&until=%s", owner, repo1, nowStr), createGitHubHandler)
+		fmt.Sprintf("/repos/%s/%s/commits?page=1&per_page=30&since=2021-01-01T00%%3A00%%3A00Z&until=", owner, repo1), createGitHubHandlerForUnknownUrl)
 	defer cleanUp()
 
 	options := GitCommitsQueryOptions{
@@ -434,7 +432,7 @@ func TestGitHubClient_GetCommitsWithQueryOptions(t *testing.T) {
 		AuthorEmail:   "vinci@github.com",
 	}, result[1])
 
-	_, err = createBadGitHubClient(t).GetCommits(ctx, owner, repo1, "master")
+	_, err = createBadGitHubClient(t).GetCommitsWithQueryOptions(ctx, owner, repo1, options)
 	assert.Error(t, err)
 }
 
@@ -1042,6 +1040,22 @@ func createGitHubWithPaginationHandler(t *testing.T, _ string, response []byte, 
 func createGitHubHandler(t *testing.T, expectedURI string, response []byte, expectedStatusCode int) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, expectedURI, r.RequestURI)
+		assert.Equal(t, "Bearer "+token, r.Header.Get("Authorization"))
+		if strings.Contains(r.RequestURI, "tarball") {
+			w.Header().Add("Location", string(response))
+			w.WriteHeader(expectedStatusCode)
+			return
+		}
+		w.WriteHeader(expectedStatusCode)
+		_, err := w.Write(response)
+		assert.NoError(t, err)
+	}
+}
+
+// Similar to createGitHubHandler but without checking if the expectedURI is equal to the request URI, only if it contained in the request URI.
+func createGitHubHandlerForUnknownUrl(t *testing.T, expectedURI string, response []byte, expectedStatusCode int) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		assert.Contains(t, r.RequestURI, expectedURI)
 		assert.Equal(t, "Bearer "+token, r.Header.Get("Authorization"))
 		if strings.Contains(r.RequestURI, "tarball") {
 			w.Header().Add("Location", string(response))

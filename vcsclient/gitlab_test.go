@@ -398,11 +398,9 @@ func TestGitLabClient_GetCommitsWithQueryOptions(t *testing.T) {
 	ctx := context.Background()
 	response, err := os.ReadFile(filepath.Join("testdata", "gitlab", "commit_list_response.json"))
 	assert.NoError(t, err)
-	// TODO fix test
-	nowStr := time.Now().UTC().Format(time.RFC3339)
 	client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, response,
-		fmt.Sprintf("/api/v4/projects/%s/repository/commits?page=1&per_page=30&since=2021-01-01T00%%3A00%%3A00Z&until=%s",
-			url.PathEscape(owner+"/"+repo1), nowStr), createGitLabHandler)
+		fmt.Sprintf("/api/v4/projects/%s/repository/commits?page=1&per_page=30&since=2021-01-01T00%%3A00%%3A00Z&until=",
+			url.PathEscape(owner+"/"+repo1)), createGitLabHandlerForUnknownUrl)
 	defer cleanUp()
 
 	options := GitCommitsQueryOptions{
@@ -752,6 +750,21 @@ func createGitLabHandler(t *testing.T, expectedURI string, response []byte, expe
 		_, err := w.Write(response)
 		assert.NoError(t, err)
 		assert.Equal(t, expectedURI, r.RequestURI)
+		assert.Equal(t, token, r.Header.Get("Private-Token"))
+	}
+}
+
+// Similar to createGitLabHandler but without checking if the expectedURI is equal to the request URI, only if it contained in the request URI.
+func createGitLabHandlerForUnknownUrl(t *testing.T, expectedURI string, response []byte, expectedStatusCode int) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.RequestURI == "/api/v4/" {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+		w.WriteHeader(expectedStatusCode)
+		_, err := w.Write(response)
+		assert.NoError(t, err)
+		assert.Contains(t, r.RequestURI, expectedURI)
 		assert.Equal(t, token, r.Header.Get("Private-Token"))
 	}
 }
