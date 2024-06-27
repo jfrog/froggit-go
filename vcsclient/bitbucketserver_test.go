@@ -1001,9 +1001,7 @@ func TestGetCommitsInDateRate(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := getCommitsInDateRate(tt.commits, tt.options)
-			if !assert.ElementsMatch(t, result, tt.expected) {
-				t.Errorf("Test case %s failed: expected %v, got %v", tt.name, tt.expected, result)
-			}
+			assert.ElementsMatch(t, result, tt.expected, fmt.Sprintf("Test case %s failed: expected %v, got %v", tt.name, tt.expected, result))
 		})
 	}
 }
