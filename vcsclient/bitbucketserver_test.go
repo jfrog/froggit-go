@@ -941,40 +941,40 @@ func TestGetCommitsInDateRate(t *testing.T) {
 		{
 			name: "All commits within range",
 			commits: []CommitInfo{
-				{Timestamp: 1717396600000}, // Mon, 03 Jun 2024 09:56:40 GMT (Within range)
-				{Timestamp: 1717396500000}, // Mon, 03 Jun 2024 09:55:00 GMT (Within range)
-				{Timestamp: 1717396400000}, // Mon, 03 Jun 2024 09:53:20 GMT (Within range)
+				{Timestamp: 1717396600}, // Mon, 03 Jun 2024 09:56:40 GMT (Within range)
+				{Timestamp: 1717396500}, // Mon, 03 Jun 2024 09:55:00 GMT (Within range)
+				{Timestamp: 1717396400}, // Mon, 03 Jun 2024 09:53:20 GMT (Within range)
 			},
 			options: GitCommitsQueryOptions{
 				Since: time.Unix(1717396300, 0), // Mon, 03 Jun 2024 09:51:40 GMT (Set since timestamp in seconds)
 			},
 			expected: []CommitInfo{
-				{Timestamp: 1717396600000},
-				{Timestamp: 1717396500000},
-				{Timestamp: 1717396400000},
+				{Timestamp: 1717396600},
+				{Timestamp: 1717396500},
+				{Timestamp: 1717396400},
 			},
 		},
 		{
 			name: "All commits within range or equal",
 			commits: []CommitInfo{
-				{Timestamp: 1717396600000}, // Mon, 03 Jun 2024 09:56:40 GMT (Within range)
-				{Timestamp: 1717396500000}, // Mon, 03 Jun 2024 09:55:00 GMT (Within range)
-				{Timestamp: 1717396400000}, // Mon, 03 Jun 2024 09:53:20 GMT (Within range)
+				{Timestamp: 1717396600}, // Mon, 03 Jun 2024 09:56:40 GMT (Within range)
+				{Timestamp: 1717396500}, // Mon, 03 Jun 2024 09:55:00 GMT (Within range)
+				{Timestamp: 1717396400}, // Mon, 03 Jun 2024 09:53:20 GMT (Within range)
 			},
 			options: GitCommitsQueryOptions{
 				Since: time.Unix(1717396400, 0), // Mon, 03 Jun 2024 09:53:20 GMT (Set since timestamp in seconds)
 			},
 			expected: []CommitInfo{
-				{Timestamp: 1717396600000},
-				{Timestamp: 1717396500000},
-				{Timestamp: 1717396400000},
+				{Timestamp: 1717396600},
+				{Timestamp: 1717396500},
+				{Timestamp: 1717396400},
 			},
 		},
 		{
 			name: "No commits within range",
 			commits: []CommitInfo{
-				{Timestamp: 1717396500000}, // Mon, 03 Jun 2024 09:55:00 GMT (Older than range)
-				{Timestamp: 1717396400000}, // Mon, 03 Jun 2024 09:53:20 GMT (Older than range)
+				{Timestamp: 1717396500}, // Mon, 03 Jun 2024 09:55:00 GMT (Older than range)
+				{Timestamp: 1717396400}, // Mon, 03 Jun 2024 09:53:20 GMT (Older than range)
 			},
 			options: GitCommitsQueryOptions{
 				Since: time.Unix(1717396600, 0), // Mon, 03 Jun 2024 09:56:40 GMT (Set since timestamp in seconds)
@@ -984,16 +984,16 @@ func TestGetCommitsInDateRate(t *testing.T) {
 		{
 			name: "Partial commits within range",
 			commits: []CommitInfo{
-				{Timestamp: 1717396600000}, // Mon, 03 Jun 2024 09:56:40 GMT (Within range)
-				{Timestamp: 1717396500000}, // Mon, 03 Jun 2024 09:55:00 GMT (Within range)
-				{Timestamp: 1717396400000}, // Mon, 03 Jun 2024 09:53:20 GMT (Older than range)
+				{Timestamp: 1717396600}, // Mon, 03 Jun 2024 09:56:40 GMT (Within range)
+				{Timestamp: 1717396500}, // Mon, 03 Jun 2024 09:55:00 GMT (Within range)
+				{Timestamp: 1717396400}, // Mon, 03 Jun 2024 09:53:20 GMT (Older than range)
 			},
 			options: GitCommitsQueryOptions{
 				Since: time.Unix(1717396500, 0), // Mon, 03 Jun 2024 09:55:00 GMT (Set since timestamp in seconds)
 			},
 			expected: []CommitInfo{
-				{Timestamp: 1717396600000},
-				{Timestamp: 1717396500000},
+				{Timestamp: 1717396600},
+				{Timestamp: 1717396500},
 			},
 		},
 	}
@@ -1001,7 +1001,7 @@ func TestGetCommitsInDateRate(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := getCommitsInDateRate(tt.commits, tt.options)
-			assert.ElementsMatch(t, result, tt.expected, fmt.Sprintf("Test case %s failed: expected %v, got %v", tt.name, tt.expected, result))
+			assert.ElementsMatch(t, result, tt.expected)
 		})
 	}
 }

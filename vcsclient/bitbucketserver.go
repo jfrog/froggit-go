@@ -578,8 +578,8 @@ func getCommitsInDateRate(commits []CommitInfo, options GitCommitsQueryOptions) 
 		return commits
 	}
 
-	firstCommit := time.Unix(0, commits[0].Timestamp*int64(time.Millisecond)).UTC()
-	lastCommit := time.Unix(0, commits[commitsNumber-1].Timestamp*int64(time.Millisecond)).UTC()
+	firstCommit := time.Unix(commits[0].Timestamp, 0).UTC()
+	lastCommit := time.Unix(commits[commitsNumber-1].Timestamp, 0).UTC()
 
 	// If all commits are in the range return all.
 	if lastCommit.After(options.Since) || lastCommit.Equal(options.Since) {
@@ -591,7 +591,7 @@ func getCommitsInDateRate(commits []CommitInfo, options GitCommitsQueryOptions) 
 	}
 	// Find the first commit that is older than the "since" timestamp.
 	for i, commit := range commits {
-		if time.Unix(0, commit.Timestamp*int64(time.Millisecond)).UTC().Before(options.Since) {
+		if time.Unix(commit.Timestamp, 0).UTC().Before(options.Since) {
 			return commits[:i]
 		}
 	}
@@ -820,10 +820,11 @@ func (client *BitbucketServerClient) mapBitbucketServerCommitToCommitInfo(commit
 		AuthorName:    commit.Author.Name,
 		CommitterName: commit.Committer.Name,
 		Url:           url,
-		Timestamp:     commit.CommitterTimestamp,
-		Message:       commit.Message,
-		ParentHashes:  parents,
-		AuthorEmail:   commit.Author.EmailAddress,
+		// Convert from bitbucket millisecond timestamp to CommitInfo seconds timestamp.
+		Timestamp:    commit.CommitterTimestamp / 1000,
+		Message:      commit.Message,
+		ParentHashes: parents,
+		AuthorEmail:  commit.Author.EmailAddress,
 	}
 }
 
