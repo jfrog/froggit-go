@@ -51,6 +51,7 @@ Currently supported providers are: [GitHub](#github), [Bitbucket Server](#bitbuc
       - [Delete Pull Request Comment](#delete-pull-request-comment)
       - [Delete Pull Request Review Comments](#delete-pull-request-review-comments)
       - [Get Commits](#get-commits)
+      - [Get Commits With Options](#get-commits-with-options)
       - [Get Latest Commit](#get-latest-commit)
       - [Get Commit By SHA](#get-commit-by-sha)
       - [Get List of Modified Files](#get-list-of-modified-files)
@@ -542,6 +543,29 @@ branch := "dev"
 
 // Commits information of the latest branch commits 
 commitInfo, err := client.GetCommits(ctx, owner, repository, branch)
+```
+
+#### Get Commits With Options
+
+```go
+// Go context
+ctx := context.Background()
+// Organization or username
+owner := "jfrog"
+// VCS repository
+repository := "jfrog-cli"
+
+// Commits query options 
+options := GitCommitsQueryOptions{
+  Since: time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC),
+  Until: time.Now(),
+  ListOptions: ListOptions{
+	  Page:    1,
+	  PerPage: 30,
+    },
+  }
+
+result, err := client.GetCommitsWithQueryOptions(ctx, owner, repository, options)
 ```
 
 #### Get Latest Commit

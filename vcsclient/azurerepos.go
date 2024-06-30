@@ -20,10 +20,13 @@ import (
 )
 
 const (
+	notSupportedOnAzure              = "currently not supported on Azure"
 	defaultAzureBaseUrl              = "https://dev.azure.com/"
 	azurePullRequestDetailsSizeLimit = 4000
 	azurePullRequestCommentSizeLimit = 150000
 )
+
+var errAzureGetCommitsWithOptionsNotSupported = fmt.Errorf("get commits with options is %s", notSupportedOnAzure)
 
 // Azure Devops API version 6
 type AzureReposClient struct {
@@ -423,6 +426,10 @@ func (client *AzureReposClient) GetCommits(ctx context.Context, _, repository, b
 		commitsInfo = append(commitsInfo, commitInfo)
 	}
 	return commitsInfo, nil
+}
+
+func (client *AzureReposClient) GetCommitsWithQueryOptions(ctx context.Context, _, repository string, listOptions GitCommitsQueryOptions) ([]CommitInfo, error) {
+	return nil, errAzureGetCommitsWithOptionsNotSupported
 }
 
 func mapAzureReposCommitsToCommitInfo(commit git.GitCommitRef) CommitInfo {

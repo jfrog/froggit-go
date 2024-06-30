@@ -393,6 +393,49 @@ func TestGitHubClient_GetCommits(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestGitHubClient_GetCommitsWithQueryOptions(t *testing.T) {
+	ctx := context.Background()
+	response, err := os.ReadFile(filepath.Join("testdata", "github", "commit_list_response.json"))
+	assert.NoError(t, err)
+	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, response,
+		fmt.Sprintf("/repos/%s/%s/commits?page=1&per_page=30&since=2021-01-01T00%%3A00%%3A00Z&until=", owner, repo1), createGitHubHandlerForUnknownUrl)
+	defer cleanUp()
+
+	options := GitCommitsQueryOptions{
+		Since: time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC),
+		ListOptions: ListOptions{
+			Page:    1,
+			PerPage: 30,
+		},
+	}
+	result, err := client.GetCommitsWithQueryOptions(ctx, owner, repo1, options)
+
+	assert.NoError(t, err)
+	assert.Equal(t, CommitInfo{
+		Hash:          "6dcb09b5b57875f334f61aebed695e2e4193db5e",
+		AuthorName:    "Monalisa Octocat",
+		CommitterName: "Joconde Octocat",
+		Url:           "https://api.github.com/repos/octocat/Hello-World/commits/6dcb09b5b57875f334f61aebed695e2e4193db5e",
+		Timestamp:     1302796850,
+		Message:       "Fix all the bugs",
+		ParentHashes:  []string{"6dcb09b5b57875f334f61aebed695e2e4193db5e"},
+		AuthorEmail:   "support@github.com",
+	}, result[0])
+	assert.Equal(t, CommitInfo{
+		Hash:          "6dcb09b5b57875f334f61aebed695e2e4193db5e",
+		AuthorName:    "Leonardo De Vinci",
+		CommitterName: "Leonardo De Vinci",
+		Url:           "https://api.github.com/repos/octocat/Hello-World/commits/6dcb09b5b57875f334f61aebed695e2e4193db5e",
+		Timestamp:     1302796850,
+		Message:       "Fix all the bugs",
+		ParentHashes:  []string{"6dcb09b5b57875f334f61aebed695e2e4193db5e"},
+		AuthorEmail:   "vinci@github.com",
+	}, result[1])
+
+	_, err = createBadGitHubClient(t).GetCommitsWithQueryOptions(ctx, owner, repo1, options)
+	assert.Error(t, err)
+}
+
 func TestGitHubClient_GetLatestCommitNotFound(t *testing.T) {
 	ctx := context.Background()
 	response := []byte(`{
@@ -997,6 +1040,22 @@ func createGitHubWithPaginationHandler(t *testing.T, _ string, response []byte, 
 func createGitHubHandler(t *testing.T, expectedURI string, response []byte, expectedStatusCode int) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, expectedURI, r.RequestURI)
+		assert.Equal(t, "Bearer "+token, r.Header.Get("Authorization"))
+		if strings.Contains(r.RequestURI, "tarball") {
+			w.Header().Add("Location", string(response))
+			w.WriteHeader(expectedStatusCode)
+			return
+		}
+		w.WriteHeader(expectedStatusCode)
+		_, err := w.Write(response)
+		assert.NoError(t, err)
+	}
+}
+
+// Similar to createGitHubHandler but without checking if the expectedURI is equal to the request URI, only if it contained in the request URI.
+func createGitHubHandlerForUnknownUrl(t *testing.T, expectedURI string, response []byte, expectedStatusCode int) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		assert.Contains(t, r.RequestURI, expectedURI)
 		assert.Equal(t, "Bearer "+token, r.Header.Get("Authorization"))
 		if strings.Contains(r.RequestURI, "tarball") {
 			w.Header().Add("Location", string(response))
