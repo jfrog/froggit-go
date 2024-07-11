@@ -600,7 +600,7 @@ func (client *GitLabClient) GetCommitBySha(ctx context.Context, owner, repositor
 		return CommitInfo{}, err
 	}
 
-	commit, _, err := client.glClient.Commits.GetCommit(getProjectID(owner, repository), sha, nil, gitlab.WithContext(ctx))
+	commit, _, err := client.glClient.Commits.GetCommit(getProjectID(owner, repository), sha, &gitlab.GetCommitOptions{}, gitlab.WithContext(ctx))
 	if err != nil {
 		return CommitInfo{}, err
 	}
