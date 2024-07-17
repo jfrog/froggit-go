@@ -553,6 +553,52 @@ func (client *BitbucketServerClient) GetCommits(ctx context.Context, owner, repo
 		"limit": vcsutils.NumberOfCommitsToFetch,
 		"until": branch,
 	}
+	return client.getCommitsWithQueryOptions(ctx, owner, repository, options)
+}
+
+func (client *BitbucketServerClient) GetCommitsWithQueryOptions(ctx context.Context, owner, repository string, listOptions GitCommitsQueryOptions) ([]CommitInfo, error) {
+	err := validateParametersNotBlank(map[string]string{
+		"owner":      owner,
+		"repository": repository,
+	})
+	if err != nil {
+		return nil, err
+	}
+	commits, err := client.getCommitsWithQueryOptions(ctx, owner, repository, convertToBitbucketOptionsMap(listOptions))
+	if err != nil {
+		return nil, err
+	}
+	return getCommitsInDateRate(commits, listOptions), nil
+}
+
+// Bitbucket doesn't support filtering by date, so we need to filter the commits by date ourselves.
+func getCommitsInDateRate(commits []CommitInfo, options GitCommitsQueryOptions) []CommitInfo {
+	commitsNumber := len(commits)
+	if commitsNumber == 0 {
+		return commits
+	}
+
+	firstCommit := time.Unix(commits[0].Timestamp, 0).UTC()
+	lastCommit := time.Unix(commits[commitsNumber-1].Timestamp, 0).UTC()
+
+	// If all commits are in the range return all.
+	if lastCommit.After(options.Since) || lastCommit.Equal(options.Since) {
+		return commits
+	}
+	// If the first commit is older than the "since" timestamp, all commits are out of range, return an empty list.
+	if firstCommit.Before(options.Since) {
+		return []CommitInfo{}
+	}
+	// Find the first commit that is older than the "since" timestamp.
+	for i, commit := range commits {
+		if time.Unix(commit.Timestamp, 0).UTC().Before(options.Since) {
+			return commits[:i]
+		}
+	}
+	return []CommitInfo{}
+}
+
+func (client *BitbucketServerClient) getCommitsWithQueryOptions(ctx context.Context, owner, repository string, options map[string]interface{}) ([]CommitInfo, error) {
 	bitbucketClient := client.buildBitbucketClient(ctx)
 
 	apiResponse, err := bitbucketClient.GetCommits(owner, repository, options)
@@ -569,6 +615,13 @@ func (client *BitbucketServerClient) GetCommits(ctx context.Context, owner, repo
 		commitsInfo = append(commitsInfo, commitInfo)
 	}
 	return commitsInfo, nil
+}
+
+func convertToBitbucketOptionsMap(listOptions GitCommitsQueryOptions) map[string]interface{} {
+	return map[string]interface{}{
+		"limit": listOptions.PerPage,
+		"start": (listOptions.Page - 1) * listOptions.PerPage,
+	}
 }
 
 // GetRepositoryInfo on Bitbucket server
@@ -767,10 +820,11 @@ func (client *BitbucketServerClient) mapBitbucketServerCommitToCommitInfo(commit
 		AuthorName:    commit.Author.Name,
 		CommitterName: commit.Committer.Name,
 		Url:           url,
-		Timestamp:     commit.CommitterTimestamp,
-		Message:       commit.Message,
-		ParentHashes:  parents,
-		AuthorEmail:   commit.Author.EmailAddress,
+		// Convert from bitbucket millisecond timestamp to CommitInfo seconds timestamp.
+		Timestamp:    commit.CommitterTimestamp / 1000,
+		Message:      commit.Message,
+		ParentHashes: parents,
+		AuthorEmail:  commit.Author.EmailAddress,
 	}
 }
 

@@ -340,7 +340,7 @@ func TestBitbucketServer_GetLatestCommit(t *testing.T) {
 		AuthorName:    "charlie",
 		CommitterName: "mark",
 		Url:           expectedUrl,
-		Timestamp:     1548720847610,
+		Timestamp:     1548720847,
 		Message:       "More work on feature 1",
 		ParentHashes:  []string{"abcdef0123abcdef4567abcdef8987abcdef6543", "qwerty0123abcdef4567abcdef8987abcdef6543"},
 		AuthorEmail:   "charlie@example.com",
@@ -371,7 +371,7 @@ func TestBitbucketServer_GetCommits(t *testing.T) {
 		AuthorName:    "charlie",
 		CommitterName: "mark",
 		Url:           expectedUrl,
-		Timestamp:     1548720847610,
+		Timestamp:     1548720847,
 		Message:       "More work on feature 1",
 		ParentHashes:  []string{"abcdef0123abcdef4567abcdef8987abcdef6543", "qwerty0123abcdef4567abcdef8987abcdef6543"},
 		AuthorEmail:   "charlie@example.com",
@@ -381,13 +381,61 @@ func TestBitbucketServer_GetCommits(t *testing.T) {
 		AuthorName:    "marly",
 		CommitterName: "marly",
 		Url:           expectedUrl,
-		Timestamp:     1548720847610,
+		Timestamp:     1548720847,
 		Message:       "More work on feature 2",
 		ParentHashes:  []string{"abcdef0123abcdef4567abcdef8987abcdef6543", "qwerty0123abcdef4567abcdef8987abcdef6543"},
 		AuthorEmail:   "marly@example.com",
 	}, result[1])
 
 	_, err = createBadBitbucketServerClient(t).GetCommits(ctx, owner, repo1, "master")
+	assert.Error(t, err)
+}
+
+func TestBitbucketServer_GetCommitsWithQueryOptions(t *testing.T) {
+	ctx := context.Background()
+	response, err := os.ReadFile(filepath.Join("testdata", "bitbucketserver", "commit_list_response.json"))
+	assert.NoError(t, err)
+	client, serverUrl, cleanUp := createServerWithUrlAndClientReturningStatus(t, vcsutils.BitbucketServer, false,
+		response,
+		fmt.Sprintf("/rest/api/1.0/projects/%s/repos/%s/commits?limit=30&limit=30&start=0", owner, repo1),
+		http.StatusOK, createBitbucketServerHandler)
+	defer cleanUp()
+
+	options := GitCommitsQueryOptions{
+		Since: time.Date(2017, 1, 1, 0, 0, 0, 0, time.UTC),
+		ListOptions: ListOptions{
+			Page:    1,
+			PerPage: 30,
+		},
+	}
+
+	result, err := client.GetCommitsWithQueryOptions(ctx, owner, repo1, options)
+
+	assert.NoError(t, err)
+	expectedUrl := fmt.Sprintf("%s/projects/jfrog/repos/repo-1"+
+		"/commits/def0123abcdef4567abcdef8987abcdef6543abc", serverUrl)
+	assert.Equal(t, CommitInfo{
+		Hash:          "def0123abcdef4567abcdef8987abcdef6543abc",
+		AuthorName:    "charlie",
+		CommitterName: "mark",
+		Url:           expectedUrl,
+		Timestamp:     1548720847,
+		Message:       "More work on feature 1",
+		ParentHashes:  []string{"abcdef0123abcdef4567abcdef8987abcdef6543", "qwerty0123abcdef4567abcdef8987abcdef6543"},
+		AuthorEmail:   "charlie@example.com",
+	}, result[0])
+	assert.Equal(t, CommitInfo{
+		Hash:          "def0123abcdef4567abcdef8987abcdef6543abc",
+		AuthorName:    "marly",
+		CommitterName: "marly",
+		Url:           expectedUrl,
+		Timestamp:     1548720847,
+		Message:       "More work on feature 2",
+		ParentHashes:  []string{"abcdef0123abcdef4567abcdef8987abcdef6543", "qwerty0123abcdef4567abcdef8987abcdef6543"},
+		AuthorEmail:   "marly@example.com",
+	}, result[1])
+
+	_, err = createBadBitbucketServerClient(t).GetCommitsWithQueryOptions(ctx, owner, repo1, options)
 	assert.Error(t, err)
 }
 
@@ -603,7 +651,7 @@ func TestBitbucketServer_GetCommitBySha(t *testing.T) {
 		AuthorName:    "charlie",
 		CommitterName: "mark",
 		Url:           expectedUrl,
-		Timestamp:     1636089306104,
+		Timestamp:     1636089306,
 		Message:       "WIP on feature 1",
 		ParentHashes:  []string{"bbcdef0123abcdef4567abcdef8987abcdef6543"},
 		AuthorEmail:   "charlie@example.com",
@@ -881,4 +929,79 @@ func createBadBitbucketServerClient(t *testing.T) VcsClient {
 	client, err := NewClientBuilder(vcsutils.BitbucketServer).ApiEndpoint("https://bad^endpoint").Build()
 	assert.NoError(t, err)
 	return client
+}
+
+func TestGetCommitsInDateRate(t *testing.T) {
+	tests := []struct {
+		name     string
+		commits  []CommitInfo
+		options  GitCommitsQueryOptions
+		expected []CommitInfo
+	}{
+		{
+			name: "All commits within range",
+			commits: []CommitInfo{
+				{Timestamp: 1717396600}, // Mon, 03 Jun 2024 09:56:40 GMT (Within range)
+				{Timestamp: 1717396500}, // Mon, 03 Jun 2024 09:55:00 GMT (Within range)
+				{Timestamp: 1717396400}, // Mon, 03 Jun 2024 09:53:20 GMT (Within range)
+			},
+			options: GitCommitsQueryOptions{
+				Since: time.Unix(1717396300, 0), // Mon, 03 Jun 2024 09:51:40 GMT (Set since timestamp in seconds)
+			},
+			expected: []CommitInfo{
+				{Timestamp: 1717396600},
+				{Timestamp: 1717396500},
+				{Timestamp: 1717396400},
+			},
+		},
+		{
+			name: "All commits within range or equal",
+			commits: []CommitInfo{
+				{Timestamp: 1717396600}, // Mon, 03 Jun 2024 09:56:40 GMT (Within range)
+				{Timestamp: 1717396500}, // Mon, 03 Jun 2024 09:55:00 GMT (Within range)
+				{Timestamp: 1717396400}, // Mon, 03 Jun 2024 09:53:20 GMT (Within range)
+			},
+			options: GitCommitsQueryOptions{
+				Since: time.Unix(1717396400, 0), // Mon, 03 Jun 2024 09:53:20 GMT (Set since timestamp in seconds)
+			},
+			expected: []CommitInfo{
+				{Timestamp: 1717396600},
+				{Timestamp: 1717396500},
+				{Timestamp: 1717396400},
+			},
+		},
+		{
+			name: "No commits within range",
+			commits: []CommitInfo{
+				{Timestamp: 1717396500}, // Mon, 03 Jun 2024 09:55:00 GMT (Older than range)
+				{Timestamp: 1717396400}, // Mon, 03 Jun 2024 09:53:20 GMT (Older than range)
+			},
+			options: GitCommitsQueryOptions{
+				Since: time.Unix(1717396600, 0), // Mon, 03 Jun 2024 09:56:40 GMT (Set since timestamp in seconds)
+			},
+			expected: []CommitInfo{},
+		},
+		{
+			name: "Partial commits within range",
+			commits: []CommitInfo{
+				{Timestamp: 1717396600}, // Mon, 03 Jun 2024 09:56:40 GMT (Within range)
+				{Timestamp: 1717396500}, // Mon, 03 Jun 2024 09:55:00 GMT (Within range)
+				{Timestamp: 1717396400}, // Mon, 03 Jun 2024 09:53:20 GMT (Older than range)
+			},
+			options: GitCommitsQueryOptions{
+				Since: time.Unix(1717396500, 0), // Mon, 03 Jun 2024 09:55:00 GMT (Set since timestamp in seconds)
+			},
+			expected: []CommitInfo{
+				{Timestamp: 1717396600},
+				{Timestamp: 1717396500},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := getCommitsInDateRate(tt.commits, tt.options)
+			assert.ElementsMatch(t, result, tt.expected)
+		})
+	}
 }
