@@ -1,5 +1,10 @@
 package vcsutils
 
+import (
+	"fmt"
+	"strings"
+)
+
 const (
 	branchPrefix           = "refs/heads/"
 	TagPrefix              = "refs/tags/"
@@ -22,6 +27,38 @@ const (
 	// AzureRepos VCS provider
 	AzureRepos
 )
+
+func (v *VcsProvider) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	var s string
+	if err := unmarshal(&s); err != nil {
+		return err
+	}
+
+	switch strings.ToLower(s) {
+	case "github":
+		*v = GitHub
+	case "gitlab":
+		*v = GitLab
+	case "bitbucket":
+		*v = BitbucketServer
+	default:
+		return fmt.Errorf("invalid VcsProvider: %s", s)
+	}
+	return nil
+}
+
+func (v VcsProvider) MarshalYAML() (interface{}, error) {
+	switch v {
+	case GitHub:
+		return "github", nil
+	case GitLab:
+		return "gitlab", nil
+	case BitbucketServer:
+		return "bitbucket", nil
+	default:
+		return nil, fmt.Errorf("invalid VcsProvider: %d", v)
+	}
+}
 
 // String representation of the VcsProvider
 func (v VcsProvider) String() string {
