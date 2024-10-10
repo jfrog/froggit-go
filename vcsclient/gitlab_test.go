@@ -562,11 +562,8 @@ func TestGitLabClient_GetCommitBySha(t *testing.T) {
 func TestGitLabClient_GetCommitByShaNotFound(t *testing.T) {
 	ctx := context.Background()
 	sha := "ff4a54b88fbd387ac4d9e8cdeb54b049978e450b"
-	response := []byte(`{
-		"message": "404 Commit Not Found"
-	}`)
 
-	client, cleanUp := createServerAndClientReturningStatus(t, vcsutils.GitLab, false, response,
+	client, cleanUp := createServerAndClientReturningStatus(t, vcsutils.GitLab, false, nil,
 		fmt.Sprintf("/api/v4/projects/%s/repository/commits/%s",
 			url.PathEscape(owner+"/"+repo1), sha), http.StatusNotFound, createGitLabHandler)
 	defer cleanUp()
@@ -574,7 +571,7 @@ func TestGitLabClient_GetCommitByShaNotFound(t *testing.T) {
 	result, err := client.GetCommitBySha(ctx, owner, repo1, sha)
 
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "404 Commit Not Found")
+	assert.ErrorIs(t, err, gitlab.ErrNotFound)
 	assert.Empty(t, result)
 }
 
