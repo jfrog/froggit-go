@@ -512,7 +512,8 @@ func (client *BitbucketServerClient) DeletePullRequestComment(ctx context.Contex
 			break
 		}
 	}
-	if _, err = bitbucketClient.DeleteComment_2(owner, repository, int64(pullRequestID), int64(commentID), map[string]interface{}{"version": int32(commentVersion)}); err != nil && err != io.EOF { // #nosec G115
+	// #nosec G115
+	if _, err = bitbucketClient.DeleteComment_2(owner, repository, int64(pullRequestID), int64(commentID), map[string]interface{}{"version": int32(commentVersion)}); err != nil && err != io.EOF {
 		return fmt.Errorf("an error occurred while deleting pull request comment:\n%s", err.Error())
 	}
 	return nil
