@@ -438,11 +438,8 @@ func TestGitLabClient_GetCommitsWithQueryOptions(t *testing.T) {
 
 func TestGitLabClient_GetLatestCommitNotFound(t *testing.T) {
 	ctx := context.Background()
-	response := []byte(`{
-		"message": "404 Project Not Found"
-	}`)
 
-	client, cleanUp := createServerAndClientReturningStatus(t, vcsutils.GitLab, false, response,
+	client, cleanUp := createServerAndClientReturningStatus(t, vcsutils.GitLab, false, nil,
 		fmt.Sprintf("/api/v4/projects/%s/repository/commits?page=1&per_page=50&ref_name=master",
 			url.PathEscape(owner+"/"+repo1)), http.StatusNotFound, createGitLabHandler)
 	defer cleanUp()
@@ -450,7 +447,7 @@ func TestGitLabClient_GetLatestCommitNotFound(t *testing.T) {
 	result, err := client.GetLatestCommit(ctx, owner, repo1, "master")
 
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "404 Project Not Found")
+	assert.ErrorIs(t, err, gitlab.ErrNotFound)
 	assert.Empty(t, result)
 }
 
