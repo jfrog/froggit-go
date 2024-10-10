@@ -121,7 +121,7 @@ func TestGitHubClient_ListBranches(t *testing.T) {
 
 func TestGitHubClient_CreateWebhook(t *testing.T) {
 	ctx := context.Background()
-	id := rand.Int63()
+	id := rand.Int63() // #nosec G404
 	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, github.Hook{ID: &id}, fmt.Sprintf("/repos/jfrog/%s/hooks", repo1), createGitHubHandler)
 	defer cleanUp()
 
@@ -136,7 +136,7 @@ func TestGitHubClient_CreateWebhook(t *testing.T) {
 
 func TestGitHubClient_UpdateWebhook(t *testing.T) {
 	ctx := context.Background()
-	id := rand.Int63()
+	id := rand.Int63() // #nosec G404
 	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, github.Hook{ID: &id}, fmt.Sprintf("/repos/jfrog/%s/hooks/%s", repo1, strconv.FormatInt(id, 10)), createGitHubHandler)
 	defer cleanUp()
 
@@ -151,7 +151,7 @@ func TestGitHubClient_UpdateWebhook(t *testing.T) {
 
 func TestGitHubClient_DeleteWebhook(t *testing.T) {
 	ctx := context.Background()
-	id := rand.Int63()
+	id := rand.Int63() // #nosec G404
 	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, github.Hook{ID: &id}, fmt.Sprintf("/repos/jfrog/%s/hooks/%s", repo1, strconv.FormatInt(id, 10)), createGitHubHandler)
 	defer cleanUp()
 

@@ -83,7 +83,7 @@ func TestGitLabClient_ListBranches(t *testing.T) {
 
 func TestGitLabClient_CreateWebhook(t *testing.T) {
 	ctx := context.Background()
-	id := rand.Int()
+	id := rand.Int() // #nosec G404
 	client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, gitlab.ProjectHook{ID: id}, fmt.Sprintf("/api/v4/projects/%s/hooks", url.PathEscape(owner+"/"+repo1)), createGitLabHandler)
 	defer cleanUp()
 
@@ -96,7 +96,7 @@ func TestGitLabClient_CreateWebhook(t *testing.T) {
 
 func TestGitLabClient_UpdateWebhook(t *testing.T) {
 	ctx := context.Background()
-	id := rand.Int()
+	id := rand.Int() // #nosec G404
 	client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, gitlab.ProjectHook{ID: id}, fmt.Sprintf("/api/v4/projects/%s/hooks/%d", url.PathEscape(owner+"/"+repo1), id), createGitLabHandler)
 	defer cleanUp()
 
@@ -107,7 +107,7 @@ func TestGitLabClient_UpdateWebhook(t *testing.T) {
 
 func TestGitLabClient_DeleteWebhook(t *testing.T) {
 	ctx := context.Background()
-	id := rand.Int()
+	id := rand.Int() // #nosec G404
 	client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, gitlab.ProjectHook{ID: id}, fmt.Sprintf("/api/v4/projects/%s/hooks/%d", url.PathEscape(owner+"/"+repo1), id), createGitLabHandler)
 	defer cleanUp()
 
