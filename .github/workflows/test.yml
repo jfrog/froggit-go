@@ -1,4 +1,4 @@
-name: JFrog CLI Core Tests
+name: Tests
 on:
   push:
     branches:
@@ -13,10 +13,6 @@ jobs:
       fail-fast: false
       matrix:
         os: [ ubuntu, windows, macos ]
-    env:
-      GOPROXY: direct
-      GRADLE_OPTS: -Dorg.gradle.daemon=false
-      JFROG_CLI_LOG_LEVEL: "DEBUG"
     steps:
       - uses: actions/checkout@v4
 
