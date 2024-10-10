@@ -272,7 +272,7 @@ func GenerateResponseError(status, body string) error {
 	if body != "" {
 		responseErrString = responseErrString + "\n" + body
 	}
-	return fmt.Errorf(responseErrString)
+	return errors.New(responseErrString)
 }
 
 func generateErrorString(bodyArray []byte) string {
