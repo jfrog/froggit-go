@@ -83,7 +83,7 @@ func TestGitLabClient_ListBranches(t *testing.T) {
 
 func TestGitLabClient_CreateWebhook(t *testing.T) {
 	ctx := context.Background()
-	id := rand.Int()
+	id := rand.Int() // #nosec G404
 	client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, gitlab.ProjectHook{ID: id}, fmt.Sprintf("/api/v4/projects/%s/hooks", url.PathEscape(owner+"/"+repo1)), createGitLabHandler)
 	defer cleanUp()
 
@@ -96,7 +96,7 @@ func TestGitLabClient_CreateWebhook(t *testing.T) {
 
 func TestGitLabClient_UpdateWebhook(t *testing.T) {
 	ctx := context.Background()
-	id := rand.Int()
+	id := rand.Int() // #nosec G404
 	client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, gitlab.ProjectHook{ID: id}, fmt.Sprintf("/api/v4/projects/%s/hooks/%d", url.PathEscape(owner+"/"+repo1), id), createGitLabHandler)
 	defer cleanUp()
 
@@ -107,7 +107,7 @@ func TestGitLabClient_UpdateWebhook(t *testing.T) {
 
 func TestGitLabClient_DeleteWebhook(t *testing.T) {
 	ctx := context.Background()
-	id := rand.Int()
+	id := rand.Int() // #nosec G404
 	client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, gitlab.ProjectHook{ID: id}, fmt.Sprintf("/api/v4/projects/%s/hooks/%d", url.PathEscape(owner+"/"+repo1), id), createGitLabHandler)
 	defer cleanUp()
 
@@ -438,11 +438,8 @@ func TestGitLabClient_GetCommitsWithQueryOptions(t *testing.T) {
 
 func TestGitLabClient_GetLatestCommitNotFound(t *testing.T) {
 	ctx := context.Background()
-	response := []byte(`{
-		"message": "404 Project Not Found"
-	}`)
 
-	client, cleanUp := createServerAndClientReturningStatus(t, vcsutils.GitLab, false, response,
+	client, cleanUp := createServerAndClientReturningStatus(t, vcsutils.GitLab, false, nil,
 		fmt.Sprintf("/api/v4/projects/%s/repository/commits?page=1&per_page=50&ref_name=master",
 			url.PathEscape(owner+"/"+repo1)), http.StatusNotFound, createGitLabHandler)
 	defer cleanUp()
@@ -450,7 +447,7 @@ func TestGitLabClient_GetLatestCommitNotFound(t *testing.T) {
 	result, err := client.GetLatestCommit(ctx, owner, repo1, "master")
 
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "404 Project Not Found")
+	assert.ErrorIs(t, err, gitlab.ErrNotFound)
 	assert.Empty(t, result)
 }
 
@@ -562,11 +559,8 @@ func TestGitLabClient_GetCommitBySha(t *testing.T) {
 func TestGitLabClient_GetCommitByShaNotFound(t *testing.T) {
 	ctx := context.Background()
 	sha := "ff4a54b88fbd387ac4d9e8cdeb54b049978e450b"
-	response := []byte(`{
-		"message": "404 Commit Not Found"
-	}`)
 
-	client, cleanUp := createServerAndClientReturningStatus(t, vcsutils.GitLab, false, response,
+	client, cleanUp := createServerAndClientReturningStatus(t, vcsutils.GitLab, false, nil,
 		fmt.Sprintf("/api/v4/projects/%s/repository/commits/%s",
 			url.PathEscape(owner+"/"+repo1), sha), http.StatusNotFound, createGitLabHandler)
 	defer cleanUp()
@@ -574,7 +568,7 @@ func TestGitLabClient_GetCommitByShaNotFound(t *testing.T) {
 	result, err := client.GetCommitBySha(ctx, owner, repo1, sha)
 
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "404 Commit Not Found")
+	assert.ErrorIs(t, err, gitlab.ErrNotFound)
 	assert.Empty(t, result)
 }
 

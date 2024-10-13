@@ -87,7 +87,7 @@ func TestBitbucketServer_ListBranches(t *testing.T) {
 
 func TestBitbucketServer_CreateWebhook(t *testing.T) {
 	ctx := context.Background()
-	id := rand.Int31()
+	id := rand.Int31() // #nosec G404
 	mockResponse := bitbucketv1.Webhook{ID: int(id)}
 	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, false, mockResponse, "/rest/api/1.0/projects/jfrog/repos/repo-1/webhooks", createBitbucketServerHandler)
 	defer cleanUp()
@@ -104,7 +104,7 @@ func TestBitbucketServer_CreateWebhook(t *testing.T) {
 
 func TestBitbucketServer_UpdateWebhook(t *testing.T) {
 	ctx := context.Background()
-	id := rand.Int31()
+	id := rand.Int31() // #nosec G404
 	stringID := strconv.Itoa(int(id))
 
 	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, false, nil, fmt.Sprintf("/rest/api/1.0/projects/jfrog/repos/repo-1/webhooks/%s", stringID), createBitbucketServerHandler)
@@ -120,7 +120,7 @@ func TestBitbucketServer_UpdateWebhook(t *testing.T) {
 
 func TestBitbucketServer_DeleteWebhook(t *testing.T) {
 	ctx := context.Background()
-	id := rand.Int31()
+	id := rand.Int31() // #nosec G404
 	stringID := strconv.Itoa(int(id))
 
 	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, false, nil, fmt.Sprintf("/rest/api/1.0/projects/jfrog/repos/repo-1/webhooks/%s", stringID), createBitbucketServerHandler)

@@ -86,7 +86,7 @@ func Untar(destDir string, reader io.Reader, shouldRemoveBaseDir bool) (err erro
 		// If it's a file create it
 		case tar.TypeReg:
 			var targetFile *os.File
-			targetFile, err = os.OpenFile(filepath.Clean(target), os.O_CREATE|os.O_RDWR, os.FileMode(header.Mode))
+			targetFile, err = os.OpenFile(filepath.Clean(target), os.O_CREATE|os.O_RDWR, os.FileMode(header.Mode)) // #nosec G115
 			if err != nil {
 				return
 			}
@@ -272,7 +272,7 @@ func GenerateResponseError(status, body string) error {
 	if body != "" {
 		responseErrString = responseErrString + "\n" + body
 	}
-	return fmt.Errorf(responseErrString)
+	return errors.New(responseErrString)
 }
 
 func generateErrorString(bodyArray []byte) string {
