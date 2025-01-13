@@ -1139,14 +1139,16 @@ func mapGitHubCommitToCommitInfo(commit *github.RepositoryCommit) CommitInfo {
 	}
 	details := commit.GetCommit()
 	return CommitInfo{
-		Hash:          commit.GetSHA(),
-		AuthorName:    details.GetAuthor().GetName(),
-		CommitterName: details.GetCommitter().GetName(),
-		Url:           commit.GetURL(),
-		Timestamp:     details.GetCommitter().GetDate().UTC().Unix(),
-		Message:       details.GetMessage(),
-		ParentHashes:  parents,
-		AuthorEmail:   details.GetAuthor().GetEmail(),
+		Hash:           commit.GetSHA(),
+		AuthorName:     details.GetAuthor().GetName(),
+		CommitterName:  details.GetCommitter().GetName(),
+		Url:            commit.GetURL(),
+		Timestamp:      details.GetCommitter().GetDate().UTC().Unix(),
+		Message:        details.GetMessage(),
+		ParentHashes:   parents,
+		CommitterEmail: details.GetCommitter().GetEmail(),
+		AuthorEmail:    details.GetAuthor().GetEmail(),
+		AuthorDate:     details.GetAuthor().GetDate().UTC().Unix(),
 	}
 }
 
