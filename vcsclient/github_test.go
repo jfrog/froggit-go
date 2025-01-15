@@ -329,6 +329,78 @@ func TestGitHubClient_ListPullRequestReviewComments(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestListCommitsOnPullRequest(t *testing.T) {
+	ctx := context.Background()
+	pullRequestID := 1
+
+	t.Run("Valid case", func(t *testing.T) {
+		mockCommits := []*github.RepositoryCommit{
+			{
+				SHA: github.String("commitSHA1"),
+				Commit: &github.Commit{
+					Author: &github.CommitAuthor{
+						Name:  github.String("Author1"),
+						Email: github.String("author1@example.com"),
+						Date:  &github.Timestamp{Time: time.Now()},
+					},
+					Committer: &github.CommitAuthor{
+						Name:  github.String("Committer1"),
+						Email: github.String("committer1@example.com"),
+						Date:  &github.Timestamp{Time: time.Now()},
+					},
+					Message:      github.String("Commit message 1"),
+					URL:          github.String("https://github.com/owner/repo/commit/commitSHA1"),
+					CommentCount: github.Int(1),
+					Verification: &github.SignatureVerification{
+						Verified:  github.Bool(true),
+						Reason:    github.String("valid"),
+						Signature: github.String("signature"),
+						Payload:   github.String("payload"),
+					},
+				},
+				Parents: []*github.Commit{
+					{
+						SHA: github.String("parentSHA1"),
+					},
+				},
+				HTMLURL: github.String("https://github.com/owner/repo/commit/commitSHA1"),
+				Stats: &github.CommitStats{
+					Additions: github.Int(10),
+					Deletions: github.Int(2),
+					Total:     github.Int(12),
+				},
+				Files: []*github.CommitFile{
+					{
+						Filename:  github.String("file1.txt"),
+						Additions: github.Int(5),
+						Deletions: github.Int(1),
+						Changes:   github.Int(6),
+						Status:    github.String("modified"),
+						Patch:     github.String("@@ -1,1 +1,1 @@"),
+					},
+				},
+			},
+		}
+
+		client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, mockCommits, fmt.Sprintf("/repos/%s/%s/pulls/%d/commits", owner, repo1, pullRequestID), createGitHubHandler)
+		defer cleanUp()
+
+		commitsInfo, err := client.ListCommitsOnPullRequest(ctx, owner, repo1, pullRequestID)
+		assert.NoError(t, err)
+		assert.Len(t, commitsInfo, 1)
+		assert.Equal(t, "commitSHA1", commitsInfo[0].Hash)
+		assert.Equal(t, "Author1", commitsInfo[0].AuthorName)
+		assert.Equal(t, "author1@example.com", commitsInfo[0].AuthorEmail)
+		assert.Equal(t, "Commit message 1", commitsInfo[0].Message)
+	})
+
+	t.Run("Error case", func(t *testing.T) {
+		client, cleanUp := createServerAndClientReturningStatus(t, vcsutils.GitHub, false, nil, fmt.Sprintf("/repos/%s/%s/pulls/%d/commits", owner, repo1, pullRequestID), http.StatusInternalServerError, createGitHubHandler)
+		defer cleanUp()
+		_, err := client.ListCommitsOnPullRequest(ctx, owner, repo1, pullRequestID)
+		assert.Error(t, err)
+	})
+}
 func TestGitHubClient_GetLatestCommit(t *testing.T) {
 	ctx := context.Background()
 	response, err := os.ReadFile(filepath.Join("testdata", "github", "commit_list_response.json"))

@@ -27,6 +27,11 @@ type BitbucketCloudClient struct {
 	logger  vcsutils.Log
 }
 
+func (client *BitbucketCloudClient) ListCommitsOnPullRequest(ctx context.Context, owner, repository string, pullRequestID int) ([]CommitInfo, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
 // NewBitbucketCloudClient create a new BitbucketCloudClient
 func NewBitbucketCloudClient(vcsInfo VcsInfo, logger vcsutils.Log) (*BitbucketCloudClient, error) {
 	bitbucketClient := &BitbucketCloudClient{
