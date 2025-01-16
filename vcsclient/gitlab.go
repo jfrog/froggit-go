@@ -23,11 +23,6 @@ type GitLabClient struct {
 	logger   vcsutils.Log
 }
 
-func (client *GitLabClient) ListPullRequestCommits(ctx context.Context, owner, repository string, pullRequestID int) ([]CommitInfo, error) {
-	//TODO implement me
-	panic("implement me")
-}
-
 // NewGitLabClient create a new GitLabClient
 func NewGitLabClient(vcsInfo VcsInfo, logger vcsutils.Log) (*GitLabClient, error) {
 	var client *gitlab.Client
@@ -463,6 +458,32 @@ func (client *GitLabClient) ListPullRequestReviewComments(ctx context.Context, o
 	}
 
 	return commentsInfo, nil
+}
+
+func (client *GitLabClient) ListPullRequestCommits(ctx context.Context, owner, repository string, pullRequestID int) ([]CommitInfo, error) {
+	// Validate parameters
+	err := validateParametersNotBlank(map[string]string{
+		"owner":      owner,
+		"repository": repository,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// Fetch the commits for the specified pull request
+	commits, _, err := client.glClient.MergeRequests.GetMergeRequestCommits(getProjectID(owner, repository), pullRequestID, nil, gitlab.WithContext(ctx))
+	if err != nil {
+		return nil, err
+	}
+
+	// Map the retrieved commits to the CommitInfo structure
+	var commitsInfo []CommitInfo
+	for _, commit := range commits {
+		commitInfo := mapGitLabCommitToCommitInfo(commit)
+		commitsInfo = append(commitsInfo, commitInfo)
+	}
+
+	return commitsInfo, nil
 }
 
 // ListPullRequestComments on GitLab
