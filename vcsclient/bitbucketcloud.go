@@ -27,11 +27,6 @@ type BitbucketCloudClient struct {
 	logger  vcsutils.Log
 }
 
-func (client *BitbucketCloudClient) ListPullRequestCommits(ctx context.Context, owner, repository string, pullRequestID int) ([]CommitInfo, error) {
-	//TODO implement me
-	panic("implement me")
-}
-
 // NewBitbucketCloudClient create a new BitbucketCloudClient
 func NewBitbucketCloudClient(vcsInfo VcsInfo, logger vcsutils.Log) (*BitbucketCloudClient, error) {
 	bitbucketClient := &BitbucketCloudClient{
@@ -453,6 +448,11 @@ func (client *BitbucketCloudClient) ListPullRequestComments(ctx context.Context,
 		return
 	}
 	return mapBitbucketCloudCommentToCommentInfo(&parsedComments), nil
+}
+
+func (client *BitbucketCloudClient) ListPullRequestCommits(ctx context.Context, owner, repository string, pullRequestID int) ([]CommitInfo, error) {
+	// TODO implement me
+	panic("implement me")
 }
 
 // DeletePullRequestReviewComments on Bitbucket cloud
