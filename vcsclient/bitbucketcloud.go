@@ -451,8 +451,43 @@ func (client *BitbucketCloudClient) ListPullRequestComments(ctx context.Context,
 }
 
 func (client *BitbucketCloudClient) ListPullRequestCommits(ctx context.Context, owner, repository string, pullRequestID int) ([]CommitInfo, error) {
-	// TODO implement me
-	panic("implement me")
+	// Validate parameters
+	err := validateParametersNotBlank(map[string]string{
+		"owner":      owner,
+		"repository": repository,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// Build the Bitbucket Cloud client
+	bitbucketClient := client.buildBitbucketCloudClient(ctx)
+
+	// Fetch the commits for the specified pull request
+	options := &bitbucket.PullRequestsOptions{
+		Owner:    owner,
+		RepoSlug: repository,
+		ID:       strconv.Itoa(pullRequestID),
+	}
+	commits, err := bitbucketClient.Repositories.PullRequests.Commits(options)
+	if err != nil {
+		return nil, err
+	}
+
+	// Remap the fields using vcsutils.RemapFields
+	parsedCommits, err := vcsutils.RemapFields[commitResponse](commits, "json")
+	if err != nil {
+		return nil, err
+	}
+
+	// Map the parsed commits to the CommitInfo structure
+	var commitsInfo []CommitInfo
+	for _, commit := range parsedCommits.Values {
+		commitInfo := mapBitbucketCloudCommitToCommitInfo(commit)
+		commitsInfo = append(commitsInfo, commitInfo)
+	}
+
+	return commitsInfo, nil
 }
 
 // DeletePullRequestReviewComments on Bitbucket cloud
