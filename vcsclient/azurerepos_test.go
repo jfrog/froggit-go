@@ -430,6 +430,53 @@ func TestListPullRequestComments(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestAzureRepos_ListPullRequestCommits(t *testing.T) {
+	type ListPullRequestCommitsResponse struct {
+		Value []git.GitCommitRef
+		Count int
+	}
+
+	testCommits := []git.GitCommitRef{
+		{
+			CommitId:  vcsutils.PointerOf("commit1"),
+			Author:    &git.GitUserDate{Name: vcsutils.PointerOf("Author1")},
+			Committer: &git.GitUserDate{Name: vcsutils.PointerOf("Committer1")},
+			Comment:   vcsutils.PointerOf("Initial commit"),
+			Url:       vcsutils.PointerOf("https://dev.azure.com/commit1"),
+		},
+		{
+			CommitId:  vcsutils.PointerOf("commit2"),
+			Author:    &git.GitUserDate{Name: vcsutils.PointerOf("Author2")},
+			Committer: &git.GitUserDate{Name: vcsutils.PointerOf("Committer2")},
+			Comment:   vcsutils.PointerOf("Second commit"),
+			Url:       vcsutils.PointerOf("https://dev.azure.com/commit2"),
+		},
+	}
+
+	res := ListPullRequestCommitsResponse{
+		Value: testCommits,
+		Count: len(testCommits),
+	}
+
+	jsonRes, err := json.Marshal(res)
+	assert.NoError(t, err)
+
+	ctx := context.Background()
+	client, cleanUp := createServerAndClient(t, vcsutils.AzureRepos, true, jsonRes, "/_apis/git/repositories/repo-1/pullRequests/1/commits", createAzureReposHandler)
+	defer cleanUp()
+
+	commitsInfo, err := client.ListPullRequestCommits(ctx, "", repo1, 1)
+	assert.NoError(t, err)
+	assert.Len(t, commitsInfo, len(testCommits))
+	assert.Equal(t, "commit1", commitsInfo[0].Hash)
+	assert.Equal(t, "commit2", commitsInfo[1].Hash)
+
+	badClient, badClientCleanup := createBadAzureReposClient(t, []byte{})
+	defer badClientCleanup()
+	_, err = badClient.ListPullRequestCommits(ctx, "", repo1, 1)
+	assert.Error(t, err)
+}
+
 func TestAzureRepos_TestGetLatestCommit(t *testing.T) {
 	ctx := context.Background()
 	response, err := os.ReadFile(filepath.Join("testdata", "azurerepos", "commits.json"))
