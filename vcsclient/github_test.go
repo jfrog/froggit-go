@@ -385,7 +385,7 @@ func TestListCommitsOnPullRequest(t *testing.T) {
 		client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, mockCommits, fmt.Sprintf("/repos/%s/%s/pulls/%d/commits", owner, repo1, pullRequestID), createGitHubHandler)
 		defer cleanUp()
 
-		commitsInfo, err := client.ListCommitsOnPullRequest(ctx, owner, repo1, pullRequestID)
+		commitsInfo, err := client.ListPullRequestCommits(ctx, owner, repo1, pullRequestID)
 		assert.NoError(t, err)
 		assert.Len(t, commitsInfo, 1)
 		assert.Equal(t, "commitSHA1", commitsInfo[0].Hash)
@@ -397,7 +397,7 @@ func TestListCommitsOnPullRequest(t *testing.T) {
 	t.Run("Error case", func(t *testing.T) {
 		client, cleanUp := createServerAndClientReturningStatus(t, vcsutils.GitHub, false, nil, fmt.Sprintf("/repos/%s/%s/pulls/%d/commits", owner, repo1, pullRequestID), http.StatusInternalServerError, createGitHubHandler)
 		defer cleanUp()
-		_, err := client.ListCommitsOnPullRequest(ctx, owner, repo1, pullRequestID)
+		_, err := client.ListPullRequestCommits(ctx, owner, repo1, pullRequestID)
 		assert.Error(t, err)
 	})
 }

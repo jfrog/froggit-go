@@ -177,11 +177,11 @@ type VcsClient interface {
 	// pullRequestID  - Pull request ID
 	ListPullRequestReviewComments(ctx context.Context, owner, repository string, pullRequestID int) ([]CommentInfo, error)
 
-	// ListCommitsOnPullRequest List commits for a pull request
+	// ListPullRequestCommits List commits for a pull request
 	// owner          - User or organization
 	// repository     - VCS repository name
 	// pullRequestID  - Pull request ID
-	ListCommitsOnPullRequest(ctx context.Context, owner, repository string, pullRequestID int) ([]CommitInfo, error)
+	ListPullRequestCommits(ctx context.Context, owner, repository string, pullRequestID int) ([]CommitInfo, error)
 
 	// DeletePullRequestReviewComments Gets all comments assigned to a pull request.
 	// owner          - User or organization

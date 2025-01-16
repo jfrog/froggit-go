@@ -571,7 +571,7 @@ func (client *GitHubClient) ListPullRequestReviewComments(ctx context.Context, o
 	return commentsInfoList, err
 }
 
-func (client *GitHubClient) ListCommitsOnPullRequest(ctx context.Context, owner, repository string, pullRequestID int) (commitsInfo []CommitInfo, err error) {
+func (client *GitHubClient) ListPullRequestCommits(ctx context.Context, owner, repository string, pullRequestID int) (commitsInfo []CommitInfo, err error) {
 	if err = validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository, "pullRequestID": strconv.Itoa(pullRequestID)}); err != nil {
 		return
 	}

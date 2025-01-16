@@ -44,10 +44,11 @@ Currently supported providers are: [GitHub](#github), [Bitbucket Server](#bitbuc
       - [Get Pull Request By ID](#get-pull-request-by-id)
       - [List Open Pull Requests](#list-open-pull-requests)
       - [List Open Pull Requests With Body](#list-open-pull-requests-with-body)
+      - [List Pull Request Review Comments](#list-pull-request-review-comments)  
+      - [List Pull Request Commits](#list-pull-request-commits)
+      - [List Pull Request Comments](#list-pull-request-comments)
       - [Add Pull Request Comment](#add-pull-request-comment)
       - [Add Pull Request Review Comments](#add-pull-request-review-comments)
-      - [List Pull Request Comments](#list-pull-request-comments)
-      - [List Pull Request Review Comments](#list-pull-request-review-comments)
       - [Delete Pull Request Comment](#delete-pull-request-comment)
       - [Delete Pull Request Review Comments](#delete-pull-request-review-comments)
       - [Get Commits](#get-commits)
@@ -486,6 +487,22 @@ repository := "jfrog-cli"
 pullRequestID := 5
 
 pullRequestComments, err := client.ListPullRequestReviewComments(ctx, owner, repository, pullRequestID)
+```
+
+#### List Pull Request Commits
+
+```go
+// Go context
+ctx := context.Background()
+// Organization or username
+owner := "jfrog"
+// VCS repository
+repository := "jfrog-cli"
+// Pull Request ID
+pullRequestID := 1
+
+// List commits for a pull request
+commitsInfo, err := client.ListPullRequestCommits(ctx, owner, repository, pullRequestID)
 ```
 
 ##### Delete Pull Request Comment

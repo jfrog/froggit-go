@@ -23,7 +23,7 @@ type GitLabClient struct {
 	logger   vcsutils.Log
 }
 
-func (client *GitLabClient) ListCommitsOnPullRequest(ctx context.Context, owner, repository string, pullRequestID int) ([]CommitInfo, error) {
+func (client *GitLabClient) ListPullRequestCommits(ctx context.Context, owner, repository string, pullRequestID int) ([]CommitInfo, error) {
 	//TODO implement me
 	panic("implement me")
 }
