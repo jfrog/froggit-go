@@ -119,6 +119,16 @@
       "minVersion": "3.2",
       "maxVersion": "7.1",
       "releasedVersion": "0.0"
+    },
+    {
+      "id": "52823034-34a8-4576-922c-8d8b77e9e4c4",
+      "area": "Location",
+      "resourceName": "ResourceAreas",
+      "routeTemplate": "_apis/git/repositories/{repositoryId}/pullRequests/{pullRequestId}/commits",
+      "resourceVersion": 1,
+      "minVersion": "3.2",
+      "maxVersion": "7.1",
+      "releasedVersion": "0.0"
     }
   ],
   "count": 2

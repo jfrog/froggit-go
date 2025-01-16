@@ -35,11 +35,6 @@ type AzureReposClient struct {
 	logger            vcsutils.Log
 }
 
-func (client *AzureReposClient) ListCommitsOnPullRequest(ctx context.Context, owner, repository string, pullRequestID int) ([]CommitInfo, error) {
-	//TODO implement me
-	panic("implement me")
-}
-
 // NewAzureReposClient create a new AzureReposClient
 func NewAzureReposClient(vcsInfo VcsInfo, logger vcsutils.Log) (*AzureReposClient, error) {
 	client := &AzureReposClient{vcsInfo: vcsInfo, logger: logger}
@@ -273,6 +268,27 @@ func getThreadArgs(repository, project string, prId int, comment PullRequestComm
 // ListPullRequestReviewComments on Azure Repos
 func (client *AzureReposClient) ListPullRequestReviewComments(ctx context.Context, owner, repository string, pullRequestID int) ([]CommentInfo, error) {
 	return client.ListPullRequestComments(ctx, owner, repository, pullRequestID)
+}
+
+func (client *AzureReposClient) ListPullRequestCommits(ctx context.Context, _, repository string, pullRequestID int) ([]CommitInfo, error) {
+	azureReposGitClient, err := client.buildAzureReposClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+	rawCommits, err := azureReposGitClient.GetPullRequestCommits(ctx, git.GetPullRequestCommitsArgs{
+		RepositoryId:  &repository,
+		PullRequestId: &pullRequestID,
+		Project:       &client.vcsInfo.Project,
+	})
+	if err != nil {
+		return nil, err
+	}
+	rawCommitsList := rawCommits.Value
+	var prCommits []CommitInfo
+	for _, commit := range rawCommitsList {
+		prCommits = append(prCommits, mapAzureReposCommitsToCommitInfo(commit))
+	}
+	return prCommits, nil
 }
 
 // ListPullRequestComments on Azure Repos
