@@ -327,6 +327,10 @@ type CommitInfo struct {
 	ParentHashes []string
 	// The email of the commit author
 	AuthorEmail string
+	// Seconds from epoch
+	AuthorDate int64
+	// The email of the committer
+	CommitterEmail string
 }
 
 type CommentInfo struct {
