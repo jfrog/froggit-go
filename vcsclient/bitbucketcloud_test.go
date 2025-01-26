@@ -258,6 +258,22 @@ func TestBitbucketCloud_ListPullRequestComments(t *testing.T) {
 	}, result[0])
 }
 
+func TestBitbucketCloudClient_ListPullRequestCommits(t *testing.T) {
+	ctx := context.Background()
+	response, err := os.ReadFile(filepath.Join("testdata", "bitbucketcloud", "commit_list_response.json"))
+	assert.NoError(t, err)
+
+	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketCloud, true, response, fmt.Sprintf("/repositories/%s/%s/pullrequests/1/commits", owner, repo1), createBitbucketCloudHandler)
+	defer cleanUp()
+
+	commitsInfo, err := client.ListPullRequestCommits(ctx, owner, repo1, 1)
+	assert.NoError(t, err)
+	assert.Len(t, commitsInfo, 13)
+	assert.Equal(t, "ec05bacb91d757b4b6b2a11a0676471020e89fb5", commitsInfo[0].Hash)
+	assert.Equal(t, "774aa0fb252bccbc2a7e01060ef4d4be0b0eeaa9", commitsInfo[1].Hash)
+
+}
+
 func TestBitbucketCloud_GetLatestCommit(t *testing.T) {
 	ctx := context.Background()
 	response, err := os.ReadFile(filepath.Join("testdata", "bitbucketcloud", "commit_list_response.json"))

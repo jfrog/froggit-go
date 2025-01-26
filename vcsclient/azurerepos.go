@@ -270,6 +270,27 @@ func (client *AzureReposClient) ListPullRequestReviewComments(ctx context.Contex
 	return client.ListPullRequestComments(ctx, owner, repository, pullRequestID)
 }
 
+func (client *AzureReposClient) ListPullRequestCommits(ctx context.Context, _, repository string, pullRequestID int) ([]CommitInfo, error) {
+	azureReposGitClient, err := client.buildAzureReposClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+	rawCommits, err := azureReposGitClient.GetPullRequestCommits(ctx, git.GetPullRequestCommitsArgs{
+		RepositoryId:  &repository,
+		PullRequestId: &pullRequestID,
+		Project:       &client.vcsInfo.Project,
+	})
+	if err != nil {
+		return nil, err
+	}
+	rawCommitsList := rawCommits.Value
+	var prCommits []CommitInfo
+	for _, commit := range rawCommitsList {
+		prCommits = append(prCommits, mapAzureReposCommitsToCommitInfo(commit))
+	}
+	return prCommits, nil
+}
+
 // ListPullRequestComments on Azure Repos
 func (client *AzureReposClient) ListPullRequestComments(ctx context.Context, _, repository string, pullRequestID int) ([]CommentInfo, error) {
 	azureReposGitClient, err := client.buildAzureReposClient(ctx)
