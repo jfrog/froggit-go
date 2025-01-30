@@ -23,6 +23,11 @@ type GitLabClient struct {
 	logger   vcsutils.Log
 }
 
+func (client *GitLabClient) ListPullRequestsAssociatedWithCommit(ctx context.Context, owner, repository string, commitSHA string) ([]PullRequestInfo, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
 // NewGitLabClient create a new GitLabClient
 func NewGitLabClient(vcsInfo VcsInfo, logger vcsutils.Log) (*GitLabClient, error) {
 	var client *gitlab.Client

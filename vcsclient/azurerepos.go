@@ -35,6 +35,11 @@ type AzureReposClient struct {
 	logger            vcsutils.Log
 }
 
+func (client *AzureReposClient) ListPullRequestsAssociatedWithCommit(ctx context.Context, owner, repository string, commitSHA string) ([]PullRequestInfo, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
 // NewAzureReposClient create a new AzureReposClient
 func NewAzureReposClient(vcsInfo VcsInfo, logger vcsutils.Log) (*AzureReposClient, error) {
 	client := &AzureReposClient{vcsInfo: vcsInfo, logger: logger}

@@ -871,6 +871,19 @@ func (client *GitHubClient) ListPullRequestLabels(ctx context.Context, owner, re
 	return results, nil
 }
 
+func (client *GitHubClient) ListPullRequestsAssociatedWithCommit(ctx context.Context, owner, repository string, commitSHA string) ([]PullRequestInfo, error) {
+	err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository})
+	if err != nil {
+		return nil, err
+	}
+
+	pulls, err := client.ListPullRequestsAssociatedWithCommit(ctx, owner, repository, commitSHA)
+	if err != nil {
+		return nil, err
+	}
+	return pulls, nil
+}
+
 // UnlabelPullRequest on GitHub
 func (client *GitHubClient) UnlabelPullRequest(ctx context.Context, owner, repository, name string, pullRequestID int) error {
 	err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository})

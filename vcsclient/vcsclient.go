@@ -231,6 +231,12 @@ type VcsClient interface {
 	// listOptions - Optional parameters for the 'ListCommits' method
 	GetCommitsWithQueryOptions(ctx context.Context, owner, repository string, options GitCommitsQueryOptions) ([]CommitInfo, error)
 
+	// ListPullRequestsAssociatedWithCommit Lists pull requests associated with the commit.
+	// owner       - User or organization
+	// repository  - VCS repository name
+	// commitSHA   - commit sha
+	ListPullRequestsAssociatedWithCommit(ctx context.Context, owner, repository string, commitSHA string) ([]PullRequestInfo, error)
+
 	// AddSshKeyToRepository Adds a public ssh key to a repository
 	// owner      - User or organization
 	// repository - VCS repository name
