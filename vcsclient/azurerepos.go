@@ -35,6 +35,11 @@ type AzureReposClient struct {
 	logger            vcsutils.Log
 }
 
+func (client *AzureReposClient) ListPullRequestReviews(ctx context.Context, owner, repository string, pullRequestID int) ([]PullRequestReviewDetails, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
 func (client *AzureReposClient) ListPullRequestsAssociatedWithCommit(ctx context.Context, owner, repository string, commitSHA string) ([]PullRequestInfo, error) {
 	// TODO implement me
 	panic("implement me")

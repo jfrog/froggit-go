@@ -571,6 +571,37 @@ func (client *GitHubClient) ListPullRequestReviewComments(ctx context.Context, o
 	return commentsInfoList, err
 }
 
+// ListPullRequestReviews on GitHub
+func (client *GitHubClient) ListPullRequestReviews(ctx context.Context, owner, repository string, pullRequestID int) ([]PullRequestReviewDetails, error) {
+	err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository})
+	if err != nil {
+		return nil, err
+	}
+
+	var reviews []*github.PullRequestReview
+	err = client.runWithRateLimitRetries(func() (*github.Response, error) {
+		var ghResponse *github.Response
+		reviews, ghResponse, err = client.ghClient.PullRequests.ListReviews(ctx, owner, repository, pullRequestID, nil)
+		return ghResponse, err
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	var reviewInfos []PullRequestReviewDetails
+	for _, review := range reviews {
+		reviewInfos = append(reviewInfos, PullRequestReviewDetails{
+			ID:          review.GetID(),
+			Reviewer:    review.GetUser().GetLogin(),
+			Body:        review.GetBody(),
+			State:       review.GetState(),
+			SubmittedAt: review.GetSubmittedAt().Time.String(),
+		})
+	}
+
+	return reviewInfos, nil
+}
+
 func (client *GitHubClient) executeListPullRequestReviewComments(ctx context.Context, owner, repository string, pullRequestID int) ([]CommentInfo, *github.Response, error) {
 	commentsList, ghResponse, err := client.ghClient.PullRequests.ListComments(ctx, owner, repository, pullRequestID, nil)
 	if err != nil {

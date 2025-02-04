@@ -171,6 +171,13 @@ type VcsClient interface {
 	// comment        - The new comment details defined in PullRequestComment
 	AddPullRequestReviewComments(ctx context.Context, owner, repository string, pullRequestID int, comments ...PullRequestComment) error
 
+	// ListPullRequestReviews List all reviews assigned to a pull request.
+	// owner          - User or organization
+	// repository     - VCS repository name
+	// pullRequestID  - Pull request ID
+	// comment        - The new comment details defined in PullRequestComment
+	ListPullRequestReviews(ctx context.Context, owner, repository string, pullRequestID int) ([]PullRequestReviewDetails, error)
+
 	// ListPullRequestReviewComments Gets all pull request review comments
 	// owner          - User or organization
 	// repository     - VCS repository name
@@ -349,6 +356,17 @@ type PullRequestInfo struct {
 	URL    string
 	Source BranchInfo
 	Target BranchInfo
+}
+
+type PullRequestReviewDetails struct {
+	ID             int64
+	NodeID         string
+	Reviewer       string
+	Body           string
+	SubmittedAt    string
+	CommitID       string
+	PullRequestURL string
+	State          string
 }
 
 type BranchInfo struct {

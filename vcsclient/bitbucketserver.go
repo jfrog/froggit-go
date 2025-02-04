@@ -26,6 +26,11 @@ type BitbucketServerClient struct {
 	logger  vcsutils.Log
 }
 
+func (client *BitbucketServerClient) ListPullRequestReviews(ctx context.Context, owner, repository string, pullRequestID int) ([]PullRequestReviewDetails, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
 func (client *BitbucketServerClient) ListPullRequestsAssociatedWithCommit(ctx context.Context, owner, repository string, commitSHA string) ([]PullRequestInfo, error) {
 	// TODO implement me
 	panic("implement me")
