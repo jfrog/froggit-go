@@ -877,11 +877,11 @@ func (client *GitHubClient) ListPullRequestsAssociatedWithCommit(ctx context.Con
 		return nil, err
 	}
 
-	pulls, err := client.ListPullRequestsAssociatedWithCommit(ctx, owner, repository, commitSHA)
+	pulls, _, err := client.ghClient.PullRequests.ListPullRequestsWithCommit(ctx, owner, repository, commitSHA, nil)
 	if err != nil {
 		return nil, err
 	}
-	return pulls, nil
+	return mapGitHubPullRequestToPullRequestInfoList(pulls, false)
 }
 
 // UnlabelPullRequest on GitHub
