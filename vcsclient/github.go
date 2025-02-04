@@ -595,7 +595,8 @@ func (client *GitHubClient) ListPullRequestReviews(ctx context.Context, owner, r
 			Reviewer:    review.GetUser().GetLogin(),
 			Body:        review.GetBody(),
 			State:       review.GetState(),
-			SubmittedAt: review.GetSubmittedAt().Time.String(),
+			SubmittedAt: review.GetSubmittedAt().String(),
+			CommitID:    review.GetCommitID(),
 		})
 	}
 
