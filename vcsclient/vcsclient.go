@@ -359,14 +359,12 @@ type PullRequestInfo struct {
 }
 
 type PullRequestReviewDetails struct {
-	ID             int64
-	NodeID         string
-	Reviewer       string
-	Body           string
-	SubmittedAt    string
-	CommitID       string
-	PullRequestURL string
-	State          string
+	ID          int64
+	Reviewer    string
+	Body        string
+	SubmittedAt string
+	CommitID    string
+	State       string
 }
 
 type BranchInfo struct {
