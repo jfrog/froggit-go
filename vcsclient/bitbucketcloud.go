@@ -28,7 +28,7 @@ type BitbucketCloudClient struct {
 }
 
 func (client *BitbucketCloudClient) ListPullRequestReviews(ctx context.Context, owner, repository string, pullRequestID int) ([]PullRequestReviewDetails, error) {
-	//TODO implement me
+	// TODO implement me
 	panic("implement me")
 }
 
