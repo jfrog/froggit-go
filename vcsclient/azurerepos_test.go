@@ -246,11 +246,13 @@ func TestAzureRepos_TestListOpenPullRequests(t *testing.T) {
 		Count int
 	}
 	pullRequestId := 1
+	testTitle := "test-title"
 	url := "https://dev.azure.com/owner/project/_git/repo/pullrequest/47"
 	res := ListOpenPullRequestsResponse{
 		Value: []git.GitPullRequest{
 			{
 				PullRequestId: &pullRequestId,
+				Title:         &testTitle,
 				Repository:    &git.GitRepository{Name: &repo1},
 				SourceRefName: &branch1,
 				TargetRefName: &branch2,
@@ -269,6 +271,7 @@ func TestAzureRepos_TestListOpenPullRequests(t *testing.T) {
 	assert.EqualValues(t, pullRequestsInfo, []PullRequestInfo{
 		{
 			ID:     1,
+			Title:  testTitle,
 			Source: BranchInfo{Name: branch1, Repository: repo1},
 			Target: BranchInfo{Name: branch2, Repository: repo1},
 			URL:    url,
@@ -288,6 +291,7 @@ func TestAzureRepos_TestListOpenPullRequests(t *testing.T) {
 		Value: []git.GitPullRequest{
 			{
 				PullRequestId: &pullRequestId,
+				Title:         &testTitle,
 				Description:   &prBody,
 				Url:           &url,
 				Repository:    &git.GitRepository{Name: &repo1},
@@ -307,6 +311,7 @@ func TestAzureRepos_TestListOpenPullRequests(t *testing.T) {
 	assert.EqualValues(t, pullRequestsInfo, []PullRequestInfo{
 		{
 			ID:     1,
+			Title:  testTitle,
 			Body:   prBody,
 			Source: BranchInfo{Name: branch1, Repository: repo1},
 			Target: BranchInfo{Name: branch2, Repository: repo1},
