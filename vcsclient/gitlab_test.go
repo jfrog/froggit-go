@@ -287,6 +287,7 @@ func TestGitLabClient_ListOpenPullRequests(t *testing.T) {
 	assert.Len(t, result, 1)
 	assert.EqualValues(t, PullRequestInfo{
 		ID:     302,
+		Title:  "test1",
 		Source: BranchInfo{Name: "test1", Repository: repo1, Owner: owner},
 		Target: BranchInfo{Name: "master", Repository: repo1, Owner: owner},
 		URL:    "https://gitlab.example.com/my-group/my-project/merge_requests/1",
@@ -298,6 +299,7 @@ func TestGitLabClient_ListOpenPullRequests(t *testing.T) {
 	assert.Len(t, result, 1)
 	assert.EqualValues(t, PullRequestInfo{
 		ID:     302,
+		Title:  "test1",
 		Body:   "hello world",
 		Source: BranchInfo{Name: "test1", Repository: repo1, Owner: owner},
 		Target: BranchInfo{Name: "master", Repository: repo1, Owner: owner},
