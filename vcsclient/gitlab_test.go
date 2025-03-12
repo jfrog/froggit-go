@@ -322,6 +322,7 @@ func TestGitLabClient_GetPullRequestByID(t *testing.T) {
 	assert.NoError(t, err)
 	assert.EqualValues(t, PullRequestInfo{
 		ID:     133,
+		Title:  "Manual job rules",
 		Source: BranchInfo{Name: "manual-job-rules", Repository: repoName, Owner: owner},
 		Target: BranchInfo{Name: "master", Repository: repoName, Owner: owner},
 		URL:    "https://gitlab.com/marcel.amirault/test-project/-/merge_requests/133",
