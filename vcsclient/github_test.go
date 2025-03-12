@@ -713,6 +713,7 @@ func TestGitHubClient_GetPullRequestByID(t *testing.T) {
 	assert.NoError(t, err)
 	assert.EqualValues(t, PullRequestInfo{
 		ID:     int64(pullRequestId),
+		Title:  "Amazing new feature",
 		Source: BranchInfo{Name: "new-topic", Repository: "Hello-World", Owner: owner},
 		Target: BranchInfo{Name: "master", Repository: "Hello-World", Owner: forkedOwner},
 		URL:    "https://github.com/octocat/Hello-World/pull/1347",
