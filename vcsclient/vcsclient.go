@@ -339,6 +339,7 @@ type CommentInfo struct {
 
 type PullRequestInfo struct {
 	ID     int64
+	Title  string
 	Body   string
 	URL    string
 	Source BranchInfo

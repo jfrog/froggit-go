@@ -722,9 +722,10 @@ func parsePullRequestDetails(client *AzureReposClient, pullRequest git.GitPullRe
 	}
 
 	return PullRequestInfo{
-		ID:   int64(*pullRequest.PullRequestId),
-		Body: prBody,
-		URL:  vcsutils.DefaultIfNotNil(pullRequest.Url),
+		ID:    int64(*pullRequest.PullRequestId),
+		Title: *pullRequest.Title,
+		Body:  prBody,
+		URL:   vcsutils.DefaultIfNotNil(pullRequest.Url),
 		Source: BranchInfo{
 			Name:       shortSourceName,
 			Repository: repository,

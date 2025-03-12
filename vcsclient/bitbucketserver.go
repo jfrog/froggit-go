@@ -401,6 +401,7 @@ func mapBitbucketServerPullRequestToPullRequestInfo(pullRequest bitbucketv1.Pull
 	}
 	return PullRequestInfo{
 		ID:     int64(pullRequest.ID),
+		Title:  pullRequest.Title,
 		Source: BranchInfo{Name: pullRequest.FromRef.DisplayID, Repository: pullRequest.ToRef.Repository.Slug, Owner: sourceOwner},
 		Target: BranchInfo{Name: pullRequest.ToRef.DisplayID, Repository: pullRequest.ToRef.Repository.Slug, Owner: owner},
 		Body:   body,

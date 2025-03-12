@@ -456,9 +456,10 @@ func mapGitHubPullRequestToPullRequestInfo(ghPullRequest *github.PullRequest, wi
 	}
 
 	return PullRequestInfo{
-		ID:   int64(vcsutils.DefaultIfNotNil(ghPullRequest.Number)),
-		URL:  vcsutils.DefaultIfNotNil(ghPullRequest.HTMLURL),
-		Body: body,
+		ID:    int64(vcsutils.DefaultIfNotNil(ghPullRequest.Number)),
+		Title: *ghPullRequest.Title,
+		URL:   vcsutils.DefaultIfNotNil(ghPullRequest.HTMLURL),
+		Body:  body,
 		Source: BranchInfo{
 			Name:       sourceBranch,
 			Repository: sourceRepoName,
