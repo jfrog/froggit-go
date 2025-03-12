@@ -175,6 +175,7 @@ func TestBitbucketCloud_ListOpenPullRequests(t *testing.T) {
 	assert.Len(t, result, 3)
 	assert.EqualValues(t, PullRequestInfo{
 		ID:     3,
+		Title:  "A change",
 		Source: BranchInfo{Name: "test-2", Repository: "user17/test"},
 		Target: BranchInfo{Name: "master", Repository: "user17/test"},
 	}, result[0])
@@ -186,6 +187,7 @@ func TestBitbucketCloud_ListOpenPullRequests(t *testing.T) {
 	assert.Len(t, result, 3)
 	assert.EqualValues(t, PullRequestInfo{
 		ID:     3,
+		Title:  "A change",
 		Body:   "hello world",
 		Source: BranchInfo{Name: "test-2", Repository: "user17/test"},
 		Target: BranchInfo{Name: "master", Repository: "user17/test"},
