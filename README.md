@@ -33,6 +33,7 @@ Currently supported providers are: [GitHub](#github), [Bitbucket Server](#bitbuc
       - [Test Connection](#test-connection)
       - [List Repositories](#list-repositories)
       - [List Branches](#list-branches)
+      - [List Pull Request Reviews](#list-pull-request-reviews)
       - [Download Repository](#download-repository)
       - [Create Webhook](#create-webhook)
       - [Update Webhook](#update-webhook)
@@ -204,6 +205,22 @@ owner := "jfrog"
 repository := "jfrog-cli"
 
 repositoryBranches, err := client.ListBranches(ctx, owner, repository)
+```
+
+#### List Pull Request Reviews
+
+```go
+// Go context
+ctx := context.Background()
+// Organization or username
+owner := "jfrog"
+// VCS repository
+repository := "jfrog-cli"
+// Pull Request ID
+pullRequestID := 1
+
+// List all reviews for pull request 1
+reviews, err := client.ListPullRequestReviews(ctx, owner, repository, pullRequestID)
 ```
 
 #### Download Repository
