@@ -1,0 +1,22 @@
+[
+  {
+    "id": 1,
+    "author": {
+      "username": "reviewer1"
+    },
+    "body": "Looks good to me",
+    "resolvable": true,
+    "created_at": "2023-01-01T12:00:00Z",
+    "commit_id": "commitsha1"
+  },
+  {
+    "id": 2,
+    "author": {
+      "username": "reviewer2"
+    },
+    "body": "Please fix this issue",
+    "resolvable": false,
+    "created_at": "2023-01-01T12:00:00Z",
+    "commit_id": "commitsha2"
+  }
+]

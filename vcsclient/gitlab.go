@@ -23,16 +23,6 @@ type GitLabClient struct {
 	logger   vcsutils.Log
 }
 
-func (client *GitLabClient) ListPullRequestReviews(ctx context.Context, owner, repository string, pullRequestID int) ([]PullRequestReviewDetails, error) {
-	// TODO implement me
-	panic("implement me")
-}
-
-func (client *GitLabClient) ListPullRequestsAssociatedWithCommit(ctx context.Context, owner, repository string, commitSHA string) ([]PullRequestInfo, error) {
-	// TODO implement me
-	panic("implement me")
-}
-
 // NewGitLabClient create a new GitLabClient
 func NewGitLabClient(vcsInfo VcsInfo, logger vcsutils.Log) (*GitLabClient, error) {
 	var client *gitlab.Client
@@ -745,6 +735,73 @@ func (client *GitLabClient) GetModifiedFiles(_ context.Context, owner, repositor
 	fileNamesList := fileNamesSet.ToSlice()
 	sort.Strings(fileNamesList)
 	return fileNamesList, nil
+}
+
+func (client *GitLabClient) ListPullRequestReviews(ctx context.Context, owner, repository string, pullRequestID int) ([]PullRequestReviewDetails, error) {
+	err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository})
+	if err != nil {
+		return nil, err
+	}
+
+	var prNotes []*gitlab.Note
+	prNotes, _, err = client.glClient.Notes.ListMergeRequestNotes(owner+"/"+repository, pullRequestID, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var reviewInfos []PullRequestReviewDetails
+	for _, review := range prNotes {
+		reviewInfos = append(reviewInfos, PullRequestReviewDetails{
+			ID:          int64(review.ID),
+			Reviewer:    review.Author.Username,
+			Body:        review.Body,
+			SubmittedAt: review.CreatedAt.Format(time.RFC3339),
+			CommitID:    review.CommitID,
+		})
+	}
+
+	return reviewInfos, nil
+}
+
+func mapResolvableToState(resolvable bool) string {
+	if resolvable {
+		return "resolvable"
+	}
+	return "unresolvable"
+}
+
+func (client *GitLabClient) ListPullRequestsAssociatedWithCommit(ctx context.Context, owner, repository string, commitSHA string) ([]PullRequestInfo, error) {
+	err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository})
+	if err != nil {
+		return nil, err
+	}
+
+	var mergeRequests []*gitlab.MergeRequest
+	mergeRequests, _, err = client.glClient.Commits.ListMergeRequestsByCommit(owner+"/"+repository, commitSHA, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var pullRequests []PullRequestInfo
+	for _, mr := range mergeRequests {
+		pullRequests = append(pullRequests, PullRequestInfo{
+			ID:   int64(mr.ID),
+			URL:  mr.WebURL,
+			Body: mr.Description,
+			Source: BranchInfo{
+				Name:       mr.SourceBranch,
+				Repository: repository,
+				Owner:      owner,
+			},
+			Target: BranchInfo{
+				Name:       mr.TargetBranch,
+				Repository: repository,
+				Owner:      owner,
+			},
+		})
+	}
+
+	return pullRequests, nil
 }
 
 func getProjectID(owner, project string) string {

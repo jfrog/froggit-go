@@ -980,3 +980,45 @@ func TestGitLabClient_getProjectOwnerByID(t *testing.T) {
 	assert.Error(t, err)
 	assert.NotEqual(t, "test", projectOwner)
 }
+
+func TestGitLabClient_ListPullRequestReviews(t *testing.T) {
+	ctx := context.Background()
+	response, err := os.ReadFile(filepath.Join("testdata", "gitlab", "merge_request_notes_response.json"))
+	assert.NoError(t, err)
+
+	client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, response,
+		fmt.Sprintf("/api/v4/projects/%s/merge_requests/1/notes", url.PathEscape(owner+"/"+repo1)), createGitLabHandler)
+	defer cleanUp()
+
+	result, err := client.ListPullRequestReviews(ctx, owner, repo1, 1)
+	assert.NoError(t, err)
+	assert.Len(t, result, 2)
+	assert.Equal(t, int64(1), result[0].ID)
+	assert.Equal(t, "reviewer1", result[0].Reviewer)
+	assert.Equal(t, "Looks good to me", result[0].Body)
+	assert.Equal(t, "2023-01-01T12:00:00Z", result[0].SubmittedAt)
+	assert.Equal(t, "commitsha1", result[0].CommitID)
+}
+
+func TestGitLabClient_ListPullRequestsAssociatedWithCommit(t *testing.T) {
+	ctx := context.Background()
+	response, err := os.ReadFile(filepath.Join("testdata", "gitlab", "merge_requests_by_commit_response.json"))
+	assert.NoError(t, err)
+
+	client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, response,
+		fmt.Sprintf("/api/v4/projects/%s/repository/commits/%s/merge_requests", url.PathEscape(owner+"/"+repo1), "commitsha1"), createGitLabHandler)
+	defer cleanUp()
+
+	result, err := client.ListPullRequestsAssociatedWithCommit(ctx, owner, repo1, "commitsha1")
+	assert.NoError(t, err)
+	assert.Len(t, result, 1)
+	assert.Equal(t, int64(1), result[0].ID)
+	assert.Equal(t, "https://gitlab.example.com/my-group/my-project/merge_requests/1", result[0].URL)
+	assert.Equal(t, "Fix bug", result[0].Body)
+	assert.Equal(t, "feature-branch", result[0].Source.Name)
+	assert.Equal(t, repo1, result[0].Source.Repository)
+	assert.Equal(t, owner, result[0].Source.Owner)
+	assert.Equal(t, "main", result[0].Target.Name)
+	assert.Equal(t, repo1, result[0].Target.Repository)
+	assert.Equal(t, owner, result[0].Target.Owner)
+}
