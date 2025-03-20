@@ -763,13 +763,6 @@ func (client *GitLabClient) ListPullRequestReviews(ctx context.Context, owner, r
 	return reviewInfos, nil
 }
 
-func mapResolvableToState(resolvable bool) string {
-	if resolvable {
-		return "resolvable"
-	}
-	return "unresolvable"
-}
-
 func (client *GitLabClient) ListPullRequestsAssociatedWithCommit(ctx context.Context, owner, repository string, commitSHA string) ([]PullRequestInfo, error) {
 	err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository})
 	if err != nil {
