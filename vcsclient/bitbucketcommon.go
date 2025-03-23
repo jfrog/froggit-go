@@ -13,15 +13,17 @@ const (
 )
 
 var (
-	errLabelsNotSupported                                 = fmt.Errorf("labels are %s", notSupportedOnBitbucket)
-	errBitbucketCodeScanningNotSupported                  = fmt.Errorf("code scanning is %s", notSupportedOnBitbucket)
-	errBitbucketDownloadFileFromRepoNotSupported          = fmt.Errorf("download file from repo is %s", notSupportedOnBitbucket)
-	errBitbucketGetCommitsNotSupported                    = fmt.Errorf("get commits is %s", notSupportedOnBitbucket)
-	errBitbucketGetCommitsWithOptionsNotSupported         = fmt.Errorf("get commits with options is %s", notSupportedOnBitbucket)
-	errBitbucketGetRepoEnvironmentInfoNotSupported        = fmt.Errorf("get repository environment info is %s", notSupportedOnBitbucket)
-	errBitbucketListPullRequestReviewCommentsNotSupported = fmt.Errorf("list pull request review comments is %s", notSupportedOnBitbucket)
-	errBitbucketAddPullRequestReviewCommentsNotSupported  = fmt.Errorf("add pull request review comment is %s", notSupportedOnBitbucket)
-	errBitbucketDeletePullRequestComment                  = fmt.Errorf("delete pull request comment is %s", notSupportedOnBitbucket)
+	errLabelsNotSupported                                    = fmt.Errorf("labels are %s", notSupportedOnBitbucket)
+	errBitbucketCodeScanningNotSupported                     = fmt.Errorf("code scanning is %s", notSupportedOnBitbucket)
+	errBitbucketDownloadFileFromRepoNotSupported             = fmt.Errorf("download file from repo is %s", notSupportedOnBitbucket)
+	errBitbucketGetCommitsNotSupported                       = fmt.Errorf("get commits is %s", notSupportedOnBitbucket)
+	errBitbucketGetCommitsWithOptionsNotSupported            = fmt.Errorf("get commits with options is %s", notSupportedOnBitbucket)
+	errBitbucketGetRepoEnvironmentInfoNotSupported           = fmt.Errorf("get repository environment info is %s", notSupportedOnBitbucket)
+	errBitbucketListPullRequestReviewCommentsNotSupported    = fmt.Errorf("list pull request review comments is %s", notSupportedOnBitbucket)
+	errBitbucketAddPullRequestReviewCommentsNotSupported     = fmt.Errorf("add pull request review comment is %s", notSupportedOnBitbucket)
+	errBitbucketDeletePullRequestComment                     = fmt.Errorf("delete pull request comment is %s", notSupportedOnBitbucket)
+	errBitbucketListPullRequestAssociatedCommitsNotSupported = fmt.Errorf("list pull requests associated commits is %s", notSupportedOnBitbucket)
+	errBitbucketListListPullRequestReviewsNotSupported       = fmt.Errorf("list pull request reviews is %s", notSupportedOnBitbucket)
 )
 
 type BitbucketCommitInfo struct {

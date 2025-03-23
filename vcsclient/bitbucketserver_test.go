@@ -133,6 +133,24 @@ func TestBitbucketServer_DeleteWebhook(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestBitbucketServer_ListPullRequestReviews(t *testing.T) {
+	ctx := context.Background()
+	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, true, nil,
+		fmt.Sprintf("/rest/api/1.0/projects/%s/repos/%s/pull-requests/%d/reviewers", owner, repo1, 1), createBitbucketServerHandler)
+	defer cleanUp()
+	_, err := client.ListPullRequestReviews(ctx, owner, repo1, 1)
+	assert.ErrorIs(t, err, errBitbucketListListPullRequestReviewsNotSupported)
+}
+
+func TestBitbucketServer_ListPullRequestsAssociatedWithCommit(t *testing.T) {
+	ctx := context.Background()
+	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, true, nil,
+		fmt.Sprintf("/rest/api/1.0/projects/%s/repos/%s/commits/%s/pull-requests", owner, repo1, "commitSHA"), createBitbucketServerHandler)
+	defer cleanUp()
+	_, err := client.ListPullRequestsAssociatedWithCommit(ctx, owner, repo1, "commitSHA")
+	assert.ErrorIs(t, err, errBitbucketListPullRequestAssociatedCommitsNotSupported)
+}
+
 func TestBitbucketServer_SetCommitStatus(t *testing.T) {
 	ctx := context.Background()
 	ref := "9caf1c431fb783b669f0f909bd018b40f2ea3808"
