@@ -385,7 +385,8 @@ func (client *BitbucketCloudClient) GetPullRequestByID(ctx context.Context, owne
 	targetOwner, targetRepository := splitBitbucketCloudRepoName(pullRequestDetails.Target.Repository.Name)
 
 	pullRequestInfo = PullRequestInfo{
-		ID: pullRequestDetails.ID,
+		ID:     pullRequestDetails.ID,
+		Author: pullRequestDetails.Author.DisplayName,
 		Source: BranchInfo{
 			Name:       pullRequestDetails.Source.Name.Str,
 			Repository: sourceRepository,
@@ -662,8 +663,13 @@ type pullRequestsResponse struct {
 type pullRequestsDetails struct {
 	ID     int64             `json:"id"`
 	Body   string            `json:"description"`
+	Author Author            `json:"author"`
 	Source pullRequestBranch `json:"source"`
 	Target pullRequestBranch `json:"destination"`
+}
+
+type Author struct {
+	DisplayName string `json:"display_name"`
 }
 
 type pullRequestBranch struct {
@@ -807,8 +813,9 @@ func mapBitbucketCloudPullRequestToPullRequestInfo(parsedPullRequests *pullReque
 			body = pullRequest.Body
 		}
 		pullRequests[i] = PullRequestInfo{
-			ID:   pullRequest.ID,
-			Body: body,
+			ID:     pullRequest.ID,
+			Body:   body,
+			Author: pullRequest.Author.DisplayName,
 			Source: BranchInfo{
 				Name:       pullRequest.Source.Name.Str,
 				Repository: pullRequest.Source.Repository.Name,
