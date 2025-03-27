@@ -669,6 +669,7 @@ func TestGitHubClient_ListOpenPullRequests(t *testing.T) {
 	assert.NoError(t, err)
 	assert.EqualValues(t, PullRequestInfo{
 		ID:     1347,
+		Author: "octocat",
 		Source: BranchInfo{Name: "new-topic", Repository: "Hello-World", Owner: owner},
 		Target: BranchInfo{Name: "master", Repository: "Hello-World", Owner: owner},
 		URL:    "https://github.com/octocat/Hello-World/pull/1347",
@@ -685,6 +686,7 @@ func TestGitHubClient_ListOpenPullRequests(t *testing.T) {
 	assert.EqualValues(t, PullRequestInfo{
 		ID:     1347,
 		Body:   "hello world",
+		Author: "octocat",
 		Source: BranchInfo{Name: "new-topic", Repository: "Hello-World", Owner: owner},
 		Target: BranchInfo{Name: "master", Repository: "Hello-World", Owner: owner},
 		URL:    "https://github.com/octocat/Hello-World/pull/1347",
@@ -714,6 +716,7 @@ func TestGitHubClient_GetPullRequestByID(t *testing.T) {
 		Source: BranchInfo{Name: "new-topic", Repository: "Hello-World", Owner: owner},
 		Target: BranchInfo{Name: "master", Repository: "Hello-World", Owner: forkedOwner},
 		URL:    "https://github.com/octocat/Hello-World/pull/1347",
+		Author: "octocat",
 	}, result)
 
 	// Bad Labels
