@@ -572,6 +572,38 @@ func (client *GitHubClient) ListPullRequestReviewComments(ctx context.Context, o
 	return commentsInfoList, err
 }
 
+// ListPullRequestReviews on GitHub
+func (client *GitHubClient) ListPullRequestReviews(ctx context.Context, owner, repository string, pullRequestID int) ([]PullRequestReviewDetails, error) {
+	err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository})
+	if err != nil {
+		return nil, err
+	}
+
+	var reviews []*github.PullRequestReview
+	err = client.runWithRateLimitRetries(func() (*github.Response, error) {
+		var ghResponse *github.Response
+		reviews, ghResponse, err = client.ghClient.PullRequests.ListReviews(ctx, owner, repository, pullRequestID, nil)
+		return ghResponse, err
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	var reviewInfos []PullRequestReviewDetails
+	for _, review := range reviews {
+		reviewInfos = append(reviewInfos, PullRequestReviewDetails{
+			ID:          review.GetID(),
+			Reviewer:    review.GetUser().GetLogin(),
+			Body:        review.GetBody(),
+			State:       review.GetState(),
+			SubmittedAt: review.GetSubmittedAt().String(),
+			CommitID:    review.GetCommitID(),
+		})
+	}
+
+	return reviewInfos, nil
+}
+
 func (client *GitHubClient) executeListPullRequestReviewComments(ctx context.Context, owner, repository string, pullRequestID int) ([]CommentInfo, *github.Response, error) {
 	commentsList, ghResponse, err := client.ghClient.PullRequests.ListComments(ctx, owner, repository, pullRequestID, nil)
 	if err != nil {
@@ -870,6 +902,22 @@ func (client *GitHubClient) ListPullRequestLabels(ctx context.Context, owner, re
 		}
 	}
 	return results, nil
+}
+
+func (client *GitHubClient) ListPullRequestsAssociatedWithCommit(ctx context.Context, owner, repository string, commitSHA string) ([]PullRequestInfo, error) {
+	err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository})
+	if err != nil {
+		return nil, err
+	}
+
+	var pulls []*github.PullRequest
+	if err = client.runWithRateLimitRetries(func() (ghResponse *github.Response, err error) {
+		pulls, ghResponse, err = client.ghClient.PullRequests.ListPullRequestsWithCommit(ctx, owner, repository, commitSHA, nil)
+		return ghResponse, err
+	}); err != nil {
+		return nil, err
+	}
+	return mapGitHubPullRequestToPullRequestInfoList(pulls, false)
 }
 
 // UnlabelPullRequest on GitHub

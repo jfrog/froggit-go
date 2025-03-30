@@ -1,0 +1,45 @@
+{
+  "pagelen": 10,
+  "values": [
+    {
+      "id": 1,
+      "source": {
+        "branch": {
+          "name": "source-branch"
+        },
+        "repository": {
+          "full_name": "workspace/source-repo"
+        }
+      },
+      "destination": {
+        "branch": {
+          "name": "target-branch"
+        },
+        "repository": {
+          "full_name": "workspace/target-repo"
+        }
+      }
+    },
+    {
+      "id": 2,
+      "source": {
+        "branch": {
+          "name": "source-branch-2"
+        },
+        "repository": {
+          "full_name": "workspace/source-repo-2"
+        }
+      },
+      "destination": {
+        "branch": {
+          "name": "target-branch-2"
+        },
+        "repository": {
+          "full_name": "workspace/target-repo-2"
+        }
+      }
+    }
+  ],
+  "page": 1,
+  "size": 2
+}

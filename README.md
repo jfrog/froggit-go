@@ -33,6 +33,7 @@ Currently supported providers are: [GitHub](#github), [Bitbucket Server](#bitbuc
       - [Test Connection](#test-connection)
       - [List Repositories](#list-repositories)
       - [List Branches](#list-branches)
+      - [List Pull Request Reviews](#list-pull-request-reviews)
       - [Download Repository](#download-repository)
       - [Create Webhook](#create-webhook)
       - [Update Webhook](#update-webhook)
@@ -54,6 +55,7 @@ Currently supported providers are: [GitHub](#github), [Bitbucket Server](#bitbuc
       - [Get Commits With Options](#get-commits-with-options)
       - [Get Latest Commit](#get-latest-commit)
       - [Get Commit By SHA](#get-commit-by-sha)
+      - [List Pull Requests associated with a Commit](#list-pull-requests-associated-with-a-commit)
       - [Get List of Modified Files](#get-list-of-modified-files)
       - [Add Public SSH Key](#add-public-ssh-key)
       - [Get Repository Info](#get-repository-info)
@@ -203,6 +205,22 @@ owner := "jfrog"
 repository := "jfrog-cli"
 
 repositoryBranches, err := client.ListBranches(ctx, owner, repository)
+```
+
+#### List Pull Request Reviews
+
+```go
+// Go context
+ctx := context.Background()
+// Organization or username
+owner := "jfrog"
+// VCS repository
+repository := "jfrog-cli"
+// Pull Request ID
+pullRequestID := 1
+
+// List all reviews for pull request 1
+reviews, err := client.ListPullRequestReviews(ctx, owner, repository, pullRequestID)
 ```
 
 #### Download Repository
@@ -598,6 +616,21 @@ sha := "abcdef0123abcdef4567abcdef8987abcdef6543"
 
 // Commit information of requested commit
 commitInfo, err := client.GetCommitBySha(ctx, owner, repository, sha)
+```
+
+### 
+```go
+// Go context
+ctx := context.Background()
+// Organization or username
+owner := "jfrog"
+// VCS repository
+repository := "jfrog-cli"
+// Commit SHA
+commitSHA := "abcdef0123abcdef4567abcdef8987abcdef6543"
+
+// List pull requests associated with a specific commit
+pullRequests, err := client.ListPullRequestsAssociatedWithCommit(ctx, owner, repository, commitSHA)
 ```
 
 #### Get List of Modified Files

@@ -403,6 +403,62 @@ func TestListPullRequestReviewComments(t *testing.T) {
 	TestListPullRequestComments(t)
 }
 
+func TestAzureRepos_ListPullRequestReviews(t *testing.T) {
+	ctx := context.Background()
+	repository := "repo"
+	pullRequestID := 1
+	mockResponse := struct {
+		Count int
+		Value []git.IdentityRefWithVote
+	}{
+		Count: 2,
+		Value: []git.IdentityRefWithVote{
+			{
+				ReviewerUrl: vcsutils.PointerOf("https://dev.azure.com/owner/project/_apis/git/repositories/repo/pullRequests/1/reviewers/1"),
+				Vote:        vcsutils.PointerOf(10),
+				DisplayName: vcsutils.PointerOf("Reviewer One"),
+				Id:          vcsutils.PointerOf("1"),
+			},
+			{
+				ReviewerUrl: vcsutils.PointerOf("https://dev.azure.com/owner/project/_apis/git/repositories/repo/pullRequests/1/reviewers/2"),
+				Vote:        vcsutils.PointerOf(-5),
+				DisplayName: vcsutils.PointerOf("Reviewer Two"),
+				Id:          vcsutils.PointerOf("2"),
+			},
+		},
+	}
+	responseBytes, err := json.Marshal(mockResponse)
+	assert.NoError(t, err)
+
+	client, cleanUp := createServerAndClient(t, vcsutils.AzureRepos, true, responseBytes,
+		fmt.Sprintf("/_apis/git/repositories/%s/pullRequests/%d/reviewers", repository, pullRequestID), createAzureReposHandler)
+	defer cleanUp()
+
+	result, err := client.ListPullRequestReviews(ctx, owner, repository, pullRequestID)
+	assert.NoError(t, err)
+	assert.Len(t, result, 2)
+	assert.Equal(t, PullRequestReviewDetails{
+		ID:       1,
+		Reviewer: "Reviewer One",
+		State:    "APPROVED",
+	}, result[0])
+	assert.Equal(t, PullRequestReviewDetails{
+		ID:       2,
+		Reviewer: "Reviewer Two",
+		State:    "CHANGES_REQUESTED",
+	}, result[1])
+}
+func TestAzureRepos_ListPullRequestsAssociatedWithCommit(t *testing.T) {
+	ctx := context.Background()
+	repository := "repo"
+	commitSHA := "commitSHA"
+	client, cleanUp := createServerAndClient(t, vcsutils.AzureRepos, true, nil,
+		fmt.Sprintf("/_apis/git/repositories/%s/commits/%s/pullRequests", repository, commitSHA), createAzureReposHandler)
+	defer cleanUp()
+
+	_, err := client.ListPullRequestsAssociatedWithCommit(ctx, owner, repository, commitSHA)
+	assert.Error(t, err)
+}
 func TestListPullRequestComments(t *testing.T) {
 	type ListPullRequestCommentsResponse struct {
 		Value []git.GitPullRequestCommentThread

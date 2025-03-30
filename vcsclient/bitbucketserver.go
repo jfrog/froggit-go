@@ -499,6 +499,14 @@ func (client *BitbucketServerClient) DeletePullRequestReviewComments(ctx context
 	return nil
 }
 
+func (client *BitbucketServerClient) ListPullRequestReviews(ctx context.Context, owner, repository string, pullRequestID int) ([]PullRequestReviewDetails, error) {
+	return nil, errBitbucketListListPullRequestReviewsNotSupported
+}
+
+func (client *BitbucketServerClient) ListPullRequestsAssociatedWithCommit(ctx context.Context, owner, repository string, commitSHA string) ([]PullRequestInfo, error) {
+	return nil, errBitbucketListPullRequestAssociatedCommitsNotSupported
+}
+
 // DeletePullRequestComment on Bitbucket Server
 func (client *BitbucketServerClient) DeletePullRequestComment(ctx context.Context, owner, repository string, pullRequestID, commentID int) error {
 	bitbucketClient := client.buildBitbucketClient(ctx)
