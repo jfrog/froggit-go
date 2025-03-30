@@ -756,9 +756,9 @@ func parsePullRequestDetails(client *AzureReposClient, pullRequest git.GitPullRe
 			client.logger.Warn(vcsutils.FailedForkedRepositoryExtraction)
 		}
 	}
-
 	return PullRequestInfo{
 		ID:     int64(*pullRequest.PullRequestId),
+		Title:  vcsutils.DefaultIfNotNil(pullRequest.Title),
 		Body:   prBody,
 		URL:    vcsutils.DefaultIfNotNil(pullRequest.Url),
 		Author: vcsutils.DefaultIfNotNil(pullRequest.CreatedBy.DisplayName),

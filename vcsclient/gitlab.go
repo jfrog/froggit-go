@@ -873,6 +873,7 @@ func (client *GitLabClient) mapGitLabMergeRequestToPullRequestInfo(mergeRequest 
 
 	return PullRequestInfo{
 		ID:     int64(mergeRequest.IID),
+		Title:  mergeRequest.Title,
 		Body:   body,
 		Author: mergeRequest.Author.Username,
 		Source: BranchInfo{

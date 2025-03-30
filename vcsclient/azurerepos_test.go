@@ -246,12 +246,14 @@ func TestAzureRepos_TestListOpenPullRequests(t *testing.T) {
 		Count int
 	}
 	pullRequestId := 1
+	testTitle := "test-title"
 	url := "https://dev.azure.com/owner/project/_git/repo/pullrequest/47"
 	author := "user"
 	res := ListOpenPullRequestsResponse{
 		Value: []git.GitPullRequest{
 			{
 				PullRequestId: &pullRequestId,
+				Title:         &testTitle,
 				Repository:    &git.GitRepository{Name: &repo1},
 				SourceRefName: &branch1,
 				TargetRefName: &branch2,
@@ -273,6 +275,7 @@ func TestAzureRepos_TestListOpenPullRequests(t *testing.T) {
 	assert.EqualValues(t, pullRequestsInfo, []PullRequestInfo{
 		{
 			ID:     1,
+			Title:  testTitle,
 			Author: "user",
 			Source: BranchInfo{Name: branch1, Repository: repo1},
 			Target: BranchInfo{Name: branch2, Repository: repo1},
@@ -293,6 +296,7 @@ func TestAzureRepos_TestListOpenPullRequests(t *testing.T) {
 		Value: []git.GitPullRequest{
 			{
 				PullRequestId: &pullRequestId,
+				Title:         &testTitle,
 				Description:   &prBody,
 				Url:           &url,
 				Repository:    &git.GitRepository{Name: &repo1},
@@ -315,6 +319,7 @@ func TestAzureRepos_TestListOpenPullRequests(t *testing.T) {
 	assert.EqualValues(t, pullRequestsInfo, []PullRequestInfo{
 		{
 			ID:     1,
+			Title:  testTitle,
 			Author: "user",
 			Body:   prBody,
 			Source: BranchInfo{Name: branch1, Repository: repo1},
@@ -338,7 +343,9 @@ func TestAzureReposClient_GetPullRequest(t *testing.T) {
 	forkedSourceUrl := fmt.Sprintf("https://dev.azure.com/%s/201f2c7f-305a-446c-a1d6-a04ec811093b/_apis/git/repositories/82d33a66-8971-4279-9687-19c69e66e114", forkedOwner)
 	url := "https://dev.azure.com/owner/project/_git/repo/pullrequest/47"
 	author := "user"
+	title := "PR title"
 	res := git.GitPullRequest{
+		Title:         &title,
 		SourceRefName: &sourceName,
 		TargetRefName: &targetName,
 		PullRequestId: &pullRequestId,
@@ -363,6 +370,7 @@ func TestAzureReposClient_GetPullRequest(t *testing.T) {
 		Target: BranchInfo{Name: targetName, Repository: repoName, Owner: owner},
 		URL:    url,
 		Author: author,
+		Title:  title,
 	})
 
 	// Fail source repository owner extraction, should be empty string and not fail the process.
