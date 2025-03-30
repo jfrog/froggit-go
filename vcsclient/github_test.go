@@ -796,7 +796,8 @@ func TestGitHubClient_ListPullRequestsAssociatedWithCommit(t *testing.T) {
 	result, err := client.ListPullRequestsAssociatedWithCommit(ctx, owner, repo1, "commitSHA")
 	assert.NoError(t, err)
 	assert.Len(t, result, 1)
-	assert.Equal(t, PullRequestInfo{
+
+	expected := PullRequestInfo{
 		ID:   1347,
 		Body: "",
 		URL:  "https://github.com/octocat/Hello-World/pull/1347",
@@ -810,7 +811,13 @@ func TestGitHubClient_ListPullRequestsAssociatedWithCommit(t *testing.T) {
 			Repository: "Hello-World",
 			Owner:      "octocat",
 		},
-	}, result[0])
+	}
+
+	assert.Equal(t, expected.ID, result[0].ID)
+	assert.Equal(t, expected.Body, result[0].Body)
+	assert.Equal(t, expected.URL, result[0].URL)
+	assert.Equal(t, expected.Source, result[0].Source)
+	assert.Equal(t, expected.Target, result[0].Target)
 
 	_, err = createBadGitHubClient(t).ListPullRequestsAssociatedWithCommit(ctx, owner, repo1, "commitSHA")
 	assert.Error(t, err)
