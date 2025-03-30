@@ -761,6 +761,61 @@ func TestGitHubClient_ListPullRequestComments(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestGitHubClient_ListPullRequestReviews(t *testing.T) {
+	ctx := context.Background()
+	response, err := os.ReadFile(filepath.Join("testdata", "github", "pull_request_reviews_response.json"))
+	assert.NoError(t, err)
+	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, response,
+		fmt.Sprintf("/repos/%s/%s/pulls/%d/reviews", owner, repo1, 1), createGitHubHandler)
+	defer cleanUp()
+
+	result, err := client.ListPullRequestReviews(ctx, owner, repo1, 1)
+	assert.NoError(t, err)
+	assert.Len(t, result, 1)
+	assert.Equal(t, PullRequestReviewDetails{
+		ID:          80,
+		Reviewer:    "octocat",
+		Body:        "This is close to perfect! Please address the suggested inline change.",
+		SubmittedAt: "2019-11-17 17:43:43 +0000 UTC",
+		CommitID:    "ecdd80bb57125d7ba9641ffaa4d7d2c19d3f3091",
+		State:       "CHANGES_REQUESTED",
+	}, result[0])
+
+	_, err = createBadGitHubClient(t).ListPullRequestReviews(ctx, owner, repo1, 1)
+	assert.Error(t, err)
+}
+
+func TestGitHubClient_ListPullRequestsAssociatedWithCommit(t *testing.T) {
+	ctx := context.Background()
+	response, err := os.ReadFile(filepath.Join("testdata", "github", "pull_requests_associated_with_commit_response.json"))
+	assert.NoError(t, err)
+	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, response,
+		fmt.Sprintf("/repos/%s/%s/commits/%s/pulls", owner, repo1, "commitSHA"), createGitHubHandler)
+	defer cleanUp()
+
+	result, err := client.ListPullRequestsAssociatedWithCommit(ctx, owner, repo1, "commitSHA")
+	assert.NoError(t, err)
+	assert.Len(t, result, 1)
+	assert.Equal(t, PullRequestInfo{
+		ID:   1347,
+		Body: "",
+		URL:  "https://github.com/octocat/Hello-World/pull/1347",
+		Source: BranchInfo{
+			Name:       "new-topic",
+			Repository: "Hello-World",
+			Owner:      "octocat",
+		},
+		Target: BranchInfo{
+			Name:       "master",
+			Repository: "Hello-World",
+			Owner:      "octocat",
+		},
+	}, result[0])
+
+	_, err = createBadGitHubClient(t).ListPullRequestsAssociatedWithCommit(ctx, owner, repo1, "commitSHA")
+	assert.Error(t, err)
+}
+
 func TestGitHubClient_UnlabelPullRequest(t *testing.T) {
 	ctx := context.Background()
 	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, &github.PullRequest{}, fmt.Sprintf("/repos/jfrog/repo-1/issues/1/labels/%s", url.PathEscape(labelName)), createGitHubHandler)
