@@ -211,6 +211,7 @@ func TestBitbucketCloudClient_GetPullRequest(t *testing.T) {
 	assert.NoError(t, err)
 	assert.EqualValues(t, PullRequestInfo{
 		ID:     int64(pullRequestId),
+		Title:  "s",
 		Author: "fname lname",
 		Source: BranchInfo{Name: "pr", Repository: "froggit", Owner: "forkedWorkspace"},
 		Target: BranchInfo{Name: "main", Repository: "froggit", Owner: "workspace"},
