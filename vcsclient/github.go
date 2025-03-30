@@ -909,8 +909,11 @@ func (client *GitHubClient) ListPullRequestsAssociatedWithCommit(ctx context.Con
 		return nil, err
 	}
 
-	pulls, _, err := client.ghClient.PullRequests.ListPullRequestsWithCommit(ctx, owner, repository, commitSHA, nil)
-	if err != nil {
+	var pulls []*github.PullRequest
+	if err = client.runWithRateLimitRetries(func() (ghResponse *github.Response, err error) {
+		pulls, ghResponse, err = client.ghClient.PullRequests.ListPullRequestsWithCommit(ctx, owner, repository, commitSHA, nil)
+		return ghResponse, err
+	}); err != nil {
 		return nil, err
 	}
 	return mapGitHubPullRequestToPullRequestInfoList(pulls, false)

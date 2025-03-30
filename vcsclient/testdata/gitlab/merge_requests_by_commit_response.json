@@ -1,6 +1,6 @@
 [
   {
-    "id": 1,
+    "iid": 1,
     "web_url": "https://gitlab.example.com/my-group/my-project/merge_requests/1",
     "description": "Fix bug",
     "source_branch": "feature-branch",

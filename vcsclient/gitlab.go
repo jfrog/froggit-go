@@ -774,27 +774,7 @@ func (client *GitLabClient) ListPullRequestsAssociatedWithCommit(ctx context.Con
 	if err != nil {
 		return nil, err
 	}
-
-	var pullRequests []PullRequestInfo
-	for _, mr := range mergeRequests {
-		pullRequests = append(pullRequests, PullRequestInfo{
-			ID:   int64(mr.ID),
-			URL:  mr.WebURL,
-			Body: mr.Description,
-			Source: BranchInfo{
-				Name:       mr.SourceBranch,
-				Repository: repository,
-				Owner:      owner,
-			},
-			Target: BranchInfo{
-				Name:       mr.TargetBranch,
-				Repository: repository,
-				Owner:      owner,
-			},
-		})
-	}
-
-	return pullRequests, nil
+	return client.mapGitLabMergeRequestToPullRequestInfoList(mergeRequests, owner, repository, true)
 }
 
 func getProjectID(owner, project string) string {
