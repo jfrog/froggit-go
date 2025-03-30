@@ -247,6 +247,7 @@ func TestAzureRepos_TestListOpenPullRequests(t *testing.T) {
 	}
 	pullRequestId := 1
 	url := "https://dev.azure.com/owner/project/_git/repo/pullrequest/47"
+	author := "user"
 	res := ListOpenPullRequestsResponse{
 		Value: []git.GitPullRequest{
 			{
@@ -255,6 +256,9 @@ func TestAzureRepos_TestListOpenPullRequests(t *testing.T) {
 				SourceRefName: &branch1,
 				TargetRefName: &branch2,
 				Url:           &url,
+				CreatedBy: &webapi.IdentityRef{
+					DisplayName: &author,
+				},
 			},
 		},
 		Count: 1,
@@ -269,6 +273,7 @@ func TestAzureRepos_TestListOpenPullRequests(t *testing.T) {
 	assert.EqualValues(t, pullRequestsInfo, []PullRequestInfo{
 		{
 			ID:     1,
+			Author: "user",
 			Source: BranchInfo{Name: branch1, Repository: repo1},
 			Target: BranchInfo{Name: branch2, Repository: repo1},
 			URL:    url,
@@ -293,6 +298,9 @@ func TestAzureRepos_TestListOpenPullRequests(t *testing.T) {
 				Repository:    &git.GitRepository{Name: &repo1},
 				SourceRefName: &branch1WithPrefix,
 				TargetRefName: &branch2WithPrefix,
+				CreatedBy: &webapi.IdentityRef{
+					DisplayName: &author,
+				},
 			},
 		},
 		Count: 1,
@@ -307,6 +315,7 @@ func TestAzureRepos_TestListOpenPullRequests(t *testing.T) {
 	assert.EqualValues(t, pullRequestsInfo, []PullRequestInfo{
 		{
 			ID:     1,
+			Author: "user",
 			Body:   prBody,
 			Source: BranchInfo{Name: branch1, Repository: repo1},
 			Target: BranchInfo{Name: branch2, Repository: repo1},
@@ -328,6 +337,7 @@ func TestAzureReposClient_GetPullRequest(t *testing.T) {
 	forkedOwner := "jfrogForked"
 	forkedSourceUrl := fmt.Sprintf("https://dev.azure.com/%s/201f2c7f-305a-446c-a1d6-a04ec811093b/_apis/git/repositories/82d33a66-8971-4279-9687-19c69e66e114", forkedOwner)
 	url := "https://dev.azure.com/owner/project/_git/repo/pullrequest/47"
+	author := "user"
 	res := git.GitPullRequest{
 		SourceRefName: &sourceName,
 		TargetRefName: &targetName,
@@ -336,6 +346,9 @@ func TestAzureReposClient_GetPullRequest(t *testing.T) {
 			Repository: &git.GitRepository{Url: &forkedSourceUrl},
 		},
 		Url: &url,
+		CreatedBy: &webapi.IdentityRef{
+			DisplayName: &author,
+		},
 	}
 	jsonRes, err := json.Marshal(res)
 	assert.NoError(t, err)
@@ -349,6 +362,7 @@ func TestAzureReposClient_GetPullRequest(t *testing.T) {
 		Source: BranchInfo{Name: sourceName, Repository: repoName, Owner: forkedOwner},
 		Target: BranchInfo{Name: targetName, Repository: repoName, Owner: owner},
 		URL:    url,
+		Author: author,
 	})
 
 	// Fail source repository owner extraction, should be empty string and not fail the process.
@@ -360,6 +374,9 @@ func TestAzureReposClient_GetPullRequest(t *testing.T) {
 			Repository: &git.GitRepository{Url: &repoName},
 		},
 		Url: &url,
+		CreatedBy: &webapi.IdentityRef{
+			DisplayName: &author,
+		},
 	}
 	jsonRes, err = json.Marshal(res)
 	assert.NoError(t, err)
@@ -371,6 +388,7 @@ func TestAzureReposClient_GetPullRequest(t *testing.T) {
 		Source: BranchInfo{Name: sourceName, Repository: repoName, Owner: ""},
 		Target: BranchInfo{Name: targetName, Repository: repoName, Owner: owner},
 		URL:    url,
+		Author: author,
 	},
 	)
 
