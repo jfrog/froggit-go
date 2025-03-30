@@ -288,6 +288,7 @@ func TestGitLabClient_ListOpenPullRequests(t *testing.T) {
 	assert.EqualValues(t, PullRequestInfo{
 		ID:     302,
 		Title:  "test1",
+		Author: "admin",
 		Source: BranchInfo{Name: "test1", Repository: repo1, Owner: owner},
 		Target: BranchInfo{Name: "master", Repository: repo1, Owner: owner},
 		URL:    "https://gitlab.example.com/my-group/my-project/merge_requests/1",
@@ -300,6 +301,7 @@ func TestGitLabClient_ListOpenPullRequests(t *testing.T) {
 	assert.EqualValues(t, PullRequestInfo{
 		ID:     302,
 		Title:  "test1",
+		Author: "admin",
 		Body:   "hello world",
 		Source: BranchInfo{Name: "test1", Repository: repo1, Owner: owner},
 		Target: BranchInfo{Name: "master", Repository: repo1, Owner: owner},
@@ -323,6 +325,7 @@ func TestGitLabClient_GetPullRequestByID(t *testing.T) {
 	assert.EqualValues(t, PullRequestInfo{
 		ID:     133,
 		Title:  "Manual job rules",
+		Author: "marcel.amirault",
 		Source: BranchInfo{Name: "manual-job-rules", Repository: repoName, Owner: owner},
 		Target: BranchInfo{Name: "master", Repository: repoName, Owner: owner},
 		URL:    "https://gitlab.com/marcel.amirault/test-project/-/merge_requests/133",

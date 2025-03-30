@@ -342,6 +342,7 @@ type PullRequestInfo struct {
 	Title  string
 	Body   string
 	URL    string
+	Author string
 	Source BranchInfo
 	Target BranchInfo
 }
