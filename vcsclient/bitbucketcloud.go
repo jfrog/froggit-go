@@ -814,9 +814,9 @@ func mapBitbucketCloudPullRequestToPullRequestInfo(parsedPullRequests *pullReque
 			body = pullRequest.Body
 		}
 		pullRequests[i] = PullRequestInfo{
-			ID:      pullRequest.ID,
-			Title: pullRequest.Title,
-			Body:    body,
+			ID:     pullRequest.ID,
+			Title:  pullRequest.Title,
+			Body:   body,
 			Author: pullRequest.Author.DisplayName,
 			Source: BranchInfo{
 				Name:       pullRequest.Source.Name.Str,
