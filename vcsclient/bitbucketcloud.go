@@ -385,7 +385,9 @@ func (client *BitbucketCloudClient) GetPullRequestByID(ctx context.Context, owne
 	targetOwner, targetRepository := splitBitbucketCloudRepoName(pullRequestDetails.Target.Repository.Name)
 
 	pullRequestInfo = PullRequestInfo{
-		ID: pullRequestDetails.ID,
+		ID:     pullRequestDetails.ID,
+		Title:  pullRequestDetails.Title,
+		Author: pullRequestDetails.Author.DisplayName,
 		Source: BranchInfo{
 			Name:       pullRequestDetails.Source.Name.Str,
 			Repository: sourceRepository,
@@ -425,6 +427,47 @@ func (client *BitbucketCloudClient) AddPullRequestReviewComments(_ context.Conte
 // ListPullRequestReviewComments on Bitbucket cloud
 func (client *BitbucketCloudClient) ListPullRequestReviewComments(_ context.Context, _, _ string, _ int) ([]CommentInfo, error) {
 	return nil, errBitbucketListPullRequestReviewCommentsNotSupported
+}
+
+func (client *BitbucketCloudClient) ListPullRequestReviews(ctx context.Context, owner, repository string, pullRequestID int) ([]PullRequestReviewDetails, error) {
+	err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository})
+	if err != nil {
+		return nil, err
+	}
+
+	bitbucketClient := client.buildBitbucketCloudClient(ctx)
+	options := &bitbucket.PullRequestsOptions{
+		Owner:    owner,
+		RepoSlug: repository,
+		ID:       fmt.Sprint(pullRequestID),
+	}
+
+	comments, err := bitbucketClient.Repositories.PullRequests.GetComments(options)
+	if err != nil {
+		return nil, err
+	}
+
+	parsedComments, err := vcsutils.RemapFields[commentsResponse](comments, "json")
+	if err != nil {
+		return nil, err
+	}
+
+	var reviewInfos []PullRequestReviewDetails
+	for _, comment := range parsedComments.Values {
+		reviewInfos = append(reviewInfos, PullRequestReviewDetails{
+			ID:          comment.ID,
+			Reviewer:    comment.User.DisplayName,
+			Body:        comment.Content.Raw,
+			SubmittedAt: comment.Created.Format(time.RFC3339),
+			CommitID:    "", // Bitbucket Cloud comments do not have a commit ID
+		})
+	}
+
+	return reviewInfos, nil
+}
+
+func (client *BitbucketCloudClient) ListPullRequestsAssociatedWithCommit(ctx context.Context, owner, repository, commitSHA string) ([]PullRequestInfo, error) {
+	return nil, errBitbucketListPullRequestAssociatedCommitsNotSupported
 }
 
 // ListPullRequestComments on Bitbucket cloud
@@ -701,9 +744,15 @@ type pullRequestsResponse struct {
 
 type pullRequestsDetails struct {
 	ID     int64             `json:"id"`
+	Title  string            `json:"title"`
 	Body   string            `json:"description"`
+	Author Author            `json:"author"`
 	Source pullRequestBranch `json:"source"`
 	Target pullRequestBranch `json:"destination"`
+}
+
+type Author struct {
+	DisplayName string `json:"display_name"`
 }
 
 type pullRequestBranch struct {
@@ -847,8 +896,10 @@ func mapBitbucketCloudPullRequestToPullRequestInfo(parsedPullRequests *pullReque
 			body = pullRequest.Body
 		}
 		pullRequests[i] = PullRequestInfo{
-			ID:   pullRequest.ID,
-			Body: body,
+			ID:     pullRequest.ID,
+			Title:  pullRequest.Title,
+			Body:   body,
+			Author: pullRequest.Author.DisplayName,
 			Source: BranchInfo{
 				Name:       pullRequest.Source.Name.Str,
 				Repository: pullRequest.Source.Repository.Name,

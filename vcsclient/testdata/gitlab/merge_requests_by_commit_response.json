@@ -1,0 +1,17 @@
+[
+  {
+    "iid": 1,
+    "web_url": "https://gitlab.example.com/my-group/my-project/merge_requests/1",
+    "description": "Fix bug",
+    "source_branch": "feature-branch",
+    "target_branch": "main",
+    "source_project_id": 1,
+    "target_project_id": 1,
+    "Author": {
+      "name": "John Doe",
+      "username": "johndoe",
+      "avatar_url": "https://gitlab.example.com/uploads/user/avatar/1/avatar.png",
+      "web_url": "https://gitlab.example.com/johndoe"
+    }
+  }
+]

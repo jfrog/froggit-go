@@ -401,6 +401,8 @@ func mapBitbucketServerPullRequestToPullRequestInfo(pullRequest bitbucketv1.Pull
 	}
 	return PullRequestInfo{
 		ID:     int64(pullRequest.ID),
+		Title:  pullRequest.Title,
+		Author: pullRequest.Author.User.Name,
 		Source: BranchInfo{Name: pullRequest.FromRef.DisplayID, Repository: pullRequest.ToRef.Repository.Slug, Owner: sourceOwner},
 		Target: BranchInfo{Name: pullRequest.ToRef.DisplayID, Repository: pullRequest.ToRef.Repository.Slug, Owner: owner},
 		Body:   body,
@@ -501,6 +503,14 @@ func (client *BitbucketServerClient) DeletePullRequestReviewComments(ctx context
 		}
 	}
 	return nil
+}
+
+func (client *BitbucketServerClient) ListPullRequestReviews(ctx context.Context, owner, repository string, pullRequestID int) ([]PullRequestReviewDetails, error) {
+	return nil, errBitbucketListListPullRequestReviewsNotSupported
+}
+
+func (client *BitbucketServerClient) ListPullRequestsAssociatedWithCommit(ctx context.Context, owner, repository string, commitSHA string) ([]PullRequestInfo, error) {
+	return nil, errBitbucketListPullRequestAssociatedCommitsNotSupported
 }
 
 // DeletePullRequestComment on Bitbucket Server

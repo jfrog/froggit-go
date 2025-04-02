@@ -15,6 +15,7 @@ import (
 	"net/http"
 	"os"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -263,6 +264,41 @@ func getThreadArgs(repository, project string, prId int, comment PullRequestComm
 		PullRequestId: &prId,
 		Project:       &project,
 	}
+}
+
+func (client *AzureReposClient) ListPullRequestReviews(ctx context.Context, owner, repository string, pullRequestID int) ([]PullRequestReviewDetails, error) {
+	azureReposGitClient, err := client.buildAzureReposClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	reviewers, err := azureReposGitClient.GetPullRequestReviewers(ctx, git.GetPullRequestReviewersArgs{
+		RepositoryId:  &repository,
+		PullRequestId: &pullRequestID,
+		Project:       &client.vcsInfo.Project,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	var reviews []PullRequestReviewDetails
+	for _, reviewer := range *reviewers {
+		id, err := strconv.ParseInt(*reviewer.Id, 10, 64)
+		if err != nil {
+			return nil, err
+		}
+		reviews = append(reviews, PullRequestReviewDetails{
+			ID:       id,
+			Reviewer: *reviewer.DisplayName,
+			State:    mapVoteToState(*reviewer.Vote),
+		})
+	}
+
+	return reviews, nil
+}
+
+func (client *AzureReposClient) ListPullRequestsAssociatedWithCommit(ctx context.Context, owner, repository string, commitSHA string) ([]PullRequestInfo, error) {
+	return nil, getUnsupportedInAzureError("list pull requests associated with commit")
 }
 
 // ListPullRequestReviewComments on Azure Repos
@@ -741,11 +777,12 @@ func parsePullRequestDetails(client *AzureReposClient, pullRequest git.GitPullRe
 			client.logger.Warn(vcsutils.FailedForkedRepositoryExtraction)
 		}
 	}
-
 	return PullRequestInfo{
-		ID:   int64(*pullRequest.PullRequestId),
-		Body: prBody,
-		URL:  vcsutils.DefaultIfNotNil(pullRequest.Url),
+		ID:     int64(*pullRequest.PullRequestId),
+		Title:  vcsutils.DefaultIfNotNil(pullRequest.Title),
+		Body:   prBody,
+		URL:    vcsutils.DefaultIfNotNil(pullRequest.Url),
+		Author: vcsutils.DefaultIfNotNil(pullRequest.CreatedBy.DisplayName),
 		Source: BranchInfo{
 			Name:       shortSourceName,
 			Repository: repository,
@@ -798,5 +835,20 @@ func azureMapPullRequestState(state vcsutils.PullRequestState) *git.PullRequestS
 		return &git.PullRequestStatusValues.Abandoned
 	default:
 		return nil
+	}
+}
+
+func mapVoteToState(vote int) string {
+	switch vote {
+	case 10:
+		return "APPROVED"
+	case 5:
+		return "APPROVED_WITH_SUGGESTIONS"
+	case -5:
+		return "CHANGES_REQUESTED"
+	case -10:
+		return "REJECTED"
+	default:
+		return "UNKNOWN"
 	}
 }

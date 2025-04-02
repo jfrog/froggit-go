@@ -133,6 +133,24 @@ func TestBitbucketServer_DeleteWebhook(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestBitbucketServer_ListPullRequestReviews(t *testing.T) {
+	ctx := context.Background()
+	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, true, nil,
+		fmt.Sprintf("/rest/api/1.0/projects/%s/repos/%s/pull-requests/%d/reviewers", owner, repo1, 1), createBitbucketServerHandler)
+	defer cleanUp()
+	_, err := client.ListPullRequestReviews(ctx, owner, repo1, 1)
+	assert.ErrorIs(t, err, errBitbucketListListPullRequestReviewsNotSupported)
+}
+
+func TestBitbucketServer_ListPullRequestsAssociatedWithCommit(t *testing.T) {
+	ctx := context.Background()
+	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, true, nil,
+		fmt.Sprintf("/rest/api/1.0/projects/%s/repos/%s/commits/%s/pull-requests", owner, repo1, "commitSHA"), createBitbucketServerHandler)
+	defer cleanUp()
+	_, err := client.ListPullRequestsAssociatedWithCommit(ctx, owner, repo1, "commitSHA")
+	assert.ErrorIs(t, err, errBitbucketListPullRequestAssociatedCommitsNotSupported)
+}
+
 func TestBitbucketServer_SetCommitStatus(t *testing.T) {
 	ctx := context.Background()
 	ref := "9caf1c431fb783b669f0f909bd018b40f2ea3808"
@@ -235,6 +253,8 @@ func TestBitbucketServer_ListOpenPullRequests(t *testing.T) {
 	assert.Len(t, result, 1)
 	assert.EqualValues(t, PullRequestInfo{
 		ID:     101,
+		Title:  "Talking Nerdy",
+		Author: "tom",
 		Source: BranchInfo{Name: "feature-ABC-123", Repository: repo1, Owner: forkedOwner},
 		Target: BranchInfo{Name: "master", Repository: repo1, Owner: owner},
 		URL:    "https://link/to/pullrequest",
@@ -247,6 +267,8 @@ func TestBitbucketServer_ListOpenPullRequests(t *testing.T) {
 	assert.Len(t, result, 1)
 	assert.EqualValues(t, PullRequestInfo{
 		ID:     101,
+		Title:  "Talking Nerdy",
+		Author: "tom",
 		Body:   "hello world",
 		Source: BranchInfo{Name: "feature-ABC-123", Repository: repo1, Owner: forkedOwner},
 		Target: BranchInfo{Name: "master", Repository: repo1, Owner: owner},
@@ -268,6 +290,8 @@ func TestBitbucketServerClient_GetPullRequest(t *testing.T) {
 	assert.NoError(t, err)
 	assert.EqualValues(t, PullRequestInfo{
 		ID:     int64(pullRequestId),
+		Title:  "New vul 2",
+		Author: "owner",
 		Source: BranchInfo{Name: "new_vul_2", Repository: "repoName", Owner: "~fromOwner"},
 		Target: BranchInfo{Name: "master", Repository: "repoName", Owner: owner},
 		URL:    "https://git.bbServerHost.info/users/owner/repos/repoName/pull-requests/6",

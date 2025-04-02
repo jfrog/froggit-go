@@ -246,15 +246,21 @@ func TestAzureRepos_TestListOpenPullRequests(t *testing.T) {
 		Count int
 	}
 	pullRequestId := 1
+	testTitle := "test-title"
 	url := "https://dev.azure.com/owner/project/_git/repo/pullrequest/47"
+	author := "user"
 	res := ListOpenPullRequestsResponse{
 		Value: []git.GitPullRequest{
 			{
 				PullRequestId: &pullRequestId,
+				Title:         &testTitle,
 				Repository:    &git.GitRepository{Name: &repo1},
 				SourceRefName: &branch1,
 				TargetRefName: &branch2,
 				Url:           &url,
+				CreatedBy: &webapi.IdentityRef{
+					DisplayName: &author,
+				},
 			},
 		},
 		Count: 1,
@@ -269,6 +275,8 @@ func TestAzureRepos_TestListOpenPullRequests(t *testing.T) {
 	assert.EqualValues(t, pullRequestsInfo, []PullRequestInfo{
 		{
 			ID:     1,
+			Title:  testTitle,
+			Author: "user",
 			Source: BranchInfo{Name: branch1, Repository: repo1},
 			Target: BranchInfo{Name: branch2, Repository: repo1},
 			URL:    url,
@@ -288,11 +296,15 @@ func TestAzureRepos_TestListOpenPullRequests(t *testing.T) {
 		Value: []git.GitPullRequest{
 			{
 				PullRequestId: &pullRequestId,
+				Title:         &testTitle,
 				Description:   &prBody,
 				Url:           &url,
 				Repository:    &git.GitRepository{Name: &repo1},
 				SourceRefName: &branch1WithPrefix,
 				TargetRefName: &branch2WithPrefix,
+				CreatedBy: &webapi.IdentityRef{
+					DisplayName: &author,
+				},
 			},
 		},
 		Count: 1,
@@ -307,6 +319,8 @@ func TestAzureRepos_TestListOpenPullRequests(t *testing.T) {
 	assert.EqualValues(t, pullRequestsInfo, []PullRequestInfo{
 		{
 			ID:     1,
+			Title:  testTitle,
+			Author: "user",
 			Body:   prBody,
 			Source: BranchInfo{Name: branch1, Repository: repo1},
 			Target: BranchInfo{Name: branch2, Repository: repo1},
@@ -328,7 +342,10 @@ func TestAzureReposClient_GetPullRequest(t *testing.T) {
 	forkedOwner := "jfrogForked"
 	forkedSourceUrl := fmt.Sprintf("https://dev.azure.com/%s/201f2c7f-305a-446c-a1d6-a04ec811093b/_apis/git/repositories/82d33a66-8971-4279-9687-19c69e66e114", forkedOwner)
 	url := "https://dev.azure.com/owner/project/_git/repo/pullrequest/47"
+	author := "user"
+	title := "PR title"
 	res := git.GitPullRequest{
+		Title:         &title,
 		SourceRefName: &sourceName,
 		TargetRefName: &targetName,
 		PullRequestId: &pullRequestId,
@@ -336,6 +353,9 @@ func TestAzureReposClient_GetPullRequest(t *testing.T) {
 			Repository: &git.GitRepository{Url: &forkedSourceUrl},
 		},
 		Url: &url,
+		CreatedBy: &webapi.IdentityRef{
+			DisplayName: &author,
+		},
 	}
 	jsonRes, err := json.Marshal(res)
 	assert.NoError(t, err)
@@ -349,6 +369,8 @@ func TestAzureReposClient_GetPullRequest(t *testing.T) {
 		Source: BranchInfo{Name: sourceName, Repository: repoName, Owner: forkedOwner},
 		Target: BranchInfo{Name: targetName, Repository: repoName, Owner: owner},
 		URL:    url,
+		Author: author,
+		Title:  title,
 	})
 
 	// Fail source repository owner extraction, should be empty string and not fail the process.
@@ -360,6 +382,9 @@ func TestAzureReposClient_GetPullRequest(t *testing.T) {
 			Repository: &git.GitRepository{Url: &repoName},
 		},
 		Url: &url,
+		CreatedBy: &webapi.IdentityRef{
+			DisplayName: &author,
+		},
 	}
 	jsonRes, err = json.Marshal(res)
 	assert.NoError(t, err)
@@ -371,6 +396,7 @@ func TestAzureReposClient_GetPullRequest(t *testing.T) {
 		Source: BranchInfo{Name: sourceName, Repository: repoName, Owner: ""},
 		Target: BranchInfo{Name: targetName, Repository: repoName, Owner: owner},
 		URL:    url,
+		Author: author,
 	},
 	)
 
@@ -385,6 +411,62 @@ func TestListPullRequestReviewComments(t *testing.T) {
 	TestListPullRequestComments(t)
 }
 
+func TestAzureRepos_ListPullRequestReviews(t *testing.T) {
+	ctx := context.Background()
+	repository := "repo"
+	pullRequestID := 1
+	mockResponse := struct {
+		Count int
+		Value []git.IdentityRefWithVote
+	}{
+		Count: 2,
+		Value: []git.IdentityRefWithVote{
+			{
+				ReviewerUrl: vcsutils.PointerOf("https://dev.azure.com/owner/project/_apis/git/repositories/repo/pullRequests/1/reviewers/1"),
+				Vote:        vcsutils.PointerOf(10),
+				DisplayName: vcsutils.PointerOf("Reviewer One"),
+				Id:          vcsutils.PointerOf("1"),
+			},
+			{
+				ReviewerUrl: vcsutils.PointerOf("https://dev.azure.com/owner/project/_apis/git/repositories/repo/pullRequests/1/reviewers/2"),
+				Vote:        vcsutils.PointerOf(-5),
+				DisplayName: vcsutils.PointerOf("Reviewer Two"),
+				Id:          vcsutils.PointerOf("2"),
+			},
+		},
+	}
+	responseBytes, err := json.Marshal(mockResponse)
+	assert.NoError(t, err)
+
+	client, cleanUp := createServerAndClient(t, vcsutils.AzureRepos, true, responseBytes,
+		fmt.Sprintf("/_apis/git/repositories/%s/pullRequests/%d/reviewers", repository, pullRequestID), createAzureReposHandler)
+	defer cleanUp()
+
+	result, err := client.ListPullRequestReviews(ctx, owner, repository, pullRequestID)
+	assert.NoError(t, err)
+	assert.Len(t, result, 2)
+	assert.Equal(t, PullRequestReviewDetails{
+		ID:       1,
+		Reviewer: "Reviewer One",
+		State:    "APPROVED",
+	}, result[0])
+	assert.Equal(t, PullRequestReviewDetails{
+		ID:       2,
+		Reviewer: "Reviewer Two",
+		State:    "CHANGES_REQUESTED",
+	}, result[1])
+}
+func TestAzureRepos_ListPullRequestsAssociatedWithCommit(t *testing.T) {
+	ctx := context.Background()
+	repository := "repo"
+	commitSHA := "commitSHA"
+	client, cleanUp := createServerAndClient(t, vcsutils.AzureRepos, true, nil,
+		fmt.Sprintf("/_apis/git/repositories/%s/commits/%s/pullRequests", repository, commitSHA), createAzureReposHandler)
+	defer cleanUp()
+
+	_, err := client.ListPullRequestsAssociatedWithCommit(ctx, owner, repository, commitSHA)
+	assert.Error(t, err)
+}
 func TestListPullRequestComments(t *testing.T) {
 	type ListPullRequestCommentsResponse struct {
 		Value []git.GitPullRequestCommentThread

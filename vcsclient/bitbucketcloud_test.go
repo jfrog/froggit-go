@@ -175,6 +175,8 @@ func TestBitbucketCloud_ListOpenPullRequests(t *testing.T) {
 	assert.Len(t, result, 3)
 	assert.EqualValues(t, PullRequestInfo{
 		ID:     3,
+		Title:  "A change",
+		Author: "user",
 		Source: BranchInfo{Name: "test-2", Repository: "user17/test"},
 		Target: BranchInfo{Name: "master", Repository: "user17/test"},
 	}, result[0])
@@ -186,6 +188,8 @@ func TestBitbucketCloud_ListOpenPullRequests(t *testing.T) {
 	assert.Len(t, result, 3)
 	assert.EqualValues(t, PullRequestInfo{
 		ID:     3,
+		Title:  "A change",
+		Author: "user",
 		Body:   "hello world",
 		Source: BranchInfo{Name: "test-2", Repository: "user17/test"},
 		Target: BranchInfo{Name: "master", Repository: "user17/test"},
@@ -207,6 +211,8 @@ func TestBitbucketCloudClient_GetPullRequest(t *testing.T) {
 	assert.NoError(t, err)
 	assert.EqualValues(t, PullRequestInfo{
 		ID:     int64(pullRequestId),
+		Title:  "s",
+		Author: "fname lname",
 		Source: BranchInfo{Name: "pr", Repository: "froggit", Owner: "forkedWorkspace"},
 		Target: BranchInfo{Name: "main", Repository: "froggit", Owner: "workspace"},
 	}, result)
@@ -632,6 +638,40 @@ func TestBitbucketCloudClient_GetCommitStatus(t *testing.T) {
 		assert.Equal(t, Pass, commitStatuses[1].State)
 		assert.Equal(t, Fail, commitStatuses[2].State)
 	})
+}
+
+func TestBitbucketCloud_ListPullRequestReviews(t *testing.T) {
+	ctx := context.Background()
+	response, err := os.ReadFile(filepath.Join("testdata", "bitbucketcloud", "pull_request_reviews_response.json"))
+	assert.NoError(t, err)
+
+	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketCloud, true, response,
+		fmt.Sprintf("/repositories/%s/%s/pullrequests/%d/comments/", owner, repo1, 1), createBitbucketCloudHandler)
+	defer cleanUp()
+
+	result, err := client.ListPullRequestReviews(ctx, owner, repo1, 1)
+	assert.NoError(t, err)
+	assert.Len(t, result, 2)
+	assert.Equal(t, PullRequestReviewDetails{
+		ID:          301545835,
+		Reviewer:    "user",
+		Body:        "I’m a comment",
+		SubmittedAt: "2022-05-16T11:04:07Z",
+		CommitID:    "",
+	}, result[0])
+}
+
+func TestBitbucketCloud_ListPullRequestsAssociatedWithCommit(t *testing.T) {
+	ctx := context.Background()
+	response, err := os.ReadFile(filepath.Join("testdata", "bitbucketcloud", "pull_requests_associated_with_commit_response.json"))
+	assert.NoError(t, err)
+
+	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketCloud, true, response,
+		fmt.Sprintf("/repositories/%s/%s/commit/%s/pullrequests", owner, repo1, "commitSHA"), createBitbucketCloudHandler)
+	defer cleanUp()
+
+	_, err = client.ListPullRequestsAssociatedWithCommit(ctx, owner, repo1, "commitSHA")
+	assert.ErrorIs(t, err, errBitbucketListPullRequestAssociatedCommitsNotSupported)
 }
 
 func TestSplitWorkSpaceAndOwner(t *testing.T) {

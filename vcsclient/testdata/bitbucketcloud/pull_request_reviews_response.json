@@ -1,0 +1,29 @@
+{
+  "pagelen": 10,
+  "values": [
+    {
+      "id": 301545835,
+      "user": {
+        "display_name": "user"
+      },
+      "content": {
+        "raw": "I’m a comment"
+      },
+      "created_on": "2022-05-16T11:04:07.075827+00:00",
+      "state": "approved"
+    },
+    {
+      "id": 301545836,
+      "user": {
+        "display_name": "another_user"
+      },
+      "content": {
+        "raw": "Another comment"
+      },
+      "created_on": "2022-05-16T12:04:07.075827+00:00",
+      "state": "changes_requested"
+    }
+  ],
+  "page": 1,
+  "size": 2
+}

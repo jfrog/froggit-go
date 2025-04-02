@@ -763,6 +763,46 @@ func (client *GitLabClient) GetModifiedFiles(_ context.Context, owner, repositor
 	return fileNamesList, nil
 }
 
+func (client *GitLabClient) ListPullRequestReviews(ctx context.Context, owner, repository string, pullRequestID int) ([]PullRequestReviewDetails, error) {
+	err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository})
+	if err != nil {
+		return nil, err
+	}
+
+	var prNotes []*gitlab.Note
+	prNotes, _, err = client.glClient.Notes.ListMergeRequestNotes(owner+"/"+repository, pullRequestID, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var reviewInfos []PullRequestReviewDetails
+	for _, review := range prNotes {
+		reviewInfos = append(reviewInfos, PullRequestReviewDetails{
+			ID:          int64(review.ID),
+			Reviewer:    review.Author.Username,
+			Body:        review.Body,
+			SubmittedAt: review.CreatedAt.Format(time.RFC3339),
+			CommitID:    review.CommitID,
+		})
+	}
+
+	return reviewInfos, nil
+}
+
+func (client *GitLabClient) ListPullRequestsAssociatedWithCommit(ctx context.Context, owner, repository string, commitSHA string) ([]PullRequestInfo, error) {
+	err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository})
+	if err != nil {
+		return nil, err
+	}
+
+	var mergeRequests []*gitlab.MergeRequest
+	mergeRequests, _, err = client.glClient.Commits.ListMergeRequestsByCommit(owner+"/"+repository, commitSHA, nil)
+	if err != nil {
+		return nil, err
+	}
+	return client.mapGitLabMergeRequestToPullRequestInfoList(mergeRequests, owner, repository, true)
+}
+
 func getProjectID(owner, project string) string {
 	return fmt.Sprintf("%s/%s", owner, project)
 }
@@ -858,8 +898,10 @@ func (client *GitLabClient) mapGitLabMergeRequestToPullRequestInfo(mergeRequest 
 	}
 
 	return PullRequestInfo{
-		ID:   int64(mergeRequest.IID),
-		Body: body,
+		ID:     int64(mergeRequest.IID),
+		Title:  mergeRequest.Title,
+		Body:   body,
+		Author: mergeRequest.Author.Username,
 		Source: BranchInfo{
 			Name:       mergeRequest.SourceBranch,
 			Repository: repository,

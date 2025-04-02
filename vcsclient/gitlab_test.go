@@ -302,6 +302,8 @@ func TestGitLabClient_ListOpenPullRequests(t *testing.T) {
 	assert.Len(t, result, 1)
 	assert.EqualValues(t, PullRequestInfo{
 		ID:     302,
+		Title:  "test1",
+		Author: "admin",
 		Source: BranchInfo{Name: "test1", Repository: repo1, Owner: owner},
 		Target: BranchInfo{Name: "master", Repository: repo1, Owner: owner},
 		URL:    "https://gitlab.example.com/my-group/my-project/merge_requests/1",
@@ -313,6 +315,8 @@ func TestGitLabClient_ListOpenPullRequests(t *testing.T) {
 	assert.Len(t, result, 1)
 	assert.EqualValues(t, PullRequestInfo{
 		ID:     302,
+		Title:  "test1",
+		Author: "admin",
 		Body:   "hello world",
 		Source: BranchInfo{Name: "test1", Repository: repo1, Owner: owner},
 		Target: BranchInfo{Name: "master", Repository: repo1, Owner: owner},
@@ -335,6 +339,8 @@ func TestGitLabClient_GetPullRequestByID(t *testing.T) {
 	assert.NoError(t, err)
 	assert.EqualValues(t, PullRequestInfo{
 		ID:     133,
+		Title:  "Manual job rules",
+		Author: "marcel.amirault",
 		Source: BranchInfo{Name: "manual-job-rules", Repository: repoName, Owner: owner},
 		Target: BranchInfo{Name: "master", Repository: repoName, Owner: owner},
 		URL:    "https://gitlab.com/marcel.amirault/test-project/-/merge_requests/133",
@@ -994,4 +1000,46 @@ func TestGitLabClient_getProjectOwnerByID(t *testing.T) {
 	projectOwner, err = badGlClient.getProjectOwnerByID(projectID)
 	assert.Error(t, err)
 	assert.NotEqual(t, "test", projectOwner)
+}
+
+func TestGitLabClient_ListPullRequestReviews(t *testing.T) {
+	ctx := context.Background()
+	response, err := os.ReadFile(filepath.Join("testdata", "gitlab", "merge_request_notes_response.json"))
+	assert.NoError(t, err)
+
+	client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, response,
+		fmt.Sprintf("/api/v4/projects/%s/merge_requests/1/notes", url.PathEscape(owner+"/"+repo1)), createGitLabHandler)
+	defer cleanUp()
+
+	result, err := client.ListPullRequestReviews(ctx, owner, repo1, 1)
+	assert.NoError(t, err)
+	assert.Len(t, result, 2)
+	assert.Equal(t, int64(1), result[0].ID)
+	assert.Equal(t, "reviewer1", result[0].Reviewer)
+	assert.Equal(t, "Looks good to me", result[0].Body)
+	assert.Equal(t, "2023-01-01T12:00:00Z", result[0].SubmittedAt)
+	assert.Equal(t, "commitsha1", result[0].CommitID)
+}
+
+func TestGitLabClient_ListPullRequestsAssociatedWithCommit(t *testing.T) {
+	ctx := context.Background()
+	response, err := os.ReadFile(filepath.Join("testdata", "gitlab", "merge_requests_by_commit_response.json"))
+	assert.NoError(t, err)
+
+	client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, response,
+		fmt.Sprintf("/api/v4/projects/%s/repository/commits/%s/merge_requests", url.PathEscape(owner+"/"+repo1), "commitsha1"), createGitLabHandler)
+	defer cleanUp()
+
+	result, err := client.ListPullRequestsAssociatedWithCommit(ctx, owner, repo1, "commitsha1")
+	assert.NoError(t, err)
+	assert.Len(t, result, 1)
+	assert.Equal(t, int64(1), result[0].ID)
+	assert.Equal(t, "https://gitlab.example.com/my-group/my-project/merge_requests/1", result[0].URL)
+	assert.Equal(t, "Fix bug", result[0].Body)
+	assert.Equal(t, "feature-branch", result[0].Source.Name)
+	assert.Equal(t, repo1, result[0].Source.Repository)
+	assert.Equal(t, owner, result[0].Source.Owner)
+	assert.Equal(t, "main", result[0].Target.Name)
+	assert.Equal(t, repo1, result[0].Target.Repository)
+	assert.Equal(t, owner, result[0].Target.Owner)
 }

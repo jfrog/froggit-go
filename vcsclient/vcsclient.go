@@ -171,6 +171,13 @@ type VcsClient interface {
 	// comment        - The new comment details defined in PullRequestComment
 	AddPullRequestReviewComments(ctx context.Context, owner, repository string, pullRequestID int, comments ...PullRequestComment) error
 
+	// ListPullRequestReviews List all reviews assigned to a pull request.
+	// owner          - User or organization
+	// repository     - VCS repository name
+	// pullRequestID  - Pull request ID
+	// comment        - The new comment details defined in PullRequestComment
+	ListPullRequestReviews(ctx context.Context, owner, repository string, pullRequestID int) ([]PullRequestReviewDetails, error)
+
 	// ListPullRequestReviewComments Gets all pull request review comments
 	// owner          - User or organization
 	// repository     - VCS repository name
@@ -236,6 +243,12 @@ type VcsClient interface {
 	// repository  - VCS repository name
 	// listOptions - Optional parameters for the 'ListCommits' method
 	GetCommitsWithQueryOptions(ctx context.Context, owner, repository string, options GitCommitsQueryOptions) ([]CommitInfo, error)
+
+	// ListPullRequestsAssociatedWithCommit Lists pull requests associated with the commit.
+	// owner       - User or organization
+	// repository  - VCS repository name
+	// commitSHA   - commit sha
+	ListPullRequestsAssociatedWithCommit(ctx context.Context, owner, repository string, commitSHA string) ([]PullRequestInfo, error)
 
 	// AddSshKeyToRepository Adds a public ssh key to a repository
 	// owner      - User or organization
@@ -345,10 +358,21 @@ type CommentInfo struct {
 
 type PullRequestInfo struct {
 	ID     int64
+	Title  string
 	Body   string
 	URL    string
+	Author string
 	Source BranchInfo
 	Target BranchInfo
+}
+
+type PullRequestReviewDetails struct {
+	ID          int64
+	Reviewer    string
+	Body        string
+	SubmittedAt string
+	CommitID    string
+	State       string
 }
 
 type BranchInfo struct {
