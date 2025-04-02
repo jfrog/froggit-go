@@ -490,6 +490,10 @@ func (client *BitbucketServerClient) ListPullRequestComments(ctx context.Context
 	return results, nil
 }
 
+func (client *BitbucketServerClient) ListPullRequestCommits(ctx context.Context, owner, repository string, pullRequestID int) ([]CommitInfo, error) {
+	return nil, errBitbucketListPullRequestCommitsNotSupported
+}
+
 // DeletePullRequestReviewComments on Bitbucket server
 func (client *BitbucketServerClient) DeletePullRequestReviewComments(ctx context.Context, owner, repository string, pullRequestID int, comments ...CommentInfo) error {
 	for _, comment := range comments {

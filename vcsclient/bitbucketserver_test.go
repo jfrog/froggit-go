@@ -142,6 +142,15 @@ func TestBitbucketServer_ListPullRequestReviews(t *testing.T) {
 	assert.ErrorIs(t, err, errBitbucketListListPullRequestReviewsNotSupported)
 }
 
+func TestBitbucketServer_ListPullCommits(t *testing.T) {
+	ctx := context.Background()
+	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, true, nil,
+		fmt.Sprintf("/rest/api/1.0/projects/%s/repos/%s/pull-requests/%d/commits", owner, repo1, 1), createBitbucketServerHandler)
+	defer cleanUp()
+	_, err := client.ListPullRequestCommits(ctx, owner, repo1, 1)
+	assert.ErrorIs(t, err, errBitbucketListPullRequestCommitsNotSupported)
+}
+
 func TestBitbucketServer_ListPullRequestsAssociatedWithCommit(t *testing.T) {
 	ctx := context.Background()
 	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, true, nil,

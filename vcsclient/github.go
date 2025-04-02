@@ -573,6 +573,20 @@ func (client *GitHubClient) ListPullRequestReviewComments(ctx context.Context, o
 	return commentsInfoList, err
 }
 
+func (client *GitHubClient) ListPullRequestCommits(ctx context.Context, owner, repository string, pullRequestID int) (commitsInfo []CommitInfo, err error) {
+	if err = validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository, "pullRequestID": strconv.Itoa(pullRequestID)}); err != nil {
+		return
+	}
+	err = client.runWithRateLimitRetries(func() (*github.Response, error) {
+		commits, ghResponse, err := client.ghClient.PullRequests.ListCommits(ctx, owner, repository, pullRequestID, nil)
+		for _, commit := range commits {
+			commitsInfo = append(commitsInfo, mapGitHubCommitToCommitInfo(commit))
+		}
+		return ghResponse, err
+	})
+	return commitsInfo, err
+}
+
 // ListPullRequestReviews on GitHub
 func (client *GitHubClient) ListPullRequestReviews(ctx context.Context, owner, repository string, pullRequestID int) ([]PullRequestReviewDetails, error) {
 	err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository})

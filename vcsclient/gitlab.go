@@ -460,6 +460,32 @@ func (client *GitLabClient) ListPullRequestReviewComments(ctx context.Context, o
 	return commentsInfo, nil
 }
 
+func (client *GitLabClient) ListPullRequestCommits(ctx context.Context, owner, repository string, pullRequestID int) ([]CommitInfo, error) {
+	// Validate parameters
+	err := validateParametersNotBlank(map[string]string{
+		"owner":      owner,
+		"repository": repository,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// Fetch the commits for the specified pull request
+	commits, _, err := client.glClient.MergeRequests.GetMergeRequestCommits(getProjectID(owner, repository), pullRequestID, nil, gitlab.WithContext(ctx))
+	if err != nil {
+		return nil, err
+	}
+
+	// Map the retrieved commits to the CommitInfo structure
+	var commitsInfo []CommitInfo
+	for _, commit := range commits {
+		commitInfo := mapGitLabCommitToCommitInfo(commit)
+		commitsInfo = append(commitsInfo, commitInfo)
+	}
+
+	return commitsInfo, nil
+}
+
 // ListPullRequestComments on GitLab
 func (client *GitLabClient) ListPullRequestComments(ctx context.Context, owner, repository string, pullRequestID int) ([]CommentInfo, error) {
 	if err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository, "pullRequestID": strconv.Itoa(pullRequestID)}); err != nil {

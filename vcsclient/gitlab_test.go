@@ -273,6 +273,21 @@ func TestGitLabClient_ListPullRequestComments(t *testing.T) {
 	}, result[1])
 }
 
+func TestGitLabClient_ListPullRequestCommits(t *testing.T) {
+	ctx := context.Background()
+	response, err := os.ReadFile(filepath.Join("testdata", "gitlab", "merge_request_commits_response.json"))
+	assert.NoError(t, err)
+
+	client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, response, fmt.Sprintf("/api/v4/projects/%s/merge_requests/1/commits", url.PathEscape(owner+"/"+repo1)), createGitLabHandler)
+	defer cleanUp()
+
+	commitsInfo, err := client.ListPullRequestCommits(ctx, owner, repo1, 1)
+	assert.NoError(t, err)
+	assert.Len(t, commitsInfo, 2)
+	assert.Equal(t, "commit1", commitsInfo[0].Hash)
+	assert.Equal(t, "commit2", commitsInfo[1].Hash)
+}
+
 func TestGitLabClient_ListOpenPullRequests(t *testing.T) {
 	ctx := context.Background()
 	response, err := os.ReadFile(filepath.Join("testdata", "gitlab", "pull_requests_list_response.json"))
