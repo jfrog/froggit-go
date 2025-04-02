@@ -491,8 +491,7 @@ func (client *BitbucketServerClient) ListPullRequestComments(ctx context.Context
 }
 
 func (client *BitbucketServerClient) ListPullRequestCommits(ctx context.Context, owner, repository string, pullRequestID int) ([]CommitInfo, error) {
-	// TODO implement me
-	panic("implement me")
+	return nil, errBitbucketListPullRequestCommitsNotSupported
 }
 
 // DeletePullRequestReviewComments on Bitbucket server
