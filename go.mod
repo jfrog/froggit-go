@@ -1,6 +1,8 @@
 module github.com/jfrog/froggit-go
 
-go 1.22.0
+go 1.23.0
+
+toolchain go1.23.6
 
 require (
 	github.com/gfleury/go-bitbucket-v1 v0.0.0-20230825095122-9bc1711434ab
@@ -15,7 +17,7 @@ require (
 	github.com/stretchr/testify v1.10.0
 	github.com/xanzy/go-gitlab v0.110.0
 	golang.org/x/exp v0.0.0-20241009180824-f66d83c29e7c
-	golang.org/x/oauth2 v0.20.0
+	golang.org/x/oauth2 v0.27.0
 )
 
 require (
