@@ -1170,7 +1170,7 @@ func TestGitHubClient_GetRepoTeamsByPermissions(t *testing.T) {
 	teams, err := client.GetRepoTeamsByPermissions(ctx, owner, repo1, permissions)
 	assert.NoError(t, err)
 	assert.Len(t, teams, 1)
-	assert.Equal(t, teams[0], response[0].ID)
+	assert.Equal(t, teams[0], response[0].GetID())
 	client = createBadGitHubClient(t)
 	_, err = client.GetRepoTeamsByPermissions(ctx, owner, repo1, permissions)
 	assert.Error(t, err)
