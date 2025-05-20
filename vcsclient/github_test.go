@@ -1126,7 +1126,7 @@ func TestGitHubClient_CommitAndPushFiles(t *testing.T) {
 		},
 	}
 
-	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, nil, "", MultiResponseGitHubHandlerFactory(t, expectedResponses))
+	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, nil, "", createGitHubHandlerWithMultiResponse(t, expectedResponses))
 	defer cleanUp()
 	err := client.CommitAndPushFiles(ctx, owner, repo1, sourceBranch, "generic commit message", "example", "example@jfrog.com", filesToCommit)
 	assert.NoError(t, err)
@@ -1311,33 +1311,6 @@ func createGitHubHandlerWithoutExpectedURI(t *testing.T, _ string, response []by
 	}
 }
 
-type mockGitHubResponse struct {
-	StatusCode int
-	Response   []byte
-}
-
-func createMultiResponseGitHubHandler(
-	t *testing.T,
-	expectedResponses map[string]mockGitHubResponse,
-) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		resp, ok := expectedResponses[r.RequestURI]
-		assert.True(t, ok, "unexpected URI: %s", r.RequestURI)
-
-		assert.Equal(t, "Bearer "+token, r.Header.Get("Authorization"))
-
-		if strings.Contains(r.RequestURI, "tarball") {
-			w.Header().Add("Location", string(resp.Response))
-			w.WriteHeader(resp.StatusCode)
-			return
-		}
-
-		w.WriteHeader(resp.StatusCode)
-		_, err := w.Write(resp.Response)
-		assert.NoError(t, err)
-	}
-}
-
 func createAddPullRequestReviewCommentHandler(t *testing.T, expectedURI string, response []byte, expectedStatusCode int) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.RequestURI == "/repos/jfrog/repo-1/pulls/1/commits" {
@@ -1455,8 +1428,32 @@ func mustMarshal(v interface{}) []byte {
 	return data
 }
 
-func MultiResponseGitHubHandlerFactory(t *testing.T, expectedResponses map[string]mockGitHubResponse) func(*testing.T, string, []byte, int) http.HandlerFunc {
+type mockGitHubResponse struct {
+	StatusCode int
+	Response   []byte
+}
+
+func createGitHubHandlerWithMultiResponse(t *testing.T, expectedResponses map[string]mockGitHubResponse) func(*testing.T, string, []byte, int) http.HandlerFunc {
 	return func(_ *testing.T, _ string, _ []byte, _ int) http.HandlerFunc {
-		return createMultiResponseGitHubHandler(t, expectedResponses)
+		return func(w http.ResponseWriter, r *http.Request) {
+			// Look up the expected response for the URI
+			resp, ok := expectedResponses[r.RequestURI]
+			assert.True(t, ok, "unexpected URI: %s", r.RequestURI)
+
+			// Check the Authorization header
+			assert.Equal(t, "Bearer "+token, r.Header.Get("Authorization"))
+
+			// Handle special case for "tarball"
+			if strings.Contains(r.RequestURI, "tarball") {
+				w.Header().Add("Location", string(resp.Response))
+				w.WriteHeader(resp.StatusCode)
+				return
+			}
+
+			// Write the response for the general case
+			w.WriteHeader(resp.StatusCode)
+			_, err := w.Write(resp.Response)
+			assert.NoError(t, err)
+		}
 	}
 }
