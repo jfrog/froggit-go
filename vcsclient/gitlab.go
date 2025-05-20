@@ -777,6 +777,34 @@ func (client *GitLabClient) ListPullRequestsAssociatedWithCommit(ctx context.Con
 	return client.mapGitLabMergeRequestToPullRequestInfoList(mergeRequests, owner, repository, true)
 }
 
+func (client *GitLabClient) CreateBranch(ctx context.Context, owner, repository, sourceBranch, newBranch string) error {
+	return errGitLabCreateBranchNotSupported
+}
+
+func (client *GitLabClient) AllowWorkflows(ctx context.Context, owner string) error {
+	return errGitLabAllowWorkflowsNotSupported
+}
+
+func (client *GitLabClient) AddOrganizationSecret(ctx context.Context, owner, secretName, secretValue string) error {
+	return errGitLLabAddOrganizationSecretNotSupported
+}
+
+func (client *GitLabClient) CommitAndPushFiles(ctx context.Context, owner, repo, sourceBranch, commitMessage, authorName, authorEmail string, files []FileToCommit) error {
+	return errGitLabCommitAndPushFilesNotSupported
+}
+
+func (client *GitLabClient) GetRepoCollaborators(ctx context.Context, owner, repo, affiliation, permission string) ([]string, error) {
+	return nil, errGitLabGetCollaboratorsNotSupported
+}
+
+func (client *GitLabClient) GetRepoTeamsByPermissions(ctx context.Context, owner, repo string, permissions []string) ([]int64, error) {
+	return nil, errGitLabGetRepoTeamsByPermissionsNotSupported
+}
+
+func (client *GitLabClient) CreateOrUpdateEnvironment(ctx context.Context, owner, repo, envName string, teams []int64, users []string) error {
+	return errGitLabCreateOrUpdateEnvironmentNotSupported
+}
+
 func getProjectID(owner, project string) string {
 	return fmt.Sprintf("%s/%s", owner, project)
 }

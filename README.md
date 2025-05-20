@@ -845,3 +845,121 @@ request := http.Request{}
 
 webhookInfo, err := webhookparser.ParseIncomingWebhook(ctx, logger, origin, request)
 ```
+
+### Create Branch
+```go
+// Go Context
+ctx := context.Background()
+// Organization or username
+owner := "jfrog"
+// VSC Repository
+repository := "jfrog-cli"
+// Source branch to create a new branch from
+sourceBranch := "main"
+// New branch name
+newBranch := "my-new-branch"
+
+// Create a new branch
+err = client.CreateBranch(ctx, owner, repository, sourceBranch, newBranch)
+```
+
+### Allow Workflows
+```go
+// Go context
+ctx := context.Background()
+// Organization 
+owner := "jfrog"
+
+// Allow workflows for the organization
+err = client.AllowWorkflows(ctx, owner)
+```
+
+### Add Organization Secret
+```go
+// Go context
+ctx := context.Background()
+// Organization
+owner := "jfrog"
+// Secret name
+secret := "JF_URL"
+// Secret value, will be encrypted by froggit
+secretValue := "https://acme.jfrog.io/"
+
+// Add a secret to the organization
+err = client.AddOrganizationSecret(ctx, owner, secret, secretValue)
+```
+
+### Get Repo Collaborators
+```go
+// Go context
+ctx := context.Background()
+// Organization
+owner := "jfrog"
+// Repository name
+repo := "jfrog-cli"
+// Affiliation type, can be one of the following: all, direct, outside, member
+affiliation := "direct"
+// Permission type, can be one of the following: read, write, admin, maintain, triage
+permission := "maintain"
+
+// Get the list of collaborators for a specific repository
+collaborators, err := client.GetRepoCollaborators(ctx, owner, repo, affiliation, permission)
+```
+
+### Get Repo Teams By Permissions
+```go
+// Go context
+ctx := context.Background()
+// Organization
+owner := "jfrog"
+// Repository name
+repo := "jfrog-cli"
+// Permission type, can be one of the following: read, write, admin, maintain, triage
+permissions := []string{"maintain", "admin"}
+
+// Get the list of teams with specific permissions for a repository
+teams, err := client.GetRepoTeamsByPermissions(ctx, owner, repo, permissions)
+```
+
+### Create Or Update Environment
+```go
+// Go context
+ctx := context.Background()
+// Organization
+owner := "jfrog-org"
+// Repository name
+repo := "big-npm"
+// Repository environment name
+envName := "frogbot"
+// List of teams ids to add to the environment
+teams := []int64{{12345678}}
+
+// Create or update the environment
+err = client.CreateOrUpdateEnvironment(ctx, owner, repo, envName, teams, nil)
+```
+
+### CommitAndPushFiles
+```go
+// Go context
+ctx := context.Background()
+// Organization
+owner := "jfrog"
+// Repository name
+repo := "jfrog-cli"
+// Source branch name
+sourceBranch := "feature-branch"
+// Commit message
+commitMessage := "example commit message" 
+// Author name
+author := "example"
+//Files To commit
+filesToCommit := []vcsclient.FileToCommit{{
+		Path:    ".github/workflows/example.yml",
+		Content: "hello world",
+	}}
+//Author email
+authorEmail := "example@gmail.com"
+
+// Commit and push files to the repository in the source branch
+err = client.CommitAndPushFiles(ctx, owner, repo, sourceBranch, commitMessage, author, authorEmail, filesToCommit)
+```

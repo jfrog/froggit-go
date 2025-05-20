@@ -889,6 +889,34 @@ func (client *BitbucketServerClient) GetModifiedFiles(ctx context.Context, owner
 	return fileNamesList, nil
 }
 
+func (client *BitbucketServerClient) CreateBranch(ctx context.Context, owner, repository, sourceBranch, newBranch string) error {
+	return errBitbucketCreateBranchNotSupported
+}
+
+func (client *BitbucketServerClient) AllowWorkflows(ctx context.Context, owner string) error {
+	return errBitbucketAllowWorkflowsNotSupported
+}
+
+func (client *BitbucketServerClient) AddOrganizationSecret(ctx context.Context, owner, secretName, secretValue string) error {
+	return errBitbucketAddOrganizationSecretNotSupported
+}
+
+func (client *BitbucketServerClient) CommitAndPushFiles(ctx context.Context, owner, repo, sourceBranch, commitMessage, authorName, authorEmail string, files []FileToCommit) error {
+	return errBitbucketCommitAndPushFilesNotSupported
+}
+
+func (client *BitbucketServerClient) GetRepoCollaborators(ctx context.Context, owner, repo, affiliation, permission string) ([]string, error) {
+	return nil, errBitbucketGetRepoCollaboratorsNotSupported
+}
+
+func (client *BitbucketServerClient) GetRepoTeamsByPermissions(ctx context.Context, owner, repo string, permissions []string) ([]int64, error) {
+	return nil, errBitbucketGetRepoTeamsByPermissionsNotSupported
+}
+
+func (client *BitbucketServerClient) CreateOrUpdateEnvironment(ctx context.Context, owner, repo, envName string, teams []int64, users []string) error {
+	return errBitbucketCreateOrUpdateEnvironmentNotSupported
+}
+
 func getBitbucketServerRepositoryVisibility(public bool) RepositoryVisibility {
 	if public {
 		return Public

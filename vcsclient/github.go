@@ -2,6 +2,8 @@ package vcsclient
 
 import (
 	"context"
+	"crypto/rand"
+	base64Utils "encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -10,6 +12,7 @@ import (
 	"github.com/jfrog/froggit-go/vcsutils"
 	"github.com/jfrog/gofrog/datastructures"
 	"github.com/mitchellh/mapstructure"
+	"golang.org/x/crypto/nacl/box"
 	"golang.org/x/exp/slices"
 	"golang.org/x/oauth2"
 	"io"
@@ -27,6 +30,7 @@ const (
 	retriesIntervalMilliSecs = 60000
 	// https://github.com/orgs/community/discussions/27190
 	githubPrContentSizeLimit = 65536
+	ghMaxEnvReviewers        = 6
 )
 
 var rateLimitRetryStatuses = []int{http.StatusForbidden, http.StatusTooManyRequests}
@@ -36,6 +40,11 @@ type GitHubRateLimitExecutionHandler func() (*github.Response, error)
 type GitHubRateLimitRetryExecutor struct {
 	vcsutils.RetryExecutor
 	GitHubRateLimitExecutionHandler
+}
+
+type FileToCommit struct {
+	Path    string
+	Content string
 }
 
 func (ghe *GitHubRateLimitRetryExecutor) Execute() error {
@@ -798,7 +807,7 @@ func (client *GitHubClient) GetRepositoryInfo(ctx context.Context, owner, reposi
 		return RepositoryInfo{}, err
 	}
 
-	return RepositoryInfo{RepositoryVisibility: getGitHubRepositoryVisibility(repo), CloneInfo: CloneInfo{HTTP: repo.GetCloneURL(), SSH: repo.GetSSHURL()}}, nil
+	return RepositoryInfo{RepositoryVisibility: getGitHubRepositoryVisibility(repo), CloneInfo: CloneInfo{HTTP: repo.GetCloneURL(), SSH: repo.GetSSHURL()}, DefaultBranch: *repo.DefaultBranch}, nil
 }
 
 // GetCommitBySha on GitHub
@@ -1040,6 +1049,263 @@ func (client *GitHubClient) GetRepositoryEnvironmentInfo(ctx context.Context, ow
 	return *repositoryEnvInfo, err
 }
 
+func (client *GitHubClient) CreateBranch(ctx context.Context, owner, repository, sourceBranch, newBranch string) error {
+	err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository, "sourceBranch": sourceBranch, "newBranch": newBranch})
+	if err != nil {
+		return err
+	}
+
+	var sourceBranchRef *github.Branch
+	err = client.runWithRateLimitRetries(func() (*github.Response, error) {
+		sourceBranchRef, _, err = client.ghClient.Repositories.GetBranch(ctx, owner, repository, sourceBranch, 3)
+		if err != nil {
+			return nil, err
+		}
+		return nil, nil
+	})
+	if err != nil {
+		return err
+	}
+
+	latestCommitSHA := sourceBranchRef.Commit.SHA
+	ref := &github.Reference{
+		Ref:    github.String("refs/heads/" + newBranch),
+		Object: &github.GitObject{SHA: latestCommitSHA},
+	}
+
+	return client.runWithRateLimitRetries(func() (*github.Response, error) {
+		_, _, err = client.ghClient.Git.CreateRef(ctx, owner, repository, ref)
+		if err != nil {
+			return nil, err
+		}
+		return nil, nil
+	})
+}
+
+func (client *GitHubClient) AddOrganizationSecret(ctx context.Context, owner, secretName, secretValue string) error {
+	err := validateParametersNotBlank(map[string]string{"secretName": secretName, "owner": owner, "secretValue": secretValue})
+	if err != nil {
+		return err
+	}
+
+	publicKey, _, err := client.ghClient.Actions.GetOrgPublicKey(ctx, owner)
+	if err != nil {
+		return err
+	}
+
+	encryptedValue, err := encryptSecret(publicKey, secretValue)
+	if err != nil {
+		return err
+	}
+
+	secret := &github.EncryptedSecret{
+		Name:           secretName,
+		KeyID:          publicKey.GetKeyID(),
+		EncryptedValue: encryptedValue,
+		Visibility:     "all",
+	}
+
+	err = client.runWithRateLimitRetries(func() (*github.Response, error) {
+		_, err = client.ghClient.Actions.CreateOrUpdateOrgSecret(ctx, owner, secret)
+		return nil, err
+	})
+	return err
+}
+
+func (client *GitHubClient) AllowWorkflows(ctx context.Context, owner string) error {
+	err := validateParametersNotBlank(map[string]string{"owner": owner})
+	if err != nil {
+		return err
+	}
+
+	requestBody := &github.ActionsPermissions{
+		AllowedActions:      github.String("all"),
+		EnabledRepositories: github.String("all"),
+	}
+
+	err = client.runWithRateLimitRetries(func() (*github.Response, error) {
+		_, _, err = client.ghClient.Actions.EditActionsPermissions(ctx, owner, *requestBody)
+		return nil, err
+	})
+	return err
+}
+
+func (client *GitHubClient) GetRepoCollaborators(ctx context.Context, owner, repo, affiliation, permission string) ([]string, error) {
+	err := validateParametersNotBlank(map[string]string{"owner": owner, "repo": repo, "affiliation": affiliation, "permission": permission})
+	if err != nil {
+		return nil, err
+	}
+
+	var collaborators []*github.User
+	err = client.runWithRateLimitRetries(func() (*github.Response, error) {
+		var ghResponse *github.Response
+		var err error
+		collaborators, ghResponse, err = client.ghClient.Repositories.ListCollaborators(ctx, owner, repo, &github.ListCollaboratorsOptions{
+			Affiliation: affiliation,
+			Permission:  permission,
+		})
+		return ghResponse, err
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	var names []string
+	for _, collab := range collaborators {
+		names = append(names, collab.GetLogin())
+	}
+	return names, nil
+}
+
+func (client *GitHubClient) GetRepoTeamsByPermissions(ctx context.Context, owner, repo string, permissions []string) ([]int64, error) {
+	err := validateParametersNotBlank(map[string]string{"owner": owner, "repo": repo, "permissions": strings.Join(permissions, ",")})
+	if err != nil {
+		return nil, err
+	}
+
+	var allTeams []*github.Team
+	err = client.runWithRateLimitRetries(func() (*github.Response, error) {
+		var resp *github.Response
+		var err error
+		allTeams, resp, err = client.ghClient.Repositories.ListTeams(ctx, owner, repo, nil)
+		return resp, err
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	permMap := make(map[string]bool)
+	for _, p := range permissions {
+		permMap[strings.ToLower(p)] = true
+	}
+
+	var matchedTeams []int64
+	for _, team := range allTeams {
+		if permMap[strings.ToLower(team.GetPermission())] {
+			matchedTeams = append(matchedTeams, team.GetID())
+		}
+	}
+
+	return matchedTeams, nil
+}
+
+func (client *GitHubClient) CreateOrUpdateEnvironment(ctx context.Context, owner, repo, envName string, teams []int64, users []string) error {
+	err := validateParametersNotBlank(map[string]string{"owner": owner, "repo": repo, "envName": envName})
+	if err != nil {
+		return err
+	}
+
+	envReviewers := make([]*github.EnvReviewers, 0)
+	for _, team := range teams {
+		envReviewers = append(envReviewers, &github.EnvReviewers{
+			Type: github.String("Team"),
+			ID:   &team,
+		})
+	}
+
+	if len(envReviewers) >= ghMaxEnvReviewers {
+		envReviewers = envReviewers[:ghMaxEnvReviewers]
+		_, _, err := client.ghClient.Repositories.CreateUpdateEnvironment(ctx, owner, repo, envName, &github.CreateUpdateEnvironment{
+			Reviewers: envReviewers,
+		})
+		return err
+	}
+
+	for _, userName := range users {
+		user, _, err := client.ghClient.Users.Get(ctx, userName)
+
+		if err != nil {
+			return err
+		}
+		userId := user.GetID()
+		envReviewers = append(envReviewers, &github.EnvReviewers{
+			Type: github.String("User"),
+			ID:   github.Int64(userId),
+		})
+	}
+
+	if len(envReviewers) >= ghMaxEnvReviewers {
+		envReviewers = envReviewers[:ghMaxEnvReviewers]
+		_, _, err := client.ghClient.Repositories.CreateUpdateEnvironment(ctx, owner, repo, envName, &github.CreateUpdateEnvironment{
+			Reviewers: envReviewers,
+		})
+		return err
+	}
+
+	_, _, err = client.ghClient.Repositories.CreateUpdateEnvironment(ctx, owner, repo, envName, &github.CreateUpdateEnvironment{
+		Reviewers: envReviewers,
+	})
+	return err
+}
+
+func (client *GitHubClient) CommitAndPushFiles(
+	ctx context.Context,
+	owner, repo, sourceBranch, commitMessage, authorName, authorEmail string,
+	files []FileToCommit,
+) error {
+	if len(files) == 0 {
+		return errors.New("no files provided to commit")
+	}
+
+	ref, _, err := client.ghClient.Git.GetRef(ctx, owner, repo, "refs/heads/"+sourceBranch)
+	if err != nil {
+		return fmt.Errorf("failed to get branch ref: %w", err)
+	}
+
+	parentCommit, _, err := client.ghClient.Git.GetCommit(ctx, owner, repo, *ref.Object.SHA)
+	if err != nil {
+		return fmt.Errorf("failed to get parent commit: %w", err)
+	}
+
+	var treeEntries []*github.TreeEntry
+	for _, file := range files {
+		blob, _, err := client.ghClient.Git.CreateBlob(ctx, owner, repo, &github.Blob{
+			Content:  github.String(file.Content),
+			Encoding: github.String("utf-8"),
+		})
+		if err != nil {
+			return fmt.Errorf("failed to create blob for %s: %w", file.Path, err)
+		}
+
+		var regularFileCode = "100644"
+		// Add each file to the treeEntries
+		treeEntries = append(treeEntries, &github.TreeEntry{
+			Path: github.String(file.Path),
+			Mode: github.String(regularFileCode),
+			Type: github.String("blob"),
+			SHA:  blob.SHA,
+		})
+	}
+
+	tree, _, err := client.ghClient.Git.CreateTree(ctx, owner, repo, *parentCommit.Tree.SHA, treeEntries)
+	if err != nil {
+		return fmt.Errorf("failed to create tree: %w", err)
+	}
+
+	commit := &github.Commit{
+		Message: github.String(commitMessage),
+		Tree:    tree,
+		Parents: []*github.Commit{{SHA: parentCommit.SHA}},
+		Author: &github.CommitAuthor{
+			Name:  github.String(authorName),
+			Email: github.String(authorEmail),
+			Date:  &github.Timestamp{Time: time.Now()},
+		},
+	}
+
+	newCommit, _, err := client.ghClient.Git.CreateCommit(ctx, owner, repo, commit, nil)
+	if err != nil {
+		return fmt.Errorf("failed to create commit: %w", err)
+	}
+
+	ref.Object.SHA = newCommit.SHA
+	_, _, err = client.ghClient.Git.UpdateRef(ctx, owner, repo, ref, false)
+	if err != nil {
+		return fmt.Errorf("failed to update branch ref: %w", err)
+	}
+	return nil
+}
+
 func (client *GitHubClient) executeGetRepositoryEnvironmentInfo(ctx context.Context, owner, repository, name string) (*RepositoryEnvironmentInfo, *github.Response, error) {
 	environment, ghResponse, err := client.ghClient.Repositories.GetEnvironment(ctx, owner, repository, name)
 	if err != nil {
@@ -1262,4 +1528,22 @@ func isRateLimitAbuseError(requestError error) bool {
 	var abuseRateLimitError *github.AbuseRateLimitError
 	var rateLimitError *github.RateLimitError
 	return errors.As(requestError, &abuseRateLimitError) || errors.As(requestError, &rateLimitError)
+}
+
+func encryptSecret(publicKey *github.PublicKey, secretValue string) (string, error) {
+	publicKeyBytes, err := base64Utils.StdEncoding.DecodeString(publicKey.GetKey())
+	if err != nil {
+		return "", err
+	}
+
+	var publicKeyDecoded [32]byte
+	copy(publicKeyDecoded[:], publicKeyBytes)
+
+	encrypted, err := box.SealAnonymous(nil, []byte(secretValue), &publicKeyDecoded, rand.Reader)
+	if err != nil {
+		return "", err
+	}
+
+	encryptedBase64 := base64Utils.StdEncoding.EncodeToString(encrypted)
+	return encryptedBase64, nil
 }
