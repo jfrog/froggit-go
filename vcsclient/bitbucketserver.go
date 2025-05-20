@@ -917,6 +917,10 @@ func (client *BitbucketServerClient) CreateOrUpdateEnvironment(ctx context.Conte
 	return errBitbucketCreateOrUpdateEnvironmentNotSupported
 }
 
+func (client *BitbucketServerClient) MergePullRequest(ctx context.Context, owner, repo string, prNumber int, commitMessage string) error {
+	return errBitbucketMergePullRequestNotSupported
+}
+
 func getBitbucketServerRepositoryVisibility(public bool) RepositoryVisibility {
 	if public {
 		return Public

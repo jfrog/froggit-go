@@ -1190,6 +1190,20 @@ func TestGitHubClient_CreateOrUpdateEnvironment(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestGitHubClient_MergePullRequest(t *testing.T) {
+	ctx := context.Background()
+	prNumber := 1
+	commitMessage := "merge"
+
+	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, nil, fmt.Sprintf("/repos/%v/%v/pulls/%v/%v", owner, repo1, prNumber, commitMessage), createGitHubHandler)
+	defer cleanUp()
+	err := client.MergePullRequest(ctx, owner, repo1, prNumber, commitMessage)
+	assert.NoError(t, err)
+	client = createBadGitHubClient(t)
+	err = client.MergePullRequest(ctx, owner, repo1, prNumber, commitMessage)
+	assert.Error(t, err)
+}
+
 func createBadGitHubClient(t *testing.T) VcsClient {
 	client, err := NewClientBuilder(vcsutils.GitHub).ApiEndpoint("https://badendpoint").Build()
 	assert.NoError(t, err)

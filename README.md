@@ -963,3 +963,20 @@ authorEmail := "example@gmail.com"
 // Commit and push files to the repository in the source branch
 err = client.CommitAndPushFiles(ctx, owner, repo, sourceBranch, commitMessage, author, authorEmail, filesToCommit)
 ```
+
+### Merge Pull Request
+```go
+// Go context
+ctx := context.Background()
+// Organization
+owner := "jfrog"
+// Repository name
+repo := "jfrog-cli"
+// pull request number
+prNumber := 134
+// Commit message, empty will use the default commit message
+commitMessage := "example commit message"
+
+// Merge the pull request
+err = client.MergePullRequest(ctx, owner, repo, prNumber, commitMessage)
+```

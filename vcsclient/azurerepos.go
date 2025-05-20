@@ -766,6 +766,10 @@ func (client *AzureReposClient) CreateOrUpdateEnvironment(ctx context.Context, o
 	return getUnsupportedInAzureError("create or update environment")
 }
 
+func (client *AzureReposClient) MergePullRequest(ctx context.Context, owner, repo string, prNumber int, commitMessage string) error {
+	return getUnsupportedInAzureError("merge pull request")
+}
+
 func parsePullRequestDetails(client *AzureReposClient, pullRequest git.GitPullRequest, owner, repository string, withBody bool) PullRequestInfo {
 	// Trim the branches prefix and get the actual branches name
 	shortSourceName := plumbing.ReferenceName(*pullRequest.SourceRefName).Short()

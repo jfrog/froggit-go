@@ -341,6 +341,9 @@ type VcsClient interface {
 
 	// CreateOrUpdateEnvironment creates or updates an environment in the specified repository
 	CreateOrUpdateEnvironment(ctx context.Context, owner, repo, envName string, teams []int64, users []string) error
+
+	// MergePullRequest merges a pull request into the target branch
+	MergePullRequest(ctx context.Context, owner, repo string, prNumber int, commitMessage string) error
 }
 
 // CommitInfo contains the details of a commit

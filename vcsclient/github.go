@@ -1306,6 +1306,14 @@ func (client *GitHubClient) CommitAndPushFiles(
 	return nil
 }
 
+func (client *GitHubClient) MergePullRequest(ctx context.Context, owner, repo string, prNumber int, commitMessage string) error {
+	err := client.runWithRateLimitRetries(func() (*github.Response, error) {
+		_, resp, err := client.ghClient.PullRequests.Merge(ctx, owner, repo, prNumber, commitMessage, nil)
+		return resp, err
+	})
+	return err
+}
+
 func (client *GitHubClient) executeGetRepositoryEnvironmentInfo(ctx context.Context, owner, repository, name string) (*RepositoryEnvironmentInfo, *github.Response, error) {
 	environment, ghResponse, err := client.ghClient.Repositories.GetEnvironment(ctx, owner, repository, name)
 	if err != nil {

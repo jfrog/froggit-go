@@ -726,6 +726,10 @@ func (client *BitbucketCloudClient) CreateOrUpdateEnvironment(ctx context.Contex
 	return errBitbucketCreateOrUpdateEnvironmentNotSupported
 }
 
+func (client *BitbucketCloudClient) MergePullRequest(ctx context.Context, owner, repo string, prNumber int, commitMessage string) error {
+	return errBitbucketMergePullRequestNotSupported
+}
+
 type pullRequestsResponse struct {
 	Values []pullRequestsDetails `json:"values"`
 }

@@ -805,6 +805,10 @@ func (client *GitLabClient) CreateOrUpdateEnvironment(ctx context.Context, owner
 	return errGitLabCreateOrUpdateEnvironmentNotSupported
 }
 
+func (client *GitLabClient) MergePullRequest(ctx context.Context, owner, repo string, prNumber int, commitMessage string) error {
+	return errGitLabMergePullRequestNotSupported
+}
+
 func getProjectID(owner, project string) string {
 	return fmt.Sprintf("%s/%s", owner, project)
 }
