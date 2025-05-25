@@ -6,14 +6,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/jfrog/gofrog/datastructures"
-	"github.com/ktrysmt/go-bitbucket"
 	"net/http"
 	"net/url"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/jfrog/gofrog/datastructures"
+	"github.com/ktrysmt/go-bitbucket"
 
 	"github.com/mitchellh/mapstructure"
 
@@ -634,7 +635,7 @@ func (client *BitbucketCloudClient) UploadCodeScanning(ctx context.Context, owne
 	return "", errBitbucketCodeScanningNotSupported
 }
 
-func (client *BitbucketCloudClient) ListAppRepositories(_ context.Context) (map[string][]string, error) {
+func (client *BitbucketCloudClient) ListAppRepositories(_ context.Context) ([]AppRepositoryInfo, error) {
 	return nil, errBitbucketListAppReposNotSupported
 }
 

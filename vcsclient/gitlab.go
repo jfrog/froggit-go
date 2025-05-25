@@ -73,7 +73,7 @@ func (client *GitLabClient) ListRepositories(ctx context.Context) (map[string][]
 }
 
 // ListAppRepositories returns an error since this is not supported in GitLab
-func (client *GitLabClient) ListAppRepositories(_ context.Context) (map[string][]string, error) {
+func (client *GitLabClient) ListAppRepositories(_ context.Context) ([]AppRepositoryInfo, error) {
 	return nil, fmt.Errorf("listing app repositories is not supported in GitLab")
 }
 

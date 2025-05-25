@@ -97,7 +97,7 @@ func (client *BitbucketServerClient) ListRepositories(ctx context.Context) (map[
 }
 
 // ListAppRepositories returns an error since this is not supported in Bitbucket Server
-func (client *BitbucketServerClient) ListAppRepositories(_ context.Context) (map[string][]string, error) {
+func (client *BitbucketServerClient) ListAppRepositories(_ context.Context) ([]AppRepositoryInfo, error) {
 	return nil, fmt.Errorf("listing app repositories is not supported in Bitbucket Server")
 }
 

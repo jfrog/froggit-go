@@ -1265,12 +1265,23 @@ func isRateLimitAbuseError(requestError error) bool {
 	return errors.As(requestError, &abuseRateLimitError) || errors.As(requestError, &rateLimitError)
 }
 
-// ListAppRepositories returns a map between all accessible Apps and their list of repositories.
-// Note: In older go-github versions, this endpoint was not available and required a raw GET request.
-// Now implemented using the official go-github client method.
-// ListAppRepositories returns a map between all accessible Apps and their list of repositories with detailed info.
-func (client *GitHubClient) ListAppRepositories(ctx context.Context) (map[string][]string, error) {
-	results := make(map[string][]string)
+// AppRepositoryInfo is a VCS-agnostic struct for app repository details
+// Extend as needed for other providers
+type AppRepositoryInfo struct {
+	Name          string
+	FullName      string
+	Owner         string
+	Private       bool
+	Description   string
+	URL           string
+	CloneURL      string
+	SSHURL        string
+	DefaultBranch string
+}
+
+// ListAppRepositories returns a slice of all accessible app repositories with details.
+func (client *GitHubClient) ListAppRepositories(ctx context.Context) ([]AppRepositoryInfo, error) {
+	var results []AppRepositoryInfo
 
 	req, err := client.ghClient.NewRequest("GET", "installation/repositories", nil)
 	if err != nil {
@@ -1295,8 +1306,18 @@ func (client *GitHubClient) ListAppRepositories(ctx context.Context) (map[string
 
 	for _, repo := range response.Repositories {
 		if repo.Owner != nil && repo.Owner.Login != nil && repo.Name != nil {
-			ownerLogin := repo.Owner.GetLogin()
-			results[ownerLogin] = append(results[ownerLogin], repo.GetName())
+			repoInfo := AppRepositoryInfo{
+				Name:          repo.GetName(),
+				FullName:      repo.GetFullName(),
+				Owner:         repo.Owner.GetLogin(),
+				Private:       repo.GetPrivate(),
+				Description:   repo.GetDescription(),
+				URL:           repo.GetHTMLURL(),
+				CloneURL:      repo.GetCloneURL(),
+				SSHURL:        repo.GetSSHURL(),
+				DefaultBranch: repo.GetDefaultBranch(),
+			}
+			results = append(results, repoInfo)
 		}
 	}
 
