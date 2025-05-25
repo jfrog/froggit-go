@@ -1268,6 +1268,7 @@ func isRateLimitAbuseError(requestError error) bool {
 // ListAppRepositories returns a map between all accessible Apps and their list of repositories.
 // Note: In older go-github versions, this endpoint was not available and required a raw GET request.
 // Now implemented using the official go-github client method.
+// ListAppRepositories returns a map between all accessible Apps and their list of repositories with detailed info.
 func (client *GitHubClient) ListAppRepositories(ctx context.Context) (map[string][]string, error) {
 	results := make(map[string][]string)
 
@@ -1294,8 +1295,8 @@ func (client *GitHubClient) ListAppRepositories(ctx context.Context) (map[string
 
 	for _, repo := range response.Repositories {
 		if repo.Owner != nil && repo.Owner.Login != nil && repo.Name != nil {
-			ownerLogin := *repo.Owner.Login
-			results[ownerLogin] = append(results[ownerLogin], *repo.Name)
+			ownerLogin := repo.Owner.GetLogin()
+			results[ownerLogin] = append(results[ownerLogin], repo.GetName())
 		}
 	}
 

@@ -1291,7 +1291,8 @@ func TestGitHubClient_ListAppRepositories(t *testing.T) {
 	repos, err := client.ListAppRepositories(ctx)
 	assert.NoError(t, err)
 	assert.Contains(t, repos, "octocat")
-	assert.Contains(t, repos["octocat"], "Hello-World")
+	assert.Len(t, repos["octocat"], 1)
+	assert.Equal(t, "Hello-World", repos["octocat"][0])
 
 	// Negative test: bad client
 	_, err = createBadGitHubClient(t).ListAppRepositories(ctx)
