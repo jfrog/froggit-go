@@ -1258,3 +1258,42 @@ func TestIsRateLimitAbuseError(t *testing.T) {
 	isRateLimitAbuseErr = isRateLimitAbuseError(&github.AbuseRateLimitError{})
 	assert.True(t, isRateLimitAbuseErr)
 }
+
+func TestGitHubClient_ListAppRepositories(t *testing.T) {
+	ctx := context.Background()
+	response := `{
+	  "total_count": 1,
+	  "repositories": [
+	    {
+	      "id": 1296269,
+	      "node_id": "MDEwOlJlcG9zaXRvcnkxMjk2MjY5",
+	      "name": "Hello-World",
+	      "full_name": "octocat/Hello-World",
+	      "owner": {
+	        "login": "octocat",
+	        "id": 1
+	      },
+	      "private": false
+	    }
+	  ]
+	}`
+
+	client, cleanUp := createServerAndClient(
+		t,
+		vcsutils.GitHub,
+		false,
+		[]byte(response),
+		"/installation/repositories",
+		createGitHubHandler,
+	)
+	defer cleanUp()
+
+	repos, err := client.ListAppRepositories(ctx)
+	assert.NoError(t, err)
+	assert.Contains(t, repos, "octocat")
+	assert.Contains(t, repos["octocat"], "Hello-World")
+
+	// Negative test: bad client
+	_, err = createBadGitHubClient(t).ListAppRepositories(ctx)
+	assert.Error(t, err)
+}
