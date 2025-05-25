@@ -5,13 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/google/go-github/v56/github"
-	"github.com/grokify/mogo/encoding/base64"
-	"github.com/jfrog/froggit-go/vcsutils"
-	"github.com/jfrog/gofrog/datastructures"
-	"github.com/mitchellh/mapstructure"
-	"golang.org/x/exp/slices"
-	"golang.org/x/oauth2"
 	"io"
 	"net/http"
 	"net/url"
@@ -20,6 +13,14 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/google/go-github/v56/github"
+	"github.com/grokify/mogo/encoding/base64"
+	"github.com/jfrog/froggit-go/vcsutils"
+	"github.com/jfrog/gofrog/datastructures"
+	"github.com/mitchellh/mapstructure"
+	"golang.org/x/exp/slices"
+	"golang.org/x/oauth2"
 )
 
 const (
@@ -1262,4 +1263,39 @@ func isRateLimitAbuseError(requestError error) bool {
 	var abuseRateLimitError *github.AbuseRateLimitError
 	var rateLimitError *github.RateLimitError
 	return errors.As(requestError, &abuseRateLimitError) || errors.As(requestError, &rateLimitError)
+}
+
+// ListAppRepositories returns a map between all accessible App to their list of repositories
+func (client *GitHubClient) ListAppRepositories(ctx context.Context) (map[string][]string, error) {
+	results := make(map[string][]string)
+
+	req, err := client.ghClient.NewRequest("GET", "installation/repositories", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Accept", "application/vnd.github+json")
+	req.Header.Set("X-GitHub-Api-Version", "2022-11-28")
+
+	var response struct {
+		TotalCount   int                  `json:"total_count"`
+		Repositories []*github.Repository `json:"repositories"`
+	}
+
+	err = client.runWithRateLimitRetries(func() (*github.Response, error) {
+		resp, err := client.ghClient.Do(ctx, req, &response)
+		return resp, err
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	for _, repo := range response.Repositories {
+		if repo.Owner != nil && repo.Owner.Login != nil && repo.Name != nil {
+			ownerLogin := *repo.Owner.Login
+			results[ownerLogin] = append(results[ownerLogin], *repo.Name)
+		}
+	}
+
+	return results, nil
 }

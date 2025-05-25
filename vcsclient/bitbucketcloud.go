@@ -634,6 +634,10 @@ func (client *BitbucketCloudClient) UploadCodeScanning(ctx context.Context, owne
 	return "", errBitbucketCodeScanningNotSupported
 }
 
+func (client *BitbucketCloudClient) ListAppRepositories(_ context.Context) (map[string][]string, error) {
+	return nil, errBitbucketListAppReposNotSupported
+}
+
 // DownloadFileFromRepo on Bitbucket cloud
 func (client *BitbucketCloudClient) DownloadFileFromRepo(ctx context.Context, owner, repository, branch, path string) ([]byte, int, error) {
 	return nil, 0, errBitbucketDownloadFileFromRepoNotSupported

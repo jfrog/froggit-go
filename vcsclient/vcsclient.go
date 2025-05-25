@@ -85,6 +85,9 @@ type VcsClient interface {
 	// ListRepositories Returns a map between all accessible owners to their list of repositories
 	ListRepositories(ctx context.Context) (map[string][]string, error)
 
+	// ListRepositories Returns a map between all accessible App to their list of repositories
+	ListAppRepositories(ctx context.Context) (map[string][]string, error)
+
 	// ListBranches Lists all branches under the input repository
 	// owner      - User or organization
 	// repository - VCS repository name

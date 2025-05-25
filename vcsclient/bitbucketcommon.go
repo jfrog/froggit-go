@@ -24,6 +24,7 @@ var (
 	errBitbucketDeletePullRequestComment                     = fmt.Errorf("delete pull request comment is %s", notSupportedOnBitbucket)
 	errBitbucketListPullRequestAssociatedCommitsNotSupported = fmt.Errorf("list pull requests associated commits is %s", notSupportedOnBitbucket)
 	errBitbucketListListPullRequestReviewsNotSupported       = fmt.Errorf("list pull request reviews is %s", notSupportedOnBitbucket)
+	errBitbucketListAppReposNotSupported                     = fmt.Errorf("list app repositories is %s", notSupportedOnBitbucket)
 )
 
 type BitbucketCommitInfo struct {

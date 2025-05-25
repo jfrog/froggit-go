@@ -6,14 +6,15 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"github.com/jfrog/froggit-go/vcsutils"
-	"github.com/jfrog/gofrog/datastructures"
-	"github.com/xanzy/go-gitlab"
 	"net/http"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/jfrog/froggit-go/vcsutils"
+	"github.com/jfrog/gofrog/datastructures"
+	"github.com/xanzy/go-gitlab"
 )
 
 // GitLabClient API version 4
@@ -69,6 +70,11 @@ func (client *GitLabClient) ListRepositories(ctx context.Context) (map[string][]
 		}
 	}
 	return results, nil
+}
+
+// ListAppRepositories returns an error since this is not supported in GitLab
+func (client *GitLabClient) ListAppRepositories(_ context.Context) (map[string][]string, error) {
+	return nil, fmt.Errorf("listing app repositories is not supported in GitLab")
 }
 
 // ListBranches on GitLab
