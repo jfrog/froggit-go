@@ -32,6 +32,7 @@ Currently supported providers are: [GitHub](#github), [Bitbucket Server](#bitbuc
         - [Azure Repos](#azure-repos)
       - [Test Connection](#test-connection)
       - [List Repositories](#list-repositories)
+      - [List App Repositories](#list-app-repositories)
       - [List Branches](#list-branches)
       - [List Pull Request Reviews](#list-pull-request-reviews)
       - [Download Repository](#download-repository)
@@ -192,6 +193,28 @@ err := client.TestConnection(ctx)
 ctx := context.Background()
 
 repositories, err := client.ListRepositories(ctx)
+```
+
+#### List App Repositories
+
+Returns a map between all accessible Apps and their list of repositories.  
+Note: Currently supported for GitHub Apps only.
+
+```go
+// Go context
+ctx := context.Background()
+
+// List all repositories accessible by the app (for example, a GitHub App installation)
+appRepositories, err := client.ListAppRepositories(ctx)
+if err != nil {
+    // handle error
+}
+for owner, repos := range appRepositories {
+    fmt.Printf("Owner: %s\n", owner)
+    for _, repo := range repos {
+        fmt.Printf("  - %s\n", repo)
+    }
+}
 ```
 
 #### List Branches
