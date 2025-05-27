@@ -66,6 +66,14 @@ Currently supported providers are: [GitHub](#github), [Bitbucket Server](#bitbuc
       - [Unlabel Pull Request](#unlabel-pull-request)
       - [Upload Code Scanning](#upload-code-scanning)
       - [Download a File From a Repository](#download-a-file-from-a-repository)
+      - [Create a branch](#create-branch)
+      - [Allow workflows on organization](#allow-workflows)
+      - [Add Organization Secret](#add-organization-secret)
+      - [Get Repo Collaborators](#get-repo-collaborators)
+      - [Get Repo Teams By Permissions](#get-repo-teams-by-permissions)
+      - [Create Or Update Environment](#create-or-update-environment)
+      - [CommitAndPushFiles](#commit-and-push-files)
+      - [Merge Pull Request](#merge-pull-request)
     - [Webhook Parser](#webhook-parser)
 
 ### VCS Clients
@@ -823,30 +831,11 @@ path := "path"
 content, statusCode, err := client.DownloadFileFromRepo(ctx, owner, repo, branch, path)
 ```
 
-### Webhook Parser
 
-```go
-// Go context
-ctx := context.Background()
-// Logger
-logger := vcsclient.EmptyLogger{}
-// Webhook contextual information
-origin := webhookparser.WebhookOrigin{
-  // The VCS provider (required)
-  VcsProvider: vcsutils.GitHub,
-  // Optional URL of the VCS provider (used for building some URLs)
-  OriginURL: "https://api.github.com",
-  // Token to authenticate incoming webhooks. If empty, signature will not be verified. 
-  // The token is a random key generated in the CreateWebhook command. 
-  Token: []byte("abc123"),
-}
-// The HTTP request of the incoming webhook
-request := http.Request{}
+#### Create Branch
 
-webhookInfo, err := webhookparser.ParseIncomingWebhook(ctx, logger, origin, request)
-```
+Notice - Create Branch is currently supported on GitHub only.
 
-### Create Branch
 ```go
 // Go Context
 ctx := context.Background()
@@ -863,7 +852,10 @@ newBranch := "my-new-branch"
 err = client.CreateBranch(ctx, owner, repository, sourceBranch, newBranch)
 ```
 
-### Allow Workflows
+#### Allow Workflows
+
+Notice - Allow Workflows is currently supported on GitHub only.
+
 ```go
 // Go context
 ctx := context.Background()
@@ -874,7 +866,10 @@ owner := "jfrog"
 err = client.AllowWorkflows(ctx, owner)
 ```
 
-### Add Organization Secret
+#### Add Organization Secret
+
+Notice - Add Organization Secrets currently supported on GitHub only.
+
 ```go
 // Go context
 ctx := context.Background()
@@ -889,7 +884,10 @@ secretValue := "https://acme.jfrog.io/"
 err = client.AddOrganizationSecret(ctx, owner, secret, secretValue)
 ```
 
-### Get Repo Collaborators
+#### Get Repo Collaborators
+
+Notice - Get Repo Collaborators is currently supported on GitHub only.
+
 ```go
 // Go context
 ctx := context.Background()
@@ -906,7 +904,10 @@ permission := "maintain"
 collaborators, err := client.GetRepoCollaborators(ctx, owner, repo, affiliation, permission)
 ```
 
-### Get Repo Teams By Permissions
+#### Get Repo Teams By Permissions
+
+Notice - Get Repo Teams By Permissions currently supported on GitHub only.
+
 ```go
 // Go context
 ctx := context.Background()
@@ -921,7 +922,10 @@ permissions := []string{"maintain", "admin"}
 teams, err := client.GetRepoTeamsByPermissions(ctx, owner, repo, permissions)
 ```
 
-### Create Or Update Environment
+#### Create Or Update Environment
+
+Notice - Create Or Update Environment is currently supported on GitHub only.
+
 ```go
 // Go context
 ctx := context.Background()
@@ -940,7 +944,10 @@ users := []string{"eyalk007"}
 err = client.CreateOrUpdateEnvironment(ctx, owner, repo, envName, teams, users)
 ```
 
-### CommitAndPushFiles
+#### Commit And Push Files
+
+Notice - Commit And Push Files is currently supported on GitHub only.
+
 ```go
 // Go context
 ctx := context.Background()
@@ -966,7 +973,10 @@ authorEmail := "example@gmail.com"
 err = client.CommitAndPushFiles(ctx, owner, repo, sourceBranch, commitMessage, author, authorEmail, filesToCommit)
 ```
 
-### Merge Pull Request
+#### Merge Pull Request
+
+Notice - Merge Pull Request is currently supported on GitHub only.
+
 ```go
 // Go context
 ctx := context.Background()
@@ -981,4 +991,27 @@ commitMessage := "example commit message"
 
 // Merge the pull request
 err = client.MergePullRequest(ctx, owner, repo, prNumber, commitMessage)
+```
+
+### Webhook Parser
+
+```go
+// Go context
+ctx := context.Background()
+// Logger
+logger := vcsclient.EmptyLogger{}
+// Webhook contextual information
+origin := webhookparser.WebhookOrigin{
+  // The VCS provider (required)
+  VcsProvider: vcsutils.GitHub,
+  // Optional URL of the VCS provider (used for building some URLs)
+  OriginURL: "https://api.github.com",
+  // Token to authenticate incoming webhooks. If empty, signature will not be verified. 
+  // The token is a random key generated in the CreateWebhook command. 
+  Token: []byte("abc123"),
+}
+// The HTTP request of the incoming webhook
+request := http.Request{}
+
+webhookInfo, err := webhookparser.ParseIncomingWebhook(ctx, logger, origin, request)
 ```

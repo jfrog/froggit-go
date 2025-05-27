@@ -30,8 +30,9 @@ const (
 	retriesIntervalMilliSecs = 60000
 	// https://github.com/orgs/community/discussions/27190
 	githubPrContentSizeLimit = 65536
-	ghMaxEnvReviewers        = 6
-	regularFileCode          = "100644"
+	// The maximum number of reviewers that can be added to a GitHub environment
+	ghMaxEnvReviewers = 6
+	regularFileCode   = "100644"
 )
 
 var rateLimitRetryStatuses = []int{http.StatusForbidden, http.StatusTooManyRequests}
@@ -41,11 +42,6 @@ type GitHubRateLimitExecutionHandler func() (*github.Response, error)
 type GitHubRateLimitRetryExecutor struct {
 	vcsutils.RetryExecutor
 	GitHubRateLimitExecutionHandler
-}
-
-type FileToCommit struct {
-	Path    string
-	Content string
 }
 
 func (ghe *GitHubRateLimitRetryExecutor) Execute() error {
@@ -1196,7 +1192,7 @@ func (client *GitHubClient) CreateOrUpdateEnvironment(ctx context.Context, owner
 		return err
 	}
 
-	envReviewers := make([]*github.EnvReviewers, 0)
+	var envReviewers []*github.EnvReviewers
 	for _, team := range teams {
 		envReviewers = append(envReviewers, &github.EnvReviewers{
 			Type: github.String("Team"),

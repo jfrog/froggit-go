@@ -468,6 +468,11 @@ type ListOptions struct {
 	PerPage int
 }
 
+type FileToCommit struct {
+	Path    string
+	Content string
+}
+
 func validateParametersNotBlank(paramNameValueMap map[string]string) error {
 	var errorMessages []string
 	for k, v := range paramNameValueMap {
