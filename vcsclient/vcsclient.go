@@ -435,7 +435,6 @@ type PullRequestDiff struct {
 type RepositoryInfo struct {
 	CloneInfo            CloneInfo
 	RepositoryVisibility RepositoryVisibility
-	DefaultBranch        string
 }
 
 // CloneInfo contains URLs that can be used to clone the repository.

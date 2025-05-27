@@ -583,7 +583,6 @@ func TestGitHubClient_GetRepositoryInfo(t *testing.T) {
 	assert.Equal(t,
 		RepositoryInfo{
 			RepositoryVisibility: Public,
-			DefaultBranch:        "master",
 			CloneInfo:            CloneInfo{HTTP: "https://github.com/octocat/Hello-World.git", SSH: "git@github.com:octocat/Hello-World.git"},
 		},
 		info,

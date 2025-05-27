@@ -932,10 +932,12 @@ repo := "big-npm"
 // Repository environment name
 envName := "frogbot"
 // List of teams ids to add to the environment
-teams := []int64{{12345678}}
-
+teams := []int64{12345678}
+// List of user names to add to the environment
+users := []string{"eyalk007"}
+	
 // Create or update the environment
-err = client.CreateOrUpdateEnvironment(ctx, owner, repo, envName, teams, nil)
+err = client.CreateOrUpdateEnvironment(ctx, owner, repo, envName, teams, users)
 ```
 
 ### CommitAndPushFiles

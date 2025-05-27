@@ -31,6 +31,7 @@ const (
 	// https://github.com/orgs/community/discussions/27190
 	githubPrContentSizeLimit = 65536
 	ghMaxEnvReviewers        = 6
+	regularFileCode          = "100644"
 )
 
 var rateLimitRetryStatuses = []int{http.StatusForbidden, http.StatusTooManyRequests}
@@ -807,7 +808,7 @@ func (client *GitHubClient) GetRepositoryInfo(ctx context.Context, owner, reposi
 		return RepositoryInfo{}, err
 	}
 
-	return RepositoryInfo{RepositoryVisibility: getGitHubRepositoryVisibility(repo), CloneInfo: CloneInfo{HTTP: repo.GetCloneURL(), SSH: repo.GetSSHURL()}, DefaultBranch: *repo.DefaultBranch}, nil
+	return RepositoryInfo{RepositoryVisibility: getGitHubRepositoryVisibility(repo), CloneInfo: CloneInfo{HTTP: repo.GetCloneURL(), SSH: repo.GetSSHURL()}}, nil
 }
 
 // GetCommitBySha on GitHub
@@ -1267,7 +1268,6 @@ func (client *GitHubClient) CommitAndPushFiles(
 			return fmt.Errorf("failed to create blob for %s: %w", file.Path, err)
 		}
 
-		var regularFileCode = "100644"
 		// Add each file to the treeEntries
 		treeEntries = append(treeEntries, &github.TreeEntry{
 			Path: github.String(file.Path),
