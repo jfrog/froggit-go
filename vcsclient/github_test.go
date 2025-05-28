@@ -1029,6 +1029,180 @@ func TestGitHubClient_DeletePullRequestComment(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestGitHubClient_CreateBranch(t *testing.T) {
+	ctx := context.Background()
+	branchResponse := github.Branch{
+		Name:      github.String("master"),
+		Commit:    &github.RepositoryCommit{},
+		Protected: nil,
+	}
+	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, branchResponse, "", createGitHubHandlerWithoutExpectedURI)
+	defer cleanUp()
+	err := client.CreateBranch(ctx, owner, repo1, "master", "BranchForTest")
+	assert.NoError(t, err)
+	client = createBadGitHubClient(t)
+	err = client.CreateBranch(ctx, owner, repo1, "master", "BranchForTest")
+	assert.Error(t, err)
+}
+
+func TestGitHubClient_AllowWorkflows(t *testing.T) {
+	ctx := context.Background()
+	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, nil, fmt.Sprintf("/orgs/%v/actions/permissions", owner), createGitHubHandler)
+	defer cleanUp()
+	err := client.AllowWorkflows(ctx, owner)
+	assert.NoError(t, err)
+	client = createBadGitHubClient(t)
+	err = client.AllowWorkflows(ctx, owner)
+	assert.Error(t, err)
+}
+
+func TestGitHubClient_AddOrganizationSecret(t *testing.T) {
+	ctx := context.Background()
+	publicKeyResponse := github.PublicKey{
+		KeyID: github.String("key-id"),
+		Key:   github.String("mfB0IZfFzP0YoJ4GzRbGVFfuR6MGlwGTi5jJ6EEXa5g="),
+	}
+	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, publicKeyResponse, "", createGitHubHandlerWithoutExpectedURI)
+	defer cleanUp()
+	err := client.AddOrganizationSecret(ctx, owner, "super-duper-secret", "super-duper-secret-value")
+	assert.NoError(t, err)
+	client = createBadGitHubClient(t)
+	err = client.AddOrganizationSecret(ctx, owner, "super-duper-secret", "super-duper-secret-value")
+	assert.Error(t, err)
+}
+
+func TestGitHubClient_CommitAndPushFiles(t *testing.T) {
+	ctx := context.Background()
+	sourceBranch := "feature-branch"
+	filesToCommit := []FileToCommit{
+		{Path: "example.txt", Content: "example content"},
+	}
+	expectedResponses := map[string]mockGitHubResponse{
+		"/repos/jfrog/repo-1/git/ref/heads/feature-branch": {
+			StatusCode: 200,
+			Response: mustMarshal(&github.Reference{
+				Ref: github.String("refs/heads/feature-branch"),
+				Object: &github.GitObject{
+					SHA: github.String("abc123abc123abc123abc123abc123abc123abcd"),
+				},
+			}),
+		},
+		"/repos/jfrog/repo-1/git/commits/abc123abc123abc123abc123abc123abc123abcd": {
+			StatusCode: 200,
+			Response: mustMarshal(&github.Commit{
+				SHA: github.String("abc123abc123abc123abc123abc123abc123abcd"),
+				Tree: &github.Tree{
+					SHA: github.String("def456def456def456def456def456def456defa"),
+				},
+			}),
+		},
+		"/repos/jfrog/repo-1/git/blobs": {
+			StatusCode: 201,
+			Response: mustMarshal(&github.Blob{
+				SHA: github.String("blobsha1234567890abcdef1234567890abcdef1234"),
+			}),
+		},
+		"/repos/jfrog/repo-1/git/trees": {
+			StatusCode: 201,
+			Response: mustMarshal(&github.Tree{
+				SHA: github.String("tree789tree789tree789tree789tree789tree789"),
+			}),
+		},
+		"/repos/jfrog/repo-1/git/commits": {
+			StatusCode: 201,
+			Response: mustMarshal(&github.Commit{
+				SHA: github.String("commit123commit123commit123commit123commit123"),
+			}),
+		},
+		"/repos/jfrog/repo-1/git/refs/heads/feature-branch": {
+			StatusCode: 200,
+			Response: mustMarshal(&github.Reference{
+				Ref: github.String("refs/heads/feature-branch"),
+				Object: &github.GitObject{
+					SHA: github.String("commit123commit123commit123commit123commit123"),
+				},
+			}),
+		},
+	}
+
+	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, nil, "", createGitHubHandlerWithMultiResponse(t, expectedResponses))
+	defer cleanUp()
+	err := client.CommitAndPushFiles(ctx, owner, repo1, sourceBranch, "generic commit message", "example", "example@jfrog.com", filesToCommit)
+	assert.NoError(t, err)
+	client = createBadGitHubClient(t)
+	err = client.CommitAndPushFiles(ctx, owner, repo1, sourceBranch, "generic commit message", "example", "example@jfrog.com", filesToCommit)
+	assert.Error(t, err)
+}
+
+func TestGitHubClient_GetRepoCollaborators(t *testing.T) {
+	ctx := context.Background()
+	response := []*github.User{
+		{Login: github.String("example")},
+	}
+	affiliation := "direct"
+	permission := "maintain"
+	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, response, fmt.Sprintf("/repos/%v/%v/collaborators?affiliation=%v&permission=%v", owner, repo1, affiliation, permission), createGitHubHandler)
+	defer cleanUp()
+	collaborators, err := client.GetRepoCollaborators(ctx, owner, repo1, "direct", "maintain")
+	assert.NoError(t, err)
+	assert.Len(t, collaborators, 1)
+	assert.Equal(t, collaborators[0], *response[0].Login)
+	client = createBadGitHubClient(t)
+	_, err = client.GetRepoCollaborators(ctx, owner, repo1, "direct", "maintain")
+	assert.Error(t, err)
+}
+
+func TestGitHubClient_GetRepoTeamsByPermissions(t *testing.T) {
+	ctx := context.Background()
+	response := []*github.Team{
+		{
+			Name:       github.String("dev-team"),
+			Slug:       github.String("dev-team"),
+			ID:         github.Int64(1234567),
+			Permission: github.String("maintain"),
+		},
+	}
+	permissions := []string{"maintain"}
+
+	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, response, fmt.Sprintf("/repos/%v/%v/teams", owner, repo1), createGitHubHandler)
+	defer cleanUp()
+	teams, err := client.GetRepoTeamsByPermissions(ctx, owner, repo1, permissions)
+	assert.NoError(t, err)
+	assert.Len(t, teams, 1)
+	assert.Equal(t, teams[0], response[0].GetID())
+	client = createBadGitHubClient(t)
+	_, err = client.GetRepoTeamsByPermissions(ctx, owner, repo1, permissions)
+	assert.Error(t, err)
+}
+
+func TestGitHubClient_CreateOrUpdateEnvironment(t *testing.T) {
+	ctx := context.Background()
+	teams := []int64{123467}
+	environment := "frogbot"
+
+	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, nil, fmt.Sprintf("/repos/%v/%v/environments/%v", owner, repo1, environment), createGitHubHandler)
+	defer cleanUp()
+	err := client.CreateOrUpdateEnvironment(ctx, owner, repo1, environment, teams, nil)
+	assert.NoError(t, err)
+	client = createBadGitHubClient(t)
+	err = client.CreateOrUpdateEnvironment(ctx, owner, repo1, environment, teams, nil)
+	assert.Error(t, err)
+}
+
+func TestGitHubClient_MergePullRequest(t *testing.T) {
+	ctx := context.Background()
+	prNumber := 1
+	commitMessage := "merge"
+
+	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, nil, fmt.Sprintf("/repos/%v/%v/pulls/%v/%v", owner, repo1, prNumber, commitMessage), createGitHubHandler)
+	defer cleanUp()
+	err := client.MergePullRequest(ctx, owner, repo1, prNumber, commitMessage)
+	assert.NoError(t, err)
+	client = createBadGitHubClient(t)
+	err = client.MergePullRequest(ctx, owner, repo1, prNumber, commitMessage)
+	assert.Error(t, err)
+}
+
 func createBadGitHubClient(t *testing.T) VcsClient {
 	client, err := NewClientBuilder(vcsutils.GitHub).ApiEndpoint("https://badendpoint").Build()
 	assert.NoError(t, err)
@@ -1257,6 +1431,44 @@ func TestIsRateLimitAbuseError(t *testing.T) {
 	// type `AbuseRateLimitError`, should return true
 	isRateLimitAbuseErr = isRateLimitAbuseError(&github.AbuseRateLimitError{})
 	assert.True(t, isRateLimitAbuseErr)
+}
+
+func mustMarshal(v interface{}) []byte {
+	data, err := json.Marshal(v)
+	if err != nil {
+		panic(fmt.Sprintf("failed to marshal: %v", err))
+	}
+	return data
+}
+
+type mockGitHubResponse struct {
+	StatusCode int
+	Response   []byte
+}
+
+func createGitHubHandlerWithMultiResponse(t *testing.T, expectedResponses map[string]mockGitHubResponse) func(*testing.T, string, []byte, int) http.HandlerFunc {
+	return func(_ *testing.T, _ string, _ []byte, _ int) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
+			// Look up the expected response for the URI
+			resp, ok := expectedResponses[r.RequestURI]
+			assert.True(t, ok, "unexpected URI: %s", r.RequestURI)
+
+			// Check the Authorization header
+			assert.Equal(t, "Bearer "+token, r.Header.Get("Authorization"))
+
+			// Handle special case for "tarball"
+			if strings.Contains(r.RequestURI, "tarball") {
+				w.Header().Add("Location", string(resp.Response))
+				w.WriteHeader(resp.StatusCode)
+				return
+			}
+
+			// Write the response for the general case
+			w.WriteHeader(resp.StatusCode)
+			_, err := w.Write(resp.Response)
+			assert.NoError(t, err)
+		}
+	}
 }
 
 func TestGitHubClient_ListAppRepositories(t *testing.T) {

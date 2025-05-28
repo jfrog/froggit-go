@@ -703,6 +703,38 @@ func (client *BitbucketCloudClient) GetModifiedFiles(ctx context.Context, owner,
 	return fileNamesList, nil
 }
 
+func (client *BitbucketCloudClient) CreateBranch(ctx context.Context, owner, repository, sourceBranch, newBranch string) error {
+	return errBitbucketCreateBranchNotSupported
+}
+
+func (client *BitbucketCloudClient) AllowWorkflows(ctx context.Context, owner string) error {
+	return errBitbucketAllowWorkflowsNotSupported
+}
+
+func (client *BitbucketCloudClient) AddOrganizationSecret(ctx context.Context, owner, secretName, secretValue string) error {
+	return errBitbucketAddOrganizationSecretNotSupported
+}
+
+func (client *BitbucketCloudClient) CommitAndPushFiles(ctx context.Context, owner, repo, sourceBranch, commitMessage, authorName, authorEmail string, files []FileToCommit) error {
+	return errBitbucketCommitAndPushFilesNotSupported
+}
+
+func (client *BitbucketCloudClient) GetRepoCollaborators(ctx context.Context, owner, repo, affiliation, permission string) ([]string, error) {
+	return nil, errBitbucketGetRepoCollaboratorsNotSupported
+}
+
+func (client *BitbucketCloudClient) GetRepoTeamsByPermissions(ctx context.Context, owner, repo string, permissions []string) ([]int64, error) {
+	return nil, errBitbucketGetRepoTeamsByPermissionsNotSupported
+}
+
+func (client *BitbucketCloudClient) CreateOrUpdateEnvironment(ctx context.Context, owner, repo, envName string, teams []int64, users []string) error {
+	return errBitbucketCreateOrUpdateEnvironmentNotSupported
+}
+
+func (client *BitbucketCloudClient) MergePullRequest(ctx context.Context, owner, repo string, prNumber int, commitMessage string) error {
+	return errBitbucketMergePullRequestNotSupported
+}
+
 type pullRequestsResponse struct {
 	Values []pullRequestsDetails `json:"values"`
 }

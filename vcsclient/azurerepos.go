@@ -744,6 +744,38 @@ func (client *AzureReposClient) GetModifiedFiles(ctx context.Context, _, reposit
 	return fileNamesList, nil
 }
 
+func (client *AzureReposClient) CreateBranch(ctx context.Context, owner, repository, sourceBranch, newBranch string) error {
+	return getUnsupportedInAzureError("create branch")
+}
+
+func (client *AzureReposClient) AllowWorkflows(ctx context.Context, owner string) error {
+	return getUnsupportedInAzureError("allow workflows")
+}
+
+func (client *AzureReposClient) AddOrganizationSecret(ctx context.Context, owner, secretName, secretValue string) error {
+	return getUnsupportedInAzureError("add organization secret")
+}
+
+func (client *AzureReposClient) CommitAndPushFiles(ctx context.Context, owner, repo, sourceBranch, commitMessage, authorName, authorEmail string, files []FileToCommit) error {
+	return getUnsupportedInAzureError("commit and push files")
+}
+
+func (client *AzureReposClient) GetRepoCollaborators(ctx context.Context, owner, repo, affiliation, permission string) ([]string, error) {
+	return nil, getUnsupportedInAzureError("get repo collaborators")
+}
+
+func (client *AzureReposClient) GetRepoTeamsByPermissions(ctx context.Context, owner, repo string, permissions []string) ([]int64, error) {
+	return nil, getUnsupportedInAzureError("get repo teams by permissions")
+}
+
+func (client *AzureReposClient) CreateOrUpdateEnvironment(ctx context.Context, owner, repo, envName string, teams []int64, users []string) error {
+	return getUnsupportedInAzureError("create or update environment")
+}
+
+func (client *AzureReposClient) MergePullRequest(ctx context.Context, owner, repo string, prNumber int, commitMessage string) error {
+	return getUnsupportedInAzureError("merge pull request")
+}
+
 func parsePullRequestDetails(client *AzureReposClient, pullRequest git.GitPullRequest, owner, repository string, withBody bool) PullRequestInfo {
 	// Trim the branches prefix and get the actual branches name
 	shortSourceName := plumbing.ReferenceName(*pullRequest.SourceRefName).Short()

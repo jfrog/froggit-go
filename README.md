@@ -67,6 +67,14 @@ Currently supported providers are: [GitHub](#github), [Bitbucket Server](#bitbuc
       - [Unlabel Pull Request](#unlabel-pull-request)
       - [Upload Code Scanning](#upload-code-scanning)
       - [Download a File From a Repository](#download-a-file-from-a-repository)
+      - [Create a branch](#create-branch)
+      - [Allow workflows on organization](#allow-workflows)
+      - [Add Organization Secret](#add-organization-secret)
+      - [Get Repo Collaborators](#get-repo-collaborators)
+      - [Get Repo Teams By Permissions](#get-repo-teams-by-permissions)
+      - [Create Or Update Environment](#create-or-update-environment)
+      - [CommitAndPushFiles](#commit-and-push-files)
+      - [Merge Pull Request](#merge-pull-request)
     - [Webhook Parser](#webhook-parser)
 
 ### VCS Clients
@@ -844,6 +852,168 @@ path := "path"
 
 // Downloads a file from a repository
 content, statusCode, err := client.DownloadFileFromRepo(ctx, owner, repo, branch, path)
+```
+
+
+#### Create Branch
+
+Notice - Create Branch is currently supported on GitHub only.
+
+```go
+// Go Context
+ctx := context.Background()
+// Organization or username
+owner := "jfrog"
+// VSC Repository
+repository := "jfrog-cli"
+// Source branch to create a new branch from
+sourceBranch := "main"
+// New branch name
+newBranch := "my-new-branch"
+
+// Create a new branch
+err = client.CreateBranch(ctx, owner, repository, sourceBranch, newBranch)
+```
+
+#### Allow Workflows
+
+Notice - Allow Workflows is currently supported on GitHub only.
+
+```go
+// Go context
+ctx := context.Background()
+// Organization 
+owner := "jfrog"
+
+// Allow workflows for the organization
+err = client.AllowWorkflows(ctx, owner)
+```
+
+#### Add Organization Secret
+
+Notice - Add Organization Secrets currently supported on GitHub only.
+
+```go
+// Go context
+ctx := context.Background()
+// Organization
+owner := "jfrog"
+// Secret name
+secret := "JF_URL"
+// Secret value, will be encrypted by froggit
+secretValue := "https://acme.jfrog.io/"
+
+// Add a secret to the organization
+err = client.AddOrganizationSecret(ctx, owner, secret, secretValue)
+```
+
+#### Get Repo Collaborators
+
+Notice - Get Repo Collaborators is currently supported on GitHub only.
+
+```go
+// Go context
+ctx := context.Background()
+// Organization
+owner := "jfrog"
+// Repository name
+repo := "jfrog-cli"
+// Affiliation type, can be one of the following: all, direct, outside, member
+affiliation := "direct"
+// Permission type, can be one of the following: read, write, admin, maintain, triage
+permission := "maintain"
+
+// Get the list of collaborators for a specific repository
+collaborators, err := client.GetRepoCollaborators(ctx, owner, repo, affiliation, permission)
+```
+
+#### Get Repo Teams By Permissions
+
+Notice - Get Repo Teams By Permissions currently supported on GitHub only.
+
+```go
+// Go context
+ctx := context.Background()
+// Organization
+owner := "jfrog"
+// Repository name
+repo := "jfrog-cli"
+// Permission type, can be one of the following: read, write, admin, maintain, triage
+permissions := []string{"maintain", "admin"}
+
+// Get the list of teams with specific permissions for a repository
+teams, err := client.GetRepoTeamsByPermissions(ctx, owner, repo, permissions)
+```
+
+#### Create Or Update Environment
+
+Notice - Create Or Update Environment is currently supported on GitHub only.
+
+```go
+// Go context
+ctx := context.Background()
+// Organization
+owner := "jfrog-org"
+// Repository name
+repo := "big-npm"
+// Repository environment name
+envName := "frogbot"
+// List of teams ids to add to the environment
+teams := []int64{12345678}
+// List of user names to add to the environment
+users := []string{"eyalk007"}
+	
+// Create or update the environment
+err = client.CreateOrUpdateEnvironment(ctx, owner, repo, envName, teams, users)
+```
+
+#### Commit And Push Files
+
+Notice - Commit And Push Files is currently supported on GitHub only.
+
+```go
+// Go context
+ctx := context.Background()
+// Organization
+owner := "jfrog"
+// Repository name
+repo := "jfrog-cli"
+// Source branch name
+sourceBranch := "feature-branch"
+// Commit message
+commitMessage := "example commit message" 
+// Author name
+author := "example"
+//Files To commit
+filesToCommit := []vcsclient.FileToCommit{{
+		Path:    ".github/workflows/example.yml",
+		Content: "hello world",
+	}}
+//Author email
+authorEmail := "example@gmail.com"
+
+// Commit and push files to the repository in the source branch
+err = client.CommitAndPushFiles(ctx, owner, repo, sourceBranch, commitMessage, author, authorEmail, filesToCommit)
+```
+
+#### Merge Pull Request
+
+Notice - Merge Pull Request is currently supported on GitHub only.
+
+```go
+// Go context
+ctx := context.Background()
+// Organization
+owner := "jfrog"
+// Repository name
+repo := "jfrog-cli"
+// pull request number
+prNumber := 134
+// Commit message, empty will use the default commit message
+commitMessage := "example commit message"
+
+// Merge the pull request
+err = client.MergePullRequest(ctx, owner, repo, prNumber, commitMessage)
 ```
 
 ### Webhook Parser
