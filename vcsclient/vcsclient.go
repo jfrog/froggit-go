@@ -320,6 +320,30 @@ type VcsClient interface {
 
 	// GetPullRequestDetailsSizeLimit returns the maximum size of a pull request details
 	GetPullRequestDetailsSizeLimit() int
+
+	// CreateBranch creates a new branch in the specified repository using the provided source branch as a base.
+	CreateBranch(ctx context.Context, owner, repository, sourceBranch, newBranch string) error
+
+	// AllowWorkflows allows the user to enable or disable workflows for an organization
+	AllowWorkflows(ctx context.Context, owner string) error
+
+	// AddOrganizationSecret adds a secret to the organization
+	AddOrganizationSecret(ctx context.Context, owner, secretName, secretValue string) error
+
+	// CommitAndPushFiles commits and pushes files to the specified branch in the repository
+	CommitAndPushFiles(ctx context.Context, owner, repo, sourceBranch, commitMessage, authorName, authorEmail string, files []FileToCommit) error
+
+	// GetRepoCollaborators returns a list of collaborators for the specified repository
+	GetRepoCollaborators(ctx context.Context, owner, repo, affiliation, permission string) ([]string, error)
+
+	// GetRepoTeamsByPermissions returns a list of teams with the proper permissions
+	GetRepoTeamsByPermissions(ctx context.Context, owner, repo string, permissions []string) ([]int64, error)
+
+	// CreateOrUpdateEnvironment creates or updates an environment in the specified repository
+	CreateOrUpdateEnvironment(ctx context.Context, owner, repo, envName string, teams []int64, users []string) error
+
+	// MergePullRequest merges a pull request into the target branch
+	MergePullRequest(ctx context.Context, owner, repo string, prNumber int, commitMessage string) error
 }
 
 // CommitInfo contains the details of a commit
@@ -442,6 +466,11 @@ type ListOptions struct {
 	Page int
 	// For paginated result sets, the number of results to include per page.
 	PerPage int
+}
+
+type FileToCommit struct {
+	Path    string
+	Content string
 }
 
 func validateParametersNotBlank(paramNameValueMap map[string]string) error {

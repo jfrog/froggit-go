@@ -24,6 +24,14 @@ var (
 	errBitbucketDeletePullRequestComment                     = fmt.Errorf("delete pull request comment is %s", notSupportedOnBitbucket)
 	errBitbucketListPullRequestAssociatedCommitsNotSupported = fmt.Errorf("list pull requests associated commits is %s", notSupportedOnBitbucket)
 	errBitbucketListListPullRequestReviewsNotSupported       = fmt.Errorf("list pull request reviews is %s", notSupportedOnBitbucket)
+	errBitbucketCreateBranchNotSupported                     = fmt.Errorf("creating a branch is %s", notSupportedOnBitbucket)
+	errBitbucketAllowWorkflowsNotSupported                   = fmt.Errorf("allow workflows is %s", notSupportedOnBitbucket)
+	errBitbucketAddOrganizationSecretNotSupported            = fmt.Errorf("adding organization secret is %s", notSupportedOnBitbucket)
+	errBitbucketCommitAndPushFilesNotSupported               = fmt.Errorf("commit and push files is %s", notSupportedOnBitbucket)
+	errBitbucketGetRepoCollaboratorsNotSupported             = fmt.Errorf("get repository collaborators is %s", notSupportedOnBitbucket)
+	errBitbucketGetRepoTeamsByPermissionsNotSupported        = fmt.Errorf("get repo teams by permissions is %s", notSupportedOnBitbucket)
+	errBitbucketCreateOrUpdateEnvironmentNotSupported        = fmt.Errorf("create or update environment is %s", notSupportedOnBitbucket)
+	errBitbucketMergePullRequestNotSupported                 = fmt.Errorf("merge pull request is %s", notSupportedOnBitbucket)
 )
 
 type BitbucketCommitInfo struct {
