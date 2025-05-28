@@ -1265,20 +1265,6 @@ func isRateLimitAbuseError(requestError error) bool {
 	return errors.As(requestError, &abuseRateLimitError) || errors.As(requestError, &rateLimitError)
 }
 
-// AppRepositoryInfo is a VCS-agnostic struct for app repository details
-// Extend as needed for other providers
-type AppRepositoryInfo struct {
-	Name          string
-	FullName      string
-	Owner         string
-	Private       bool
-	Description   string
-	URL           string
-	CloneURL      string
-	SSHURL        string
-	DefaultBranch string
-}
-
 // ListAppRepositories returns a slice of all accessible app repositories with details.
 func (client *GitHubClient) ListAppRepositories(ctx context.Context) ([]AppRepositoryInfo, error) {
 	var results []AppRepositoryInfo

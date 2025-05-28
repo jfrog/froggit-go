@@ -77,6 +77,28 @@ type CommitStatusInfo struct {
 	LastUpdatedAt time.Time
 }
 
+// AppRepositoryInfo contains information about an application repository
+// Name          - The repository name
+// FullName      - The full name of the repository (including owner/namespace)
+// Owner         - The owner of the repository
+// Private       - Whether the repository is private
+// Description   - The repository description
+// URL           - The web URL of the repository
+// CloneURL      - The HTTP(S) clone URL of the repository
+// SSHURL        - The SSH clone URL of the repository
+// DefaultBranch - The default branch of the repository
+type AppRepositoryInfo struct {
+	Name          string
+	FullName      string
+	Owner         string
+	Private       bool
+	Description   string
+	URL           string
+	CloneURL      string
+	SSHURL        string
+	DefaultBranch string
+}
+
 // VcsClient is a base class of all Vcs clients - GitHub, GitLab, Bitbucket server and cloud clients
 type VcsClient interface {
 	// TestConnection Returns nil if connection and authorization established successfully

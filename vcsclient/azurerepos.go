@@ -77,8 +77,8 @@ func (client *AzureReposClient) ListRepositories(ctx context.Context) (map[strin
 }
 
 // ListAppRepositories returns an error since this is not supported in Azure Repos
-func (client *AzureReposClient) ListAppRepositories(_ context.Context) ([]AppRepositoryInfo, error) {
-	return nil, fmt.Errorf("listing app repositories is not supported in Azure Repos")
+func (client *AzureReposClient) ListAppRepositories(ctx context.Context) ([]AppRepositoryInfo, error) {
+	return nil, getUnsupportedInAzureError("list app repositories")
 }
 
 // ListBranches on Azure Repos
