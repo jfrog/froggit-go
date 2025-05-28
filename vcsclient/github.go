@@ -1283,27 +1283,10 @@ type AppRepositoryInfo struct {
 func (client *GitHubClient) ListAppRepositories(ctx context.Context) ([]AppRepositoryInfo, error) {
 	var results []AppRepositoryInfo
 
-	req, err := client.ghClient.NewRequest("GET", "installation/repositories", nil)
+	response, _, err := client.ghClient.Apps.ListRepos(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
-
-	req.Header.Set("Accept", "application/vnd.github+json")
-	req.Header.Set("X-GitHub-Api-Version", "2022-11-28")
-
-	var response struct {
-		TotalCount   int                  `json:"total_count"`
-		Repositories []*github.Repository `json:"repositories"`
-	}
-
-	err = client.runWithRateLimitRetries(func() (*github.Response, error) {
-		resp, err := client.ghClient.Do(ctx, req, &response)
-		return resp, err
-	})
-	if err != nil {
-		return nil, err
-	}
-
 	for _, repo := range response.Repositories {
 		if repo.Owner != nil && repo.Owner.Login != nil && repo.Name != nil {
 			repoInfo := AppRepositoryInfo{
