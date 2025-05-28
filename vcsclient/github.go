@@ -1560,20 +1560,21 @@ func (client *GitHubClient) ListAppRepositories(ctx context.Context) ([]AppRepos
 		return nil, err
 	}
 	for _, repo := range response.Repositories {
-		if repo.Owner != nil && repo.Owner.Login != nil && repo.Name != nil {
-			repoInfo := AppRepositoryInfo{
-				Name:          repo.GetName(),
-				FullName:      repo.GetFullName(),
-				Owner:         repo.Owner.GetLogin(),
-				Private:       repo.GetPrivate(),
-				Description:   repo.GetDescription(),
-				URL:           repo.GetHTMLURL(),
-				CloneURL:      repo.GetCloneURL(),
-				SSHURL:        repo.GetSSHURL(),
-				DefaultBranch: repo.GetDefaultBranch(),
-			}
-			results = append(results, repoInfo)
+		if repo == nil || repo.Owner == nil || repo.Owner.Login == nil || repo.Name == nil {
+			continue
 		}
+		repoInfo := AppRepositoryInfo{
+			Name:          vcsutils.DefaultIfNotNil(repo.Name),
+			FullName:      vcsutils.DefaultIfNotNil(repo.FullName),
+			Owner:         vcsutils.DefaultIfNotNil(repo.Owner.Login),
+			Private:       repo.GetPrivate(),
+			Description:   vcsutils.DefaultIfNotNil(repo.Description),
+			URL:           vcsutils.DefaultIfNotNil(repo.HTMLURL),
+			CloneURL:      vcsutils.DefaultIfNotNil(repo.CloneURL),
+			SSHURL:        vcsutils.DefaultIfNotNil(repo.SSHURL),
+			DefaultBranch: vcsutils.DefaultIfNotNil(repo.DefaultBranch),
+		}
+		results = append(results, repoInfo)
 	}
 
 	return results, nil
