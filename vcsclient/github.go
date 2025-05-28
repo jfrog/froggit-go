@@ -1265,7 +1265,6 @@ func isRateLimitAbuseError(requestError error) bool {
 	return errors.As(requestError, &abuseRateLimitError) || errors.As(requestError, &rateLimitError)
 }
 
-// ListAppRepositories returns a slice of all accessible app repositories with details.
 func (client *GitHubClient) ListAppRepositories(ctx context.Context) ([]AppRepositoryInfo, error) {
 	var results []AppRepositoryInfo
 
