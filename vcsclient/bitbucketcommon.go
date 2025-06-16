@@ -32,6 +32,7 @@ var (
 	errBitbucketGetRepoTeamsByPermissionsNotSupported        = fmt.Errorf("get repo teams by permissions is %s", notSupportedOnBitbucket)
 	errBitbucketCreateOrUpdateEnvironmentNotSupported        = fmt.Errorf("create or update environment is %s", notSupportedOnBitbucket)
 	errBitbucketMergePullRequestNotSupported                 = fmt.Errorf("merge pull request is %s", notSupportedOnBitbucket)
+	errBitbucketCreatePullRequestDetailedNotSupported        = fmt.Errorf("creating pull request detailed is %s", notSupportedOnBitbucket)
 )
 
 type BitbucketCommitInfo struct {

@@ -74,6 +74,7 @@ Currently supported providers are: [GitHub](#github), [Bitbucket Server](#bitbuc
       - [Create Or Update Environment](#create-or-update-environment)
       - [CommitAndPushFiles](#commit-and-push-files)
       - [Merge Pull Request](#merge-pull-request)
+      - [Create Pull Request Detailed](#create-pull-request-detailed)
     - [Webhook Parser](#webhook-parser)
 
 ### VCS Clients
@@ -991,6 +992,30 @@ commitMessage := "example commit message"
 
 // Merge the pull request
 err = client.MergePullRequest(ctx, owner, repo, prNumber, commitMessage)
+```
+
+#### Create Pull Request Detailed
+
+Notice - Create Pull Request Detailed is currently supported on GitHub only.
+
+```go
+// Go context
+ctx := context.Background()
+// Organization or username
+owner := "jfrog"
+// VCS repository
+repository := "jfrog-cli"
+// Source pull request branch
+sourceBranch := "dev"
+// Target pull request branch
+targetBranch := "main"
+// Pull request title
+title := "Pull request title"
+// Pull request description
+description := "Pull request description"
+
+// Creates a pull request and returns its number and URL.
+prInfo,err := client.CreatePullRequestDetailed(ctx, owner, repository, sourceBranch, targetBranch, title, description)
 ```
 
 ### Webhook Parser

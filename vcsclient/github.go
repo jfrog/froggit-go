@@ -341,21 +341,44 @@ func (client *GitHubClient) GetPullRequestDetailsSizeLimit() int {
 // CreatePullRequest on GitHub
 func (client *GitHubClient) CreatePullRequest(ctx context.Context, owner, repository, sourceBranch, targetBranch, title, description string) error {
 	return client.runWithRateLimitRetries(func() (*github.Response, error) {
-		return client.executeCreatePullRequest(ctx, owner, repository, sourceBranch, targetBranch, title, description)
+		_, githubResponse, err := client.executeCreatePullRequest(ctx, owner, repository, sourceBranch, targetBranch, title, description)
+		return githubResponse, err
 	})
 }
 
-func (client *GitHubClient) executeCreatePullRequest(ctx context.Context, owner, repository, sourceBranch, targetBranch, title, description string) (*github.Response, error) {
+func (client *GitHubClient) CreatePullRequestDetailed(ctx context.Context, owner, repository, sourceBranch, targetBranch, title, description string) (CreatedPullRequestInfo, error) {
+	var prInfo CreatedPullRequestInfo
+
+	err := client.runWithRateLimitRetries(func() (*github.Response, error) {
+		pr, ghResponse, err := client.executeCreatePullRequest(ctx, owner, repository, sourceBranch, targetBranch, title, description)
+		if err != nil {
+			return ghResponse, err
+		}
+		prInfo = mapToPullRequestInfo(pr)
+		return ghResponse, nil
+	})
+
+	return prInfo, err
+}
+
+func (client *GitHubClient) executeCreatePullRequest(ctx context.Context, owner, repository, sourceBranch, targetBranch, title, description string) (*github.PullRequest, *github.Response, error) {
 	head := owner + ":" + sourceBranch
 	client.logger.Debug(vcsutils.CreatingPullRequest, title)
 
-	_, ghResponse, err := client.ghClient.PullRequests.Create(ctx, owner, repository, &github.NewPullRequest{
+	pr, ghResponse, err := client.ghClient.PullRequests.Create(ctx, owner, repository, &github.NewPullRequest{
 		Title: &title,
 		Body:  &description,
 		Head:  &head,
 		Base:  &targetBranch,
 	})
-	return ghResponse, err
+	return pr, ghResponse, err
+}
+
+func mapToPullRequestInfo(pr *github.PullRequest) CreatedPullRequestInfo {
+	return CreatedPullRequestInfo{
+		Number: pr.GetNumber(),
+		URL:    pr.GetHTMLURL(),
+	}
 }
 
 // UpdatePullRequest on GitHub
@@ -1003,6 +1026,7 @@ func (client *GitHubClient) DownloadFileFromRepo(ctx context.Context, owner, rep
 		content, statusCode, ghResponse, err = client.executeDownloadFileFromRepo(ctx, owner, repository, branch, path)
 		return ghResponse, err
 	})
+
 	return
 }
 

@@ -77,6 +77,14 @@ type CommitStatusInfo struct {
 	LastUpdatedAt time.Time
 }
 
+// PullRequestData contains the data returned from a pull request creation
+// number - The number of the pull request
+// URL - The URL of the pull request
+type CreatedPullRequestInfo struct {
+	Number int
+	URL    string
+}
+
 // VcsClient is a base class of all Vcs clients - GitHub, GitLab, Bitbucket server and cloud clients
 type VcsClient interface {
 	// TestConnection Returns nil if connection and authorization established successfully
@@ -344,6 +352,15 @@ type VcsClient interface {
 
 	// MergePullRequest merges a pull request into the target branch
 	MergePullRequest(ctx context.Context, owner, repo string, prNumber int, commitMessage string) error
+
+	// CreatePullRequestDetailed Creates a pull request between 2 different branches in the same repository
+	// owner        - User or organization
+	// repository   - VCS repository name
+	// sourceBranch - Source branch
+	// targetBranch - Target branch
+	// title        - Pull request title
+	// description  - Pull request description
+	CreatePullRequestDetailed(ctx context.Context, owner, repository, sourceBranch, targetBranch, title, description string) (CreatedPullRequestInfo, error)
 }
 
 // CommitInfo contains the details of a commit

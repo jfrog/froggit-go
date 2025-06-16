@@ -730,6 +730,10 @@ func (client *BitbucketCloudClient) MergePullRequest(ctx context.Context, owner,
 	return errBitbucketMergePullRequestNotSupported
 }
 
+func (client *BitbucketCloudClient) CreatePullRequestDetailed(ctx context.Context, owner, repository, sourceBranch, targetBranch, title, description string) (CreatedPullRequestInfo, error) {
+	return CreatedPullRequestInfo{}, errBitbucketCreatePullRequestDetailedNotSupported
+}
+
 type pullRequestsResponse struct {
 	Values []pullRequestsDetails `json:"values"`
 }

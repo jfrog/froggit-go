@@ -14,6 +14,7 @@ var errGitLabGetCollaboratorsNotSupported = errors.New("get collaborators is not
 var errGitLabGetRepoTeamsByPermissionsNotSupported = errors.New("get repository Teams By permissions is not supported on Gitlab")
 var errGitLabCreateOrUpdateEnvironmentNotSupported = errors.New("create or update environment is not supported on Gitlab")
 var errGitLabMergePullRequestNotSupported = errors.New("merging pull request is not supported on Gitlab")
+var errGitlabCreatePullRequestDetailedNotSupported = errors.New("creating pull request detailed is not supported on Gitlab")
 
 const (
 	// https://docs.gitlab.com/ee/api/merge_requests.html#create-mr

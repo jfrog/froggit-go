@@ -770,6 +770,10 @@ func (client *AzureReposClient) MergePullRequest(ctx context.Context, owner, rep
 	return getUnsupportedInAzureError("merge pull request")
 }
 
+func (client *AzureReposClient) CreatePullRequestDetailed(ctx context.Context, owner, repository, sourceBranch, targetBranch, title, description string) (CreatedPullRequestInfo, error) {
+	return CreatedPullRequestInfo{}, getUnsupportedInAzureError("create pull request detailed")
+}
+
 func parsePullRequestDetails(client *AzureReposClient, pullRequest git.GitPullRequest, owner, repository string, withBody bool) PullRequestInfo {
 	// Trim the branches prefix and get the actual branches name
 	shortSourceName := plumbing.ReferenceName(*pullRequest.SourceRefName).Short()

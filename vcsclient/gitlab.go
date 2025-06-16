@@ -809,6 +809,10 @@ func (client *GitLabClient) MergePullRequest(ctx context.Context, owner, repo st
 	return errGitLabMergePullRequestNotSupported
 }
 
+func (client *GitLabClient) CreatePullRequestDetailed(ctx context.Context, owner, repository, sourceBranch, targetBranch, title, description string) (CreatedPullRequestInfo, error) {
+	return CreatedPullRequestInfo{}, errGitlabCreatePullRequestDetailedNotSupported
+}
+
 func getProjectID(owner, project string) string {
 	return fmt.Sprintf("%s/%s", owner, project)
 }

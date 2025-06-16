@@ -921,6 +921,10 @@ func (client *BitbucketServerClient) MergePullRequest(ctx context.Context, owner
 	return errBitbucketMergePullRequestNotSupported
 }
 
+func (client *BitbucketServerClient) CreatePullRequestDetailed(ctx context.Context, owner, repository, sourceBranch, targetBranch, title, description string) (CreatedPullRequestInfo, error) {
+	return CreatedPullRequestInfo{}, errBitbucketCreatePullRequestDetailedNotSupported
+}
+
 func getBitbucketServerRepositoryVisibility(public bool) RepositoryVisibility {
 	if public {
 		return Public
