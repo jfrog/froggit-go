@@ -5,12 +5,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/go-git/go-git/v5/plumbing"
-	"github.com/jfrog/froggit-go/vcsutils"
-	"github.com/jfrog/gofrog/datastructures"
-	"github.com/microsoft/azure-devops-go-api/azuredevops/v7"
-	"github.com/microsoft/azure-devops-go-api/azuredevops/v7/core"
-	"github.com/microsoft/azure-devops-go-api/azuredevops/v7/git"
 	"io"
 	"net/http"
 	"os"
@@ -18,6 +12,13 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/jfrog/froggit-go/vcsutils"
+	"github.com/jfrog/gofrog/datastructures"
+	"github.com/microsoft/azure-devops-go-api/azuredevops/v7"
+	"github.com/microsoft/azure-devops-go-api/azuredevops/v7/core"
+	"github.com/microsoft/azure-devops-go-api/azuredevops/v7/git"
 )
 
 const (
@@ -73,6 +74,11 @@ func (client *AzureReposClient) ListRepositories(ctx context.Context) (map[strin
 		repositories[client.vcsInfo.Project] = append(repositories[client.vcsInfo.Project], *repo.Name)
 	}
 	return repositories, nil
+}
+
+// ListAppRepositories returns an error since this is not supported in Azure Repos
+func (client *AzureReposClient) ListAppRepositories(ctx context.Context) ([]AppRepositoryInfo, error) {
+	return nil, getUnsupportedInAzureError("list app repositories")
 }
 
 // ListBranches on Azure Repos

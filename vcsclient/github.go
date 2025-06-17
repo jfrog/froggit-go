@@ -1551,3 +1551,31 @@ func encryptSecret(publicKey *github.PublicKey, secretValue string) (string, err
 	encryptedBase64 := base64Utils.StdEncoding.EncodeToString(encrypted)
 	return encryptedBase64, nil
 }
+
+func (client *GitHubClient) ListAppRepositories(ctx context.Context) ([]AppRepositoryInfo, error) {
+	var results []AppRepositoryInfo
+
+	response, _, err := client.ghClient.Apps.ListRepos(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	for _, repo := range response.Repositories {
+		if repo == nil || repo.Owner == nil || repo.Owner.Login == nil || repo.Name == nil {
+			continue
+		}
+		repoInfo := AppRepositoryInfo{
+			Name:          vcsutils.DefaultIfNotNil(repo.Name),
+			FullName:      vcsutils.DefaultIfNotNil(repo.FullName),
+			Owner:         vcsutils.DefaultIfNotNil(repo.Owner.Login),
+			Private:       repo.GetPrivate(),
+			Description:   vcsutils.DefaultIfNotNil(repo.Description),
+			URL:           vcsutils.DefaultIfNotNil(repo.HTMLURL),
+			CloneURL:      vcsutils.DefaultIfNotNil(repo.CloneURL),
+			SSHURL:        vcsutils.DefaultIfNotNil(repo.SSHURL),
+			DefaultBranch: vcsutils.DefaultIfNotNil(repo.DefaultBranch),
+		}
+		results = append(results, repoInfo)
+	}
+
+	return results, nil
+}

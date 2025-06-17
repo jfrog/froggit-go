@@ -1470,3 +1470,56 @@ func createGitHubHandlerWithMultiResponse(t *testing.T, expectedResponses map[st
 		}
 	}
 }
+
+func TestGitHubClient_ListAppRepositories(t *testing.T) {
+	ctx := context.Background()
+	response := `{
+	  "total_count": 1,
+	  "repositories": [
+	    {
+	      "id": 1296269,
+	      "node_id": "MDEwOlJlcG9zaXRvcnkxMjk2MjY5",
+	      "name": "Hello-World",
+	      "full_name": "octocat/Hello-World",
+	      "owner": {
+	        "login": "octocat",
+	        "id": 1
+	      },
+	      "private": false,
+	      "description": "This your first repo!",
+	      "html_url": "https://github.com/octocat/Hello-World",
+	      "clone_url": "https://github.com/octocat/Hello-World.git",
+	      "ssh_url": "git@github.com:octocat/Hello-World.git",
+	      "default_branch": "main"
+	    }
+	  ]
+	}`
+
+	client, cleanUp := createServerAndClient(
+		t,
+		vcsutils.GitHub,
+		false,
+		[]byte(response),
+		"/installation/repositories",
+		createGitHubHandler,
+	)
+	defer cleanUp()
+
+	repos, err := client.ListAppRepositories(ctx)
+	assert.NoError(t, err)
+	assert.Len(t, repos, 1)
+	repoInfo := repos[0]
+	assert.Equal(t, "Hello-World", repoInfo.Name)
+	assert.Equal(t, "octocat/Hello-World", repoInfo.FullName)
+	assert.Equal(t, "octocat", repoInfo.Owner)
+	assert.Equal(t, false, repoInfo.Private)
+	assert.Equal(t, "This your first repo!", repoInfo.Description)
+	assert.Equal(t, "https://github.com/octocat/Hello-World", repoInfo.URL)
+	assert.Equal(t, "https://github.com/octocat/Hello-World.git", repoInfo.CloneURL)
+	assert.Equal(t, "git@github.com:octocat/Hello-World.git", repoInfo.SSHURL)
+	assert.Equal(t, "main", repoInfo.DefaultBranch)
+
+	// Negative test: bad client
+	_, err = createBadGitHubClient(t).ListAppRepositories(ctx)
+	assert.Error(t, err)
+}
