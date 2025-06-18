@@ -1215,7 +1215,7 @@ func TestGitHubClient_CreatePullRequestDetailed(t *testing.T) {
 	assert.Equal(t, expectedPrNumber, prInfo.Number)
 	assert.Equal(t, expectedURL, prInfo.URL)
 
-	prInfo, err = createBadGitHubClient(t).CreatePullRequestDetailed(ctx, owner, repo1, branch1, branch2, "PR title", "PR body")
+	_, err = createBadGitHubClient(t).CreatePullRequestDetailed(ctx, owner, repo1, branch1, branch2, "PR title", "PR body")
 	assert.Error(t, err)
 }
 
