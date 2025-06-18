@@ -6,13 +6,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/jfrog/gofrog/datastructures"
 	"io"
 	"net/http"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/jfrog/gofrog/datastructures"
 
 	bitbucketv1 "github.com/gfleury/go-bitbucket-v1"
 	"github.com/jfrog/froggit-go/vcsutils"
@@ -93,6 +94,11 @@ func (client *BitbucketServerClient) ListRepositories(ctx context.Context) (map[
 		}
 	}
 	return results, nil
+}
+
+// ListAppRepositories returns an error since this is not supported in Bitbucket Server
+func (client *BitbucketServerClient) ListAppRepositories(ctx context.Context) ([]AppRepositoryInfo, error) {
+	return nil, errBitbucketListAppReposNotSupported
 }
 
 // ListBranches on Bitbucket server

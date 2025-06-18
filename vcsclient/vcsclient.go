@@ -77,6 +77,28 @@ type CommitStatusInfo struct {
 	LastUpdatedAt time.Time
 }
 
+// AppRepositoryInfo contains information about an application repository
+// Name          - The repository name
+// FullName      - The full name of the repository (including owner/namespace)
+// Owner         - The owner of the repository
+// Private       - Whether the repository is private
+// Description   - The repository description
+// URL           - The web URL of the repository
+// CloneURL      - The HTTP(S) clone URL of the repository
+// SSHURL        - The SSH clone URL of the repository
+// DefaultBranch - The default branch of the repository
+type AppRepositoryInfo struct {
+	Name          string
+	FullName      string
+	Owner         string
+	Private       bool
+	Description   string
+	URL           string
+	CloneURL      string
+	SSHURL        string
+	DefaultBranch string
+}
+
 // PullRequestData contains the data returned from a pull request creation
 // number - The number of the pull request
 // URL - The URL of the pull request
@@ -92,6 +114,9 @@ type VcsClient interface {
 
 	// ListRepositories Returns a map between all accessible owners to their list of repositories
 	ListRepositories(ctx context.Context) (map[string][]string, error)
+
+	// ListAppRepositories ListRepositories Returns a map between all accessible App to their list of repositories
+	ListAppRepositories(ctx context.Context) ([]AppRepositoryInfo, error)
 
 	// ListBranches Lists all branches under the input repository
 	// owner      - User or organization
