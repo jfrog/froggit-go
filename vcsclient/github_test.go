@@ -1500,7 +1500,7 @@ func TestGitHubClient_ListAppRepositories(t *testing.T) {
 		vcsutils.GitHub,
 		false,
 		[]byte(response),
-		"/installation/repositories",
+		"/installation/repositories?page=1",
 		createGitHubHandler,
 	)
 	defer cleanUp()
@@ -1509,6 +1509,7 @@ func TestGitHubClient_ListAppRepositories(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, repos, 1)
 	repoInfo := repos[0]
+	assert.Equal(t, int64(1296269), repoInfo.ID)
 	assert.Equal(t, "Hello-World", repoInfo.Name)
 	assert.Equal(t, "octocat/Hello-World", repoInfo.FullName)
 	assert.Equal(t, "octocat", repoInfo.Owner)

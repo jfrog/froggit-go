@@ -78,6 +78,7 @@ type CommitStatusInfo struct {
 }
 
 // AppRepositoryInfo contains information about an application repository
+// ID            - The unique identifier of the repository
 // Name          - The repository name
 // FullName      - The full name of the repository (including owner/namespace)
 // Owner         - The owner of the repository
@@ -88,6 +89,7 @@ type CommitStatusInfo struct {
 // SSHURL        - The SSH clone URL of the repository
 // DefaultBranch - The default branch of the repository
 type AppRepositoryInfo struct {
+	ID            int64
 	Name          string
 	FullName      string
 	Owner         string

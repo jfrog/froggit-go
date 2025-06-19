@@ -1555,15 +1555,30 @@ func encryptSecret(publicKey *github.PublicKey, secretValue string) (string, err
 func (client *GitHubClient) ListAppRepositories(ctx context.Context) ([]AppRepositoryInfo, error) {
 	var results []AppRepositoryInfo
 
-	response, _, err := client.ghClient.Apps.ListRepos(ctx, nil)
-	if err != nil {
-		return nil, err
+	var allRepositories []*github.Repository
+	for nextPage := 1; ; nextPage++ {
+		var repositoriesInPage *github.ListRepositories
+		var ghResponse *github.Response
+		var err error
+		err = client.runWithRateLimitRetries(func() (*github.Response, error) {
+			repositoriesInPage, ghResponse, err = client.ghClient.Apps.ListRepos(ctx, &github.ListOptions{Page: nextPage})
+			return ghResponse, err
+		})
+		if err != nil {
+			return nil, err
+		}
+		allRepositories = append(allRepositories, repositoriesInPage.Repositories...)
+		if nextPage+1 > ghResponse.LastPage {
+			break
+		}
 	}
-	for _, repo := range response.Repositories {
+
+	for _, repo := range allRepositories {
 		if repo == nil || repo.Owner == nil || repo.Owner.Login == nil || repo.Name == nil {
 			continue
 		}
 		repoInfo := AppRepositoryInfo{
+			ID:            repo.GetID(),
 			Name:          vcsutils.DefaultIfNotNil(repo.Name),
 			FullName:      vcsutils.DefaultIfNotNil(repo.FullName),
 			Owner:         vcsutils.DefaultIfNotNil(repo.Owner.Login),
