@@ -376,8 +376,9 @@ func (client *GitHubClient) executeCreatePullRequest(ctx context.Context, owner,
 
 func mapToPullRequestInfo(pr *github.PullRequest) CreatedPullRequestInfo {
 	return CreatedPullRequestInfo{
-		Number: pr.GetNumber(),
-		URL:    pr.GetHTMLURL(),
+		Number:      pr.GetNumber(),
+		URL:         pr.GetHTMLURL(),
+		StatusesUrl: pr.GetStatusesURL(),
 	}
 }
 

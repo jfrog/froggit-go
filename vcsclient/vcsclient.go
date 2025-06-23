@@ -99,12 +99,14 @@ type AppRepositoryInfo struct {
 	DefaultBranch string
 }
 
-// PullRequestData contains the data returned from a pull request creation
-// number - The number of the pull request
+// CreatedPullRequestInfo contains the data returned from a pull request creation
+// Number - The number of the pull request
 // URL - The URL of the pull request
+// StatusesUrl - The URL to the commit statuses of the pull request
 type CreatedPullRequestInfo struct {
-	Number int
-	URL    string
+	Number      int
+	URL         string
+	StatusesUrl string
 }
 
 // VcsClient is a base class of all Vcs clients - GitHub, GitLab, Bitbucket server and cloud clients
@@ -179,6 +181,15 @@ type VcsClient interface {
 	// title        - Pull request title
 	// description  - Pull request description
 	CreatePullRequest(ctx context.Context, owner, repository, sourceBranch, targetBranch, title, description string) error
+
+	// CreatePullRequestDetailed Creates a pull request between 2 different branches in the same repository
+	// owner        - User or organization
+	// repository   - VCS repository name
+	// sourceBranch - Source branch
+	// targetBranch - Target branch
+	// title        - Pull request title
+	// description  - Pull request description
+	CreatePullRequestDetailed(ctx context.Context, owner, repository, sourceBranch, targetBranch, title, description string) (CreatedPullRequestInfo, error)
 
 	// UpdatePullRequest Updates pull requests metadata
 	// owner        		    - User or organization
@@ -377,15 +388,6 @@ type VcsClient interface {
 
 	// MergePullRequest merges a pull request into the target branch
 	MergePullRequest(ctx context.Context, owner, repo string, prNumber int, commitMessage string) error
-
-	// CreatePullRequestDetailed Creates a pull request between 2 different branches in the same repository
-	// owner        - User or organization
-	// repository   - VCS repository name
-	// sourceBranch - Source branch
-	// targetBranch - Target branch
-	// title        - Pull request title
-	// description  - Pull request description
-	CreatePullRequestDetailed(ctx context.Context, owner, repository, sourceBranch, targetBranch, title, description string) (CreatedPullRequestInfo, error)
 }
 
 // CommitInfo contains the details of a commit
