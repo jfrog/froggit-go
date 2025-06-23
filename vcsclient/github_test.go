@@ -1203,6 +1203,22 @@ func TestGitHubClient_MergePullRequest(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestGitHubClient_CreatePullRequestDetailed(t *testing.T) {
+	ctx := context.Background()
+	expectedURL := "https://github.com/jfrog/repo1/pull/875"
+	expectedPrNumber := 1234
+	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, github.PullRequest{Number: github.Int(expectedPrNumber), HTMLURL: github.String(expectedURL)}, "/repos/jfrog/repo-1/pulls", createGitHubHandler)
+	defer cleanUp()
+
+	prInfo, err := client.CreatePullRequestDetailed(ctx, owner, repo1, branch1, branch2, "PR title", "PR body")
+	assert.NoError(t, err)
+	assert.Equal(t, expectedPrNumber, prInfo.Number)
+	assert.Equal(t, expectedURL, prInfo.URL)
+
+	_, err = createBadGitHubClient(t).CreatePullRequestDetailed(ctx, owner, repo1, branch1, branch2, "PR title", "PR body")
+	assert.Error(t, err)
+}
+
 func createBadGitHubClient(t *testing.T) VcsClient {
 	client, err := NewClientBuilder(vcsutils.GitHub).ApiEndpoint("https://badendpoint").Build()
 	assert.NoError(t, err)
