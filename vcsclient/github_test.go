@@ -674,6 +674,7 @@ func TestGitHubClient_ListOpenPullRequests(t *testing.T) {
 		Source: BranchInfo{Name: "new-topic", Repository: "Hello-World", Owner: owner},
 		Target: BranchInfo{Name: "master", Repository: "Hello-World", Owner: owner},
 		URL:    "https://github.com/octocat/Hello-World/pull/1347",
+		Status: "open",
 	}, result[0])
 
 	_, err = createBadGitHubClient(t).ListPullRequestComments(ctx, owner, repo1, 1)
@@ -692,6 +693,7 @@ func TestGitHubClient_ListOpenPullRequests(t *testing.T) {
 		Source: BranchInfo{Name: "new-topic", Repository: "Hello-World", Owner: owner},
 		Target: BranchInfo{Name: "master", Repository: "Hello-World", Owner: owner},
 		URL:    "https://github.com/octocat/Hello-World/pull/1347",
+		Status: "open",
 	}, result[0])
 
 	_, err = createBadGitHubClient(t).ListPullRequestComments(ctx, owner, repo1, 1)
@@ -720,6 +722,7 @@ func TestGitHubClient_GetPullRequestByID(t *testing.T) {
 		Target: BranchInfo{Name: "master", Repository: "Hello-World", Owner: forkedOwner},
 		URL:    "https://github.com/octocat/Hello-World/pull/1347",
 		Author: "octocat",
+		Status: "open",
 	}, result)
 
 	// Bad Labels

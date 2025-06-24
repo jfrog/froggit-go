@@ -501,6 +501,7 @@ func mapGitHubPullRequestToPullRequestInfo(ghPullRequest *github.PullRequest, wi
 			Repository: targetRepoName,
 			Owner:      targetRepoOwner,
 		},
+		Status: vcsutils.DefaultIfNotNil(ghPullRequest.State),
 	}, nil
 }
 

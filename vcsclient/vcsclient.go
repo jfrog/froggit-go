@@ -428,6 +428,7 @@ type PullRequestInfo struct {
 	Author string
 	Source BranchInfo
 	Target BranchInfo
+	Status string
 }
 
 type PullRequestReviewDetails struct {
