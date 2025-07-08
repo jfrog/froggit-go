@@ -27,6 +27,7 @@ var (
 	errBitbucketCreateBranchNotSupported                     = fmt.Errorf("creating a branch is %s", notSupportedOnBitbucket)
 	errBitbucketAllowWorkflowsNotSupported                   = fmt.Errorf("allow workflows is %s", notSupportedOnBitbucket)
 	errBitbucketAddOrganizationSecretNotSupported            = fmt.Errorf("adding organization secret is %s", notSupportedOnBitbucket)
+	errBitbucketCreateOrgVariableNotSupported                = fmt.Errorf("creating organization variable is %s", notSupportedOnBitbucket)
 	errBitbucketCommitAndPushFilesNotSupported               = fmt.Errorf("commit and push files is %s", notSupportedOnBitbucket)
 	errBitbucketGetRepoCollaboratorsNotSupported             = fmt.Errorf("get repository collaborators is %s", notSupportedOnBitbucket)
 	errBitbucketGetRepoTeamsByPermissionsNotSupported        = fmt.Errorf("get repo teams by permissions is %s", notSupportedOnBitbucket)

@@ -795,6 +795,10 @@ func (client *GitLabClient) AddOrganizationSecret(ctx context.Context, owner, se
 	return errGitLLabAddOrganizationSecretNotSupported
 }
 
+func (client *GitLabClient) CreateOrgVariable(ctx context.Context, owner, variableName, variableValue string) error {
+	return errGitLabCreateOrgVariableNotSupported
+}
+
 func (client *GitLabClient) CommitAndPushFiles(ctx context.Context, owner, repo, sourceBranch, commitMessage, authorName, authorEmail string, files []FileToCommit) error {
 	return errGitLabCommitAndPushFilesNotSupported
 }

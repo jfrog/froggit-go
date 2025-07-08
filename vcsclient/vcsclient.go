@@ -376,6 +376,9 @@ type VcsClient interface {
 	// AddOrganizationSecret adds a secret to the organization
 	AddOrganizationSecret(ctx context.Context, owner, secretName, secretValue string) error
 
+	// CreateOrgVariable creates a variable in the organization
+	CreateOrgVariable(ctx context.Context, owner, variableName, variableValue string) error
+
 	// CommitAndPushFiles commits and pushes files to the specified branch in the repository
 	CommitAndPushFiles(ctx context.Context, owner, repo, sourceBranch, commitMessage, authorName, authorEmail string, files []FileToCommit) error
 

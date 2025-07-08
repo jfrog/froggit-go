@@ -1074,6 +1074,21 @@ func TestGitHubClient_AddOrganizationSecret(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestGitHubClient_CreateOrgVariable(t *testing.T) {
+	ctx := context.Background()
+	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, github.ActionsVariable{},
+		"/orgs/jfrog/actions/variables", createGitHubHandler)
+	defer cleanUp()
+
+	// Test with default visibility "all"
+	err := client.CreateOrgVariable(ctx, owner, "JF_URL", "test.jfrogdev.org")
+	assert.NoError(t, err)
+
+	// Test with bad client
+	err = createBadGitHubClient(t).CreateOrgVariable(ctx, owner, "JF_URL", "test.jfrogdev.org")
+	assert.Error(t, err)
+}
+
 func TestGitHubClient_CommitAndPushFiles(t *testing.T) {
 	ctx := context.Background()
 	sourceBranch := "feature-branch"
