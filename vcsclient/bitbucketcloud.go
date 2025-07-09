@@ -715,6 +715,10 @@ func (client *BitbucketCloudClient) AddOrganizationSecret(ctx context.Context, o
 	return errBitbucketAddOrganizationSecretNotSupported
 }
 
+func (client *BitbucketCloudClient) CreateOrgVariable(ctx context.Context, owner, variableName, variableValue string) error {
+	return errBitbucketCreateOrgVariableNotSupported
+}
+
 func (client *BitbucketCloudClient) CommitAndPushFiles(ctx context.Context, owner, repo, sourceBranch, commitMessage, authorName, authorEmail string, files []FileToCommit) error {
 	return errBitbucketCommitAndPushFilesNotSupported
 }

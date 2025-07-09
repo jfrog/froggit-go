@@ -1135,6 +1135,25 @@ func (client *GitHubClient) AddOrganizationSecret(ctx context.Context, owner, se
 	return err
 }
 
+func (client *GitHubClient) CreateOrgVariable(ctx context.Context, owner, variableName, variableValue string) error {
+	err := validateParametersNotBlank(map[string]string{"owner": owner, "variableName": variableName, "variableValue": variableValue})
+	if err != nil {
+		return err
+	}
+
+	variable := &github.ActionsVariable{
+		Name:       variableName,
+		Value:      variableValue,
+		Visibility: github.String("all"),
+	}
+
+	err = client.runWithRateLimitRetries(func() (*github.Response, error) {
+		_, err = client.ghClient.Actions.CreateOrgVariable(ctx, owner, variable)
+		return nil, err
+	})
+	return err
+}
+
 func (client *GitHubClient) AllowWorkflows(ctx context.Context, owner string) error {
 	err := validateParametersNotBlank(map[string]string{"owner": owner})
 	if err != nil {

@@ -907,6 +907,10 @@ func (client *BitbucketServerClient) AddOrganizationSecret(ctx context.Context, 
 	return errBitbucketAddOrganizationSecretNotSupported
 }
 
+func (client *BitbucketServerClient) CreateOrgVariable(ctx context.Context, owner, variableName, variableValue string) error {
+	return errBitbucketCreateOrgVariableNotSupported
+}
+
 func (client *BitbucketServerClient) CommitAndPushFiles(ctx context.Context, owner, repo, sourceBranch, commitMessage, authorName, authorEmail string, files []FileToCommit) error {
 	return errBitbucketCommitAndPushFilesNotSupported
 }

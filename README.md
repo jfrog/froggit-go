@@ -900,13 +900,30 @@ ctx := context.Background()
 // Organization
 owner := "jfrog"
 // Secret name
-secret := "JF_URL"
+secret := "key"
 // Secret value, will be encrypted by froggit
-secretValue := "https://acme.jfrog.io/"
+secretValue := "some-secret-value"
 
 // Add a secret to the organization
 err = client.AddOrganizationSecret(ctx, owner, secret, secretValue)
 ```
+
+#### Create Organization Variable
+
+Notice - Create Organization Variable is currently supported on GitHub only.
+
+```go
+// Go context
+ctx := context.Background()
+// Organization
+owner := "jfrog"
+// Variable name
+variableName := "JF_URL"
+// Variable value
+variableValue := "https://acme.jfrog.io/"
+
+// Add a variable to the organization
+err = client.CreateOrgVar(ctx, owner, variableName, variableValue)
 
 #### Get Repo Collaborators
 

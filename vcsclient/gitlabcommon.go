@@ -9,6 +9,7 @@ var errGitLabGetRepoEnvironmentInfoNotSupported = errors.New("get repository env
 var errGitLabCreateBranchNotSupported = errors.New("creating a branch is not supported on Gitlab")
 var errGitLabAllowWorkflowsNotSupported = errors.New("allow workflows is not supported on Gitlab")
 var errGitLLabAddOrganizationSecretNotSupported = errors.New("adding organization secret is not supported on Gitlab")
+var errGitLabCreateOrgVariableNotSupported = errors.New("creating organization variable is not supported on Gitlab")
 var errGitLabCommitAndPushFilesNotSupported = errors.New("commit and push files is not supported on Gitlab")
 var errGitLabGetCollaboratorsNotSupported = errors.New("get collaborators is not supported on Gitlab")
 var errGitLabGetRepoTeamsByPermissionsNotSupported = errors.New("get repository Teams By permissions is not supported on Gitlab")

@@ -756,6 +756,10 @@ func (client *AzureReposClient) AddOrganizationSecret(ctx context.Context, owner
 	return getUnsupportedInAzureError("add organization secret")
 }
 
+func (client *AzureReposClient) CreateOrgVariable(ctx context.Context, owner, variableName, variableValue string) error {
+	return getUnsupportedInAzureError("create organization variable")
+}
+
 func (client *AzureReposClient) CommitAndPushFiles(ctx context.Context, owner, repo, sourceBranch, commitMessage, authorName, authorEmail string, files []FileToCommit) error {
 	return getUnsupportedInAzureError("commit and push files")
 }
