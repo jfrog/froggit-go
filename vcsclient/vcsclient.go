@@ -395,17 +395,17 @@ type VcsClient interface {
 	MergePullRequest(ctx context.Context, owner, repo string, prNumber int, commitMessage string) error
 
 	// UploadSnapshotToDependencyGraph uploads a snapshot to the GitHub dependency graph tab
-	UploadSnapshotToDependencyGraph(ctx context.Context, snapshot SbomSnapshot) error
+	UploadSnapshotToDependencyGraph(ctx context.Context, owner, repo string, snapshot SbomSnapshot) error
 }
 
 // SbomSnapshot represents a snapshot for GitHub dependency submission API
 type SbomSnapshot struct {
 	Version   int                  `json:"version"`
-	SHA       string               `json:"sha"`
+	Sha       string               `json:"sha"`
 	Ref       string               `json:"ref"`
 	Job       *JobInfo             `json:"job"`
 	Detector  *DetectorInfo        `json:"detector"`
-	Scanned   string               `json:"scanned"`
+	Scanned   time.Time            `json:"scanned"`
 	Manifests map[string]*Manifest `json:"manifests"`
 }
 
@@ -419,7 +419,7 @@ type JobInfo struct {
 type DetectorInfo struct {
 	Name    string `json:"name"`
 	Version string `json:"version"`
-	URL     string `json:"url"`
+	Url     string `json:"url"`
 }
 
 // Manifest represents a manifest file with its dependencies
