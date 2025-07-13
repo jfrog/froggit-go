@@ -7,14 +7,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/google/go-github/v56/github"
-	"github.com/grokify/mogo/encoding/base64"
-	"github.com/jfrog/froggit-go/vcsutils"
-	"github.com/jfrog/gofrog/datastructures"
-	"github.com/mitchellh/mapstructure"
-	"golang.org/x/crypto/nacl/box"
-	"golang.org/x/exp/slices"
-	"golang.org/x/oauth2"
 	"io"
 	"net/http"
 	"net/url"
@@ -23,6 +15,15 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/google/go-github/v62/github"
+	"github.com/grokify/mogo/encoding/base64"
+	"github.com/jfrog/froggit-go/vcsutils"
+	"github.com/jfrog/gofrog/datastructures"
+	"github.com/mitchellh/mapstructure"
+	"golang.org/x/crypto/nacl/box"
+	"golang.org/x/exp/slices"
+	"golang.org/x/oauth2"
 )
 
 const (
@@ -1448,12 +1449,13 @@ func extractGitHubEnvironmentReviewers(environment *github.Environment) ([]strin
 }
 
 func createGitHubHook(token, payloadURL string, webhookEvents ...vcsutils.WebhookEvent) *github.Hook {
+	contentType := "json"
 	return &github.Hook{
 		Events: getGitHubWebhookEvents(webhookEvents...),
-		Config: map[string]interface{}{
-			"url":          payloadURL,
-			"content_type": "json",
-			"secret":       token,
+		Config: &github.HookConfig{
+			ContentType: &contentType,
+			URL:         &payloadURL,
+			Secret:      &token,
 		},
 	}
 }
@@ -1638,4 +1640,83 @@ func (client *GitHubClient) ListAppRepositories(ctx context.Context) ([]AppRepos
 	}
 
 	return results, nil
+}
+func (client *GitHubClient) UploadSnapshotToDependencyGraph(ctx context.Context, owner, repo string, snapshot SbomSnapshot) error {
+	// Convert our SbomSnapshot to go-github's DependencyGraphSnapshot
+	ghSnapshot, err := convertToGitHubSnapshot(snapshot)
+	if err != nil {
+		return fmt.Errorf("failed to convert snapshot to GitHub format: %w", err)
+	}
+
+	// Call the GitHub API to create the snapshot
+	_, ghResponse, err := client.ghClient.DependencyGraph.CreateSnapshot(ctx, owner, repo, ghSnapshot)
+	if err != nil {
+		return fmt.Errorf("failed to upload snapshot to dependency graph: %w", err)
+	}
+
+	client.logger.Info("Successfully uploaded snapshot to dependency graph, status:", ghResponse.StatusCode)
+	return nil
+}
+
+// Converts our SbomSnapshot to go-github's DependencyGraphSnapshot
+func convertToGitHubSnapshot(snapshot SbomSnapshot) (*github.DependencyGraphSnapshot, error) {
+	ghSnapshot := &github.DependencyGraphSnapshot{
+		Version: snapshot.Version,
+		Sha:     &snapshot.Sha,
+		Ref:     &snapshot.Ref,
+		Scanned: &github.Timestamp{Time: snapshot.Scanned}, // Use current time if not provided
+	}
+
+	// Convert Job info
+	if snapshot.Job == nil {
+		return nil, fmt.Errorf("job information is required in the snapshot")
+	}
+	ghSnapshot.Job = &github.DependencyGraphSnapshotJob{
+		Correlator: &snapshot.Job.Correlator,
+		ID:         &snapshot.Job.ID,
+	}
+
+	// Convert Detector info
+	if snapshot.Detector == nil {
+		return nil, fmt.Errorf("detector information is required in the snapshot")
+	}
+	ghSnapshot.Detector = &github.DependencyGraphSnapshotDetector{
+		Name:    &snapshot.Detector.Name,
+		Version: &snapshot.Detector.Version,
+		URL:     &snapshot.Detector.Url,
+	}
+
+	// Convert Manifests
+	if snapshot.Manifests == nil || len(snapshot.Manifests) == 0 {
+		return nil, fmt.Errorf("at least one manifest is required in the snapshot")
+	}
+	ghSnapshot.Manifests = make(map[string]*github.DependencyGraphSnapshotManifest)
+	for manifestName, manifest := range snapshot.Manifests {
+		ghManifest := &github.DependencyGraphSnapshotManifest{
+			Name: &manifest.Name,
+		}
+
+		// Convert File info
+		if manifest.File == nil {
+			return nil, fmt.Errorf("manifest %s is missing file information", manifestName)
+		}
+		ghManifest.File = &github.DependencyGraphSnapshotManifestFile{SourceLocation: &manifest.File.SourceLocation}
+
+		// Convert Resolved dependencies
+		if manifest.Resolved == nil || len(manifest.Resolved) == 0 {
+			return nil, fmt.Errorf("manifest %s must have at least one resolved dependency", manifestName)
+		}
+		ghManifest.Resolved = make(map[string]*github.DependencyGraphSnapshotResolvedDependency)
+		for depName, dep := range manifest.Resolved {
+			ghDep := &github.DependencyGraphSnapshotResolvedDependency{
+				PackageURL:   &dep.PackageURL,
+				Dependencies: dep.Dependencies,
+			}
+			ghManifest.Resolved[depName] = ghDep
+		}
+
+		ghSnapshot.Manifests[manifestName] = ghManifest
+	}
+
+	return ghSnapshot, nil
 }

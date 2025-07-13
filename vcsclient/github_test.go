@@ -18,7 +18,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/go-github/v56/github"
+	"github.com/google/go-github/v62/github"
 	"github.com/jfrog/froggit-go/vcsutils"
 	"github.com/stretchr/testify/assert"
 )
@@ -1556,5 +1556,56 @@ func TestGitHubClient_ListAppRepositories(t *testing.T) {
 
 	// Negative test: bad client
 	_, err = createBadGitHubClient(t).ListAppRepositories(ctx)
+	assert.Error(t, err)
+}
+
+func TestGithubClient_UploadSnapshotToDependencyGraph(t *testing.T) {
+	ctx := context.Background()
+	expectedURI := fmt.Sprintf("/repos/%s/%s/dependency-graph/snapshots", owner, repo1)
+
+	resolvedPackages := make(map[string]*ResolvedDependency)
+	resolvedPackages["@actions/core"] = &ResolvedDependency{
+		PackageURL:   "pkg:/npm/%40actions/core@1.1.9",
+		Relationship: "direct",
+		Dependencies: []string{"@actions/http-client"},
+	}
+	resolvedPackages["@actions/http-client"] = &ResolvedDependency{
+		PackageURL:   "pkg:/npm/%40actions/http-client@1.0.1",
+		Relationship: "direct",
+		Dependencies: []string{"tunnel"},
+	}
+	resolvedPackages["tunnel"] = &ResolvedDependency{
+		PackageURL:   "pkg:/npm/tunnel@0.0.6",
+		Relationship: "indirect",
+	}
+
+	manifests := make(map[string]*Manifest)
+	manifests["package-lock.json"] = &Manifest{
+		Name:     "package-lock.json",
+		File:     &FileInfo{SourceLocation: "src/package-lock.json"},
+		Resolved: resolvedPackages,
+	}
+
+	snapshot := SbomSnapshot{
+		Version: 0,
+		Sha:     "ce587453ced02b1526dfb4cb910479d431683101",
+		Ref:     "refs/heads/master",
+		Job: &JobInfo{
+			Correlator: "my-workflow_my-action-name",
+			ID:         "my-run-id",
+		},
+		Detector:  &DetectorInfo{Name: "frogbot", Version: "1.0.0", Url: "https://github.com/jfrog/frogbot"},
+		Scanned:   time.Now(),
+		Manifests: manifests,
+	}
+
+	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, nil, expectedURI, createGitHubHandler)
+	defer cleanUp()
+
+	err := client.UploadSnapshotToDependencyGraph(ctx, owner, repo1, snapshot)
+	assert.NoError(t, err)
+
+	// Negative test: bad client
+	err = createBadGitHubClient(t).UploadSnapshotToDependencyGraph(ctx, owner, repo1, snapshot)
 	assert.Error(t, err)
 }
