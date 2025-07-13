@@ -784,7 +784,7 @@ func (client *AzureReposClient) CreatePullRequestDetailed(ctx context.Context, o
 	return CreatedPullRequestInfo{}, getUnsupportedInAzureError("create pull request detailed")
 }
 
-func (client *AzureReposClient) UploadSnapshotToDependencyGraph(ctx context.Context, snapshot SbomSnapshot) error {
+func (client *AzureReposClient) UploadSnapshotToDependencyGraph(ctx context.Context, owner, repo string, snapshot SbomSnapshot) error {
 	return getUnsupportedInAzureError("uploading snapshot to dependency graph UI")
 }
 

@@ -823,7 +823,7 @@ func (client *GitLabClient) CreatePullRequestDetailed(ctx context.Context, owner
 	return CreatedPullRequestInfo{}, errGitlabCreatePullRequestDetailedNotSupported
 }
 
-func (client *GitLabClient) UploadSnapshotToDependencyGraph(ctx context.Context, snapshot SbomSnapshot) error {
+func (client *GitLabClient) UploadSnapshotToDependencyGraph(ctx context.Context, owner, repo string, snapshot SbomSnapshot) error {
 	return errGitLabUploadSnapshotToDependencyGraphNotSupported
 }
 
