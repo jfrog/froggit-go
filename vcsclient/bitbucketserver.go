@@ -935,6 +935,10 @@ func (client *BitbucketServerClient) CreatePullRequestDetailed(ctx context.Conte
 	return CreatedPullRequestInfo{}, errBitbucketCreatePullRequestDetailedNotSupported
 }
 
+func (client *BitbucketServerClient) UploadSnapshotToDependencyGraph(ctx context.Context, snapshot SbomSnapshot) error {
+	return errBitbucketUploadSnapshotToDependencyGraphNotSupported
+}
+
 func getBitbucketServerRepositoryVisibility(public bool) RepositoryVisibility {
 	if public {
 		return Public

@@ -743,6 +743,10 @@ func (client *BitbucketCloudClient) CreatePullRequestDetailed(ctx context.Contex
 	return CreatedPullRequestInfo{}, errBitbucketCreatePullRequestDetailedNotSupported
 }
 
+func (client *BitbucketCloudClient) UploadSnapshotToDependencyGraph(ctx context.Context, snapshot SbomSnapshot) error {
+	return errBitbucketUploadSnapshotToDependencyGraphNotSupported
+}
+
 type pullRequestsResponse struct {
 	Values []pullRequestsDetails `json:"values"`
 }
