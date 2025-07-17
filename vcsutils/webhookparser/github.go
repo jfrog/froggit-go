@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/google/go-github/v56/github"
+	"github.com/google/go-github/v62/github"
 
 	"github.com/jfrog/froggit-go/vcsutils"
 )
@@ -123,7 +123,7 @@ func (webhook *gitHubWebhookParser) trimRefPrefix(ref string) string {
 	return strings.TrimPrefix(ref, "refs/heads/")
 }
 
-func (webhook *gitHubWebhookParser) user(u *github.User) WebHookInfoUser {
+func (webhook *gitHubWebhookParser) user(u *github.CommitAuthor) WebHookInfoUser {
 	if u == nil {
 		return WebHookInfoUser{}
 	}
