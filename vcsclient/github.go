@@ -157,8 +157,8 @@ func (client *GitHubClient) ListRepositories(ctx context.Context) (results map[s
 }
 
 func (client *GitHubClient) executeListRepositoriesInPage(ctx context.Context, page int) ([]*github.Repository, *github.Response, error) {
-	options := &github.RepositoryListOptions{ListOptions: github.ListOptions{Page: page}}
-	return client.ghClient.Repositories.List(ctx, "", options)
+	options := &github.RepositoryListByAuthenticatedUserOptions{ListOptions: github.ListOptions{Page: page}}
+	return client.ghClient.Repositories.ListByAuthenticatedUser(ctx, options)
 }
 
 // ListBranches on GitHub
@@ -1687,7 +1687,7 @@ func convertToGitHubSnapshot(snapshot SbomSnapshot) (*github.DependencyGraphSnap
 	}
 
 	// Convert Manifests
-	if snapshot.Manifests == nil || len(snapshot.Manifests) == 0 {
+	if len(snapshot.Manifests) == 0 {
 		return nil, fmt.Errorf("at least one manifest is required in the snapshot")
 	}
 	ghSnapshot.Manifests = make(map[string]*github.DependencyGraphSnapshotManifest)
@@ -1703,7 +1703,7 @@ func convertToGitHubSnapshot(snapshot SbomSnapshot) (*github.DependencyGraphSnap
 		ghManifest.File = &github.DependencyGraphSnapshotManifestFile{SourceLocation: &manifest.File.SourceLocation}
 
 		// Convert Resolved dependencies
-		if manifest.Resolved == nil || len(manifest.Resolved) == 0 {
+		if len(manifest.Resolved) == 0 {
 			return nil, fmt.Errorf("manifest %s must have at least one resolved dependency", manifestName)
 		}
 		ghManifest.Resolved = make(map[string]*github.DependencyGraphSnapshotResolvedDependency)
