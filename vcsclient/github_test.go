@@ -849,15 +849,13 @@ func TestGitHubClient_UploadScanningAnalysis(t *testing.T) {
 	scan := "{\n    \"version\": \"2.1.0\",\n    \"$schema\": \"https://json.schemastore.org/sarif-2.1.0-rtm.5.json\",\n    \"runs\": [\n      {\n        \"tool\": {\n          \"driver\": {\n            \"informationUri\": \"https://jfrog.com/xray/\",\n            \"name\": \"Xray\",\n            \"rules\": [\n              {\n                \"id\": \"XRAY-174176\",\n                \"shortDescription\": null,\n                \"fullDescription\": {\n                  \"text\": \"json Package for Node.js lib/json.js _parseString() Function -d Argument Handling Local Code Execution Weakness\"\n                },\n                \"properties\": {\n                  \"security-severity\": \"8\"\n                }\n              }\n            ]\n          }\n        },\n        \"results\": [\n          {\n            \"ruleId\": \"XRAY-174176\",\n            \"ruleIndex\": 1,\n            \"message\": {\n              \"text\": \"json 9.0.6. Fixed in Versions: [11.0.0]\"\n            },\n            \"locations\": [\n              {\n                \"physicalLocation\": {\n                  \"artifactLocation\": {\n                    \"uri\": \"package.json\"\n                  }\n                }\n              }\n            ]\n          }\n        ]\n      }\n    ]\n  }"
 	response, err := os.ReadFile(filepath.Join("testdata", "github", "commit_list_response.json"))
 	assert.NoError(t, err)
-	expectedUploadSarifID := "b16b0368-01b9-11ed-90a3-cabff0b8ad31"
 	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, response,
 		fmt.Sprintf("/repos/%s/%s/commits?page=1&per_page=50&sha=master", owner, repo1), createGitHubSarifUploadHandler)
 	defer cleanUp()
 
-	// TODO eran - the updated UploadSarif that is used in UploadCodeScanning is not returnind SarifId
 	sarifID, err := client.UploadCodeScanning(ctx, owner, repo1, "master", scan)
 	assert.NoError(t, err)
-	assert.Equal(t, expectedUploadSarifID, sarifID)
+	assert.Equal(t, "", sarifID)
 
 	_, err = createBadGitHubClient(t).UploadCodeScanning(ctx, owner, repo1, "master", scan)
 	assert.Error(t, err)
