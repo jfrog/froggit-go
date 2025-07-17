@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"sort"
 	"strconv"
@@ -146,7 +147,7 @@ func (client *AzureReposClient) sendDownloadRepoRequest(ctx context.Context, rep
 		client.connectionDetails.BaseUrl,
 		client.vcsInfo.Project,
 		repository,
-		branch)
+		url.QueryEscape(branch))
 	client.logger.Debug("Download url:", downloadRepoUrl)
 	headers := map[string]string{
 		"Authorization":  client.connectionDetails.AuthorizationString,
