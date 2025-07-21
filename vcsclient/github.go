@@ -131,7 +131,6 @@ func (client *GitHubClient) AddSshKeyToRepository(ctx context.Context, owner, re
 	})
 }
 
-// TODO eran - check usage of this api. make sure it doesnt break
 // ListRepositories on GitHub
 func (client *GitHubClient) ListRepositories(ctx context.Context) (results map[string][]string, err error) {
 	results = make(map[string][]string)
@@ -965,7 +964,6 @@ func (client *GitHubClient) UnlabelPullRequest(ctx context.Context, owner, repos
 	})
 }
 
-// TODO eran check this api
 // UploadCodeScanning to GitHub Security tab
 func (client *GitHubClient) UploadCodeScanning(ctx context.Context, owner, repository, branch, sarifContent string) (id string, err error) {
 	commit, err := client.GetLatestCommit(ctx, owner, repository, branch)
@@ -1634,23 +1632,20 @@ func (client *GitHubClient) ListAppRepositories(ctx context.Context) ([]AppRepos
 	return results, nil
 }
 func (client *GitHubClient) UploadSnapshotToDependencyGraph(ctx context.Context, owner, repo string, snapshot SbomSnapshot) error {
-	// Convert our SbomSnapshot to go-github's DependencyGraphSnapshot
 	ghSnapshot, err := convertToGitHubSnapshot(snapshot)
 	if err != nil {
 		return fmt.Errorf("failed to convert snapshot to GitHub format: %w", err)
 	}
 
-	// Call the GitHub API to create the snapshot
 	_, ghResponse, err := client.ghClient.DependencyGraph.CreateSnapshot(ctx, owner, repo, ghSnapshot)
 	if err != nil {
 		return fmt.Errorf("failed to upload snapshot to dependency graph: %w", err)
 	}
 
-	client.logger.Info("Successfully uploaded snapshot to dependency graph, status:", ghResponse.StatusCode)
+	client.logger.Info(vcsutils.SuccessfulSnapshotUpload, ghResponse.StatusCode)
 	return nil
 }
 
-// Converts our SbomSnapshot to go-github's DependencyGraphSnapshot
 func convertToGitHubSnapshot(snapshot SbomSnapshot) (*github.DependencyGraphSnapshot, error) {
 	ghSnapshot := &github.DependencyGraphSnapshot{
 		Version: snapshot.Version,
@@ -1659,7 +1654,6 @@ func convertToGitHubSnapshot(snapshot SbomSnapshot) (*github.DependencyGraphSnap
 		Scanned: &github.Timestamp{Time: snapshot.Scanned}, // Use current time if not provided
 	}
 
-	// Convert Job info
 	if snapshot.Job == nil {
 		return nil, fmt.Errorf("job information is required in the snapshot")
 	}
@@ -1668,7 +1662,6 @@ func convertToGitHubSnapshot(snapshot SbomSnapshot) (*github.DependencyGraphSnap
 		ID:         &snapshot.Job.ID,
 	}
 
-	// Convert Detector info
 	if snapshot.Detector == nil {
 		return nil, fmt.Errorf("detector information is required in the snapshot")
 	}
@@ -1678,7 +1671,6 @@ func convertToGitHubSnapshot(snapshot SbomSnapshot) (*github.DependencyGraphSnap
 		URL:     &snapshot.Detector.Url,
 	}
 
-	// Convert Manifests
 	if len(snapshot.Manifests) == 0 {
 		return nil, fmt.Errorf("at least one manifest is required in the snapshot")
 	}
@@ -1688,15 +1680,13 @@ func convertToGitHubSnapshot(snapshot SbomSnapshot) (*github.DependencyGraphSnap
 			Name: &manifest.Name,
 		}
 
-		// Convert File info
 		if manifest.File == nil {
-			return nil, fmt.Errorf("manifest %s is missing file information", manifestName)
+			return nil, fmt.Errorf("manifest '%s' is missing file information", manifestName)
 		}
 		ghManifest.File = &github.DependencyGraphSnapshotManifestFile{SourceLocation: &manifest.File.SourceLocation}
 
-		// Convert Resolved dependencies
 		if len(manifest.Resolved) == 0 {
-			return nil, fmt.Errorf("manifest %s must have at least one resolved dependency", manifestName)
+			return nil, fmt.Errorf("manifest '%s' must have at least one resolved dependency", manifestName)
 		}
 		ghManifest.Resolved = make(map[string]*github.DependencyGraphSnapshotResolvedDependency)
 		for depName, dep := range manifest.Resolved {
@@ -1709,6 +1699,5 @@ func convertToGitHubSnapshot(snapshot SbomSnapshot) (*github.DependencyGraphSnap
 
 		ghSnapshot.Manifests[manifestName] = ghManifest
 	}
-
 	return ghSnapshot, nil
 }
