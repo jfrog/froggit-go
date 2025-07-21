@@ -76,6 +76,7 @@ Currently supported providers are: [GitHub](#github), [Bitbucket Server](#bitbuc
       - [CommitAndPushFiles](#commit-and-push-files)
       - [Merge Pull Request](#merge-pull-request)
       - [Create Pull Request Detailed](#create-pull-request-detailed)
+      - [Upload Snapshot To Dependency Graph](#upload-snapshot-to-dependency-graph)
     - [Webhook Parser](#webhook-parser)
 
 ### VCS Clients
@@ -1056,6 +1057,52 @@ description := "Pull request description"
 
 // Creates a pull request and returns its number and URL.
 prInfo,err := client.CreatePullRequestDetailed(ctx, owner, repository, sourceBranch, targetBranch, title, description)
+```
+
+#### Upload Snapshot To Dependency Graph
+
+Notice - Upload Snapshot To Dependency Graph is currently supported on GitHub only.
+
+```go
+// Go context
+ctx := context.Background()
+// Organization or username
+owner := "jfrog"
+// VCS repository
+repository := "jfrog-cli"
+// SBOM snapshot containing dependency information
+snapshot := &vcsclient.SbomSnapshot{
+    Version: 0,
+    Sha:     "5c05522fecf8d93a11752ff255c99fcb0f0557cd",
+    Ref:     "refs/heads/main",
+    Job: &vcsclient.JobInfo{
+        Correlator: "job-correlator",
+        ID:         "job-id",
+    },
+    Detector: &vcsclient.DetectorInfo{
+        Name:    "detector-name",
+        Version: "1.0.0",
+        Url:     "https://example.com/detector",
+    },
+    Scanned: time.Now(),
+    Manifests: map[string]*vcsclient.Manifest{
+        "package.json": {
+            Name: "package.json",
+            File: &vcsclient.FileInfo{
+                SourceLocation: "package.json",
+            },
+            Resolved: map[string]*vcsclient.ResolvedDependency{
+                "lodash": {
+                    PackageURL:   "pkg:npm/lodash@4.17.21",
+                    Dependencies: []string{},
+                },
+            },
+        },
+    },
+}
+
+// Uploads the SBOM snapshot to the GitHub dependency graph tab
+err := client.UploadSnapshotToDependencyGraph(ctx, owner, repository, snapshot)
 ```
 
 ### Webhook Parser
