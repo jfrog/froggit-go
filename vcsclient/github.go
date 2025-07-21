@@ -131,6 +131,7 @@ func (client *GitHubClient) AddSshKeyToRepository(ctx context.Context, owner, re
 	})
 }
 
+// TODO eran - check usage of this api. make sure it doesnt break
 // ListRepositories on GitHub
 func (client *GitHubClient) ListRepositories(ctx context.Context) (results map[string][]string, err error) {
 	results = make(map[string][]string)
@@ -964,6 +965,7 @@ func (client *GitHubClient) UnlabelPullRequest(ctx context.Context, owner, repos
 	})
 }
 
+// TODO eran check this api
 // UploadCodeScanning to GitHub Security tab
 func (client *GitHubClient) UploadCodeScanning(ctx context.Context, owner, repository, branch, sarifContent string) (id string, err error) {
 	commit, err := client.GetLatestCommit(ctx, owner, repository, branch)
@@ -1001,16 +1003,15 @@ func (client *GitHubClient) executeUploadCodeScanning(ctx context.Context, owner
 		return
 	}
 
-	id, err = extractIdFronSarifIDIfExists(sarifID)
+	id = extractIdFronSarifIDIfExists(sarifID)
 	return
 }
 
-func extractIdFronSarifIDIfExists(sarifID *github.SarifID) (id string, err error) {
+func extractIdFronSarifIDIfExists(sarifID *github.SarifID) string {
 	if sarifID != nil && *sarifID.ID != "" {
-		id = *sarifID.ID
-		return
+		return *sarifID.ID
 	}
-	return
+	return ""
 }
 
 // DownloadFileFromRepo on GitHub
