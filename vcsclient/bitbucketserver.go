@@ -935,7 +935,7 @@ func (client *BitbucketServerClient) CreatePullRequestDetailed(ctx context.Conte
 	return CreatedPullRequestInfo{}, errBitbucketCreatePullRequestDetailedNotSupported
 }
 
-func (client *BitbucketServerClient) UploadSnapshotToDependencyGraph(ctx context.Context, owner, repo string, snapshot SbomSnapshot) error {
+func (client *BitbucketServerClient) UploadSnapshotToDependencyGraph(ctx context.Context, owner, repo string, snapshot *SbomSnapshot) error {
 	return errBitbucketUploadSnapshotToDependencyGraphNotSupported
 }
 

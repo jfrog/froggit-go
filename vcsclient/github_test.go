@@ -1601,10 +1601,10 @@ func TestGithubClient_UploadSnapshotToDependencyGraph(t *testing.T) {
 	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, nil, expectedURI, createGitHubHandler)
 	defer cleanUp()
 
-	err := client.UploadSnapshotToDependencyGraph(ctx, owner, repo1, snapshot)
+	err := client.UploadSnapshotToDependencyGraph(ctx, owner, repo1, &snapshot)
 	assert.NoError(t, err)
 
 	// Negative test: bad client
-	err = createBadGitHubClient(t).UploadSnapshotToDependencyGraph(ctx, owner, repo1, snapshot)
+	err = createBadGitHubClient(t).UploadSnapshotToDependencyGraph(ctx, owner, repo1, &snapshot)
 	assert.Error(t, err)
 }

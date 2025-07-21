@@ -395,7 +395,7 @@ type VcsClient interface {
 	MergePullRequest(ctx context.Context, owner, repo string, prNumber int, commitMessage string) error
 
 	// UploadSnapshotToDependencyGraph uploads a snapshot to the GitHub dependency graph tab
-	UploadSnapshotToDependencyGraph(ctx context.Context, owner, repo string, snapshot SbomSnapshot) error
+	UploadSnapshotToDependencyGraph(ctx context.Context, owner, repo string, snapshot *SbomSnapshot) error
 }
 
 // SbomSnapshot represents a snapshot for GitHub dependency submission API

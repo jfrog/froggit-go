@@ -743,7 +743,7 @@ func (client *BitbucketCloudClient) CreatePullRequestDetailed(ctx context.Contex
 	return CreatedPullRequestInfo{}, errBitbucketCreatePullRequestDetailedNotSupported
 }
 
-func (client *BitbucketCloudClient) UploadSnapshotToDependencyGraph(ctx context.Context, owner, repo string, snapshot SbomSnapshot) error {
+func (client *BitbucketCloudClient) UploadSnapshotToDependencyGraph(ctx context.Context, owner, repo string, snapshot *SbomSnapshot) error {
 	return errBitbucketUploadSnapshotToDependencyGraphNotSupported
 }
 
