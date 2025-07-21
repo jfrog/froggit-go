@@ -35,6 +35,7 @@ var (
 	errBitbucketMergePullRequestNotSupported                 = fmt.Errorf("merge pull request is %s", notSupportedOnBitbucket)
 	errBitbucketListAppReposNotSupported                     = fmt.Errorf("list app repositories is %s", notSupportedOnBitbucket)
 	errBitbucketCreatePullRequestDetailedNotSupported        = fmt.Errorf("creating pull request detailed is %s", notSupportedOnBitbucket)
+	errBitbucketUploadSnapshotToDependencyGraphNotSupported  = fmt.Errorf("uploading snapshot to dependency graph UI is %s", notSupportedOnBitbucket)
 )
 
 type BitbucketCommitInfo struct {

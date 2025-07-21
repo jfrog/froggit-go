@@ -11,6 +11,8 @@ const (
 	UploadingCodeScanning    = "Uploading code scanning for:"
 
 	FailedForkedRepositoryExtraction = "Failed to extract forked repository owner"
+
+	SuccessfulSnapshotUpload = "Successfully uploaded snapshot to dependency graph, status:"
 )
 
 type Log interface {

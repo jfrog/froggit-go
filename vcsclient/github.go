@@ -4,17 +4,8 @@ import (
 	"context"
 	"crypto/rand"
 	base64Utils "encoding/base64"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/google/go-github/v56/github"
-	"github.com/grokify/mogo/encoding/base64"
-	"github.com/jfrog/froggit-go/vcsutils"
-	"github.com/jfrog/gofrog/datastructures"
-	"github.com/mitchellh/mapstructure"
-	"golang.org/x/crypto/nacl/box"
-	"golang.org/x/exp/slices"
-	"golang.org/x/oauth2"
 	"io"
 	"net/http"
 	"net/url"
@@ -23,6 +14,15 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/google/go-github/v62/github"
+	"github.com/grokify/mogo/encoding/base64"
+	"github.com/jfrog/froggit-go/vcsutils"
+	"github.com/jfrog/gofrog/datastructures"
+	"github.com/mitchellh/mapstructure"
+	"golang.org/x/crypto/nacl/box"
+	"golang.org/x/exp/slices"
+	"golang.org/x/oauth2"
 )
 
 const (
@@ -156,8 +156,8 @@ func (client *GitHubClient) ListRepositories(ctx context.Context) (results map[s
 }
 
 func (client *GitHubClient) executeListRepositoriesInPage(ctx context.Context, page int) ([]*github.Repository, *github.Response, error) {
-	options := &github.RepositoryListOptions{ListOptions: github.ListOptions{Page: page}}
-	return client.ghClient.Repositories.List(ctx, "", options)
+	options := &github.RepositoryListByAuthenticatedUserOptions{ListOptions: github.ListOptions{Page: page}}
+	return client.ghClient.Repositories.ListByAuthenticatedUser(ctx, options)
 }
 
 // ListBranches on GitHub
@@ -1001,24 +1001,15 @@ func (client *GitHubClient) executeUploadCodeScanning(ctx context.Context, owner
 		return
 	}
 
-	id, err = handleGitHubUploadSarifID(sarifID, err)
+	id = extractIdFronSarifIDIfExists(sarifID)
 	return
 }
 
-func handleGitHubUploadSarifID(sarifID *github.SarifID, uploadSarifErr error) (id string, err error) {
+func extractIdFronSarifIDIfExists(sarifID *github.SarifID) string {
 	if sarifID != nil && *sarifID.ID != "" {
-		id = *sarifID.ID
-		return
+		return *sarifID.ID
 	}
-	var result map[string]string
-	var ghAcceptedError *github.AcceptedError
-	if errors.As(uploadSarifErr, &ghAcceptedError) {
-		if err = json.Unmarshal(ghAcceptedError.Raw, &result); err != nil {
-			return
-		}
-		id = result["id"]
-	}
-	return
+	return ""
 }
 
 // DownloadFileFromRepo on GitHub
@@ -1448,12 +1439,13 @@ func extractGitHubEnvironmentReviewers(environment *github.Environment) ([]strin
 }
 
 func createGitHubHook(token, payloadURL string, webhookEvents ...vcsutils.WebhookEvent) *github.Hook {
+	contentType := "json"
 	return &github.Hook{
 		Events: getGitHubWebhookEvents(webhookEvents...),
-		Config: map[string]interface{}{
-			"url":          payloadURL,
-			"content_type": "json",
-			"secret":       token,
+		Config: &github.HookConfig{
+			ContentType: &contentType,
+			URL:         &payloadURL,
+			Secret:      &token,
 		},
 	}
 }
@@ -1638,4 +1630,77 @@ func (client *GitHubClient) ListAppRepositories(ctx context.Context) ([]AppRepos
 	}
 
 	return results, nil
+}
+func (client *GitHubClient) UploadSnapshotToDependencyGraph(ctx context.Context, owner, repo string, snapshot *SbomSnapshot) error {
+	if snapshot == nil {
+		return fmt.Errorf("provided snapshot is nil")
+	}
+	ghSnapshot, err := convertToGitHubSnapshot(snapshot)
+	if err != nil {
+		return fmt.Errorf("failed to convert snapshot to GitHub format: %w", err)
+	}
+
+	_, ghResponse, err := client.ghClient.DependencyGraph.CreateSnapshot(ctx, owner, repo, ghSnapshot)
+	if err != nil {
+		return fmt.Errorf("failed to upload snapshot to dependency graph: %w", err)
+	}
+
+	client.logger.Info(vcsutils.SuccessfulSnapshotUpload, ghResponse.StatusCode)
+	return nil
+}
+
+func convertToGitHubSnapshot(snapshot *SbomSnapshot) (*github.DependencyGraphSnapshot, error) {
+	ghSnapshot := &github.DependencyGraphSnapshot{
+		Version: snapshot.Version,
+		Sha:     &snapshot.Sha,
+		Ref:     &snapshot.Ref,
+		Scanned: &github.Timestamp{Time: snapshot.Scanned}, // Use current time if not provided
+	}
+
+	if snapshot.Job == nil {
+		return nil, fmt.Errorf("job information is required in the snapshot")
+	}
+	ghSnapshot.Job = &github.DependencyGraphSnapshotJob{
+		Correlator: &snapshot.Job.Correlator,
+		ID:         &snapshot.Job.ID,
+	}
+
+	if snapshot.Detector == nil {
+		return nil, fmt.Errorf("detector information is required in the snapshot")
+	}
+	ghSnapshot.Detector = &github.DependencyGraphSnapshotDetector{
+		Name:    &snapshot.Detector.Name,
+		Version: &snapshot.Detector.Version,
+		URL:     &snapshot.Detector.Url,
+	}
+
+	if len(snapshot.Manifests) == 0 {
+		return nil, fmt.Errorf("at least one manifest is required in the snapshot")
+	}
+	ghSnapshot.Manifests = make(map[string]*github.DependencyGraphSnapshotManifest)
+	for manifestName, manifest := range snapshot.Manifests {
+		ghManifest := &github.DependencyGraphSnapshotManifest{
+			Name: &manifest.Name,
+		}
+
+		if manifest.File == nil {
+			return nil, fmt.Errorf("manifest '%s' is missing file information", manifestName)
+		}
+		ghManifest.File = &github.DependencyGraphSnapshotManifestFile{SourceLocation: &manifest.File.SourceLocation}
+
+		if len(manifest.Resolved) == 0 {
+			return nil, fmt.Errorf("manifest '%s' must have at least one resolved dependency", manifestName)
+		}
+		ghManifest.Resolved = make(map[string]*github.DependencyGraphSnapshotResolvedDependency)
+		for depName, dep := range manifest.Resolved {
+			ghDep := &github.DependencyGraphSnapshotResolvedDependency{
+				PackageURL:   &dep.PackageURL,
+				Dependencies: dep.Dependencies,
+			}
+			ghManifest.Resolved[depName] = ghDep
+		}
+
+		ghSnapshot.Manifests[manifestName] = ghManifest
+	}
+	return ghSnapshot, nil
 }

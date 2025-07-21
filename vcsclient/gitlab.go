@@ -823,6 +823,10 @@ func (client *GitLabClient) CreatePullRequestDetailed(ctx context.Context, owner
 	return CreatedPullRequestInfo{}, errGitlabCreatePullRequestDetailedNotSupported
 }
 
+func (client *GitLabClient) UploadSnapshotToDependencyGraph(ctx context.Context, owner, repo string, snapshot *SbomSnapshot) error {
+	return errGitLabUploadSnapshotToDependencyGraphNotSupported
+}
+
 func getProjectID(owner, project string) string {
 	return fmt.Sprintf("%s/%s", owner, project)
 }

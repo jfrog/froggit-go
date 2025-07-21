@@ -393,6 +393,52 @@ type VcsClient interface {
 
 	// MergePullRequest merges a pull request into the target branch
 	MergePullRequest(ctx context.Context, owner, repo string, prNumber int, commitMessage string) error
+
+	// UploadSnapshotToDependencyGraph uploads a snapshot to the GitHub dependency graph tab
+	UploadSnapshotToDependencyGraph(ctx context.Context, owner, repo string, snapshot *SbomSnapshot) error
+}
+
+// SbomSnapshot represents a snapshot for GitHub dependency submission API
+type SbomSnapshot struct {
+	Version   int                  `json:"version"`
+	Sha       string               `json:"sha"`
+	Ref       string               `json:"ref"`
+	Job       *JobInfo             `json:"job"`
+	Detector  *DetectorInfo        `json:"detector"`
+	Scanned   time.Time            `json:"scanned"`
+	Manifests map[string]*Manifest `json:"manifests"`
+}
+
+// JobInfo contains information about the job that created the snapshot
+type JobInfo struct {
+	Correlator string `json:"correlator"`
+	ID         string `json:"id"`
+}
+
+// DetectorInfo contains information about the detector that created the snapshot
+type DetectorInfo struct {
+	Name    string `json:"name"`
+	Version string `json:"version"`
+	Url     string `json:"url"`
+}
+
+// Manifest represents a manifest file with its dependencies
+type Manifest struct {
+	Name     string                         `json:"name"`
+	File     *FileInfo                      `json:"file"`
+	Resolved map[string]*ResolvedDependency `json:"resolved"`
+}
+
+// FileInfo contains information about the manifest file
+type FileInfo struct {
+	SourceLocation string `json:"source_location"`
+}
+
+// ResolvedDependency represents a resolved dependency with its package URL and dependencies
+type ResolvedDependency struct {
+	PackageURL   string   `json:"package_url"`
+	Relationship string   `json:"relationship"`
+	Dependencies []string `json:"dependencies,omitempty"`
 }
 
 // CommitInfo contains the details of a commit
