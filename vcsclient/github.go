@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/rand"
 	base64Utils "encoding/base64"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -1002,22 +1001,14 @@ func (client *GitHubClient) executeUploadCodeScanning(ctx context.Context, owner
 		return
 	}
 
-	id, err = handleGitHubUploadSarifID(sarifID, err)
+	id, err = extractIdFronSarifIDIfExists(sarifID)
 	return
 }
 
-func handleGitHubUploadSarifID(sarifID *github.SarifID, uploadSarifErr error) (id string, err error) {
+func extractIdFronSarifIDIfExists(sarifID *github.SarifID) (id string, err error) {
 	if sarifID != nil && *sarifID.ID != "" {
 		id = *sarifID.ID
 		return
-	}
-	var result map[string]string
-	var ghAcceptedError *github.AcceptedError
-	if errors.As(uploadSarifErr, &ghAcceptedError) {
-		if err = json.Unmarshal(ghAcceptedError.Raw, &result); err != nil {
-			return
-		}
-		id = result["id"]
 	}
 	return
 }
