@@ -1631,7 +1631,10 @@ func (client *GitHubClient) ListAppRepositories(ctx context.Context) ([]AppRepos
 
 	return results, nil
 }
-func (client *GitHubClient) UploadSnapshotToDependencyGraph(ctx context.Context, owner, repo string, snapshot SbomSnapshot) error {
+func (client *GitHubClient) UploadSnapshotToDependencyGraph(ctx context.Context, owner, repo string, snapshot *SbomSnapshot) error {
+	if snapshot == nil {
+		return fmt.Errorf("provided snapshot is nil")
+	}
 	ghSnapshot, err := convertToGitHubSnapshot(snapshot)
 	if err != nil {
 		return fmt.Errorf("failed to convert snapshot to GitHub format: %w", err)
@@ -1646,7 +1649,7 @@ func (client *GitHubClient) UploadSnapshotToDependencyGraph(ctx context.Context,
 	return nil
 }
 
-func convertToGitHubSnapshot(snapshot SbomSnapshot) (*github.DependencyGraphSnapshot, error) {
+func convertToGitHubSnapshot(snapshot *SbomSnapshot) (*github.DependencyGraphSnapshot, error) {
 	ghSnapshot := &github.DependencyGraphSnapshot{
 		Version: snapshot.Version,
 		Sha:     &snapshot.Sha,
