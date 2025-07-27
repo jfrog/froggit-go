@@ -1635,14 +1635,24 @@ func (client *GitHubClient) UploadSnapshotToDependencyGraph(ctx context.Context,
 	if snapshot == nil {
 		return fmt.Errorf("provided snapshot is nil")
 	}
+
 	ghSnapshot, err := convertToGitHubSnapshot(snapshot)
 	if err != nil {
 		return fmt.Errorf("failed to convert snapshot to GitHub format: %w", err)
 	}
 
-	_, ghResponse, err := client.ghClient.DependencyGraph.CreateSnapshot(ctx, owner, repo, ghSnapshot)
+	var ghResponse *github.Response
+	err = client.runWithRateLimitRetries(func() (*github.Response, error) {
+		_, ghResponse, err = client.ghClient.DependencyGraph.CreateSnapshot(ctx, owner, repo, ghSnapshot)
+		return ghResponse, err
+	})
+
 	if err != nil {
 		return fmt.Errorf("failed to upload snapshot to dependency graph: %w", err)
+	}
+
+	if ghResponse == nil || ghResponse.Response == nil || ghResponse.Response.StatusCode != http.StatusCreated {
+		return fmt.Errorf("dependency submission call finished with unexpected status code: %d", ghResponse.Response.StatusCode)
 	}
 
 	client.logger.Info(vcsutils.SuccessfulSnapshotUpload, ghResponse.StatusCode)
@@ -1696,6 +1706,7 @@ func convertToGitHubSnapshot(snapshot *SbomSnapshot) (*github.DependencyGraphSna
 			ghDep := &github.DependencyGraphSnapshotResolvedDependency{
 				PackageURL:   &dep.PackageURL,
 				Dependencies: dep.Dependencies,
+				Relationship: &dep.Relationship,
 			}
 			ghManifest.Resolved[depName] = ghDep
 		}

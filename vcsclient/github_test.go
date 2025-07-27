@@ -1570,7 +1570,7 @@ func TestGithubClient_UploadSnapshotToDependencyGraph(t *testing.T) {
 	}
 	resolvedPackages["@actions/http-client"] = &ResolvedDependency{
 		PackageURL:   "pkg:/npm/%40actions/http-client@1.0.1",
-		Relationship: "direct",
+		Relationship: "indirect",
 		Dependencies: []string{"tunnel"},
 	}
 	resolvedPackages["tunnel"] = &ResolvedDependency{
@@ -1598,7 +1598,7 @@ func TestGithubClient_UploadSnapshotToDependencyGraph(t *testing.T) {
 		Manifests: manifests,
 	}
 
-	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, nil, expectedURI, createGitHubHandler)
+	client, cleanUp := createServerAndClientReturningStatus(t, vcsutils.GitHub, false, nil, expectedURI, http.StatusCreated, createGitHubHandler)
 	defer cleanUp()
 
 	err := client.UploadSnapshotToDependencyGraph(ctx, owner, repo1, &snapshot)
