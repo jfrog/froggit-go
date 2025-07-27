@@ -1570,7 +1570,7 @@ func TestGithubClient_UploadSnapshotToDependencyGraph(t *testing.T) {
 	}
 	resolvedPackages["@actions/http-client"] = &ResolvedDependency{
 		PackageURL:   "pkg:/npm/%40actions/http-client@1.0.1",
-		Relationship: "direct",
+		Relationship: "indirect",
 		Dependencies: []string{"tunnel"},
 	}
 	resolvedPackages["tunnel"] = &ResolvedDependency{
