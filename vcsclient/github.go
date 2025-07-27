@@ -1653,9 +1653,9 @@ func (client *GitHubClient) UploadSnapshotToDependencyGraph(ctx context.Context,
 
 	if ghResponse == nil || ghResponse.Response == nil || ghResponse.Response.StatusCode != http.StatusCreated {
 		return fmt.Errorf("dependency submission call finished with unexpected status code: %d", ghResponse.Response.StatusCode)
-	} else {
-		client.logger.Info(vcsutils.SuccessfulSnapshotUpload, ghResponse.StatusCode)
 	}
+
+	client.logger.Info(vcsutils.SuccessfulSnapshotUpload, ghResponse.StatusCode)
 	return nil
 }
 
