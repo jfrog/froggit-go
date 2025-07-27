@@ -1651,7 +1651,7 @@ func (client *GitHubClient) UploadSnapshotToDependencyGraph(ctx context.Context,
 		return fmt.Errorf("failed to upload snapshot to dependency graph: %w", err)
 	}
 
-	if ghResponse == nil || ghResponse.Response == nil || (ghResponse.Response.StatusCode != http.StatusCreated && ghResponse.Response.StatusCode != http.StatusOK) {
+	if ghResponse == nil || ghResponse.Response == nil || ghResponse.Response.StatusCode != http.StatusCreated {
 		return fmt.Errorf("dependency submission call finished with unexpected status code: %d", ghResponse.Response.StatusCode)
 	} else {
 		client.logger.Info(vcsutils.SuccessfulSnapshotUpload, ghResponse.StatusCode)

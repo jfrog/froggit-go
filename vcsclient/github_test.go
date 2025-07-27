@@ -1598,7 +1598,7 @@ func TestGithubClient_UploadSnapshotToDependencyGraph(t *testing.T) {
 		Manifests: manifests,
 	}
 
-	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, nil, expectedURI, createGitHubHandler)
+	client, cleanUp := createServerAndClientReturningStatus(t, vcsutils.GitHub, false, nil, expectedURI, http.StatusCreated, createGitHubHandler)
 	defer cleanUp()
 
 	err := client.UploadSnapshotToDependencyGraph(ctx, owner, repo1, &snapshot)
