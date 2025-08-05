@@ -519,13 +519,19 @@ func (client *AzureReposClient) GetRepositoryInfo(ctx context.Context, owner, re
 		Project:      &client.vcsInfo.Project,
 	})
 	if err != nil {
-		return RepositoryInfo{}, fmt.Errorf("an error occured while retrieving <%s/%s/%s> repository info:\n%s", owner, client.vcsInfo.Project, repository, err.Error())
+		return RepositoryInfo{}, fmt.Errorf("an error occurred while retrieving <%s/%s/%s> repository info:\n%s", owner, client.vcsInfo.Project, repository, err.Error())
 	}
 	if response == nil {
-		return RepositoryInfo{}, fmt.Errorf("failed to retreive <%s/%s/%s> repository info, received empty response", owner, client.vcsInfo.Project, repository)
+		return RepositoryInfo{}, fmt.Errorf("failed to retrieve <%s/%s/%s> repository info, received empty response", owner, client.vcsInfo.Project, repository)
 	}
 	if response.Project == nil {
-		return RepositoryInfo{}, fmt.Errorf("failed to retreive <%s/%s/%s> repository info, received empty project info", owner, client.vcsInfo.Project, repository)
+		return RepositoryInfo{}, fmt.Errorf("failed to retrieve <%s/%s/%s> repository info, received empty project info", owner, client.vcsInfo.Project, repository)
+	}
+	if response.RemoteUrl == nil {
+		return RepositoryInfo{}, fmt.Errorf("failed to retrieve <%s/%s/%s> repository info, received nil HTTP clone URL", owner, client.vcsInfo.Project, repository)
+	}
+	if response.SshUrl == nil {
+		return RepositoryInfo{}, fmt.Errorf("failed to retrieve <%s/%s/%s> repository info, received nil SSH clone URL", owner, client.vcsInfo.Project, repository)
 	}
 
 	visibility := Private
