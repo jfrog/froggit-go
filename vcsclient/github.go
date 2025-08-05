@@ -1390,22 +1390,35 @@ func (client *GitHubClient) createBlobsInParallel(ctx context.Context, owner, re
 	}
 
 	blobChan := make(chan blobResult, len(files))
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
 
 	for i, file := range files {
 		go func(idx int, f FileToCommit) {
+			defer func() {
+				if r := recover(); r != nil {
+					blobChan <- blobResult{file: f, err: fmt.Errorf("panic in createBlob: %v", r), index: idx}
+				}
+			}()
+
 			err := client.runWithRateLimitRetries(func() (*github.Response, error) {
+				select {
+				case <-ctx.Done():
+					return nil, ctx.Err()
+				default:
+				}
+
 				blob, ghResponse, err := client.ghClient.Git.CreateBlob(ctx, owner, repo, &github.Blob{
 					Content:  github.String(f.Content),
 					Encoding: github.String("utf-8"),
 				})
 				if err != nil {
-					blobChan <- blobResult{file: f, err: err, index: idx}
-				} else {
-					blobChan <- blobResult{file: f, blob: blob, index: idx}
+					return ghResponse, err
 				}
-				return ghResponse, err
+				blobChan <- blobResult{file: f, blob: blob, index: idx}
+				return ghResponse, nil
 			})
-			if err != nil && blobChan != nil {
+			if err != nil {
 				blobChan <- blobResult{file: f, err: err, index: idx}
 			}
 		}(i, file)
@@ -1415,6 +1428,7 @@ func (client *GitHubClient) createBlobsInParallel(ctx context.Context, owner, re
 	for i := 0; i < len(files); i++ {
 		result := <-blobChan
 		if result.err != nil {
+			cancel()
 			close(blobChan)
 			return nil, fmt.Errorf("failed to create blob for %s: %w", result.file.Path, result.err)
 		}
