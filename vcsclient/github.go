@@ -1347,7 +1347,7 @@ func (client *GitHubClient) commitMultipleFiles(
 		return fmt.Errorf("failed to get parent commit: %w", err)
 	}
 
-	treeEntries, err := client.createBlobsInParallel(ctx, owner, repo, files)
+	treeEntries, err := client.createBlobs(ctx, owner, repo, files)
 	if err != nil {
 		return err
 	}
@@ -1381,66 +1381,30 @@ func (client *GitHubClient) commitMultipleFiles(
 	return nil
 }
 
-func (client *GitHubClient) createBlobsInParallel(ctx context.Context, owner, repo string, files []FileToCommit) ([]*github.TreeEntry, error) {
-	type blobResult struct {
-		file  FileToCommit
-		blob  *github.Blob
-		err   error
-		index int
-	}
-
-	blobChan := make(chan blobResult, len(files))
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
-	for i, file := range files {
-		go func(idx int, f FileToCommit) {
-			defer func() {
-				if r := recover(); r != nil {
-					blobChan <- blobResult{file: f, err: fmt.Errorf("panic in createBlob: %v", r), index: idx}
-				}
-			}()
-
-			err := client.runWithRateLimitRetries(func() (*github.Response, error) {
-				select {
-				case <-ctx.Done():
-					return nil, ctx.Err()
-				default:
-				}
-
-				blob, ghResponse, err := client.ghClient.Git.CreateBlob(ctx, owner, repo, &github.Blob{
-					Content:  github.String(f.Content),
-					Encoding: github.String("utf-8"),
-				})
-				if err != nil {
-					return ghResponse, err
-				}
-				blobChan <- blobResult{file: f, blob: blob, index: idx}
-				return ghResponse, nil
+func (client *GitHubClient) createBlobs(ctx context.Context, owner, repo string, files []FileToCommit) ([]*github.TreeEntry, error) {
+	var treeEntries []*github.TreeEntry
+	for _, file := range files {
+		var blob *github.Blob
+		err := client.runWithRateLimitRetries(func() (*github.Response, error) {
+			var ghResponse *github.Response
+			var err error
+			blob, ghResponse, err = client.ghClient.Git.CreateBlob(ctx, owner, repo, &github.Blob{
+				Content:  github.String(file.Content),
+				Encoding: github.String("utf-8"),
 			})
-			if err != nil {
-				blobChan <- blobResult{file: f, err: err, index: idx}
-			}
-		}(i, file)
-	}
-
-	treeEntries := make([]*github.TreeEntry, len(files))
-	for i := 0; i < len(files); i++ {
-		result := <-blobChan
-		if result.err != nil {
-			cancel()
-			close(blobChan)
-			return nil, fmt.Errorf("failed to create blob for %s: %w", result.file.Path, result.err)
+			return ghResponse, err
+		})
+		if err != nil {
+			return nil, fmt.Errorf("failed to create blob for %s: %w", file.Path, err)
 		}
 
-		treeEntries[result.index] = &github.TreeEntry{
-			Path: github.String(result.file.Path),
+		treeEntries = append(treeEntries, &github.TreeEntry{
+			Path: github.String(file.Path),
 			Mode: github.String(regularFileCode),
 			Type: github.String("blob"),
-			SHA:  result.blob.SHA,
-		}
+			SHA:  blob.SHA,
+		})
 	}
-	close(blobChan)
 
 	return treeEntries, nil
 }
