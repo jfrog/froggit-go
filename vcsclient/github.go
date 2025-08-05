@@ -1071,7 +1071,8 @@ func (client *GitHubClient) CreateBranch(ctx context.Context, owner, repository,
 
 	var sourceBranchRef *github.Reference
 	err = client.runWithRateLimitRetries(func() (*github.Response, error) {
-		sourceBranchRef, _, err = client.ghClient.Git.GetRef(ctx, owner, repository, "refs/heads/"+sourceBranch)
+		sourceBranch = vcsutils.AddBranchPrefix(sourceBranch)
+		sourceBranchRef, _, err = client.ghClient.Git.GetRef(ctx, owner, repository, sourceBranch)
 		if err != nil {
 			return nil, err
 		}
@@ -1089,6 +1090,7 @@ func (client *GitHubClient) CreateBranch(ctx context.Context, owner, repository,
 	}
 
 	latestCommitSHA := sourceBranchRef.Object.SHA
+	newBranch = vcsutils.AddBranchPrefix(newBranch)
 	ref := &github.Reference{
 		Ref:    github.String("refs/heads/" + newBranch),
 		Object: &github.GitObject{SHA: latestCommitSHA},
@@ -1292,7 +1294,7 @@ func (client *GitHubClient) CommitAndPushFiles(
 		return client.commitSingleFile(ctx, owner, repo, sourceBranch, files[0], commitMessage, authorName, authorEmail)
 	}
 
-	client.logger.Debug("Using Git API for", len(files), " file commit")
+	client.logger.Debug("Using Git API for ", len(files), " file commit")
 	return client.commitMultipleFiles(ctx, owner, repo, sourceBranch, files, commitMessage, authorName, authorEmail)
 }
 
