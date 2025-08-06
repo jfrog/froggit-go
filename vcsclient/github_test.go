@@ -1033,12 +1033,13 @@ func TestGitHubClient_DeletePullRequestComment(t *testing.T) {
 
 func TestGitHubClient_CreateBranch(t *testing.T) {
 	ctx := context.Background()
-	branchResponse := github.Branch{
-		Name:      github.String("master"),
-		Commit:    &github.RepositoryCommit{},
-		Protected: nil,
+	refResponse := github.Reference{
+		Ref: github.String("refs/heads/master"),
+		Object: &github.GitObject{
+			SHA: github.String("abc123abc123abc123abc123abc123abc123abcd"),
+		},
 	}
-	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, branchResponse, "", createGitHubHandlerWithoutExpectedURI)
+	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, refResponse, "", createGitHubHandlerWithoutExpectedURI)
 	defer cleanUp()
 	err := client.CreateBranch(ctx, owner, repo1, "master", "BranchForTest")
 	assert.NoError(t, err)
@@ -1093,6 +1094,7 @@ func TestGitHubClient_CommitAndPushFiles(t *testing.T) {
 	sourceBranch := "feature-branch"
 	filesToCommit := []FileToCommit{
 		{Path: "example.txt", Content: "example content"},
+		{Path: "example2.txt", Content: "example content 2"},
 	}
 	expectedResponses := map[string]mockGitHubResponse{
 		"/repos/jfrog/repo-1/git/ref/heads/feature-branch": {

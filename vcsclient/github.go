@@ -1069,9 +1069,10 @@ func (client *GitHubClient) CreateBranch(ctx context.Context, owner, repository,
 		return err
 	}
 
-	var sourceBranchRef *github.Branch
+	var sourceBranchRef *github.Reference
 	err = client.runWithRateLimitRetries(func() (*github.Response, error) {
-		sourceBranchRef, _, err = client.ghClient.Repositories.GetBranch(ctx, owner, repository, sourceBranch, 3)
+		sourceBranch = vcsutils.AddBranchPrefix(sourceBranch)
+		sourceBranchRef, _, err = client.ghClient.Git.GetRef(ctx, owner, repository, sourceBranch)
 		if err != nil {
 			return nil, err
 		}
@@ -1081,7 +1082,15 @@ func (client *GitHubClient) CreateBranch(ctx context.Context, owner, repository,
 		return err
 	}
 
-	latestCommitSHA := sourceBranchRef.Commit.SHA
+	if sourceBranchRef == nil {
+		return fmt.Errorf("failed to get reference for source branch %s", sourceBranch)
+	}
+	if sourceBranchRef.Object == nil {
+		return fmt.Errorf("source branch %s reference object is nil", sourceBranch)
+	}
+
+	latestCommitSHA := sourceBranchRef.Object.SHA
+	newBranch = vcsutils.AddBranchPrefix(newBranch)
 	ref := &github.Reference{
 		Ref:    github.String("refs/heads/" + newBranch),
 		Object: &github.GitObject{SHA: latestCommitSHA},
@@ -1280,6 +1289,54 @@ func (client *GitHubClient) CommitAndPushFiles(
 		return errors.New("no files provided to commit")
 	}
 
+	if len(files) == 1 {
+		client.logger.Debug("Using Contents API for single file commit")
+		return client.commitSingleFile(ctx, owner, repo, sourceBranch, files[0], commitMessage, authorName, authorEmail)
+	}
+
+	client.logger.Debug("Using Git API for ", len(files), " file commit")
+	return client.commitMultipleFiles(ctx, owner, repo, sourceBranch, files, commitMessage, authorName, authorEmail)
+}
+
+func (client *GitHubClient) commitSingleFile(
+	ctx context.Context,
+	owner, repo, branch string,
+	file FileToCommit,
+	commitMessage, authorName, authorEmail string,
+) error {
+	encodedContent := base64Utils.StdEncoding.EncodeToString([]byte(file.Content))
+
+	fileOptions := &github.RepositoryContentFileOptions{
+		Message: &commitMessage,
+		Content: []byte(encodedContent),
+		Branch:  &branch,
+		Author: &github.CommitAuthor{
+			Name:  &authorName,
+			Email: &authorEmail,
+		},
+		Committer: &github.CommitAuthor{
+			Name:  &authorName,
+			Email: &authorEmail,
+		},
+	}
+
+	err := client.runWithRateLimitRetries(func() (*github.Response, error) {
+		_, ghResponse, err := client.ghClient.Repositories.CreateFile(ctx, owner, repo, file.Path, fileOptions)
+		return ghResponse, err
+	})
+
+	if err != nil {
+		return fmt.Errorf("failed to commit single file %s: %w", file.Path, err)
+	}
+	return nil
+}
+
+func (client *GitHubClient) commitMultipleFiles(
+	ctx context.Context,
+	owner, repo, sourceBranch string,
+	files []FileToCommit,
+	commitMessage, authorName, authorEmail string,
+) error {
 	ref, _, err := client.ghClient.Git.GetRef(ctx, owner, repo, "refs/heads/"+sourceBranch)
 	if err != nil {
 		return fmt.Errorf("failed to get branch ref: %w", err)
@@ -1290,23 +1347,9 @@ func (client *GitHubClient) CommitAndPushFiles(
 		return fmt.Errorf("failed to get parent commit: %w", err)
 	}
 
-	var treeEntries []*github.TreeEntry
-	for _, file := range files {
-		blob, _, err := client.ghClient.Git.CreateBlob(ctx, owner, repo, &github.Blob{
-			Content:  github.String(file.Content),
-			Encoding: github.String("utf-8"),
-		})
-		if err != nil {
-			return fmt.Errorf("failed to create blob for %s: %w", file.Path, err)
-		}
-
-		// Add each file to the treeEntries
-		treeEntries = append(treeEntries, &github.TreeEntry{
-			Path: github.String(file.Path),
-			Mode: github.String(regularFileCode),
-			Type: github.String("blob"),
-			SHA:  blob.SHA,
-		})
+	treeEntries, err := client.createBlobs(ctx, owner, repo, files)
+	if err != nil {
+		return err
 	}
 
 	tree, _, err := client.ghClient.Git.CreateTree(ctx, owner, repo, *parentCommit.Tree.SHA, treeEntries)
@@ -1336,6 +1379,34 @@ func (client *GitHubClient) CommitAndPushFiles(
 		return fmt.Errorf("failed to update branch ref: %w", err)
 	}
 	return nil
+}
+
+func (client *GitHubClient) createBlobs(ctx context.Context, owner, repo string, files []FileToCommit) ([]*github.TreeEntry, error) {
+	var treeEntries []*github.TreeEntry
+	for _, file := range files {
+		var blob *github.Blob
+		err := client.runWithRateLimitRetries(func() (*github.Response, error) {
+			var ghResponse *github.Response
+			var err error
+			blob, ghResponse, err = client.ghClient.Git.CreateBlob(ctx, owner, repo, &github.Blob{
+				Content:  github.String(file.Content),
+				Encoding: github.String("utf-8"),
+			})
+			return ghResponse, err
+		})
+		if err != nil {
+			return nil, fmt.Errorf("failed to create blob for %s: %w", file.Path, err)
+		}
+
+		treeEntries = append(treeEntries, &github.TreeEntry{
+			Path: github.String(file.Path),
+			Mode: github.String(regularFileCode),
+			Type: github.String("blob"),
+			SHA:  blob.SHA,
+		})
+	}
+
+	return treeEntries, nil
 }
 
 func (client *GitHubClient) MergePullRequest(ctx context.Context, owner, repo string, prNumber int, commitMessage string) error {
