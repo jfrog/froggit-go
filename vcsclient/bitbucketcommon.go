@@ -2,9 +2,10 @@ package vcsclient
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/jfrog/froggit-go/vcsutils"
 	"github.com/mitchellh/mapstructure"
-	"time"
 )
 
 const (

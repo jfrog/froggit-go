@@ -1715,3 +1715,64 @@ func convertToGitHubSnapshot(snapshot *SbomSnapshot) (*github.DependencyGraphSna
 	}
 	return ghSnapshot, nil
 }
+
+// IsCodeScanningEnabled checks if code scanning is enabled for a repository.
+// Tests the SARIF upload endpoint with an empty body: 422=enabled, 403=disabled.
+// TODO: Replace with proper GitHub API when available.
+func (client *GitHubClient) IsCodeScanningEnabled(ctx context.Context, owner, repository string) (bool, error) {
+	err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository})
+	if err != nil {
+		return false, err
+	}
+
+	requestUrl := fmt.Sprintf("%srepos/%s/%s/code-scanning/sarifs", client.ghClient.BaseURL.String(), owner, repository)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, requestUrl, strings.NewReader(""))
+	if err != nil {
+		return false, err
+	}
+
+	req.Header.Set("Accept", "application/vnd.github+json")
+	req.Header.Set("Content-Type", "application/json")
+	if client.vcsInfo.Token != "" {
+		req.Header.Set("Authorization", "Bearer "+client.vcsInfo.Token)
+	}
+
+	resp, err := client.ghClient.Client().Do(req)
+	if err != nil {
+		return false, err
+	}
+	defer func() {
+		if closeErr := resp.Body.Close(); closeErr != nil {
+			client.logger.Warn("Failed to close response body:", closeErr)
+		}
+	}()
+
+	switch resp.StatusCode {
+	case http.StatusForbidden:
+		// Check if the error message mentions code scanning
+		body, readErr := io.ReadAll(resp.Body)
+		if readErr == nil {
+			bodyStr := strings.ToLower(string(body))
+			if strings.Contains(bodyStr, "code scanning") || strings.Contains(bodyStr, "advanced security") {
+				return false, nil
+			}
+		}
+		// If we can't read the body or it doesn't mention code scanning, log warning and return false
+		client.logger.Warn("Received 403 for code scanning check on", owner+"/"+repository, "but response doesn't clearly indicate code scanning status")
+		return false, nil
+	case http.StatusUnprocessableEntity:
+		// 422 means the endpoint exists and is processing our request, but the empty body is invalid
+		return true, nil
+	default:
+		// Any other status code is unexpected
+		if resp.StatusCode >= 200 && resp.StatusCode < 300 {
+			// Success is unexpected with empty body
+			client.logger.Warn("Code scanning request unexpectedly succeeded for", owner+"/"+repository, "with status", resp.StatusCode, ". This should not happen.")
+			return true, nil
+		} else {
+			// Other error status codes
+			client.logger.Warn("Unexpected status code", resp.StatusCode, "when checking code scanning for", owner+"/"+repository)
+			return false, nil
+		}
+	}
+}

@@ -827,6 +827,10 @@ func (client *GitLabClient) UploadSnapshotToDependencyGraph(ctx context.Context,
 	return errGitLabUploadSnapshotToDependencyGraphNotSupported
 }
 
+func (client *GitLabClient) IsCodeScanningEnabled(ctx context.Context, owner, repository string) (bool, error) {
+	return false, errGitLabCodeScanningNotSupported
+}
+
 func getProjectID(owner, project string) string {
 	return fmt.Sprintf("%s/%s", owner, project)
 }

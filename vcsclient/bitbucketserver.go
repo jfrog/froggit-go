@@ -939,6 +939,10 @@ func (client *BitbucketServerClient) UploadSnapshotToDependencyGraph(ctx context
 	return errBitbucketUploadSnapshotToDependencyGraphNotSupported
 }
 
+func (client *BitbucketServerClient) IsCodeScanningEnabled(ctx context.Context, owner, repository string) (bool, error) {
+	return false, errBitbucketCodeScanningNotSupported
+}
+
 func getBitbucketServerRepositoryVisibility(public bool) RepositoryVisibility {
 	if public {
 		return Public

@@ -747,6 +747,10 @@ func (client *BitbucketCloudClient) UploadSnapshotToDependencyGraph(ctx context.
 	return errBitbucketUploadSnapshotToDependencyGraphNotSupported
 }
 
+func (client *BitbucketCloudClient) IsCodeScanningEnabled(ctx context.Context, owner, repository string) (bool, error) {
+	return false, errBitbucketCodeScanningNotSupported
+}
+
 type pullRequestsResponse struct {
 	Values []pullRequestsDetails `json:"values"`
 }

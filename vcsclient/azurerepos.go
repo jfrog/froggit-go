@@ -789,6 +789,10 @@ func (client *AzureReposClient) UploadSnapshotToDependencyGraph(ctx context.Cont
 	return getUnsupportedInAzureError("uploading snapshot to dependency graph UI")
 }
 
+func (client *AzureReposClient) IsCodeScanningEnabled(ctx context.Context, owner, repository string) (bool, error) {
+	return false, getUnsupportedInAzureError("code scanning")
+}
+
 func parsePullRequestDetails(client *AzureReposClient, pullRequest git.GitPullRequest, owner, repository string, withBody bool) PullRequestInfo {
 	// Trim the branches prefix and get the actual branches name
 	shortSourceName := plumbing.ReferenceName(*pullRequest.SourceRefName).Short()
