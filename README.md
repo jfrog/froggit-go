@@ -66,6 +66,7 @@ Currently supported providers are: [GitHub](#github), [Bitbucket Server](#bitbuc
       - [List Pull Request Labels](#list-pull-request-labels)
       - [Unlabel Pull Request](#unlabel-pull-request)
       - [Upload Code Scanning](#upload-code-scanning)
+      - [Check If Code Scanning Is Enabled](#check-if-code-scanning-is-enabled)
       - [Download a File From a Repository](#download-a-file-from-a-repository)
       - [Create a branch](#create-branch)
       - [Allow workflows on organization](#allow-workflows)
@@ -834,6 +835,22 @@ scanResults := "results"
 
 // Uploads the scanning analysis file to the relevant git provider
 sarifID, err := client.UploadCodeScanning(ctx, owner, repo, branch, scanResults)
+```
+
+#### Check If Code Scanning Is Enabled
+
+Notice - Code Scanning availability check is currently supported on GitHub only.
+
+```go
+// Go context
+ctx := context.Background()
+// The account owner of the git repository
+owner := "user"
+// The name of the repository
+repo := "my_repo"
+
+// Checks if code scanning is enabled for the repository
+enabled, err := client.IsCodeScanningEnabled(ctx, owner, repo)
 ```
 
 #### Download a File From a Repository

@@ -396,6 +396,12 @@ type VcsClient interface {
 
 	// UploadSnapshotToDependencyGraph uploads a snapshot to the GitHub dependency graph tab
 	UploadSnapshotToDependencyGraph(ctx context.Context, owner, repo string, snapshot *SbomSnapshot) error
+
+	// IsCodeScanningEnabled checks if code scanning is enabled by making a direct HTTP request
+	// to the code scanning route with an empty body and interpreting the response status codes
+	// owner      - User or organization
+	// repository - VCS repository name
+	IsCodeScanningEnabled(ctx context.Context, owner, repository string) (bool, error)
 }
 
 // SbomSnapshot represents a snapshot for GitHub dependency submission API

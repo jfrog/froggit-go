@@ -1610,3 +1610,97 @@ func TestGithubClient_UploadSnapshotToDependencyGraph(t *testing.T) {
 	err = createBadGitHubClient(t).UploadSnapshotToDependencyGraph(ctx, owner, repo1, &snapshot)
 	assert.Error(t, err)
 }
+
+func TestGitHubClient_IsCodeScanningEnabled(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("code scanning enabled - 422 response", func(t *testing.T) {
+		unprocessableResponse := []byte(`{
+			"message": "Invalid request",
+			"errors": [
+				{
+					"code": "invalid",
+					"field": "sarif"
+				}
+			]
+		}`)
+
+		client, cleanUp := createServerAndClientReturningStatus(t, vcsutils.GitHub, false, unprocessableResponse,
+			fmt.Sprintf("/repos/%s/%s/code-scanning/sarifs", owner, repo1), http.StatusUnprocessableEntity,
+			createGitHubHandler)
+		defer cleanUp()
+
+		enabled, err := client.IsCodeScanningEnabled(ctx, owner, repo1)
+		assert.NoError(t, err)
+		assert.True(t, enabled)
+	})
+
+	t.Run("code scanning disabled - 403 with code scanning message", func(t *testing.T) {
+		forbiddenResponse := []byte(`{
+			"message": "Advanced Security must be enabled for this repository to use code scanning.",
+			"documentation_url": "https://docs.github.com/rest/reference/code-scanning"
+		}`)
+
+		client, cleanUp := createServerAndClientReturningStatus(t, vcsutils.GitHub, false, forbiddenResponse,
+			fmt.Sprintf("/repos/%s/%s/code-scanning/sarifs", owner, repo1), http.StatusForbidden,
+			createGitHubHandler)
+		defer cleanUp()
+
+		enabled, err := client.IsCodeScanningEnabled(ctx, owner, repo1)
+		assert.NoError(t, err)
+		assert.False(t, enabled)
+	})
+
+	t.Run("generic forbidden - 403 without code scanning message", func(t *testing.T) {
+		genericForbiddenResponse := []byte(`{
+			"message": "Forbidden"
+		}`)
+
+		client, cleanUp := createServerAndClientReturningStatus(t, vcsutils.GitHub, false, genericForbiddenResponse,
+			fmt.Sprintf("/repos/%s/%s/code-scanning/sarifs", owner, repo1), http.StatusForbidden,
+			createGitHubHandler)
+		defer cleanUp()
+
+		enabled, err := client.IsCodeScanningEnabled(ctx, owner, repo1)
+		assert.NoError(t, err)
+		assert.False(t, enabled)
+	})
+
+	t.Run("unexpected success - 200 response", func(t *testing.T) {
+		successResponse := []byte(`{"message": "Success"}`)
+
+		client, cleanUp := createServerAndClientReturningStatus(t, vcsutils.GitHub, false, successResponse,
+			fmt.Sprintf("/repos/%s/%s/code-scanning/sarifs", owner, repo1), http.StatusOK,
+			createGitHubHandler)
+		defer cleanUp()
+
+		enabled, err := client.IsCodeScanningEnabled(ctx, owner, repo1)
+		assert.NoError(t, err)
+		assert.True(t, enabled) // Should return true but log a warning
+	})
+
+	t.Run("network error", func(t *testing.T) {
+		enabled, err := createBadGitHubClient(t).IsCodeScanningEnabled(ctx, owner, repo1)
+		assert.Error(t, err)
+		assert.False(t, enabled)
+	})
+
+	t.Run("invalid parameters", func(t *testing.T) {
+		client, cleanUp := createServerAndClientReturningStatus(t, vcsutils.GitHub, false, nil,
+			fmt.Sprintf("/repos/%s/%s/code-scanning/sarifs", owner, repo1), http.StatusUnprocessableEntity,
+			createGitHubHandler)
+		defer cleanUp()
+
+		// Test empty owner
+		enabled, err := client.IsCodeScanningEnabled(ctx, "", repo1)
+		assert.Error(t, err)
+		assert.False(t, enabled)
+		assert.Contains(t, err.Error(), "owner")
+
+		// Test empty repository
+		enabled, err = client.IsCodeScanningEnabled(ctx, owner, "")
+		assert.Error(t, err)
+		assert.False(t, enabled)
+		assert.Contains(t, err.Error(), "repository")
+	})
+}
