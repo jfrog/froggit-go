@@ -18,7 +18,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/go-github/v62/github"
+	"github.com/google/go-github/v74/github"
 	"github.com/jfrog/froggit-go/vcsutils"
 	"github.com/stretchr/testify/assert"
 )
