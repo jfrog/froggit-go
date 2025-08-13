@@ -1024,25 +1024,26 @@ func (client *GitHubClient) DownloadFileFromRepo(ctx context.Context, owner, rep
 }
 
 func (client *GitHubClient) executeDownloadFileFromRepo(ctx context.Context, owner, repository, branch, path string) (content []byte, statusCode int, ghResponse *github.Response, err error) {
-	body, ghResponse, err := client.ghClient.Repositories.DownloadContents(ctx, owner, repository, path, &github.RepositoryContentGetOptions{Ref: branch})
-	defer func() {
-		if body != nil {
-			err = errors.Join(err, body.Close())
-		}
-	}()
-
+	fileContent, _, ghResponse, err := client.ghClient.Repositories.GetContents(ctx, owner, repository, path, &github.RepositoryContentGetOptions{Ref: branch})
 	if ghResponse == nil || ghResponse.Response == nil {
 		return
 	}
 
 	statusCode = ghResponse.StatusCode
-	if err != nil && statusCode != http.StatusOK {
-		err = fmt.Errorf("expected %d status code while received %d status code with error:\n%s", http.StatusOK, ghResponse.StatusCode, err)
+	if err != nil {
+		if statusCode != http.StatusOK {
+			err = fmt.Errorf("expected %d status code while received %d status code with error:\n%s", http.StatusOK, ghResponse.StatusCode, err)
+		}
 		return
 	}
 
-	if body != nil {
-		content, err = io.ReadAll(body)
+	if fileContent != nil {
+		var contentStr string
+		contentStr, err = fileContent.GetContent()
+		if err != nil {
+			return
+		}
+		content = []byte(contentStr)
 	}
 	return
 }
@@ -1092,7 +1093,7 @@ func (client *GitHubClient) CreateBranch(ctx context.Context, owner, repository,
 	latestCommitSHA := sourceBranchRef.Object.SHA
 	newBranch = vcsutils.AddBranchPrefix(newBranch)
 	ref := &github.Reference{
-		Ref:    github.String("refs/heads/" + newBranch),
+		Ref:    github.Ptr("refs/heads/" + newBranch),
 		Object: &github.GitObject{SHA: latestCommitSHA},
 	}
 
@@ -1144,7 +1145,7 @@ func (client *GitHubClient) CreateOrgVariable(ctx context.Context, owner, variab
 	variable := &github.ActionsVariable{
 		Name:       variableName,
 		Value:      variableValue,
-		Visibility: github.String("all"),
+		Visibility: github.Ptr("all"),
 	}
 
 	err = client.runWithRateLimitRetries(func() (*github.Response, error) {
@@ -1161,8 +1162,8 @@ func (client *GitHubClient) AllowWorkflows(ctx context.Context, owner string) er
 	}
 
 	requestBody := &github.ActionsPermissions{
-		AllowedActions:      github.String("all"),
-		EnabledRepositories: github.String("all"),
+		AllowedActions:      github.Ptr("all"),
+		EnabledRepositories: github.Ptr("all"),
 	}
 
 	err = client.runWithRateLimitRetries(func() (*github.Response, error) {
@@ -1240,7 +1241,7 @@ func (client *GitHubClient) CreateOrUpdateEnvironment(ctx context.Context, owner
 	var envReviewers []*github.EnvReviewers
 	for _, team := range teams {
 		envReviewers = append(envReviewers, &github.EnvReviewers{
-			Type: github.String("Team"),
+			Type: github.Ptr("Team"),
 			ID:   &team,
 		})
 	}
@@ -1261,8 +1262,8 @@ func (client *GitHubClient) CreateOrUpdateEnvironment(ctx context.Context, owner
 		}
 		userId := user.GetID()
 		envReviewers = append(envReviewers, &github.EnvReviewers{
-			Type: github.String("User"),
-			ID:   github.Int64(userId),
+			Type: github.Ptr("User"),
+			ID:   github.Ptr(userId),
 		})
 	}
 
@@ -1358,12 +1359,12 @@ func (client *GitHubClient) commitMultipleFiles(
 	}
 
 	commit := &github.Commit{
-		Message: github.String(commitMessage),
+		Message: github.Ptr(commitMessage),
 		Tree:    tree,
 		Parents: []*github.Commit{{SHA: parentCommit.SHA}},
 		Author: &github.CommitAuthor{
-			Name:  github.String(authorName),
-			Email: github.String(authorEmail),
+			Name:  github.Ptr(authorName),
+			Email: github.Ptr(authorEmail),
 			Date:  &github.Timestamp{Time: time.Now()},
 		},
 	}
@@ -1389,8 +1390,8 @@ func (client *GitHubClient) createBlobs(ctx context.Context, owner, repo string,
 			var ghResponse *github.Response
 			var err error
 			blob, ghResponse, err = client.ghClient.Git.CreateBlob(ctx, owner, repo, &github.Blob{
-				Content:  github.String(file.Content),
-				Encoding: github.String("utf-8"),
+				Content:  github.Ptr(file.Content),
+				Encoding: github.Ptr("utf-8"),
 			})
 			return ghResponse, err
 		})
@@ -1399,9 +1400,9 @@ func (client *GitHubClient) createBlobs(ctx context.Context, owner, repo string,
 		}
 
 		treeEntries = append(treeEntries, &github.TreeEntry{
-			Path: github.String(file.Path),
-			Mode: github.String(regularFileCode),
-			Type: github.String("blob"),
+			Path: github.Ptr(file.Path),
+			Mode: github.Ptr(regularFileCode),
+			Type: github.Ptr("blob"),
 			SHA:  blob.SHA,
 		})
 	}

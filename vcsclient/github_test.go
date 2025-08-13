@@ -220,18 +220,25 @@ func TestGitHubClient_DownloadRepository(t *testing.T) {
 
 func TestGitHubClient_DownloadFileFromRepository(t *testing.T) {
 	ctx := context.Background()
-	downloadURL := "https://jfrog.com"
-	name := "hello-world"
-	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, &[]github.RepositoryContent{{DownloadURL: &downloadURL, Name: &name}}, "/repos/jfrog/repo-1/contents/?ref=branch-1", createGitHubHandler)
+	// Positive case: file exists
+	contentB64 := "SGVsbG8gV29ybGQh" // "Hello World!" in base64
+	enc := "base64"
+	tpe := "file"
+	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, &github.RepositoryContent{Content: &contentB64, Encoding: &enc, Type: &tpe}, "/repos/jfrog/repo-1/contents/hello-world?ref=branch-1", createGitHubHandler)
 	defer cleanUp()
 	content, statusCode, err := client.DownloadFileFromRepo(ctx, owner, repo1, branch1, "hello-world")
 	assert.NoError(t, err)
 	assert.Equal(t, http.StatusOK, statusCode)
-	assert.NotEmpty(t, content)
+	assert.Equal(t, "Hello World!", string(content))
 
-	_, _, err = client.DownloadFileFromRepo(ctx, owner, repo1, branch1, "hello-bald")
+	// Negative case: file does not exist -> 404
+	notFoundBody := []byte(`{"message":"Not Found"}`)
+	client404, cleanUp404 := createServerAndClientReturningStatus(t, vcsutils.GitHub, false, notFoundBody, "/repos/jfrog/repo-1/contents/hello-bald?ref=branch-1", http.StatusNotFound, createGitHubHandler)
+	defer cleanUp404()
+	_, _, err = client404.DownloadFileFromRepo(ctx, owner, repo1, branch1, "hello-bald")
 	assert.Error(t, err)
 
+	// Bad client
 	_, _, err = createBadGitHubClient(t).DownloadFileFromRepo(ctx, owner, repo1, branch1, "hello")
 	assert.Error(t, err)
 }
@@ -1034,9 +1041,9 @@ func TestGitHubClient_DeletePullRequestComment(t *testing.T) {
 func TestGitHubClient_CreateBranch(t *testing.T) {
 	ctx := context.Background()
 	refResponse := github.Reference{
-		Ref: github.String("refs/heads/master"),
+		Ref: github.Ptr("refs/heads/master"),
 		Object: &github.GitObject{
-			SHA: github.String("abc123abc123abc123abc123abc123abc123abcd"),
+			SHA: github.Ptr("abc123abc123abc123abc123abc123abc123abcd"),
 		},
 	}
 	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, refResponse, "", createGitHubHandlerWithoutExpectedURI)
@@ -1062,8 +1069,8 @@ func TestGitHubClient_AllowWorkflows(t *testing.T) {
 func TestGitHubClient_AddOrganizationSecret(t *testing.T) {
 	ctx := context.Background()
 	publicKeyResponse := github.PublicKey{
-		KeyID: github.String("key-id"),
-		Key:   github.String("mfB0IZfFzP0YoJ4GzRbGVFfuR6MGlwGTi5jJ6EEXa5g="),
+		KeyID: github.Ptr("key-id"),
+		Key:   github.Ptr("mfB0IZfFzP0YoJ4GzRbGVFfuR6MGlwGTi5jJ6EEXa5g="),
 	}
 	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, publicKeyResponse, "", createGitHubHandlerWithoutExpectedURI)
 	defer cleanUp()
@@ -1100,45 +1107,45 @@ func TestGitHubClient_CommitAndPushFiles(t *testing.T) {
 		"/repos/jfrog/repo-1/git/ref/heads/feature-branch": {
 			StatusCode: 200,
 			Response: mustMarshal(&github.Reference{
-				Ref: github.String("refs/heads/feature-branch"),
+				Ref: github.Ptr("refs/heads/feature-branch"),
 				Object: &github.GitObject{
-					SHA: github.String("abc123abc123abc123abc123abc123abc123abcd"),
+					SHA: github.Ptr("abc123abc123abc123abc123abc123abc123abcd"),
 				},
 			}),
 		},
 		"/repos/jfrog/repo-1/git/commits/abc123abc123abc123abc123abc123abc123abcd": {
 			StatusCode: 200,
 			Response: mustMarshal(&github.Commit{
-				SHA: github.String("abc123abc123abc123abc123abc123abc123abcd"),
+				SHA: github.Ptr("abc123abc123abc123abc123abc123abc123abcd"),
 				Tree: &github.Tree{
-					SHA: github.String("def456def456def456def456def456def456defa"),
+					SHA: github.Ptr("def456def456def456def456def456def456defa"),
 				},
 			}),
 		},
 		"/repos/jfrog/repo-1/git/blobs": {
 			StatusCode: 201,
 			Response: mustMarshal(&github.Blob{
-				SHA: github.String("blobsha1234567890abcdef1234567890abcdef1234"),
+				SHA: github.Ptr("blobsha1234567890abcdef1234567890abcdef1234"),
 			}),
 		},
 		"/repos/jfrog/repo-1/git/trees": {
 			StatusCode: 201,
 			Response: mustMarshal(&github.Tree{
-				SHA: github.String("tree789tree789tree789tree789tree789tree789"),
+				SHA: github.Ptr("tree789tree789tree789tree789tree789tree789"),
 			}),
 		},
 		"/repos/jfrog/repo-1/git/commits": {
 			StatusCode: 201,
 			Response: mustMarshal(&github.Commit{
-				SHA: github.String("commit123commit123commit123commit123commit123"),
+				SHA: github.Ptr("commit123commit123commit123commit123commit123"),
 			}),
 		},
 		"/repos/jfrog/repo-1/git/refs/heads/feature-branch": {
 			StatusCode: 200,
 			Response: mustMarshal(&github.Reference{
-				Ref: github.String("refs/heads/feature-branch"),
+				Ref: github.Ptr("refs/heads/feature-branch"),
 				Object: &github.GitObject{
-					SHA: github.String("commit123commit123commit123commit123commit123"),
+					SHA: github.Ptr("commit123commit123commit123commit123commit123"),
 				},
 			}),
 		},
@@ -1156,7 +1163,7 @@ func TestGitHubClient_CommitAndPushFiles(t *testing.T) {
 func TestGitHubClient_GetRepoCollaborators(t *testing.T) {
 	ctx := context.Background()
 	response := []*github.User{
-		{Login: github.String("example")},
+		{Login: github.Ptr("example")},
 	}
 	affiliation := "direct"
 	permission := "maintain"
@@ -1175,10 +1182,10 @@ func TestGitHubClient_GetRepoTeamsByPermissions(t *testing.T) {
 	ctx := context.Background()
 	response := []*github.Team{
 		{
-			Name:       github.String("dev-team"),
-			Slug:       github.String("dev-team"),
-			ID:         github.Int64(1234567),
-			Permission: github.String("maintain"),
+			Name:       github.Ptr("dev-team"),
+			Slug:       github.Ptr("dev-team"),
+			ID:         github.Ptr(int64(1234567)),
+			Permission: github.Ptr("maintain"),
 		},
 	}
 	permissions := []string{"maintain"}
@@ -1226,7 +1233,7 @@ func TestGitHubClient_CreatePullRequestDetailed(t *testing.T) {
 	ctx := context.Background()
 	expectedURL := "https://github.com/jfrog/repo1/pull/875"
 	expectedPrNumber := 1234
-	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, github.PullRequest{Number: github.Int(expectedPrNumber), HTMLURL: github.String(expectedURL)}, "/repos/jfrog/repo-1/pulls", createGitHubHandler)
+	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, github.PullRequest{Number: github.Ptr(expectedPrNumber), HTMLURL: github.Ptr(expectedURL)}, "/repos/jfrog/repo-1/pulls", createGitHubHandler)
 	defer cleanUp()
 
 	prInfo, err := client.CreatePullRequestDetailed(ctx, owner, repo1, branch1, branch2, "PR title", "PR body")
