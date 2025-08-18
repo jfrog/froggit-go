@@ -221,7 +221,8 @@ func TestGitHubClient_DownloadRepository(t *testing.T) {
 func TestGitHubClient_DownloadFileFromRepository(t *testing.T) {
 	ctx := context.Background()
 	// Positive case: file exists
-	contentB64 := "SGVsbG8gV29ybGQh" // "Hello World!" in base64
+	// "Hello World!" in base64
+	contentB64 := "SGVsbG8gV29ybGQh"
 	enc := "base64"
 	tpe := "file"
 	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, &github.RepositoryContent{Content: &contentB64, Encoding: &enc, Type: &tpe}, "/repos/jfrog/repo-1/contents/hello-world?ref=branch-1", createGitHubHandler)
