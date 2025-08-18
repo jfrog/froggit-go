@@ -539,8 +539,22 @@ func (client *AzureReposClient) GetRepositoryInfo(ctx context.Context, owner, re
 	if visibilityFromResponse == core.ProjectVisibilityValues.Public {
 		visibility = Public
 	}
+
+	cloneInfo := CloneInfo{}
+	if response.RemoteUrl != nil {
+		cloneInfo.HTTP = *response.RemoteUrl
+	} else {
+		client.logger.Info(fmt.Sprintf("HTTPS clone URL not available for repository %s/%s/%s (may be disabled or not configured)", owner, client.vcsInfo.Project, repository))
+	}
+
+	if response.SshUrl != nil {
+		cloneInfo.SSH = *response.SshUrl
+	} else {
+		client.logger.Info(fmt.Sprintf("SSH clone URL not available for repository %s/%s/%s (may be disabled or not configured)", owner, client.vcsInfo.Project, repository))
+	}
+
 	return RepositoryInfo{
-		CloneInfo:            CloneInfo{HTTP: *response.RemoteUrl, SSH: *response.SshUrl},
+		CloneInfo:            cloneInfo,
 		RepositoryVisibility: visibility,
 	}, nil
 }
