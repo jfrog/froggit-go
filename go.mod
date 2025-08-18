@@ -5,7 +5,7 @@ go 1.23.0
 require (
 	github.com/gfleury/go-bitbucket-v1 v0.0.0-20230825095122-9bc1711434ab
 	github.com/go-git/go-git/v5 v5.16.0
-	github.com/google/go-github/v62 v62.0.0
+	github.com/google/go-github/v74 v74.0.0
 	github.com/google/uuid v1.6.0
 	github.com/grokify/mogo v0.64.12
 	github.com/jfrog/gofrog v1.7.6
