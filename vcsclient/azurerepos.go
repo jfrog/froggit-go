@@ -530,9 +530,6 @@ func (client *AzureReposClient) GetRepositoryInfo(ctx context.Context, owner, re
 	if response.RemoteUrl == nil {
 		return RepositoryInfo{}, fmt.Errorf("failed to retrieve <%s/%s/%s> repository info, received nil HTTP clone URL", owner, client.vcsInfo.Project, repository)
 	}
-	if response.SshUrl == nil {
-		return RepositoryInfo{}, fmt.Errorf("failed to retrieve <%s/%s/%s> repository info, received nil SSH clone URL", owner, client.vcsInfo.Project, repository)
-	}
 
 	visibility := Private
 	visibilityFromResponse := *response.Project.Visibility
