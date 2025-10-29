@@ -1093,7 +1093,7 @@ func (client *GitHubClient) CreateBranch(ctx context.Context, owner, repository,
 	latestCommitSHA := sourceBranchRef.Object.SHA
 	newBranch = vcsutils.AddBranchPrefix(newBranch)
 	ref := &github.Reference{
-		Ref:    github.Ptr("refs/heads/" + newBranch),
+		Ref:    github.Ptr(newBranch),
 		Object: &github.GitObject{SHA: latestCommitSHA},
 	}
 
