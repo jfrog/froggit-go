@@ -17,12 +17,13 @@ import (
 
 	"github.com/google/go-github/v74/github"
 	"github.com/grokify/mogo/encoding/base64"
-	"github.com/jfrog/froggit-go/vcsutils"
 	"github.com/jfrog/gofrog/datastructures"
 	"github.com/mitchellh/mapstructure"
 	"golang.org/x/crypto/nacl/box"
 	"golang.org/x/exp/slices"
 	"golang.org/x/oauth2"
+
+	"github.com/jfrog/froggit-go/vcsutils"
 )
 
 const (
@@ -983,7 +984,20 @@ func (client *GitHubClient) UploadCodeScanning(ctx context.Context, owner, repos
 	return
 }
 
-func (client *GitHubClient) executeUploadCodeScanning(ctx context.Context, owner, repository, branch, commitSHA, sarifContent string) (id string, ghResponse *github.Response, err error) {
+// UploadCodeScanningWithRef uploads SARIF to GitHub Code Scanning with a specific ref and commit SHA
+// This is useful for PR uploads where the ref should be refs/pull/<number>/head
+func (client *GitHubClient) UploadCodeScanningWithRef(ctx context.Context, owner, repository, ref, commitSHA, sarifContent string) (id string, err error) {
+	client.logger.Debug(vcsutils.UploadingCodeScanning, repository, "/", ref)
+
+	err = client.runWithRateLimitRetries(func() (*github.Response, error) {
+		var ghResponse *github.Response
+		id, ghResponse, err = client.executeUploadCodeScanning(ctx, owner, repository, ref, commitSHA, sarifContent)
+		return ghResponse, err
+	})
+	return
+}
+
+func (client *GitHubClient) executeUploadCodeScanning(ctx context.Context, owner, repository, ref, commitSHA, sarifContent string) (id string, ghResponse *github.Response, err error) {
 	encodedSarif, err := encodeScanningResult(sarifContent)
 	if err != nil {
 		return
@@ -991,7 +1005,7 @@ func (client *GitHubClient) executeUploadCodeScanning(ctx context.Context, owner
 
 	sarifID, ghResponse, err := client.ghClient.CodeScanning.UploadSarif(ctx, owner, repository, &github.SarifAnalysis{
 		CommitSHA: &commitSHA,
-		Ref:       &branch,
+		Ref:       &ref,
 		Sarif:     &encodedSarif,
 	})
 

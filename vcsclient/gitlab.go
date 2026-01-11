@@ -687,6 +687,11 @@ func (client *GitLabClient) UploadCodeScanning(_ context.Context, _ string, _ st
 	return "", errGitLabCodeScanningNotSupported
 }
 
+// UploadCodeScanningWithRef on GitLab
+func (client *GitLabClient) UploadCodeScanningWithRef(_ context.Context, _ string, _ string, _ string, _ string, _ string) (string, error) {
+	return "", errGitLabCodeScanningNotSupported
+}
+
 // GetRepositoryEnvironmentInfo on GitLab
 func (client *GitLabClient) GetRepositoryEnvironmentInfo(_ context.Context, _, _, _ string) (RepositoryEnvironmentInfo, error) {
 	return RepositoryEnvironmentInfo{}, errGitLabGetRepoEnvironmentInfoNotSupported

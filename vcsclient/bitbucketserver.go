@@ -849,6 +849,11 @@ func (client *BitbucketServerClient) UploadCodeScanning(ctx context.Context, own
 	return "", errBitbucketCodeScanningNotSupported
 }
 
+// UploadCodeScanningWithRef on Bitbucket Server
+func (client *BitbucketServerClient) UploadCodeScanningWithRef(_ context.Context, _ string, _ string, _ string, _ string, _ string) (string, error) {
+	return "", errBitbucketCodeScanningNotSupported
+}
+
 type diffPayload struct {
 	Diffs []struct {
 		Source struct {
