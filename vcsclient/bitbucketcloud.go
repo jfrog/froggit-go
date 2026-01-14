@@ -51,10 +51,8 @@ func NewBitbucketCloudClient(vcsInfo VcsInfo, logger vcsutils.Log) (*BitbucketCl
 func (client *BitbucketCloudClient) buildBitbucketCloudClient(_ context.Context) *bitbucket.Client {
 	var bitbucketClient *bitbucket.Client
 	if client.vcsInfo.Username == "" {
-		// Use Bearer token authentication when no username is provided
 		bitbucketClient = bitbucket.NewOAuthbearerToken(client.vcsInfo.Token)
 	} else {
-		// Use Basic Auth when username is provided
 		bitbucketClient = bitbucket.NewBasicAuth(client.vcsInfo.Username, client.vcsInfo.Token)
 	}
 	if client.url != nil {
@@ -63,14 +61,10 @@ func (client *BitbucketCloudClient) buildBitbucketCloudClient(_ context.Context)
 	return bitbucketClient
 }
 
-// setAuthenticationHeader sets the appropriate authentication header on the request
-// based on whether username is provided (Basic Auth) or not (Bearer Token)
 func (client *BitbucketCloudClient) setAuthenticationHeader(req *http.Request) {
 	if client.vcsInfo.Username != "" {
-		// Use HTTP Basic Authentication
 		req.SetBasicAuth(client.vcsInfo.Username, client.vcsInfo.Token)
 	} else {
-		// Use Bearer Token Authentication
 		req.Header.Set("Authorization", "Bearer "+client.vcsInfo.Token)
 	}
 }
@@ -544,8 +538,6 @@ func (client *BitbucketCloudClient) DeletePullRequestReviewComments(ctx context.
 }
 
 // DeletePullRequestComment on Bitbucket cloud
-// Deletes a comment from a pull request using Bitbucket Cloud API
-// API: DELETE /2.0/repositories/{workspace}/{repo_slug}/pullrequests/{pull_request_id}/comments/{comment_id}
 func (client *BitbucketCloudClient) DeletePullRequestComment(ctx context.Context, owner, repository string, pullRequestID, commentID int) error {
 	err := validateParametersNotBlank(map[string]string{
 		"owner":         owner,
