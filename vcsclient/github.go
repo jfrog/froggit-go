@@ -1305,10 +1305,11 @@ func (client *GitHubClient) commitSingleFile(
 	file FileToCommit,
 	commitMessage, authorName, authorEmail string,
 ) error {
+	encodedContent := base64Utils.StdEncoding.EncodeToString([]byte(file.Content))
 
 	fileOptions := &github.RepositoryContentFileOptions{
 		Message: &commitMessage,
-		Content: []byte(file.Content),
+		Content: []byte(encodedContent),
 		Branch:  &branch,
 		Author: &github.CommitAuthor{
 			Name:  &authorName,
