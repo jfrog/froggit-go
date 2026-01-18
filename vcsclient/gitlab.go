@@ -12,9 +12,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jfrog/froggit-go/vcsutils"
 	"github.com/jfrog/gofrog/datastructures"
 	"github.com/xanzy/go-gitlab"
+
+	"github.com/jfrog/froggit-go/vcsutils"
 )
 
 // GitLabClient API version 4
@@ -104,10 +105,7 @@ func (client *GitLabClient) AddSshKeyToRepository(ctx context.Context, owner, re
 		return err
 	}
 
-	canPush := false
-	if permission == ReadWrite {
-		canPush = true
-	}
+	canPush := permission == ReadWrite
 	options := &gitlab.AddDeployKeyOptions{
 		Title:   &keyName,
 		Key:     &publicKey,
@@ -702,7 +700,7 @@ func (client *GitLabClient) DownloadFileFromRepo(_ context.Context, owner, repos
 	file, glResponse, err := client.glClient.RepositoryFiles.GetFile(getProjectID(owner, repository), path, &gitlab.GetFileOptions{Ref: &branch})
 	var statusCode int
 	if glResponse != nil && glResponse.Response != nil {
-		statusCode = glResponse.Response.StatusCode
+		statusCode = glResponse.StatusCode
 	}
 	if err != nil {
 		return nil, statusCode, err

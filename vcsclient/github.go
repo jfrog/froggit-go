@@ -721,10 +721,10 @@ func (client *GitHubClient) executeDeletePullRequestComment(ctx context.Context,
 
 	var statusCode int
 	if ghResponse.Response != nil {
-		statusCode = ghResponse.Response.StatusCode
+		statusCode = ghResponse.StatusCode
 	}
 	if statusCode != http.StatusNoContent && statusCode != http.StatusOK {
-		return ghResponse, fmt.Errorf("expected %d status code while received %d status code", http.StatusNoContent, ghResponse.Response.StatusCode)
+		return ghResponse, fmt.Errorf("expected %d status code while received %d status code", http.StatusNoContent, ghResponse.StatusCode)
 	}
 
 	return ghResponse, nil
@@ -984,8 +984,6 @@ func (client *GitHubClient) UploadCodeScanning(ctx context.Context, owner, repos
 	return
 }
 
-// UploadCodeScanningWithRef uploads SARIF to GitHub Code Scanning with a specific ref and commit SHA
-// This is useful for PR uploads where the ref should be refs/pull/<number>/head
 func (client *GitHubClient) UploadCodeScanningWithRef(ctx context.Context, owner, repository, ref, commitSHA, sarifContent string) (id string, err error) {
 	client.logger.Debug(vcsutils.UploadingCodeScanning, repository, "/", ref)
 
@@ -1011,7 +1009,7 @@ func (client *GitHubClient) executeUploadCodeScanning(ctx context.Context, owner
 
 	// According to go-github API - successful ghResponse will return 202 status code
 	// The body of the ghResponse will appear in the error, and the Sarif struct will be empty.
-	if err != nil && ghResponse.Response.StatusCode != http.StatusAccepted {
+	if err != nil && (ghResponse == nil || ghResponse.Response == nil || ghResponse.Response.StatusCode != http.StatusAccepted) {
 		return
 	}
 
