@@ -586,6 +586,11 @@ func (client *AzureReposClient) UploadCodeScanning(ctx context.Context, owner, r
 	return "", getUnsupportedInAzureError("upload code scanning")
 }
 
+// UploadCodeScanningWithRef on Azure Repos
+func (client *AzureReposClient) UploadCodeScanningWithRef(_ context.Context, _ string, _ string, _ string, _ string, _ string) (string, error) {
+	return "", getUnsupportedInAzureError("upload code scanning")
+}
+
 // CreateWebhook on Azure Repos
 func (client *AzureReposClient) CreateWebhook(ctx context.Context, owner, repository, branch, payloadURL string, webhookEvents ...vcsutils.WebhookEvent) (string, string, error) {
 	return "", "", getUnsupportedInAzureError("create webhook")

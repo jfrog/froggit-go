@@ -340,6 +340,13 @@ type VcsClient interface {
 	// branch        - The name of the branch
 	// scan          - Code scanning analysis
 	UploadCodeScanning(ctx context.Context, owner, repository, branch, scanResults string) (string, error)
+	// UploadCodeScanningWithRef Upload Scanning Analysis with a specific ref and commit SHA
+	// owner         - User or organization
+	// repository    - VCS repository name
+	// ref           - The ref (e.g., refs/pull/123/head) for which the code scanning is relevant
+	// commitSHA     - The commit SHA
+	// scanResults   - Code scanning analysis
+	UploadCodeScanningWithRef(ctx context.Context, owner, repository, ref, commitSHA, scanResults string) (string, error)
 
 	// DownloadFileFromRepo Downloads a file from path in a repository
 	// owner         - User or organization

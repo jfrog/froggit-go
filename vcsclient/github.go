@@ -17,12 +17,13 @@ import (
 
 	"github.com/google/go-github/v74/github"
 	"github.com/grokify/mogo/encoding/base64"
-	"github.com/jfrog/froggit-go/vcsutils"
 	"github.com/jfrog/gofrog/datastructures"
 	"github.com/mitchellh/mapstructure"
 	"golang.org/x/crypto/nacl/box"
 	"golang.org/x/exp/slices"
 	"golang.org/x/oauth2"
+
+	"github.com/jfrog/froggit-go/vcsutils"
 )
 
 const (
@@ -720,10 +721,10 @@ func (client *GitHubClient) executeDeletePullRequestComment(ctx context.Context,
 
 	var statusCode int
 	if ghResponse.Response != nil {
-		statusCode = ghResponse.Response.StatusCode
+		statusCode = ghResponse.StatusCode
 	}
 	if statusCode != http.StatusNoContent && statusCode != http.StatusOK {
-		return ghResponse, fmt.Errorf("expected %d status code while received %d status code", http.StatusNoContent, ghResponse.Response.StatusCode)
+		return ghResponse, fmt.Errorf("expected %d status code while received %d status code", http.StatusNoContent, ghResponse.StatusCode)
 	}
 
 	return ghResponse, nil
@@ -893,7 +894,7 @@ func (client *GitHubClient) GetLabel(ctx context.Context, owner, repository, nam
 func (client *GitHubClient) executeGetLabel(ctx context.Context, owner, repository, name string) (*LabelInfo, *github.Response, error) {
 	label, ghResponse, err := client.ghClient.Issues.GetLabel(ctx, owner, repository, name)
 	if err != nil {
-		if ghResponse != nil && ghResponse.Response != nil && ghResponse.Response.StatusCode == http.StatusNotFound {
+		if ghResponse != nil && ghResponse.Response != nil && ghResponse.StatusCode == http.StatusNotFound {
 			return nil, ghResponse, nil
 		}
 		return nil, ghResponse, err
@@ -983,7 +984,18 @@ func (client *GitHubClient) UploadCodeScanning(ctx context.Context, owner, repos
 	return
 }
 
-func (client *GitHubClient) executeUploadCodeScanning(ctx context.Context, owner, repository, branch, commitSHA, sarifContent string) (id string, ghResponse *github.Response, err error) {
+func (client *GitHubClient) UploadCodeScanningWithRef(ctx context.Context, owner, repository, ref, commitSHA, sarifContent string) (id string, err error) {
+	client.logger.Debug(vcsutils.UploadingCodeScanning, repository, "/", ref)
+
+	err = client.runWithRateLimitRetries(func() (*github.Response, error) {
+		var ghResponse *github.Response
+		id, ghResponse, err = client.executeUploadCodeScanning(ctx, owner, repository, ref, commitSHA, sarifContent)
+		return ghResponse, err
+	})
+	return
+}
+
+func (client *GitHubClient) executeUploadCodeScanning(ctx context.Context, owner, repository, ref, commitSHA, sarifContent string) (id string, ghResponse *github.Response, err error) {
 	encodedSarif, err := encodeScanningResult(sarifContent)
 	if err != nil {
 		return
@@ -991,13 +1003,13 @@ func (client *GitHubClient) executeUploadCodeScanning(ctx context.Context, owner
 
 	sarifID, ghResponse, err := client.ghClient.CodeScanning.UploadSarif(ctx, owner, repository, &github.SarifAnalysis{
 		CommitSHA: &commitSHA,
-		Ref:       &branch,
+		Ref:       &ref,
 		Sarif:     &encodedSarif,
 	})
 
 	// According to go-github API - successful ghResponse will return 202 status code
 	// The body of the ghResponse will appear in the error, and the Sarif struct will be empty.
-	if err != nil && ghResponse.Response.StatusCode != http.StatusAccepted {
+	if err != nil && (ghResponse == nil || ghResponse.Response == nil || ghResponse.StatusCode != http.StatusAccepted) {
 		return
 	}
 
@@ -1722,8 +1734,8 @@ func (client *GitHubClient) UploadSnapshotToDependencyGraph(ctx context.Context,
 		return fmt.Errorf("failed to upload snapshot to dependency graph: %w", err)
 	}
 
-	if ghResponse == nil || ghResponse.Response == nil || ghResponse.Response.StatusCode != http.StatusCreated {
-		return fmt.Errorf("dependency submission call finished with unexpected status code: %d", ghResponse.Response.StatusCode)
+	if ghResponse == nil || ghResponse.Response == nil || ghResponse.StatusCode != http.StatusCreated {
+		return fmt.Errorf("dependency submission call finished with unexpected status code: %d", ghResponse.StatusCode)
 	}
 
 	client.logger.Info(vcsutils.SuccessfulSnapshotUpload, ghResponse.StatusCode)

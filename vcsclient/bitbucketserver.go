@@ -16,9 +16,10 @@ import (
 	"github.com/jfrog/gofrog/datastructures"
 
 	bitbucketv1 "github.com/gfleury/go-bitbucket-v1"
-	"github.com/jfrog/froggit-go/vcsutils"
 	"github.com/mitchellh/mapstructure"
 	"golang.org/x/oauth2"
+
+	"github.com/jfrog/froggit-go/vcsutils"
 )
 
 // BitbucketServerClient API version 1.0
@@ -767,7 +768,7 @@ func (client *BitbucketServerClient) DownloadFileFromRepo(ctx context.Context, o
 	var statusCode int
 	bbResp, err := bitbucketClient.GetContent_11(owner, repository, path, map[string]interface{}{"at": branch})
 	if bbResp != nil && bbResp.Response != nil {
-		statusCode = bbResp.Response.StatusCode
+		statusCode = bbResp.StatusCode
 	}
 	if err != nil {
 		return nil, statusCode, err
@@ -846,6 +847,11 @@ func (client *BitbucketServerClient) mapBitbucketServerCommitToCommitInfo(commit
 }
 
 func (client *BitbucketServerClient) UploadCodeScanning(ctx context.Context, owner string, repository string, branch string, scanResults string) (string, error) {
+	return "", errBitbucketCodeScanningNotSupported
+}
+
+// UploadCodeScanningWithRef on Bitbucket Server
+func (client *BitbucketServerClient) UploadCodeScanningWithRef(_ context.Context, _ string, _ string, _ string, _ string, _ string) (string, error) {
 	return "", errBitbucketCodeScanningNotSupported
 }
 
