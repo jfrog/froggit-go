@@ -894,7 +894,7 @@ func (client *GitHubClient) GetLabel(ctx context.Context, owner, repository, nam
 func (client *GitHubClient) executeGetLabel(ctx context.Context, owner, repository, name string) (*LabelInfo, *github.Response, error) {
 	label, ghResponse, err := client.ghClient.Issues.GetLabel(ctx, owner, repository, name)
 	if err != nil {
-		if ghResponse != nil && ghResponse.Response != nil && ghResponse.Response.StatusCode == http.StatusNotFound {
+		if ghResponse != nil && ghResponse.Response != nil && ghResponse.StatusCode == http.StatusNotFound {
 			return nil, ghResponse, nil
 		}
 		return nil, ghResponse, err
@@ -1009,7 +1009,7 @@ func (client *GitHubClient) executeUploadCodeScanning(ctx context.Context, owner
 
 	// According to go-github API - successful ghResponse will return 202 status code
 	// The body of the ghResponse will appear in the error, and the Sarif struct will be empty.
-	if err != nil && (ghResponse == nil || ghResponse.Response == nil || ghResponse.Response.StatusCode != http.StatusAccepted) {
+	if err != nil && (ghResponse == nil || ghResponse.Response == nil || ghResponse.StatusCode != http.StatusAccepted) {
 		return
 	}
 
@@ -1734,8 +1734,8 @@ func (client *GitHubClient) UploadSnapshotToDependencyGraph(ctx context.Context,
 		return fmt.Errorf("failed to upload snapshot to dependency graph: %w", err)
 	}
 
-	if ghResponse == nil || ghResponse.Response == nil || ghResponse.Response.StatusCode != http.StatusCreated {
-		return fmt.Errorf("dependency submission call finished with unexpected status code: %d", ghResponse.Response.StatusCode)
+	if ghResponse == nil || ghResponse.Response == nil || ghResponse.StatusCode != http.StatusCreated {
+		return fmt.Errorf("dependency submission call finished with unexpected status code: %d", ghResponse.StatusCode)
 	}
 
 	client.logger.Info(vcsutils.SuccessfulSnapshotUpload, ghResponse.StatusCode)
