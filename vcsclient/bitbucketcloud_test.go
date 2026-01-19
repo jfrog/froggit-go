@@ -481,29 +481,68 @@ func TestBitbucketCloud_AddPullRequestReviewComments(t *testing.T) {
 
 func TestBitbucketCloudClient_ListPullRequestReviewComments(t *testing.T) {
 	ctx := context.Background()
-	client, err := NewClientBuilder(vcsutils.BitbucketCloud).Build()
+	response, err := os.ReadFile(filepath.Join("testdata", "bitbucketcloud", "pull_request_comments_list_response.json"))
 	assert.NoError(t, err)
 
-	_, err = client.ListPullRequestReviewComments(ctx, owner, repo1, 1)
-	assert.ErrorIs(t, err, errBitbucketListPullRequestReviewCommentsNotSupported)
+	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketCloud, true, response,
+		fmt.Sprintf("/repositories/%s/%s/pullrequests/1/comments/", owner, repo1), createBitbucketCloudHandler)
+	defer cleanUp()
+
+	result, err := client.ListPullRequestReviewComments(ctx, owner, repo1, 1)
+
+	// ListPullRequestReviewComments now works - it aliases ListPullRequestComments
+	assert.NoError(t, err)
+	assert.Len(t, result, 2)
+	// Just verify we get results, exact content tested in TestBitbucketCloud_ListPullRequestComments
+	assert.NotZero(t, result[0].ID)
 }
 
 func TestBitbucketCloudClient_DeletePullRequestComment(t *testing.T) {
 	ctx := context.Background()
-	client, err := NewClientBuilder(vcsutils.BitbucketCloud).Build()
-	assert.NoError(t, err)
+	commentID := 100
+	prID := 1
+	expectedURI := fmt.Sprintf("/repositories/%s/%s/pullrequests/%d/comments/%d", owner, repo1, prID, commentID)
 
-	err = client.DeletePullRequestComment(ctx, owner, repo1, 1, 1)
-	assert.ErrorIs(t, err, errBitbucketDeletePullRequestComment)
+	createDeleteHandler := func(t *testing.T, expectedUri string, response []byte, expectedStatusCode int) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
+			assert.Equal(t, http.MethodDelete, r.Method)
+			assert.Equal(t, expectedUri, r.RequestURI)
+			assert.Equal(t, basicAuthHeader, r.Header.Get("Authorization"))
+			w.WriteHeader(expectedStatusCode)
+		}
+	}
+
+	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketCloud, true, nil, expectedURI, createDeleteHandler)
+	defer cleanUp()
+
+	err := client.DeletePullRequestComment(ctx, owner, repo1, prID, commentID)
+	assert.NoError(t, err)
 }
 
-func TestBitbucketCloudClient_DeletePullRequestReviewComment(t *testing.T) {
+func TestBitbucketCloudClient_DeletePullRequestReviewComments(t *testing.T) {
 	ctx := context.Background()
-	client, err := NewClientBuilder(vcsutils.BitbucketCloud).Build()
-	assert.NoError(t, err)
+	prID := 1
+	comments := []CommentInfo{{ID: 100}, {ID: 101}}
+	callCount := 0
 
-	err = client.DeletePullRequestReviewComments(ctx, owner, repo1, 1, CommentInfo{})
-	assert.ErrorIs(t, err, errBitbucketDeletePullRequestComment)
+	createDeleteMultiHandler := func(t *testing.T, expectedUri string, response []byte, expectedStatusCode int) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
+			assert.Equal(t, http.MethodDelete, r.Method)
+			assert.Equal(t, basicAuthHeader, r.Header.Get("Authorization"))
+			// Verify correct comment IDs are being deleted in sequence
+			expectedURI := fmt.Sprintf("/repositories/%s/%s/pullrequests/%d/comments/%d", owner, repo1, prID, comments[callCount].ID)
+			assert.Equal(t, expectedURI, r.RequestURI)
+			callCount++
+			w.WriteHeader(http.StatusNoContent)
+		}
+	}
+
+	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketCloud, true, nil, "", createDeleteMultiHandler)
+	defer cleanUp()
+
+	err := client.DeletePullRequestReviewComments(ctx, owner, repo1, prID, comments...)
+	assert.NoError(t, err)
+	assert.Equal(t, 2, callCount)
 }
 
 func TestBitbucketCloudClient_DownloadFileFromRepo(t *testing.T) {
