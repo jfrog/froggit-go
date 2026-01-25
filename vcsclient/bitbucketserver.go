@@ -263,12 +263,13 @@ func (client *BitbucketServerClient) DownloadRepository(ctx context.Context, own
 	if branch != "" {
 		params["at"] = branch
 	}
-	response, err := bitbucketClient.GetArchive(owner, repository, params)
+	var archiveBuffer bytes.Buffer
+	_, err := bitbucketClient.GetArchive(owner, repository, params, &archiveBuffer)
 	if err != nil {
 		return err
 	}
 	client.logger.Info(repository, vcsutils.SuccessfulRepoDownload)
-	err = vcsutils.Untar(localPath, bytes.NewReader(response.Payload), false)
+	err = vcsutils.Untar(localPath, &archiveBuffer, false)
 	if err != nil {
 		return err
 	}
@@ -474,7 +475,7 @@ func (client *BitbucketServerClient) ListPullRequestComments(ctx context.Context
 	var apiResponse *bitbucketv1.APIResponse
 	for isLastPage, nextPageStart := true, 0; isLastPage; isLastPage, nextPageStart = bitbucketv1.HasNextPage(apiResponse) {
 		var err error
-		apiResponse, err = bitbucketClient.GetActivities(owner, repository, int64(pullRequestID), createPaginationOptions(nextPageStart))
+		apiResponse, err = bitbucketClient.GetActivities(owner, repository, pullRequestID, createPaginationOptions(nextPageStart))
 		if err != nil {
 			return nil, err
 		}
@@ -529,8 +530,8 @@ func (client *BitbucketServerClient) DeletePullRequestComment(ctx context.Contex
 			break
 		}
 	}
-	// #nosec G115
-	if _, err = bitbucketClient.DeleteComment_2(owner, repository, int64(pullRequestID), int64(commentID), map[string]interface{}{"version": int32(commentVersion)}); err != nil && err != io.EOF {
+	// #nosec G115 -- commentVersion comes from API response and won't overflow int32
+	if _, err = bitbucketClient.DeleteComment_2(owner, repository, pullRequestID, commentID, map[string]interface{}{"version": int32(commentVersion)}); err != nil && err != io.EOF {
 		return fmt.Errorf("an error occurred while deleting pull request comment:\n%s", err.Error())
 	}
 	return nil
@@ -766,7 +767,7 @@ func (client *BitbucketServerClient) DownloadFileFromRepo(ctx context.Context, o
 	bitbucketClient := client.buildBitbucketClient(ctx)
 
 	var statusCode int
-	bbResp, err := bitbucketClient.GetContent_11(owner, repository, path, map[string]interface{}{"at": branch})
+	bbResp, err := bitbucketClient.GetRawContent(owner, repository, path, map[string]interface{}{"at": branch})
 	if bbResp != nil && bbResp.Response != nil {
 		statusCode = bbResp.StatusCode
 	}

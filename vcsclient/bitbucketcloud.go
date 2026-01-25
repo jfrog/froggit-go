@@ -44,24 +44,33 @@ func NewBitbucketCloudClient(vcsInfo VcsInfo, logger vcsutils.Log) (*BitbucketCl
 	return bitbucketClient, nil
 }
 
-func (client *BitbucketCloudClient) buildBitbucketCloudClient(_ context.Context) *bitbucket.Client {
-	bitbucketClient := bitbucket.NewBasicAuth(client.vcsInfo.Username, client.vcsInfo.Token)
+func (client *BitbucketCloudClient) buildBitbucketCloudClient(_ context.Context) (*bitbucket.Client, error) {
+	bitbucketClient, err := bitbucket.NewBasicAuth(client.vcsInfo.Username, client.vcsInfo.Token)
+	if err != nil {
+		return nil, err
+	}
 	if client.url != nil {
 		bitbucketClient.SetApiBaseURL(*client.url)
 	}
-	return bitbucketClient
+	return bitbucketClient, nil
 }
 
 // TestConnection on Bitbucket cloud
 func (client *BitbucketCloudClient) TestConnection(ctx context.Context) error {
-	bitbucketClient := client.buildBitbucketCloudClient(ctx)
-	_, err := bitbucketClient.User.Profile()
+	bitbucketClient, err := client.buildBitbucketCloudClient(ctx)
+	if err != nil {
+		return err
+	}
+	_, err = bitbucketClient.User.Profile()
 	return err
 }
 
 // ListRepositories on Bitbucket cloud
 func (client *BitbucketCloudClient) ListRepositories(ctx context.Context) (map[string][]string, error) {
-	bitbucketClient := client.buildBitbucketCloudClient(ctx)
+	bitbucketClient, err := client.buildBitbucketCloudClient(ctx)
+	if err != nil {
+		return nil, err
+	}
 	results := make(map[string][]string)
 	workspaces, err := bitbucketClient.Workspaces.List()
 	if err != nil {
@@ -81,7 +90,10 @@ func (client *BitbucketCloudClient) ListRepositories(ctx context.Context) (map[s
 
 // ListBranches on Bitbucket cloud
 func (client *BitbucketCloudClient) ListBranches(ctx context.Context, owner, repository string) ([]string, error) {
-	bitbucketClient := client.buildBitbucketCloudClient(ctx)
+	bitbucketClient, err := client.buildBitbucketCloudClient(ctx)
+	if err != nil {
+		return nil, err
+	}
 	branches, err := bitbucketClient.Repositories.Repository.ListBranches(&bitbucket.RepositoryBranchOptions{Owner: owner, RepoSlug: repository})
 	if err != nil {
 		return nil, err
@@ -127,7 +139,10 @@ func (client *BitbucketCloudClient) AddSshKeyToRepository(ctx context.Context, o
 	req.Header.Set("Content-Type", "application/json")
 	req.SetBasicAuth(client.vcsInfo.Username, client.vcsInfo.Token)
 
-	bitbucketClient := client.buildBitbucketCloudClient(ctx)
+	bitbucketClient, err := client.buildBitbucketCloudClient(ctx)
+	if err != nil {
+		return
+	}
 	response, err := bitbucketClient.HttpClient.Do(req)
 	if err != nil {
 		return
@@ -137,7 +152,7 @@ func (client *BitbucketCloudClient) AddSshKeyToRepository(ctx context.Context, o
 	}()
 
 	if response.StatusCode >= 300 {
-		err = fmt.Errorf(response.Status)
+		err = errors.New(response.Status)
 	}
 	return
 }
@@ -150,7 +165,10 @@ type bitbucketCloudAddSSHKeyRequest struct {
 // CreateWebhook on Bitbucket cloud
 func (client *BitbucketCloudClient) CreateWebhook(ctx context.Context, owner, repository, _, payloadURL string,
 	webhookEvents ...vcsutils.WebhookEvent) (string, string, error) {
-	bitbucketClient := client.buildBitbucketCloudClient(ctx)
+	bitbucketClient, err := client.buildBitbucketCloudClient(ctx)
+	if err != nil {
+		return "", "", err
+	}
 	token := vcsutils.CreateToken()
 	options := &bitbucket.WebhooksOptions{
 		Active:   true,
@@ -173,7 +191,10 @@ func (client *BitbucketCloudClient) CreateWebhook(ctx context.Context, owner, re
 // UpdateWebhook on Bitbucket cloud
 func (client *BitbucketCloudClient) UpdateWebhook(ctx context.Context, owner, repository, _, payloadURL, token,
 	webhookID string, webhookEvents ...vcsutils.WebhookEvent) error {
-	bitbucketClient := client.buildBitbucketCloudClient(ctx)
+	bitbucketClient, err := client.buildBitbucketCloudClient(ctx)
+	if err != nil {
+		return err
+	}
 	options := &bitbucket.WebhooksOptions{
 		Active:   true,
 		Uuid:     webhookID,
@@ -182,26 +203,32 @@ func (client *BitbucketCloudClient) UpdateWebhook(ctx context.Context, owner, re
 		Url:      payloadURL + "?token=" + url.QueryEscape(token),
 		Events:   getBitbucketCloudWebhookEvents(webhookEvents...),
 	}
-	_, err := bitbucketClient.Repositories.Webhooks.Update(options)
+	_, err = bitbucketClient.Repositories.Webhooks.Update(options)
 	return err
 }
 
 // DeleteWebhook on Bitbucket cloud
 func (client *BitbucketCloudClient) DeleteWebhook(ctx context.Context, owner, repository, webhookID string) error {
-	bitbucketClient := client.buildBitbucketCloudClient(ctx)
+	bitbucketClient, err := client.buildBitbucketCloudClient(ctx)
+	if err != nil {
+		return err
+	}
 	options := &bitbucket.WebhooksOptions{
 		Uuid:     webhookID,
 		Owner:    owner,
 		RepoSlug: repository,
 	}
-	_, err := bitbucketClient.Repositories.Webhooks.Delete(options)
+	_, err = bitbucketClient.Repositories.Webhooks.Delete(options)
 	return err
 }
 
 // SetCommitStatus on Bitbucket cloud
 func (client *BitbucketCloudClient) SetCommitStatus(ctx context.Context, commitStatus CommitStatus, owner, repository,
 	ref, title, description, detailsURL string) error {
-	bitbucketClient := client.buildBitbucketCloudClient(ctx)
+	bitbucketClient, err := client.buildBitbucketCloudClient(ctx)
+	if err != nil {
+		return err
+	}
 	commitOptions := &bitbucket.CommitsOptions{
 		Owner:    owner,
 		RepoSlug: repository,
@@ -213,13 +240,16 @@ func (client *BitbucketCloudClient) SetCommitStatus(ctx context.Context, commitS
 		Description: description,
 		Url:         detailsURL,
 	}
-	_, err := bitbucketClient.Repositories.Commits.CreateCommitStatus(commitOptions, commitStatusOptions)
+	_, err = bitbucketClient.Repositories.Commits.CreateCommitStatus(commitOptions, commitStatusOptions)
 	return err
 }
 
 // GetCommitStatuses on Bitbucket cloud
 func (client *BitbucketCloudClient) GetCommitStatuses(ctx context.Context, owner, repository, ref string) (status []CommitStatusInfo, err error) {
-	bitbucketClient := client.buildBitbucketCloudClient(ctx)
+	bitbucketClient, err := client.buildBitbucketCloudClient(ctx)
+	if err != nil {
+		return nil, err
+	}
 	commitOptions := &bitbucket.CommitsOptions{
 		Owner:    owner,
 		RepoSlug: repository,
@@ -239,7 +269,10 @@ func (client *BitbucketCloudClient) GetCommitStatuses(ctx context.Context, owner
 // DownloadRepository on Bitbucket cloud
 func (client *BitbucketCloudClient) DownloadRepository(ctx context.Context, owner, repository, branch,
 	localPath string) error {
-	bitbucketClient := client.buildBitbucketCloudClient(ctx)
+	bitbucketClient, err := client.buildBitbucketCloudClient(ctx)
+	if err != nil {
+		return err
+	}
 	client.logger.Debug("getting Bitbucket Cloud archive link to download")
 	repo, err := bitbucketClient.Repositories.Repository.Get(&bitbucket.RepositoryOptions{
 		Owner:    owner,
@@ -294,7 +327,10 @@ func (client *BitbucketCloudClient) GetPullRequestDetailsSizeLimit() int {
 // CreatePullRequest on Bitbucket cloud
 func (client *BitbucketCloudClient) CreatePullRequest(ctx context.Context, owner, repository, sourceBranch,
 	targetBranch, title, description string) error {
-	bitbucketClient := client.buildBitbucketCloudClient(ctx)
+	bitbucketClient, err := client.buildBitbucketCloudClient(ctx)
+	if err != nil {
+		return err
+	}
 	client.logger.Debug(vcsutils.CreatingPullRequest, title)
 	options := &bitbucket.PullRequestsOptions{
 		Owner:             owner,
@@ -305,13 +341,16 @@ func (client *BitbucketCloudClient) CreatePullRequest(ctx context.Context, owner
 		Title:             title,
 		Description:       description,
 	}
-	_, err := bitbucketClient.Repositories.PullRequests.Create(options)
+	_, err = bitbucketClient.Repositories.PullRequests.Create(options)
 	return err
 }
 
 // UpdatePullRequest on Bitbucket cloud
 func (client *BitbucketCloudClient) UpdatePullRequest(ctx context.Context, owner, repository, title, body, targetBranchName string, prId int, state vcsutils.PullRequestState) error {
-	bitbucketClient := client.buildBitbucketCloudClient(ctx)
+	bitbucketClient, err := client.buildBitbucketCloudClient(ctx)
+	if err != nil {
+		return err
+	}
 	client.logger.Debug(vcsutils.CreatingPullRequest, title)
 	options := &bitbucket.PullRequestsOptions{
 		Owner:             owner,
@@ -323,7 +362,7 @@ func (client *BitbucketCloudClient) UpdatePullRequest(ctx context.Context, owner
 		ID:                strconv.Itoa(prId),
 		States:            []string{*vcsutils.MapPullRequestState(&state)},
 	}
-	_, err := bitbucketClient.Repositories.PullRequests.Update(options)
+	_, err = bitbucketClient.Repositories.PullRequests.Update(options)
 	return err
 }
 
@@ -342,7 +381,10 @@ func (client *BitbucketCloudClient) getOpenPullRequests(ctx context.Context, own
 	if err != nil {
 		return nil, err
 	}
-	bitbucketClient := client.buildBitbucketCloudClient(ctx)
+	bitbucketClient, err := client.buildBitbucketCloudClient(ctx)
+	if err != nil {
+		return nil, err
+	}
 	client.logger.Debug(vcsutils.FetchingOpenPullRequests, repository)
 	options := &bitbucket.PullRequestsOptions{
 		Owner:    owner,
@@ -365,7 +407,10 @@ func (client *BitbucketCloudClient) GetPullRequestByID(ctx context.Context, owne
 	if err != nil {
 		return
 	}
-	bitbucketClient := client.buildBitbucketCloudClient(ctx)
+	bitbucketClient, err := client.buildBitbucketCloudClient(ctx)
+	if err != nil {
+		return
+	}
 	client.logger.Debug(vcsutils.FetchingPullRequestById, repository)
 	prIdStr := strconv.Itoa(pullRequestId)
 	options := &bitbucket.PullRequestsOptions{
@@ -409,7 +454,10 @@ func (client *BitbucketCloudClient) AddPullRequestComment(ctx context.Context, o
 	if err != nil {
 		return err
 	}
-	bitbucketClient := client.buildBitbucketCloudClient(ctx)
+	bitbucketClient, err := client.buildBitbucketCloudClient(ctx)
+	if err != nil {
+		return err
+	}
 	options := &bitbucket.PullRequestCommentOptions{
 		Owner:         owner,
 		RepoSlug:      repository,
@@ -436,7 +484,10 @@ func (client *BitbucketCloudClient) ListPullRequestReviews(ctx context.Context, 
 		return nil, err
 	}
 
-	bitbucketClient := client.buildBitbucketCloudClient(ctx)
+	bitbucketClient, err := client.buildBitbucketCloudClient(ctx)
+	if err != nil {
+		return nil, err
+	}
 	options := &bitbucket.PullRequestsOptions{
 		Owner:    owner,
 		RepoSlug: repository,
@@ -477,7 +528,10 @@ func (client *BitbucketCloudClient) ListPullRequestComments(ctx context.Context,
 	if err != nil {
 		return nil, err
 	}
-	bitbucketClient := client.buildBitbucketCloudClient(ctx)
+	bitbucketClient, err := client.buildBitbucketCloudClient(ctx)
+	if err != nil {
+		return nil, err
+	}
 	options := &bitbucket.PullRequestsOptions{
 		Owner:    owner,
 		RepoSlug: repository,
@@ -514,7 +568,10 @@ func (client *BitbucketCloudClient) GetLatestCommit(ctx context.Context, owner, 
 	if err != nil {
 		return CommitInfo{}, err
 	}
-	bitbucketClient := client.buildBitbucketCloudClient(ctx)
+	bitbucketClient, err := client.buildBitbucketCloudClient(ctx)
+	if err != nil {
+		return CommitInfo{}, err
+	}
 	bitbucketClient.Pagelen = 1
 	options := &bitbucket.CommitsOptions{
 		Owner:       owner,
@@ -550,7 +607,10 @@ func (client *BitbucketCloudClient) GetRepositoryInfo(ctx context.Context, owner
 	if err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository}); err != nil {
 		return RepositoryInfo{}, err
 	}
-	bitbucketClient := client.buildBitbucketCloudClient(ctx)
+	bitbucketClient, err := client.buildBitbucketCloudClient(ctx)
+	if err != nil {
+		return RepositoryInfo{}, err
+	}
 	repo, err := bitbucketClient.Repositories.Repository.Get(&bitbucket.RepositoryOptions{
 		Owner:    owner,
 		RepoSlug: repository,
@@ -593,7 +653,10 @@ func (client *BitbucketCloudClient) GetCommitBySha(ctx context.Context, owner, r
 		return CommitInfo{}, err
 	}
 
-	bitbucketClient := client.buildBitbucketCloudClient(ctx)
+	bitbucketClient, err := client.buildBitbucketCloudClient(ctx)
+	if err != nil {
+		return CommitInfo{}, err
+	}
 	options := &bitbucket.CommitsOptions{
 		Owner:    owner,
 		RepoSlug: repository,
@@ -665,7 +728,10 @@ func (client *BitbucketCloudClient) GetModifiedFiles(ctx context.Context, owner,
 		return nil, err
 	}
 
-	bitbucketClient := client.buildBitbucketCloudClient(ctx)
+	bitbucketClient, err := client.buildBitbucketCloudClient(ctx)
+	if err != nil {
+		return nil, err
+	}
 	options := &bitbucket.DiffStatOptions{
 		Owner:    owner,
 		RepoSlug: repository,

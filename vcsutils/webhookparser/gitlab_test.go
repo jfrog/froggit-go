@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/xanzy/go-gitlab"
+	"github.com/xanzy/go-gitlab" //nolint:staticcheck
 
 	"github.com/stretchr/testify/assert"
 

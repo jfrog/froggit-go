@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/xanzy/go-gitlab"
+	"github.com/xanzy/go-gitlab" //nolint:staticcheck
 
 	"github.com/jfrog/froggit-go/vcsutils"
 )
