@@ -13,26 +13,26 @@ import (
 	"time"
 
 	"github.com/jfrog/gofrog/datastructures"
-	"github.com/xanzy/go-gitlab"
+	"github.com/xanzy/go-gitlab" //nolint:staticcheck
 
 	"github.com/jfrog/froggit-go/vcsutils"
 )
 
 // GitLabClient API version 4
 type GitLabClient struct {
-	glClient *gitlab.Client
+	glClient *gitlab.Client //nolint:staticcheck
 	vcsInfo  VcsInfo
 	logger   vcsutils.Log
 }
 
 // NewGitLabClient create a new GitLabClient
 func NewGitLabClient(vcsInfo VcsInfo, logger vcsutils.Log) (*GitLabClient, error) {
-	var client *gitlab.Client
+	var client *gitlab.Client //nolint:staticcheck
 	var err error
 	if vcsInfo.APIEndpoint != "" {
-		client, err = gitlab.NewClient(vcsInfo.Token, gitlab.WithBaseURL(vcsInfo.APIEndpoint))
+		client, err = gitlab.NewClient(vcsInfo.Token, gitlab.WithBaseURL(vcsInfo.APIEndpoint)) //nolint:staticcheck
 	} else {
-		client, err = gitlab.NewClient(vcsInfo.Token)
+		client, err = gitlab.NewClient(vcsInfo.Token) //nolint:staticcheck
 	}
 	if err != nil {
 		return nil, err

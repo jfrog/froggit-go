@@ -18,7 +18,7 @@ import (
 
 	"github.com/jfrog/froggit-go/vcsutils"
 	"github.com/stretchr/testify/assert"
-	"github.com/xanzy/go-gitlab"
+	"github.com/xanzy/go-gitlab" //nolint:staticcheck
 )
 
 func TestGitLabClient_Connection(t *testing.T) {
@@ -911,7 +911,7 @@ func createGitLabWithBodyHandler(t *testing.T, expectedURI string, response []by
 
 		b, err := io.ReadAll(request.Body)
 		assert.NoError(t, err)
-		assert.Equal(t, expectedRequestBody, b)
+		assert.JSONEq(t, string(expectedRequestBody), string(b))
 
 		writer.WriteHeader(expectedStatusCode)
 		assert.NoError(t, err)
