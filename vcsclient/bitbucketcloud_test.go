@@ -27,6 +27,17 @@ func TestBitbucketCloud_Connection(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestBitbucketCloud_ConnectionWithBearerToken(t *testing.T) {
+	ctx := context.Background()
+	mockResponse := map[string][]bitbucket.User{"values": {}}
+	// basicAuth=false means only token is provided (no username), which should use Bearer authentication
+	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketCloud, false, mockResponse, "/user", createBitbucketCloudHandlerWithBearerAuth)
+	defer cleanUp()
+
+	err := client.TestConnection(ctx)
+	assert.NoError(t, err)
+}
+
 func TestBitbucketCloud_ConnectionWhenContextCancelled(t *testing.T) {
 	t.Skip("Bitbucket cloud does not use the context")
 	ctx := context.Background()
@@ -686,5 +697,24 @@ func createBitbucketCloudHandler(t *testing.T, expectedURI string, response []by
 			assert.Equal(t, expectedURI, r.RequestURI)
 		}
 		assert.Equal(t, basicAuthHeader, r.Header.Get("Authorization"))
+	}
+}
+
+func createBitbucketCloudHandlerWithBearerAuth(t *testing.T, expectedURI string, response []byte, expectedStatusCode int) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(expectedStatusCode)
+		if r.RequestURI == "/workspaces" {
+			workspacesResults := make(map[string]interface{})
+			workspacesResults["values"] = []bitbucket.Workspace{{Slug: username}}
+			response, err := json.Marshal(workspacesResults)
+			assert.NoError(t, err)
+			_, err = w.Write(response)
+			assert.NoError(t, err)
+		} else {
+			_, err := w.Write(response)
+			assert.NoError(t, err)
+			assert.Equal(t, expectedURI, r.RequestURI)
+		}
+		assert.Equal(t, bearerAuthHeader, r.Header.Get("Authorization"))
 	}
 }

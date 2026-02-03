@@ -12,10 +12,11 @@ import (
 )
 
 const (
-	owner           = "jfrog"
-	token           = "abc123"
-	basicAuthHeader = "Basic ZnJvZ2dlcjphYmMxMjM="
-	project         = "jfrog-project"
+	owner            = "jfrog"
+	token            = "abc123"
+	basicAuthHeader  = "Basic ZnJvZ2dlcjphYmMxMjM="
+	bearerAuthHeader = "Bearer abc123"
+	project          = "jfrog-project"
 )
 
 var (
