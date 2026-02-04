@@ -1,6 +1,6 @@
 module github.com/jfrog/froggit-go
 
-go 1.23.0
+go 1.24.0
 
 require (
 	github.com/gfleury/go-bitbucket-v1 v0.0.0-20230825095122-9bc1711434ab
@@ -9,14 +9,14 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/grokify/mogo v0.64.12
 	github.com/jfrog/gofrog v1.7.6
-	github.com/ktrysmt/go-bitbucket v0.9.80
+	github.com/ktrysmt/go-bitbucket v0.9.88
 	github.com/microsoft/azure-devops-go-api/azuredevops/v7 v7.1.0
 	github.com/mitchellh/mapstructure v1.5.0
-	github.com/stretchr/testify v1.10.0
+	github.com/stretchr/testify v1.11.1
 	github.com/xanzy/go-gitlab v0.110.0
-	golang.org/x/crypto v0.37.0
+	golang.org/x/crypto v0.41.0
 	golang.org/x/exp v0.0.0-20241009180824-f66d83c29e7c
-	golang.org/x/oauth2 v0.20.0
+	golang.org/x/oauth2 v0.33.0
 )
 
 require (
@@ -40,8 +40,8 @@ require (
 	github.com/sergi/go-diff v1.3.2-0.20230802210424-5b0b94c5c0d3 // indirect
 	github.com/skeema/knownhosts v1.3.1 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
-	golang.org/x/net v0.39.0 // indirect
-	golang.org/x/sys v0.32.0 // indirect
+	golang.org/x/net v0.43.0 // indirect
+	golang.org/x/sys v0.35.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect

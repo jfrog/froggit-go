@@ -45,7 +45,11 @@ func NewBitbucketCloudClient(vcsInfo VcsInfo, logger vcsutils.Log) (*BitbucketCl
 }
 
 func (client *BitbucketCloudClient) buildBitbucketCloudClient(_ context.Context) *bitbucket.Client {
-	bitbucketClient := bitbucket.NewBasicAuth(client.vcsInfo.Username, client.vcsInfo.Token)
+	bitbucketClient, err := bitbucket.NewBasicAuth(client.vcsInfo.Username, client.vcsInfo.Token)
+	if err != nil {
+		client.logger.Error("failed to create Bitbucket Cloud client:", err)
+		return nil
+	}
 	if client.url != nil {
 		bitbucketClient.SetApiBaseURL(*client.url)
 	}
@@ -137,7 +141,7 @@ func (client *BitbucketCloudClient) AddSshKeyToRepository(ctx context.Context, o
 	}()
 
 	if response.StatusCode >= 300 {
-		err = fmt.Errorf(response.Status)
+		err = fmt.Errorf("failed to add SSH key to repository: %s", response.Status)
 	}
 	return
 }
