@@ -16,7 +16,7 @@ require (
 	github.com/xanzy/go-gitlab v0.110.0
 	golang.org/x/crypto v0.45.0
 	golang.org/x/exp v0.0.0-20241009180824-f66d83c29e7c
-	golang.org/x/oauth2 v0.20.0
+	golang.org/x/oauth2 v0.27.0
 )
 
 require (
