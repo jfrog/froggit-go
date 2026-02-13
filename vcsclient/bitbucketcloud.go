@@ -11,6 +11,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/jfrog/gofrog/datastructures"
@@ -21,18 +22,28 @@ import (
 	"github.com/jfrog/froggit-go/vcsutils"
 )
 
+const commitCacheTTL = 5 * time.Minute
+
+type commitCacheEntry struct {
+	commit    CommitInfo
+	expiresAt time.Time
+}
+
 // BitbucketCloudClient API version 2.0
 type BitbucketCloudClient struct {
-	vcsInfo VcsInfo
-	url     *url.URL
-	logger  vcsutils.Log
+	vcsInfo     VcsInfo
+	url         *url.URL
+	logger      vcsutils.Log
+	commitCache map[string]commitCacheEntry
+	cacheMu     sync.RWMutex
 }
 
 // NewBitbucketCloudClient create a new BitbucketCloudClient
 func NewBitbucketCloudClient(vcsInfo VcsInfo, logger vcsutils.Log) (*BitbucketCloudClient, error) {
 	bitbucketClient := &BitbucketCloudClient{
-		vcsInfo: vcsInfo,
-		logger:  logger,
+		vcsInfo:     vcsInfo,
+		logger:      logger,
+		commitCache: make(map[string]commitCacheEntry),
 	}
 	if vcsInfo.APIEndpoint != "" {
 		url, err := url.Parse(vcsInfo.APIEndpoint)
@@ -44,8 +55,40 @@ func NewBitbucketCloudClient(vcsInfo VcsInfo, logger vcsutils.Log) (*BitbucketCl
 	return bitbucketClient, nil
 }
 
+func (client *BitbucketCloudClient) getCachedCommit(key string) (CommitInfo, bool) {
+	client.cacheMu.RLock()
+	defer client.cacheMu.RUnlock()
+
+	if entry, exists := client.commitCache[key]; exists && time.Now().Before(entry.expiresAt) {
+		return entry.commit, true
+	}
+	return CommitInfo{}, false
+}
+
+func (client *BitbucketCloudClient) setCachedCommit(key string, commit CommitInfo) {
+	client.cacheMu.Lock()
+	defer client.cacheMu.Unlock()
+
+	client.commitCache[key] = commitCacheEntry{
+		commit:    commit,
+		expiresAt: time.Now().Add(commitCacheTTL),
+	}
+}
+
+// buildBitbucketCloudClient creates a Bitbucket client with appropriate authentication.
+// It uses Bearer token authentication when username is empty (for Repository Access Tokens or HTTP Access Tokens),
+// and falls back to Basic Auth when username is provided (for App Passwords, though these are deprecated).
 func (client *BitbucketCloudClient) buildBitbucketCloudClient(_ context.Context) *bitbucket.Client {
-	bitbucketClient := bitbucket.NewBasicAuth(client.vcsInfo.Username, client.vcsInfo.Token)
+	var bitbucketClient *bitbucket.Client
+
+	// Use Bearer token authentication if no username is provided (modern authentication)
+	if client.vcsInfo.Username == "" {
+		bitbucketClient = bitbucket.NewOAuthbearerToken(client.vcsInfo.Token)
+	} else {
+		// Fall back to Basic Auth for backward compatibility (App Passwords - deprecated)
+		bitbucketClient = bitbucket.NewBasicAuth(client.vcsInfo.Username, client.vcsInfo.Token)
+	}
+
 	if client.url != nil {
 		bitbucketClient.SetApiBaseURL(*client.url)
 	}
@@ -504,34 +547,36 @@ func (client *BitbucketCloudClient) DeletePullRequestComment(_ context.Context, 
 	return errBitbucketDeletePullRequestComment
 }
 
-// GetLatestCommit on Bitbucket cloud
+// GetLatestCommit on Bitbucket cloud with caching
 func (client *BitbucketCloudClient) GetLatestCommit(ctx context.Context, owner, repository, branch string) (CommitInfo, error) {
-	err := validateParametersNotBlank(map[string]string{
-		"owner":      owner,
-		"repository": repository,
-		"branch":     branch,
+	err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository, "branch": branch})
+	if err != nil {
+		return CommitInfo{}, err
+	}
+
+	cacheKey := fmt.Sprintf("%s/%s/%s", owner, repository, branch)
+	if cached, found := client.getCachedCommit(cacheKey); found {
+		return cached, nil
+	}
+
+	bitbucketClient := client.buildBitbucketCloudClient(ctx)
+	bitbucketClient.Pagelen = 1
+	commits, err := bitbucketClient.Repositories.Commits.GetCommits(&bitbucket.CommitsOptions{
+		Owner: owner, RepoSlug: repository, Branchortag: branch,
 	})
 	if err != nil {
 		return CommitInfo{}, err
 	}
-	bitbucketClient := client.buildBitbucketCloudClient(ctx)
-	bitbucketClient.Pagelen = 1
-	options := &bitbucket.CommitsOptions{
-		Owner:       owner,
-		RepoSlug:    repository,
-		Branchortag: branch,
-	}
-	commits, err := bitbucketClient.Repositories.Commits.GetCommits(options)
-	if err != nil {
-		return CommitInfo{}, err
-	}
+
 	parsedCommits, err := vcsutils.RemapFields[commitResponse](commits, "json")
 	if err != nil {
 		return CommitInfo{}, err
 	}
+
 	if len(parsedCommits.Values) > 0 {
-		latestCommit := parsedCommits.Values[0]
-		return mapBitbucketCloudCommitToCommitInfo(latestCommit), nil
+		commit := mapBitbucketCloudCommitToCommitInfo(parsedCommits.Values[0])
+		client.setCachedCommit(cacheKey, commit)
+		return commit, nil
 	}
 	return CommitInfo{}, nil
 }
