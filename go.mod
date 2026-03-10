@@ -3,20 +3,20 @@ module github.com/jfrog/froggit-go
 go 1.24.0
 
 require (
-	github.com/gfleury/go-bitbucket-v1 v0.0.0-20230825095122-9bc1711434ab
+	github.com/gfleury/go-bitbucket-v1 v0.0.0-20240917142304-df385efaac68
 	github.com/go-git/go-git/v5 v5.16.5
 	github.com/google/go-github/v74 v74.0.0
 	github.com/google/uuid v1.6.0
 	github.com/grokify/mogo v0.64.12
 	github.com/jfrog/gofrog v1.7.6
-	github.com/ktrysmt/go-bitbucket v0.9.80
+	github.com/ktrysmt/go-bitbucket v0.9.88
 	github.com/microsoft/azure-devops-go-api/azuredevops/v7 v7.1.0
 	github.com/mitchellh/mapstructure v1.5.0
-	github.com/stretchr/testify v1.10.0
+	github.com/stretchr/testify v1.11.1
 	github.com/xanzy/go-gitlab v0.110.0
 	golang.org/x/crypto v0.45.0
 	golang.org/x/exp v0.0.0-20241009180824-f66d83c29e7c
-	golang.org/x/oauth2 v0.20.0
+	golang.org/x/oauth2 v0.33.0
 )
 
 require (
