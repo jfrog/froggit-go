@@ -152,7 +152,7 @@ func (client *BitbucketCloudClient) AddSshKeyToRepository(ctx context.Context, o
 	}()
 
 	if response.StatusCode >= 300 {
-		err = fmt.Errorf("status: %s", response.Status)
+		err = fmt.Errorf("failed to add SSH key to repository: %s", response.Status)
 	}
 	return
 }

@@ -86,7 +86,7 @@ func Untar(destDir string, reader io.Reader, shouldRemoveBaseDir bool) (err erro
 		// If it's a file create it
 		case tar.TypeReg:
 			var targetFile *os.File
-			targetFile, err = os.OpenFile(filepath.Clean(target), os.O_CREATE|os.O_RDWR, os.FileMode(header.Mode)) // #nosec G115
+			targetFile, err = os.OpenFile(filepath.Clean(target), os.O_CREATE|os.O_RDWR, os.FileMode(header.Mode)) // #nosec G115,G703 -- path validated by sanitizeExtractionPath
 			if err != nil {
 				return
 			}
@@ -232,7 +232,7 @@ func unzipFile(f *zip.File, destination string) (err error) {
 	}
 
 	// Create a destination file for unzipped content
-	destinationFile, err := os.OpenFile(filepath.Clean(fullFilePath), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
+	destinationFile, err := os.OpenFile(filepath.Clean(fullFilePath), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode()) // #nosec G703 -- path validated by sanitizeExtractionPath
 	if err != nil {
 		return err
 	}
