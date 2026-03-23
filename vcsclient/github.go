@@ -161,6 +161,57 @@ func (client *GitHubClient) executeListRepositoriesInPage(ctx context.Context, p
 	return client.ghClient.Repositories.ListByAuthenticatedUser(ctx, options)
 }
 
+// ListRepositoriesByOwner on GitHub returns repositories for the given organization or user.
+// It tries listing as an org first; if that fails, falls back to listing as a user.
+func (client *GitHubClient) ListRepositoriesByOwner(ctx context.Context, owner string) ([]string, error) {
+	var repos []string
+	for page := 1; ; page++ {
+		var reposPage []*github.Repository
+		var ghResponse *github.Response
+		err := client.runWithRateLimitRetries(func() (*github.Response, error) {
+			var e error
+			reposPage, ghResponse, e = client.ghClient.Repositories.ListByOrg(ctx, owner,
+				&github.RepositoryListByOrgOptions{ListOptions: github.ListOptions{Page: page}})
+			return ghResponse, e
+		})
+		if err != nil {
+			// owner is a user, not an org — fall back to user repos
+			return client.listRepositoriesByUser(ctx, owner)
+		}
+		for _, r := range reposPage {
+			repos = append(repos, r.GetName())
+		}
+		if page >= ghResponse.LastPage || ghResponse.LastPage == 0 {
+			break
+		}
+	}
+	return repos, nil
+}
+
+func (client *GitHubClient) listRepositoriesByUser(ctx context.Context, user string) ([]string, error) {
+	var repos []string
+	for page := 1; ; page++ {
+		var reposPage []*github.Repository
+		var ghResponse *github.Response
+		err := client.runWithRateLimitRetries(func() (*github.Response, error) {
+			var e error
+			reposPage, ghResponse, e = client.ghClient.Repositories.ListByUser(ctx, user,
+				&github.RepositoryListByUserOptions{ListOptions: github.ListOptions{Page: page}})
+			return ghResponse, e
+		})
+		if err != nil {
+			return nil, err
+		}
+		for _, r := range reposPage {
+			repos = append(repos, r.GetName())
+		}
+		if page >= ghResponse.LastPage || ghResponse.LastPage == 0 {
+			break
+		}
+	}
+	return repos, nil
+}
+
 // ListBranches on GitHub
 func (client *GitHubClient) ListBranches(ctx context.Context, owner, repository string) (branchList []string, err error) {
 	err = client.runWithRateLimitRetries(func() (*github.Response, error) {

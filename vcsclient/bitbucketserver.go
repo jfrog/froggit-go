@@ -97,6 +97,28 @@ func (client *BitbucketServerClient) ListRepositories(ctx context.Context) (map[
 	return results, nil
 }
 
+// ListRepositoriesByOwner on Bitbucket Server returns the list of repositories for the given project key.
+func (client *BitbucketServerClient) ListRepositoriesByOwner(ctx context.Context, owner string) ([]string, error) {
+	bitbucketClient := client.buildBitbucketClient(ctx)
+	var repos []string
+	var apiResponse *bitbucketv1.APIResponse
+	for isLast, nextStart := true, 0; isLast; isLast, nextStart = bitbucketv1.HasNextPage(apiResponse) {
+		var err error
+		apiResponse, err = bitbucketClient.GetRepositoriesWithOptions(owner, createPaginationOptions(nextStart))
+		if err != nil {
+			return nil, err
+		}
+		repoList, err := bitbucketv1.GetRepositoriesResponse(apiResponse)
+		if err != nil {
+			return nil, err
+		}
+		for _, repo := range repoList {
+			repos = append(repos, repo.Slug)
+		}
+	}
+	return repos, nil
+}
+
 // ListAppRepositories returns an error since this is not supported in Bitbucket Server
 func (client *BitbucketServerClient) ListAppRepositories(ctx context.Context) ([]AppRepositoryInfo, error) {
 	return nil, errBitbucketListAppReposNotSupported

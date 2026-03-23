@@ -77,6 +77,23 @@ func (client *AzureReposClient) ListRepositories(ctx context.Context) (map[strin
 	return repositories, nil
 }
 
+// ListRepositoriesByOwner on Azure Repos returns the list of repositories for the given project.
+func (client *AzureReposClient) ListRepositoriesByOwner(ctx context.Context, owner string) ([]string, error) {
+	azureReposGitClient, err := client.buildAzureReposClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := azureReposGitClient.GetRepositories(ctx, git.GetRepositoriesArgs{Project: &owner})
+	if err != nil {
+		return nil, err
+	}
+	var repos []string
+	for _, repo := range *resp {
+		repos = append(repos, *repo.Name)
+	}
+	return repos, nil
+}
+
 // ListAppRepositories returns an error since this is not supported in Azure Repos
 func (client *AzureReposClient) ListAppRepositories(ctx context.Context) ([]AppRepositoryInfo, error) {
 	return nil, getUnsupportedInAzureError("list app repositories")

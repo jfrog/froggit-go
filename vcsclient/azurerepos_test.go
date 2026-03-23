@@ -53,6 +53,31 @@ func TestAzureRepos_ListRepositories(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestAzureRepos_ListRepositoriesByOwner(t *testing.T) {
+	type ListRepositoryResponse struct {
+		Value []git.GitRepository
+		Count int
+	}
+	testRepos := []string{repo1, repo2}
+	res := ListRepositoryResponse{
+		Value: []git.GitRepository{{Name: &testRepos[0]}, {Name: &testRepos[1]}},
+		Count: 2,
+	}
+	jsonRes, err := json.Marshal(res)
+	assert.NoError(t, err)
+	ctx := context.Background()
+	client, cleanUp := createServerAndClient(t, vcsutils.AzureRepos, true, jsonRes, "getRepository", createAzureReposHandler)
+	defer cleanUp()
+	actualRepos, err := client.ListRepositoriesByOwner(ctx, owner)
+	assert.NoError(t, err)
+	assert.ElementsMatch(t, testRepos, actualRepos)
+
+	badClient, badClientCleanup := createBadAzureReposClient(t, []byte{})
+	defer badClientCleanup()
+	_, err = badClient.ListRepositoriesByOwner(ctx, owner)
+	assert.Error(t, err)
+}
+
 func TestAzureRepos_TestListBranches(t *testing.T) {
 	type ListBranchesResponse struct {
 		Value []git.GitBranchStats

@@ -109,6 +109,41 @@ func TestGitHubClient_ListRepositoriesWithPagination(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestGitHubClient_ListRepositoriesByOwner(t *testing.T) {
+	ctx := context.Background()
+	// Org listing
+	expectedRepo1 := github.Repository{Name: &repo1}
+	expectedRepo2 := github.Repository{Name: &repo2}
+	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false,
+		[]github.Repository{expectedRepo1, expectedRepo2},
+		fmt.Sprintf("/orgs/%s/repos?page=1", owner), createGitHubHandler)
+	defer cleanUp()
+
+	actualRepos, err := client.ListRepositoriesByOwner(ctx, owner)
+	assert.NoError(t, err)
+	assert.ElementsMatch(t, []string{repo1, repo2}, actualRepos)
+
+	_, err = createBadGitHubClient(t).ListRepositoriesByOwner(ctx, owner)
+	assert.Error(t, err)
+}
+
+func TestGitHubClient_ListRepositoriesByOwnerUserFallback(t *testing.T) {
+	ctx := context.Background()
+	reposJSON, err := json.Marshal([]github.Repository{{Name: &repo1}})
+	assert.NoError(t, err)
+
+	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, nil, "",
+		createGitHubHandlerWithMultiResponse(t, map[string]mockGitHubResponse{
+			fmt.Sprintf("/orgs/%s/repos?page=1", owner):  {StatusCode: http.StatusNotFound, Response: []byte(`{}`)},
+			fmt.Sprintf("/users/%s/repos?page=1", owner): {StatusCode: http.StatusOK, Response: reposJSON},
+		}))
+	defer cleanUp()
+
+	actualRepos, err := client.ListRepositoriesByOwner(ctx, owner)
+	assert.NoError(t, err)
+	assert.ElementsMatch(t, []string{repo1}, actualRepos)
+}
+
 func TestGitHubClient_ListBranches(t *testing.T) {
 	ctx := context.Background()
 	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, []github.Branch{{Name: &branch1}, {Name: &branch2}}, fmt.Sprintf("/repos/jfrog/%s/branches", repo1), createGitHubHandler)
