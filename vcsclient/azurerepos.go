@@ -354,11 +354,10 @@ func (client *AzureReposClient) ListPullRequestComments(ctx context.Context, _, 
 			if comment.IsDeleted != nil && *comment.IsDeleted {
 				continue
 			}
-			_, err = commentsAggregator.WriteString(
-				fmt.Sprintf("Author: %s, Id: %d, Content:%s\n",
-					*comment.Author.DisplayName,
-					*comment.Id,
-					*comment.Content))
+			_, err = fmt.Fprintf(&commentsAggregator, "Author: %s, Id: %d, Content:%s\n",
+				*comment.Author.DisplayName,
+				*comment.Id,
+				*comment.Content)
 			if err != nil {
 				return nil, err
 			}
