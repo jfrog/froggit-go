@@ -90,7 +90,10 @@ func (client *BitbucketCloudClient) ListRepositories(ctx context.Context) (map[s
 
 // ListRepositoriesByOwner on Bitbucket Cloud returns the list of repositories for the given workspace slug.
 func (client *BitbucketCloudClient) ListRepositoriesByOwner(ctx context.Context, owner string) ([]string, error) {
-	bitbucketClient := client.buildBitbucketCloudClient(ctx)
+	bitbucketClient, err := client.buildBitbucketCloudClient(ctx)
+	if err != nil {
+		return nil, err
+	}
 	repositoriesRes, err := bitbucketClient.Repositories.ListForAccount(&bitbucket.RepositoriesOptions{Owner: owner})
 	if err != nil {
 		return nil, err
