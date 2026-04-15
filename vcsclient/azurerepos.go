@@ -68,7 +68,7 @@ func (client *AzureReposClient) ListRepositories(ctx context.Context) (map[strin
 	}
 	repositories := make(map[string][]string)
 	resp, err := azureReposGitClient.GetRepositories(ctx, git.GetRepositoriesArgs{Project: &client.vcsInfo.Project})
-	if err != nil {
+	if err != nil || resp == nil {
 		return repositories, err
 	}
 	for _, repo := range *resp {
@@ -84,7 +84,7 @@ func (client *AzureReposClient) ListRepositoriesByOwner(ctx context.Context, own
 		return nil, err
 	}
 	resp, err := azureReposGitClient.GetRepositories(ctx, git.GetRepositoriesArgs{Project: &owner})
-	if err != nil {
+	if err != nil || resp == nil {
 		return nil, err
 	}
 	var repos []string
@@ -107,7 +107,7 @@ func (client *AzureReposClient) ListBranches(ctx context.Context, _, repository 
 	}
 	var branches []string
 	gitBranchStats, err := azureReposGitClient.GetBranches(ctx, git.GetBranchesArgs{Project: &client.vcsInfo.Project, RepositoryId: &repository})
-	if err != nil {
+	if err != nil || gitBranchStats == nil {
 		return nil, err
 	}
 	for _, branch := range *gitBranchStats {
@@ -301,7 +301,7 @@ func (client *AzureReposClient) ListPullRequestReviews(ctx context.Context, owne
 		PullRequestId: &pullRequestID,
 		Project:       &client.vcsInfo.Project,
 	})
-	if err != nil {
+	if err != nil || reviewers == nil {
 		return nil, err
 	}
 
@@ -341,7 +341,7 @@ func (client *AzureReposClient) ListPullRequestComments(ctx context.Context, _, 
 		PullRequestId: &pullRequestID,
 		Project:       &client.vcsInfo.Project,
 	})
-	if err != nil {
+	if err != nil || threads == nil {
 		return nil, err
 	}
 	var commentInfo []CommentInfo
