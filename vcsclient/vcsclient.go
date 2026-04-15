@@ -119,6 +119,11 @@ type VcsClient interface {
 	// ListRepositories Returns a map between all accessible owners to their list of repositories
 	ListRepositories(ctx context.Context) (map[string][]string, error)
 
+	// ListRepositoriesByOwner returns the list of repositories for a specific owner/project/workspace.
+	// owner - The project key (Bitbucket Server), organization/user (GitHub), group/user (GitLab),
+	//         workspace slug (Bitbucket Cloud), or project name (Azure Repos).
+	ListRepositoriesByOwner(ctx context.Context, owner string) ([]string, error)
+
 	// ListAppRepositories ListRepositories Returns a map between all accessible App to their list of repositories
 	ListAppRepositories(ctx context.Context) ([]AppRepositoryInfo, error)
 

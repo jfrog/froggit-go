@@ -69,6 +69,23 @@ func TestBitbucketServer_ListRepositories(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestBitbucketServer_ListRepositoriesByOwner(t *testing.T) {
+	ctx := context.Background()
+	mockResponse := map[string][]bitbucketv1.Repository{
+		"values": {{Slug: repo1}, {Slug: repo2}},
+	}
+	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, false, mockResponse,
+		fmt.Sprintf("/rest/api/1.0/projects/%s/repos?start=0", owner), createBitbucketServerHandler)
+	defer cleanUp()
+
+	actualRepos, err := client.ListRepositoriesByOwner(ctx, owner)
+	assert.NoError(t, err)
+	assert.ElementsMatch(t, []string{repo1, repo2}, actualRepos)
+
+	_, err = createBadBitbucketServerClient(t).ListRepositoriesByOwner(ctx, owner)
+	assert.Error(t, err)
+}
+
 func TestBitbucketServer_ListBranches(t *testing.T) {
 	ctx := context.Background()
 	mockResponse := map[string][]bitbucketv1.Branch{

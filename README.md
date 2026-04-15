@@ -32,6 +32,7 @@ Currently supported providers are: [GitHub](#github), [Bitbucket Server](#bitbuc
         - [Azure Repos](#azure-repos)
       - [Test Connection](#test-connection)
       - [List Repositories](#list-repositories)
+      - [List Repositories By Owner](#list-repositories-by-owner)
       - [List App Repositories](#list-app-repositories)
       - [List Branches](#list-branches)
       - [List Pull Request Reviews](#list-pull-request-reviews)
@@ -204,6 +205,29 @@ err := client.TestConnection(ctx)
 ctx := context.Background()
 
 repositories, err := client.ListRepositories(ctx)
+```
+
+#### List Repositories By Owner
+
+Returns the list of repositories for a specific owner. Unlike `ListRepositories`, this targets a single owner directly and avoids enumerating all owners on the server first — making it significantly more efficient on large instances.
+
+The meaning of `owner` varies by provider:
+
+| Provider | `owner` value |
+|---|---|
+| Bitbucket Server | Project key (e.g. `MYPROJECT`) |
+| GitHub | Organization or username |
+| GitLab | Group path or username |
+| Bitbucket Cloud | Workspace slug |
+| Azure Repos | Project name |
+
+```go
+// Go context
+ctx := context.Background()
+// Project key / org / group / workspace / project name
+owner := "jfrog"
+
+repositories, err := client.ListRepositoriesByOwner(ctx, owner)
 ```
 
 #### List App Repositories
