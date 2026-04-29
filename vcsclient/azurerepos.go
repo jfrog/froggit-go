@@ -811,6 +811,10 @@ func (client *AzureReposClient) GetRepoTeamsByPermissions(ctx context.Context, o
 	return nil, getUnsupportedInAzureError("get repo teams by permissions")
 }
 
+func (client *AzureReposClient) ListRepoTeamsWithInfoByPermissions(ctx context.Context, owner, repo string, permissions []string) ([]TeamInfo, error) {
+	return nil, getUnsupportedInAzureError("list repo teams with info by permissions")
+}
+
 func (client *AzureReposClient) CreateOrUpdateEnvironment(ctx context.Context, owner, repo, envName string, teams []int64, users []string) error {
 	return getUnsupportedInAzureError("create or update environment")
 }

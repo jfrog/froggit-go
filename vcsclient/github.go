@@ -32,8 +32,9 @@ const (
 	// https://github.com/orgs/community/discussions/27190
 	githubPrContentSizeLimit = 65536
 	// The maximum number of reviewers that can be added to a GitHub environment
-	ghMaxEnvReviewers = 6
-	regularFileCode   = "100644"
+	ghMaxEnvReviewers  = 6
+	regularFileCode    = "100644"
+	ghListTeamsPerPage = 100
 )
 
 var rateLimitRetryStatuses = []int{http.StatusForbidden, http.StatusTooManyRequests}
@@ -1293,6 +1294,47 @@ func (client *GitHubClient) GetRepoTeamsByPermissions(ctx context.Context, owner
 	}
 
 	return matchedTeams, nil
+}
+
+func (client *GitHubClient) ListRepoTeamsWithInfoByPermissions(ctx context.Context, owner, repo string, permissions []string) ([]TeamInfo, error) {
+	err := validateParametersNotBlank(map[string]string{"owner": owner, "repo": repo, "permissions": strings.Join(permissions, ",")})
+	if err != nil {
+		return nil, err
+	}
+
+	permMap := make(map[string]bool)
+	for _, p := range permissions {
+		permMap[strings.ToLower(p)] = true
+	}
+
+	var matched []TeamInfo
+	for page := 1; ; page++ {
+		var pageTeams []*github.Team
+		var ghResponse *github.Response
+		err = client.runWithRateLimitRetries(func() (*github.Response, error) {
+			var e error
+			pageTeams, ghResponse, e = client.ghClient.Repositories.ListTeams(ctx, owner, repo,
+				&github.ListOptions{Page: page, PerPage: ghListTeamsPerPage})
+			return ghResponse, e
+		})
+		if err != nil {
+			return nil, err
+		}
+		for _, team := range pageTeams {
+			if permMap[strings.ToLower(team.GetPermission())] {
+				matched = append(matched, TeamInfo{
+					ID:         team.GetID(),
+					Name:       team.GetName(),
+					Slug:       team.GetSlug(),
+					Permission: team.GetPermission(),
+				})
+			}
+		}
+		if page >= ghResponse.LastPage || ghResponse.LastPage == 0 {
+			break
+		}
+	}
+	return matched, nil
 }
 
 func (client *GitHubClient) CreateOrUpdateEnvironment(ctx context.Context, owner, repo, envName string, teams []int64, users []string) error {

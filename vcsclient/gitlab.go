@@ -861,6 +861,10 @@ func (client *GitLabClient) GetRepoTeamsByPermissions(ctx context.Context, owner
 	return nil, errGitLabGetRepoTeamsByPermissionsNotSupported
 }
 
+func (client *GitLabClient) ListRepoTeamsWithInfoByPermissions(ctx context.Context, owner, repo string, permissions []string) ([]TeamInfo, error) {
+	return nil, errGitLabListRepoTeamsWithInfoByPermissionsNotSupported
+}
+
 func (client *GitLabClient) CreateOrUpdateEnvironment(ctx context.Context, owner, repo, envName string, teams []int64, users []string) error {
 	return errGitLabCreateOrUpdateEnvironmentNotSupported
 }

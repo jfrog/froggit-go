@@ -400,6 +400,10 @@ type VcsClient interface {
 	// GetRepoTeamsByPermissions returns a list of teams with the proper permissions
 	GetRepoTeamsByPermissions(ctx context.Context, owner, repo string, permissions []string) ([]int64, error)
 
+	// ListRepoTeamsWithInfoByPermissions returns teams granted any of the specified permissions on the repo,
+	// including their ID, name, slug, and permission for sorting and selection by callers.
+	ListRepoTeamsWithInfoByPermissions(ctx context.Context, owner, repo string, permissions []string) ([]TeamInfo, error)
+
 	// CreateOrUpdateEnvironment creates or updates an environment in the specified repository
 	CreateOrUpdateEnvironment(ctx context.Context, owner, repo, envName string, teams []int64, users []string) error
 
@@ -408,6 +412,14 @@ type VcsClient interface {
 
 	// UploadSnapshotToDependencyGraph uploads a snapshot to the GitHub dependency graph tab
 	UploadSnapshotToDependencyGraph(ctx context.Context, owner, repo string, snapshot *SbomSnapshot) error
+}
+
+// TeamInfo holds metadata about a repository team, including enough information to sort and select reviewers.
+type TeamInfo struct {
+	ID         int64
+	Name       string
+	Slug       string
+	Permission string
 }
 
 // SbomSnapshot represents a snapshot for GitHub dependency submission API

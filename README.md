@@ -74,6 +74,7 @@ Currently supported providers are: [GitHub](#github), [Bitbucket Server](#bitbuc
       - [Add Organization Secret](#add-organization-secret)
       - [Get Repo Collaborators](#get-repo-collaborators)
       - [Get Repo Teams By Permissions](#get-repo-teams-by-permissions)
+      - [List Repo Teams With Info By Permissions](#list-repo-teams-with-info-by-permissions)
       - [Create Or Update Environment](#create-or-update-environment)
       - [CommitAndPushFiles](#commit-and-push-files)
       - [Merge Pull Request](#merge-pull-request)
@@ -1009,6 +1010,24 @@ permissions := []string{"maintain", "admin"}
 
 // Get the list of teams with specific permissions for a repository
 teams, err := client.GetRepoTeamsByPermissions(ctx, owner, repo, permissions)
+```
+
+#### List Repo Teams With Info By Permissions
+
+Notice - List Repo Teams With Info By Permissions is currently supported on GitHub only.
+
+```go
+// Go context
+ctx := context.Background()
+// Organization
+owner := "jfrog"
+// Repository name
+repo := "jfrog-cli"
+// Permission type, can be one of the following: read, write, admin, maintain, triage
+permissions := []string{"maintain", "admin"}
+
+// Get the list of teams with specific permissions for a repository, including their ID, name, slug, and permission
+teams, err := client.ListRepoTeamsWithInfoByPermissions(ctx, owner, repo, permissions)
 ```
 
 #### Create Or Update Environment

@@ -1253,6 +1253,90 @@ func TestGitHubClient_GetRepoTeamsByPermissions(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestGitHubClient_ListRepoTeamsWithInfoByPermissions(t *testing.T) {
+	ctx := context.Background()
+	path := fmt.Sprintf("/repos/%v/%v/teams?page=1&per_page=100", owner, repo1)
+
+	t.Run("returns matching teams with full metadata, filters out non-matching", func(t *testing.T) {
+		response := []*github.Team{
+			{ID: github.Ptr(int64(11)), Name: github.Ptr("zebra-team"), Slug: github.Ptr("zebra-team"), Permission: github.Ptr("maintain")},
+			{ID: github.Ptr(int64(22)), Name: github.Ptr("alpha-team"), Slug: github.Ptr("alpha-team"), Permission: github.Ptr("push")},
+			{ID: github.Ptr(int64(33)), Name: github.Ptr("beta-team"), Slug: github.Ptr("beta-team"), Permission: github.Ptr("maintain")},
+		}
+		client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, response, path, createGitHubHandler)
+		defer cleanUp()
+
+		teams, err := client.ListRepoTeamsWithInfoByPermissions(ctx, owner, repo1, []string{"maintain"})
+		assert.NoError(t, err)
+		assert.Len(t, teams, 2)
+		assert.Equal(t, int64(11), teams[0].ID)
+		assert.Equal(t, "zebra-team", teams[0].Name)
+		assert.Equal(t, "zebra-team", teams[0].Slug)
+		assert.Equal(t, "maintain", teams[0].Permission)
+		assert.Equal(t, int64(33), teams[1].ID)
+		assert.Equal(t, "beta-team", teams[1].Name)
+		assert.Equal(t, "beta-team", teams[1].Slug)
+		assert.Equal(t, "maintain", teams[1].Permission)
+	})
+
+	t.Run("returns empty slice when no teams match", func(t *testing.T) {
+		response := []*github.Team{
+			{ID: github.Ptr(int64(10)), Name: github.Ptr("push-team"), Slug: github.Ptr("push-team"), Permission: github.Ptr("push")},
+		}
+		client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, response, path, createGitHubHandler)
+		defer cleanUp()
+
+		teams, err := client.ListRepoTeamsWithInfoByPermissions(ctx, owner, repo1, []string{"maintain"})
+		assert.NoError(t, err)
+		assert.Empty(t, teams)
+	})
+
+	t.Run("accumulates results across multiple pages", func(t *testing.T) {
+		page1 := []*github.Team{
+			{ID: github.Ptr(int64(1)), Name: github.Ptr("team-a"), Slug: github.Ptr("team-a"), Permission: github.Ptr("maintain")},
+			{ID: github.Ptr(int64(2)), Name: github.Ptr("team-b"), Slug: github.Ptr("team-b"), Permission: github.Ptr("push")},
+		}
+		page2 := []*github.Team{
+			{ID: github.Ptr(int64(3)), Name: github.Ptr("team-c"), Slug: github.Ptr("team-c"), Permission: github.Ptr("maintain")},
+		}
+		handlerFactory := func(t *testing.T, _ string, _ []byte, _ int) http.HandlerFunc {
+			return func(w http.ResponseWriter, r *http.Request) {
+				assert.Equal(t, "Bearer "+token, r.Header.Get("Authorization"))
+				pageNum := 1
+				if p := r.URL.Query().Get("page"); p != "" {
+					pageNum, _ = strconv.Atoi(p)
+				}
+				var teams []*github.Team
+				if pageNum == 1 {
+					teams = page1
+					w.Header().Set("Link", `<https://api.github.com/repos/jfrog/repo-1/teams?page=2>; rel="last"`)
+				} else {
+					teams = page2
+				}
+				w.WriteHeader(http.StatusOK)
+				b, err := json.Marshal(teams)
+				assert.NoError(t, err)
+				_, err = w.Write(b)
+				assert.NoError(t, err)
+			}
+		}
+		client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, nil, "", handlerFactory)
+		defer cleanUp()
+
+		result, err := client.ListRepoTeamsWithInfoByPermissions(ctx, owner, repo1, []string{"maintain"})
+		assert.NoError(t, err)
+		assert.Len(t, result, 2)
+		assert.Equal(t, int64(1), result[0].ID)
+		assert.Equal(t, int64(3), result[1].ID)
+	})
+
+	t.Run("propagates error on bad client", func(t *testing.T) {
+		client := createBadGitHubClient(t)
+		_, err := client.ListRepoTeamsWithInfoByPermissions(ctx, owner, repo1, []string{"maintain"})
+		assert.Error(t, err)
+	})
+}
+
 func TestGitHubClient_CreateOrUpdateEnvironment(t *testing.T) {
 	ctx := context.Background()
 	teams := []int64{123467}

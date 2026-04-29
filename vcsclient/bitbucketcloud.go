@@ -819,6 +819,10 @@ func (client *BitbucketCloudClient) GetRepoTeamsByPermissions(ctx context.Contex
 	return nil, errBitbucketGetRepoTeamsByPermissionsNotSupported
 }
 
+func (client *BitbucketCloudClient) ListRepoTeamsWithInfoByPermissions(ctx context.Context, owner, repo string, permissions []string) ([]TeamInfo, error) {
+	return nil, errBitbucketListRepoTeamsWithInfoByPermissionsNotSupported
+}
+
 func (client *BitbucketCloudClient) CreateOrUpdateEnvironment(ctx context.Context, owner, repo, envName string, teams []int64, users []string) error {
 	return errBitbucketCreateOrUpdateEnvironmentNotSupported
 }
