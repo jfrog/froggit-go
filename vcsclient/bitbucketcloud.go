@@ -45,7 +45,10 @@ func NewBitbucketCloudClient(vcsInfo VcsInfo, logger vcsutils.Log) (*BitbucketCl
 }
 
 func (client *BitbucketCloudClient) buildBitbucketCloudClient(_ context.Context) *bitbucket.Client {
-	bitbucketClient := bitbucket.NewBasicAuth(client.vcsInfo.Username, client.vcsInfo.Token)
+	bitbucketClient, err := bitbucket.NewBasicAuth(client.vcsInfo.Username, client.vcsInfo.Token)
+	if err != nil {
+		panic(err)
+	}
 	if client.url != nil {
 		bitbucketClient.SetApiBaseURL(*client.url)
 	}
@@ -137,7 +140,7 @@ func (client *BitbucketCloudClient) AddSshKeyToRepository(ctx context.Context, o
 	}()
 
 	if response.StatusCode >= 300 {
-		err = fmt.Errorf(response.Status)
+		err = fmt.Errorf("%s", response.Status)
 	}
 	return
 }
@@ -145,6 +148,11 @@ func (client *BitbucketCloudClient) AddSshKeyToRepository(ctx context.Context, o
 type bitbucketCloudAddSSHKeyRequest struct {
 	Key   string `json:"key"`
 	Label string `json:"label"`
+}
+
+type bitbucketCloudInlineCommentRequest struct {
+	Content commentContent `json:"content"`
+	Inline  inlineDetails  `json:"inline"`
 }
 
 // CreateWebhook on Bitbucket cloud
@@ -421,13 +429,80 @@ func (client *BitbucketCloudClient) AddPullRequestComment(ctx context.Context, o
 }
 
 // AddPullRequestReviewComments on Bitbucket cloud
-func (client *BitbucketCloudClient) AddPullRequestReviewComments(_ context.Context, _, _ string, _ int, _ ...PullRequestComment) error {
-	return errBitbucketAddPullRequestReviewCommentsNotSupported
+func (client *BitbucketCloudClient) AddPullRequestReviewComments(ctx context.Context, owner, repository string, pullRequestID int, comments ...PullRequestComment) error {
+	err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository})
+	if err != nil {
+		return err
+	}
+	endpoint := client.vcsInfo.APIEndpoint
+	if endpoint == "" {
+		endpoint = bitbucket.DEFAULT_BITBUCKET_API_BASE_URL
+	}
+	bitbucketClient := client.buildBitbucketCloudClient(ctx)
+	for _, comment := range comments {
+		requestBody := bitbucketCloudInlineCommentRequest{
+			Content: commentContent{Raw: comment.Content},
+			Inline: inlineDetails{
+				To:   comment.NewEndLine,
+				Path: comment.NewFilePath,
+			},
+		}
+		body := new(bytes.Buffer)
+		if err = json.NewEncoder(body).Encode(requestBody); err != nil {
+			return err
+		}
+		u := fmt.Sprintf("%s/repositories/%s/%s/pullrequests/%d/comments", endpoint, owner, repository, pullRequestID)
+		req, err := http.NewRequestWithContext(ctx, http.MethodPost, u, body)
+		if err != nil {
+			return err
+		}
+		req.Header.Set("Content-Type", "application/json")
+		req.SetBasicAuth(client.vcsInfo.Username, client.vcsInfo.Token)
+		response, err := bitbucketClient.HttpClient.Do(req)
+		if err != nil {
+			return err
+		}
+		if closeErr := errors.Join(vcsutils.DiscardResponseBody(response), response.Body.Close()); closeErr != nil {
+			return closeErr
+		}
+		if response.StatusCode >= 300 {
+			return fmt.Errorf("%s", response.Status)
+		}
+	}
+	return nil
 }
 
 // ListPullRequestReviewComments on Bitbucket cloud
-func (client *BitbucketCloudClient) ListPullRequestReviewComments(_ context.Context, _, _ string, _ int) ([]CommentInfo, error) {
-	return nil, errBitbucketListPullRequestReviewCommentsNotSupported
+func (client *BitbucketCloudClient) ListPullRequestReviewComments(ctx context.Context, owner, repository string, pullRequestID int) ([]CommentInfo, error) {
+	err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository})
+	if err != nil {
+		return nil, err
+	}
+	bitbucketClient := client.buildBitbucketCloudClient(ctx)
+	options := &bitbucket.PullRequestsOptions{
+		Owner:    owner,
+		RepoSlug: repository,
+		ID:       fmt.Sprint(pullRequestID),
+	}
+	comments, err := bitbucketClient.Repositories.PullRequests.GetComments(options)
+	if err != nil {
+		return nil, err
+	}
+	parsedComments, err := vcsutils.RemapFields[commentsResponse](comments, "json")
+	if err != nil {
+		return nil, err
+	}
+	var result []CommentInfo
+	for _, comment := range parsedComments.Values {
+		if comment.Inline != nil {
+			result = append(result, CommentInfo{
+				ID:      comment.ID,
+				Content: comment.Content.Raw,
+				Created: comment.Created,
+			})
+		}
+	}
+	return result, nil
 }
 
 func (client *BitbucketCloudClient) ListPullRequestReviews(ctx context.Context, owner, repository string, pullRequestID int) ([]PullRequestReviewDetails, error) {
@@ -495,13 +570,43 @@ func (client *BitbucketCloudClient) ListPullRequestComments(ctx context.Context,
 }
 
 // DeletePullRequestReviewComments on Bitbucket cloud
-func (client *BitbucketCloudClient) DeletePullRequestReviewComments(_ context.Context, _, _ string, _ int, _ ...CommentInfo) error {
-	return errBitbucketDeletePullRequestComment
+func (client *BitbucketCloudClient) DeletePullRequestReviewComments(ctx context.Context, owner, repository string, pullRequestID int, comments ...CommentInfo) error {
+	for _, comment := range comments {
+		if err := client.DeletePullRequestComment(ctx, owner, repository, pullRequestID, int(comment.ID)); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // DeletePullRequestComment on Bitbucket cloud
-func (client *BitbucketCloudClient) DeletePullRequestComment(_ context.Context, _, _ string, _, _ int) error {
-	return errBitbucketDeletePullRequestComment
+func (client *BitbucketCloudClient) DeletePullRequestComment(ctx context.Context, owner, repository string, pullRequestID, commentID int) (err error) {
+	err = validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository})
+	if err != nil {
+		return
+	}
+	endpoint := client.vcsInfo.APIEndpoint
+	if endpoint == "" {
+		endpoint = bitbucket.DEFAULT_BITBUCKET_API_BASE_URL
+	}
+	u := fmt.Sprintf("%s/repositories/%s/%s/pullrequests/%d/comments/%d", endpoint, owner, repository, pullRequestID, commentID)
+	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, u, nil)
+	if err != nil {
+		return
+	}
+	req.SetBasicAuth(client.vcsInfo.Username, client.vcsInfo.Token)
+	bitbucketClient := client.buildBitbucketCloudClient(ctx)
+	response, err := bitbucketClient.HttpClient.Do(req)
+	if err != nil {
+		return
+	}
+	defer func() {
+		err = errors.Join(err, vcsutils.DiscardResponseBody(response), response.Body.Close())
+	}()
+	if response.StatusCode >= 300 {
+		err = fmt.Errorf("%s", response.Status)
+	}
+	return
 }
 
 // GetLatestCommit on Bitbucket cloud
@@ -790,10 +895,16 @@ type commentDetails struct {
 	IsDeleted bool           `json:"deleted"`
 	Content   commentContent `json:"content"`
 	Created   time.Time      `json:"created_on"`
+	Inline    *inlineDetails `json:"inline,omitempty"`
 }
 
 type commentContent struct {
 	Raw string `json:"raw"`
+}
+
+type inlineDetails struct {
+	To   int    `json:"to"`
+	Path string `json:"path"`
 }
 
 type commitResponse struct {
