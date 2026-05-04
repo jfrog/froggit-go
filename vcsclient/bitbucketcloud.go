@@ -48,7 +48,7 @@ func NewBitbucketCloudClient(vcsInfo VcsInfo, logger vcsutils.Log) (*BitbucketCl
 	return bitbucketClient, nil
 }
 
-func (client *BitbucketCloudClient) buildBitbucketCloudClient(_ context.Context) *bitbucket.Client {
+func (client *BitbucketCloudClient) buildBitbucketCloudClient(_ context.Context) (*bitbucket.Client, error) {
 	var bitbucketClient *bitbucket.Client
 	var err error
 
@@ -58,7 +58,7 @@ func (client *BitbucketCloudClient) buildBitbucketCloudClient(_ context.Context)
 		bitbucketClient, err = bitbucket.NewBasicAuth(client.vcsInfo.Username, client.vcsInfo.Token)
 	}
 	if err != nil {
-		panic(err) // TODO fix and return error
+		return nil, err
 	}
 	if client.url != nil {
 		bitbucketClient.SetApiBaseURL(*client.url)
@@ -309,14 +309,16 @@ func (client *BitbucketCloudClient) GetCommitStatuses(ctx context.Context, owner
 	return results, err
 }
 
-// DownloadRepository on Bitbucket cloud
 func (client *BitbucketCloudClient) DownloadRepository(ctx context.Context, owner, repository, branch, localPath string) error {
 	// TODO: Once Atlassian fixes BCLOUD-23783, Bearer tokens will work for archive downloads.
 	// Until then, fall back to git clone when no username is provided (Bearer token auth).
 	if client.vcsInfo.Username == "" {
 		return client.downloadRepositoryViaGitClone(ctx, owner, repository, branch, localPath)
 	}
-	bitbucketClient := client.buildBitbucketCloudClient(ctx)
+	bitbucketClient, err := client.buildBitbucketCloudClient(ctx)
+	if err != nil {
+		return err
+	}
 	client.logger.Debug("getting Bitbucket Cloud archive link to download")
 	repo, err := bitbucketClient.Repositories.Repository.Get(&bitbucket.RepositoryOptions{
 		Owner:    owner,
@@ -522,7 +524,10 @@ func (client *BitbucketCloudClient) AddPullRequestReviewComments(ctx context.Con
 	if endpoint == "" {
 		endpoint = bitbucket.DEFAULT_BITBUCKET_API_BASE_URL
 	}
-	bitbucketClient := client.buildBitbucketCloudClient(ctx)
+	bitbucketClient, err := client.buildBitbucketCloudClient(ctx)
+	if err != nil {
+		return err
+	}
 	for _, comment := range comments {
 		requestBody := bitbucketCloudInlineCommentRequest{
 			Content: commentContent{Raw: comment.Content},
@@ -562,7 +567,10 @@ func (client *BitbucketCloudClient) ListPullRequestReviewComments(ctx context.Co
 	if err != nil {
 		return nil, err
 	}
-	bitbucketClient := client.buildBitbucketCloudClient(ctx)
+	bitbucketClient, err := client.buildBitbucketCloudClient(ctx)
+	if err != nil {
+		return nil, err
+	}
 	options := &bitbucket.PullRequestsOptions{
 		Owner:    owner,
 		RepoSlug: repository,
@@ -685,7 +693,10 @@ func (client *BitbucketCloudClient) DeletePullRequestComment(ctx context.Context
 		return
 	}
 	client.setAuthenticationHeader(req)
-	bitbucketClient := client.buildBitbucketCloudClient(ctx)
+	bitbucketClient, err := client.buildBitbucketCloudClient(ctx)
+	if err != nil {
+		return err
+	}
 	response, err := bitbucketClient.HttpClient.Do(req)
 	if err != nil {
 		return
