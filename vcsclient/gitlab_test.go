@@ -71,6 +71,50 @@ func TestGitLabClient_ListRepositories(t *testing.T) {
 	}, actualRepositories)
 }
 
+func TestGitLabClient_ListRepositoriesByOwner(t *testing.T) {
+	ctx := context.Background()
+	projects := []gitlab.Project{{Path: repo1}, {Path: repo2}}
+	client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, projects,
+		fmt.Sprintf("/api/v4/groups/%s/projects", owner), createGitLabHandlerForUnknownUrl)
+	defer cleanUp()
+
+	actualRepos, err := client.ListRepositoriesByOwner(ctx, owner)
+	assert.NoError(t, err)
+	assert.ElementsMatch(t, []string{repo1, repo2}, actualRepos)
+}
+
+func TestGitLabClient_ListRepositoriesByOwnerUserFallback(t *testing.T) {
+	ctx := context.Background()
+	projects := []gitlab.Project{{Path: repo1}, {Path: repo2}}
+	projectsJSON, err := json.Marshal(projects)
+	assert.NoError(t, err)
+
+	handler := func(t *testing.T, _ string, _ []byte, expectedStatusCode int) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
+			if r.RequestURI == "/api/v4/" {
+				w.WriteHeader(http.StatusOK)
+				return
+			}
+			assert.Equal(t, token, r.Header.Get("Private-Token"))
+			if strings.Contains(r.RequestURI, "/api/v4/groups/") {
+				w.WriteHeader(http.StatusNotFound)
+				return
+			}
+			w.WriteHeader(expectedStatusCode)
+			_, err := w.Write(projectsJSON)
+			assert.NoError(t, err)
+		}
+	}
+
+	client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, nil,
+		fmt.Sprintf("/api/v4/users/%s/projects", owner), handler)
+	defer cleanUp()
+
+	actualRepos, err := client.ListRepositoriesByOwner(ctx, owner)
+	assert.NoError(t, err)
+	assert.ElementsMatch(t, []string{repo1, repo2}, actualRepos)
+}
+
 func TestGitLabClient_ListBranches(t *testing.T) {
 	ctx := context.Background()
 	client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, []gitlab.Branch{{Name: branch1}, {Name: branch2}}, fmt.Sprintf("/api/v4/projects/%s/repository/branches", url.PathEscape(owner+"/"+repo1)), createGitLabHandler)

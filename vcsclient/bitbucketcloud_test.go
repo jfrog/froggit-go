@@ -65,6 +65,20 @@ func TestBitbucketCloud_ListRepositories(t *testing.T) {
 	assert.Equal(t, map[string][]string{username: {repo1, repo2}}, actualRepositories)
 }
 
+func TestBitbucketCloud_ListRepositoriesByOwner(t *testing.T) {
+	ctx := context.Background()
+	mockResponse := map[string][]bitbucket.Repository{
+		"values": {{Slug: repo1}, {Slug: repo2}},
+	}
+	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketCloud, true, mockResponse,
+		"/repositories/"+owner, createBitbucketCloudHandler)
+	defer cleanUp()
+
+	actualRepos, err := client.ListRepositoriesByOwner(ctx, owner)
+	assert.NoError(t, err)
+	assert.ElementsMatch(t, []string{repo1, repo2}, actualRepos)
+}
+
 func TestBitbucketCloud_ListBranches(t *testing.T) {
 	ctx := context.Background()
 	mockResponse := map[string][]bitbucket.BranchModel{
@@ -378,7 +392,7 @@ func TestBitbucketCloud_AddSshKeyToRepositoryNotFound(t *testing.T) {
 
 	err := client.AddSshKeyToRepository(ctx, owner, repo1, "My deploy key", "ssh-rsa AAAA...", Read)
 
-	assert.EqualError(t, err, "404 Not Found")
+	assert.EqualError(t, err, "failed to add SSH key to repository: 404 Not Found")
 }
 
 func TestBitbucketCloud_GetCommitBySha(t *testing.T) {

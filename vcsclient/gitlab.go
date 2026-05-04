@@ -73,6 +73,53 @@ func (client *GitLabClient) ListRepositories(ctx context.Context) (map[string][]
 	return results, nil
 }
 
+// ListRepositoriesByOwner on GitLab returns repositories for the given group or user namespace.
+// It tries listing as a group first; if that fails, falls back to listing as a user.
+func (client *GitLabClient) ListRepositoriesByOwner(ctx context.Context, owner string) ([]string, error) {
+	simple := true
+	var repos []string
+	for pageID := 1; ; pageID++ {
+		opts := &gitlab.ListGroupProjectsOptions{
+			ListOptions: gitlab.ListOptions{Page: pageID},
+			Simple:      &simple,
+		}
+		projects, response, err := client.glClient.Groups.ListGroupProjects(owner, opts, gitlab.WithContext(ctx))
+		if err != nil {
+			// owner is a user namespace, not a group — fall back to user projects
+			return client.listUserProjectsByOwner(ctx, owner)
+		}
+		for _, p := range projects {
+			repos = append(repos, p.Path)
+		}
+		if pageID >= response.TotalPages {
+			break
+		}
+	}
+	return repos, nil
+}
+
+func (client *GitLabClient) listUserProjectsByOwner(ctx context.Context, owner string) ([]string, error) {
+	simple := true
+	var repos []string
+	for pageID := 1; ; pageID++ {
+		opts := &gitlab.ListProjectsOptions{
+			ListOptions: gitlab.ListOptions{Page: pageID},
+			Simple:      &simple,
+		}
+		projects, response, err := client.glClient.Projects.ListUserProjects(owner, opts, gitlab.WithContext(ctx))
+		if err != nil {
+			return nil, err
+		}
+		for _, p := range projects {
+			repos = append(repos, p.Path)
+		}
+		if pageID >= response.TotalPages {
+			break
+		}
+	}
+	return repos, nil
+}
+
 // ListAppRepositories returns an error since this is not supported in GitLab
 func (client *GitLabClient) ListAppRepositories(ctx context.Context) ([]AppRepositoryInfo, error) {
 	return nil, errGitLabListAppRepositories
