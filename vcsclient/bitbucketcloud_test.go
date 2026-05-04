@@ -606,7 +606,7 @@ func TestBitbucketCloudClient_DeletePullRequestComment_NotFound(t *testing.T) {
 	assert.NoError(t, err)
 
 	err = client.DeletePullRequestComment(ctx, owner, repo1, 1, 999)
-	assert.EqualError(t, err, "404 Not Found")
+	assert.ErrorContains(t, err, "404")
 }
 
 func TestBitbucketCloudClient_DeletePullRequestComment_ValidationError(t *testing.T) {
