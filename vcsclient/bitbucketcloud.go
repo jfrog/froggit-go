@@ -1172,7 +1172,7 @@ func splitBitbucketCloudRepoName(name string) (string, string) {
 // downloadRepositoryViaGitClone clones the repository using git with x-token-auth authentication.
 // This is a workaround for BCLOUD-23783: Bitbucket Cloud archive downloads do not support Bearer
 // token auth. Remove this fallback once Atlassian resolves BCLOUD-23783.
-func (client *BitbucketCloudClient) downloadRepositoryViaGitClone(ctx context.Context, owner, repository, branch, localPath string) error {
+func (client *BitbucketCloudClient) downloadRepositoryViaGitClone(ctx context.Context, owner, repository, branch, localPath string) (err error) {
 	client.logger.Debug("Using git clone fallback (BCLOUD-23783 workaround: Bearer tokens not supported for archive downloads)")
 	cloneURL := fmt.Sprintf("https://x-token-auth:%s@bitbucket.org/%s/%s.git", client.vcsInfo.Token, owner, repository)
 
@@ -1180,7 +1180,11 @@ func (client *BitbucketCloudClient) downloadRepositoryViaGitClone(ctx context.Co
 	if err != nil {
 		return fmt.Errorf("failed to create temp directory: %w", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func() {
+		if removeErr := os.RemoveAll(tempDir); removeErr != nil {
+			err = errors.Join(err, removeErr)
+		}
+	}()
 
 	args := []string{"clone", "--depth", "1"}
 	if branch != "" {
@@ -1228,17 +1232,27 @@ func copyDir(src, dst string) error {
 	})
 }
 
-func copyFile(src, dst string, mode os.FileMode) error {
+func copyFile(src, dst string, mode os.FileMode) (err error) {
 	sourceFile, err := os.Open(src)
 	if err != nil {
 		return err
 	}
-	defer sourceFile.Close()
+	defer func() {
+		if closeErr := sourceFile.Close(); closeErr != nil && err == nil {
+			err = errors.Join(err, closeErr)
+		}
+	}()
+
 	destFile, err := os.OpenFile(dst, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, mode)
 	if err != nil {
 		return err
 	}
-	defer destFile.Close()
+	defer func() {
+		if closeErr := destFile.Close(); closeErr != nil && err == nil {
+			err = errors.Join(err, closeErr)
+		}
+	}()
+
 	_, err = io.Copy(destFile, sourceFile)
 	return err
 }
