@@ -312,7 +312,7 @@ func (client *BitbucketCloudClient) GetCommitStatuses(ctx context.Context, owner
 }
 
 func (client *BitbucketCloudClient) DownloadRepository(ctx context.Context, owner, repository, branch, localPath string) error {
-	// TODO: Once Atlassian fixes BCLOUD-23783, Bearer tokens will work for archive downloads, and we can remove this woraround.
+	// TODO: Once Atlassian fixes BCLOUD-23783, Bearer tokens will work for archive downloads, and we can remove this workaround.
 	// Until then, fall back to git clone when no username is provided (Bearer token auth).
 	if client.vcsInfo.Username == "" {
 		return client.downloadRepositoryViaGitClone(ctx, owner, repository, branch, localPath)
@@ -1171,14 +1171,12 @@ func splitBitbucketCloudRepoName(name string) (string, string) {
 	return split[0], split[1]
 }
 
-// downloadRepositoryViaGitClone clones the repository using git with x-token-auth authentication.
+// Clones the repository using git with x-token-auth authentication.
 // This is a workaround for BCLOUD-23783: Bitbucket Cloud archive downloads do not support Bearer
 // token auth. Remove this fallback once Atlassian resolves BCLOUD-23783.
 func (client *BitbucketCloudClient) downloadRepositoryViaGitClone(ctx context.Context, owner, repository, branch, localPath string) (err error) {
 	client.logger.Debug("Using git clone fallback (BCLOUD-23783 workaround: Bearer tokens not supported for archive downloads)")
 	cloneURL := fmt.Sprintf("https://bitbucket.org/%s/%s.git", owner, repository)
-	// Credentials are passed via GIT_CONFIG env vars to avoid exposing the token in process args or the clone URL.
-	creds := base64.StdEncoding.EncodeToString([]byte("x-token-auth:" + client.vcsInfo.Token))
 
 	tempDir, err := os.MkdirTemp("", "bitbucket-clone-*")
 	if err != nil {
@@ -1197,15 +1195,22 @@ func (client *BitbucketCloudClient) downloadRepositoryViaGitClone(ctx context.Co
 	args = append(args, cloneURL, tempDir)
 
 	cmd := exec.CommandContext(ctx, "git", args...)
-	cmd.Env = append(os.Environ(),
-		"GIT_CONFIG_COUNT=1",
-		"GIT_CONFIG_KEY_0=http.extraHeader",
-		fmt.Sprintf("GIT_CONFIG_VALUE_0=Authorization: Basic %s", creds),
-	)
+	if client.vcsInfo.Token != "" {
+		creds := base64.StdEncoding.EncodeToString([]byte("x-token-auth:" + client.vcsInfo.Token))
+		cmd.Env = append(os.Environ(),
+			"GIT_CONFIG_COUNT=1",
+			"GIT_CONFIG_KEY_0=http.extraHeader",
+			fmt.Sprintf("GIT_CONFIG_VALUE_0=Authorization: Basic %s", creds),
+		)
+	}
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr
 	if err = cmd.Run(); err != nil {
-		return fmt.Errorf("git clone failed: %w, stderr: %s", err, strings.ReplaceAll(stderr.String(), client.vcsInfo.Token, "***"))
+		stderrStr := stderr.String()
+		if client.vcsInfo.Token != "" {
+			stderrStr = strings.ReplaceAll(stderrStr, client.vcsInfo.Token, "***")
+		}
+		return fmt.Errorf("git clone failed: %w, stderr: %s", err, stderrStr)
 	}
 	client.logger.Info(repository, vcsutils.SuccessfulRepoDownload)
 

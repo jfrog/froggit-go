@@ -157,6 +157,52 @@ func TestBitbucketCloud_DownloadRepository(t *testing.T) {
 	assert.DirExists(t, filepath.Join(dir, ".git"))
 }
 
+func TestBitbucketCloud_DownloadRepository_BearerToken_RoutesToGitClone(t *testing.T) {
+	archiveEndpointCalled := false
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		archiveEndpointCalled = true
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer server.Close()
+
+	client, err := NewClientBuilder(vcsutils.BitbucketCloud).
+		ApiEndpoint(server.URL).
+		Token(token).
+		// No Username() call — no username triggers the Bearer token / git clone path.
+		Build()
+	assert.NoError(t, err)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	dir, err := os.MkdirTemp("", "")
+	assert.NoError(t, err)
+	defer func() { _ = os.RemoveAll(dir) }()
+
+	err = client.DownloadRepository(ctx, owner, repo1, branch1, dir)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "git clone failed", "error should originate from the git clone path, not the archive download path")
+	assert.False(t, archiveEndpointCalled, "archive HTTP endpoint must not be called when no username is set")
+}
+
+func TestBitbucketCloud_DownloadRepository_BearerToken_ErrorDoesNotLeakToken(t *testing.T) {
+	client, err := NewClientBuilder(vcsutils.BitbucketCloud).
+		Token(token).
+		Build()
+	assert.NoError(t, err)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	dir, err := os.MkdirTemp("", "")
+	assert.NoError(t, err)
+	defer func() { _ = os.RemoveAll(dir) }()
+
+	err = client.DownloadRepository(ctx, owner, repo1, branch1, dir)
+	assert.Error(t, err)
+	assert.NotContains(t, err.Error(), token, "raw token must not appear in error messages")
+}
+
 func TestBitbucketCloud_CreatePullRequest(t *testing.T) {
 	ctx := context.Background()
 	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketCloud, true, nil, "/repositories/jfrog/repo-1/pullrequests/", createBitbucketCloudHandler)
