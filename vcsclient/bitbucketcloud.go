@@ -3,6 +3,7 @@ package vcsclient
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -17,6 +18,7 @@ import (
 	"strings"
 	"time"
 
+	biutils "github.com/jfrog/build-info-go/utils"
 	"github.com/jfrog/gofrog/datastructures"
 	"github.com/ktrysmt/go-bitbucket"
 
@@ -1174,7 +1176,9 @@ func splitBitbucketCloudRepoName(name string) (string, string) {
 // token auth. Remove this fallback once Atlassian resolves BCLOUD-23783.
 func (client *BitbucketCloudClient) downloadRepositoryViaGitClone(ctx context.Context, owner, repository, branch, localPath string) (err error) {
 	client.logger.Debug("Using git clone fallback (BCLOUD-23783 workaround: Bearer tokens not supported for archive downloads)")
-	cloneURL := fmt.Sprintf("https://x-token-auth:%s@bitbucket.org/%s/%s.git", client.vcsInfo.Token, owner, repository)
+	cloneURL := fmt.Sprintf("https://bitbucket.org/%s/%s.git", owner, repository)
+	// Credentials are passed via GIT_CONFIG env vars to avoid exposing the token in process args or the clone URL.
+	creds := base64.StdEncoding.EncodeToString([]byte("x-token-auth:" + client.vcsInfo.Token))
 
 	tempDir, err := os.MkdirTemp("", "bitbucket-clone-*")
 	if err != nil {
@@ -1193,17 +1197,22 @@ func (client *BitbucketCloudClient) downloadRepositoryViaGitClone(ctx context.Co
 	args = append(args, cloneURL, tempDir)
 
 	cmd := exec.CommandContext(ctx, "git", args...)
+	cmd.Env = append(os.Environ(),
+		"GIT_CONFIG_COUNT=1",
+		"GIT_CONFIG_KEY_0=http.extraHeader",
+		fmt.Sprintf("GIT_CONFIG_VALUE_0=Authorization: Basic %s", creds),
+	)
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr
 	if err = cmd.Run(); err != nil {
-		return fmt.Errorf("git clone failed: %w, stderr: %s", err, stderr.String())
+		return fmt.Errorf("git clone failed: %w, stderr: %s", err, strings.ReplaceAll(stderr.String(), client.vcsInfo.Token, "***"))
 	}
 	client.logger.Info(repository, vcsutils.SuccessfulRepoDownload)
 
 	if err = os.RemoveAll(filepath.Join(tempDir, ".git")); err != nil {
 		client.logger.Debug("Failed to remove .git directory:", err)
 	}
-	if err = copyDir(tempDir, localPath); err != nil {
+	if err = biutils.CopyDir(tempDir, localPath, true, nil); err != nil {
 		return fmt.Errorf("failed to copy repository contents: %w", err)
 	}
 	client.logger.Info(vcsutils.SuccessfulRepoExtraction)
@@ -1213,46 +1222,4 @@ func (client *BitbucketCloudClient) downloadRepositoryViaGitClone(ctx context.Co
 		return err
 	}
 	return vcsutils.CreateDotGitFolderWithRemote(localPath, "origin", repositoryInfo.CloneInfo.HTTP)
-}
-
-func copyDir(src, dst string) error {
-	return filepath.Walk(src, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		relPath, err := filepath.Rel(src, path)
-		if err != nil {
-			return err
-		}
-		dstPath := filepath.Join(dst, relPath)
-		if info.IsDir() {
-			return os.MkdirAll(dstPath, info.Mode())
-		}
-		return copyFile(path, dstPath, info.Mode())
-	})
-}
-
-func copyFile(src, dst string, mode os.FileMode) (err error) {
-	sourceFile, err := os.Open(src)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		if closeErr := sourceFile.Close(); closeErr != nil && err == nil {
-			err = errors.Join(err, closeErr)
-		}
-	}()
-
-	destFile, err := os.OpenFile(dst, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, mode)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		if closeErr := destFile.Close(); closeErr != nil && err == nil {
-			err = errors.Join(err, closeErr)
-		}
-	}()
-
-	_, err = io.Copy(destFile, sourceFile)
-	return err
 }
