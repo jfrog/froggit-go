@@ -313,8 +313,9 @@ func (client *BitbucketCloudClient) GetCommitStatuses(ctx context.Context, owner
 
 func (client *BitbucketCloudClient) DownloadRepository(ctx context.Context, owner, repository, branch, localPath string) error {
 	// TODO: Once Atlassian fixes BCLOUD-23783, Bearer tokens will work for archive downloads, and we can remove this workaround.
-	// Until then, fall back to git clone when no username is provided (Bearer token auth).
-	if client.vcsInfo.Username == "" {
+	// Until then, use git clone for Bearer token auth (token present, no username).
+	// No-credentials case (public repos, theoretical in practice) falls through to the archive path as it did originally.
+	if client.vcsInfo.Username == "" && client.vcsInfo.Token != "" {
 		return client.downloadRepositoryViaGitClone(ctx, owner, repository, branch, localPath)
 	}
 	bitbucketClient, err := client.buildBitbucketCloudClient(ctx)
