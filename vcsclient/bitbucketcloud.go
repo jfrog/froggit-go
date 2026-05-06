@@ -310,7 +310,7 @@ func (client *BitbucketCloudClient) GetCommitStatuses(ctx context.Context, owner
 }
 
 func (client *BitbucketCloudClient) DownloadRepository(ctx context.Context, owner, repository, branch, localPath string) error {
-	// TODO: Once Atlassian fixes BCLOUD-23783, Bearer tokens will work for archive downloads.
+	// TODO: Once Atlassian fixes BCLOUD-23783, Bearer tokens will work for archive downloads, and we can remove this woraround.
 	// Until then, fall back to git clone when no username is provided (Bearer token auth).
 	if client.vcsInfo.Username == "" {
 		return client.downloadRepositoryViaGitClone(ctx, owner, repository, branch, localPath)
