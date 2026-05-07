@@ -790,7 +790,14 @@ func (client *BitbucketCloudClient) GetRepositoryInfo(ctx context.Context, owner
 	for _, link := range holder.Clone {
 		switch strings.ToLower(link.Name) {
 		case "https":
-			info.HTTP = link.HRef
+			// Bitbucket Cloud embeds the token as userinfo in the HTTPS clone URL when using access tokens.
+			// Strip it so callers receive a plain URL without credentials.
+			if parsed, parseErr := url.Parse(link.HRef); parseErr == nil {
+				parsed.User = nil
+				info.HTTP = parsed.String()
+			} else {
+				info.HTTP = link.HRef
+			}
 		case "ssh":
 			info.SSH = link.HRef
 		}
