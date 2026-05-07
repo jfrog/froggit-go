@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"testing"
@@ -154,6 +155,52 @@ func TestBitbucketCloud_DownloadRepository(t *testing.T) {
 	assert.NoError(t, err)
 	assert.FileExists(t, filepath.Join(dir, "README.md"))
 	assert.DirExists(t, filepath.Join(dir, ".git"))
+}
+
+func TestBitbucketCloud_DownloadRepository_BearerToken_RoutesToGitClone(t *testing.T) {
+	archiveEndpointCalled := false
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		archiveEndpointCalled = true
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer server.Close()
+
+	client, err := NewClientBuilder(vcsutils.BitbucketCloud).
+		ApiEndpoint(server.URL).
+		Token(token).
+		// No Username() call — no username triggers the Bearer token / git clone path.
+		Build()
+	assert.NoError(t, err)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	dir, err := os.MkdirTemp("", "")
+	assert.NoError(t, err)
+	defer func() { _ = os.RemoveAll(dir) }()
+
+	err = client.DownloadRepository(ctx, owner, repo1, branch1, dir)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "git clone failed", "error should originate from the git clone path, not the archive download path")
+	assert.False(t, archiveEndpointCalled, "archive HTTP endpoint must not be called when no username is set")
+}
+
+func TestBitbucketCloud_DownloadRepository_BearerToken_ErrorDoesNotLeakToken(t *testing.T) {
+	client, err := NewClientBuilder(vcsutils.BitbucketCloud).
+		Token(token).
+		Build()
+	assert.NoError(t, err)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	dir, err := os.MkdirTemp("", "")
+	assert.NoError(t, err)
+	defer func() { _ = os.RemoveAll(dir) }()
+
+	err = client.DownloadRepository(ctx, owner, repo1, branch1, dir)
+	assert.Error(t, err)
+	assert.NotContains(t, err.Error(), token, "raw token must not appear in error messages")
 }
 
 func TestBitbucketCloud_CreatePullRequest(t *testing.T) {
@@ -486,38 +533,199 @@ func TestBitbucketCloud_CreateLabel(t *testing.T) {
 
 func TestBitbucketCloud_AddPullRequestReviewComments(t *testing.T) {
 	ctx := context.Background()
-	client, err := NewClientBuilder(vcsutils.BitbucketCloud).Build()
+	expectedBody := []byte(`{"content":{"raw":"Review comment"},"inline":{"to":10,"path":"src/main.go"}}` + "\n")
+
+	client, closeServer := createBodyHandlingServerAndClient(t, vcsutils.BitbucketCloud, true,
+		[]byte("{}"), fmt.Sprintf("/repositories/%s/%s/pullrequests/1/comments", owner, repo1), http.StatusCreated,
+		expectedBody, http.MethodPost,
+		createBitbucketCloudWithBodyHandler)
+	defer closeServer()
+
+	err := client.AddPullRequestReviewComments(ctx, owner, repo1, 1, PullRequestComment{
+		CommentInfo: CommentInfo{Content: "Review comment"},
+		PullRequestDiff: PullRequestDiff{
+			NewFilePath: "src/main.go",
+			NewEndLine:  10,
+		},
+	})
+	assert.NoError(t, err)
+}
+
+func TestBitbucketCloud_AddPullRequestReviewComments_ValidationError(t *testing.T) {
+	ctx := context.Background()
+	client := BitbucketCloudClient{}
+	err := client.AddPullRequestReviewComments(ctx, "", repo1, 1, PullRequestComment{
+		CommentInfo: CommentInfo{Content: "comment"},
+	})
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "owner")
+}
+
+func TestBitbucketCloud_AddPullRequestReviewComments_HTTPError(t *testing.T) {
+	ctx := context.Background()
+	// Close the server immediately so all HTTP calls fail at the transport level.
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
+	server.Close()
+
+	client, err := NewClientBuilder(vcsutils.BitbucketCloud).ApiEndpoint(server.URL).Token(token).Username("frogger").Build()
 	assert.NoError(t, err)
 
-	err = client.AddPullRequestReviewComments(ctx, owner, repo1, 1)
-	assert.ErrorIs(t, err, errBitbucketAddPullRequestReviewCommentsNotSupported)
+	err = client.AddPullRequestReviewComments(ctx, owner, repo1, 1, PullRequestComment{
+		CommentInfo:     CommentInfo{Content: "comment"},
+		PullRequestDiff: PullRequestDiff{NewFilePath: "src/main.go", NewEndLine: 5},
+	})
+	assert.Error(t, err)
 }
 
 func TestBitbucketCloudClient_ListPullRequestReviewComments(t *testing.T) {
 	ctx := context.Background()
-	client, err := NewClientBuilder(vcsutils.BitbucketCloud).Build()
+	response, err := os.ReadFile(filepath.Join("testdata", "bitbucketcloud", "pull_request_comments_with_inline_response.json"))
+	assert.NoError(t, err)
+	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketCloud, true, response,
+		fmt.Sprintf("/repositories/%s/%s/pullrequests/1/comments/", owner, repo1), createBitbucketCloudHandler)
+	defer cleanUp()
+
+	result, err := client.ListPullRequestReviewComments(ctx, owner, repo1, 1)
 	assert.NoError(t, err)
 
-	_, err = client.ListPullRequestReviewComments(ctx, owner, repo1, 1)
-	assert.ErrorIs(t, err, errBitbucketListPullRequestReviewCommentsNotSupported)
+	// Only the 2 inline comments should be returned, not the general comment.
+	assert.Len(t, result, 2)
+
+	expectedCreated1, err := time.Parse(time.RFC3339, "2022-05-16T12:00:00.000000+00:00")
+	assert.NoError(t, err)
+	assert.Equal(t, CommentInfo{
+		ID:      200,
+		Content: "Inline comment on line 10",
+		Created: expectedCreated1,
+	}, result[0])
+
+	expectedCreated2, err := time.Parse(time.RFC3339, "2022-05-16T13:00:00.000000+00:00")
+	assert.NoError(t, err)
+	assert.Equal(t, CommentInfo{
+		ID:      300,
+		Content: "Another inline comment",
+		Created: expectedCreated2,
+	}, result[1])
+}
+
+func TestBitbucketCloudClient_ListPullRequestReviewComments_ValidationError(t *testing.T) {
+	ctx := context.Background()
+	client := BitbucketCloudClient{}
+	_, err := client.ListPullRequestReviewComments(ctx, "", repo1, 1)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "owner")
+}
+
+func TestBitbucketCloudClient_ListPullRequestReviewComments_HTTPError(t *testing.T) {
+	ctx := context.Background()
+	// Close the server immediately so all HTTP calls fail at the transport level.
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
+	server.Close()
+
+	client, err := NewClientBuilder(vcsutils.BitbucketCloud).ApiEndpoint(server.URL).Token(token).Username("frogger").Build()
+	assert.NoError(t, err)
+
+	result, err := client.ListPullRequestReviewComments(ctx, owner, repo1, 1)
+	assert.Error(t, err)
+	assert.Empty(t, result)
 }
 
 func TestBitbucketCloudClient_DeletePullRequestComment(t *testing.T) {
 	ctx := context.Background()
-	client, err := NewClientBuilder(vcsutils.BitbucketCloud).Build()
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, http.MethodDelete, r.Method)
+		assert.Equal(t, fmt.Sprintf("/repositories/%s/%s/pullrequests/1/comments/42", owner, repo1), r.RequestURI)
+		assert.Equal(t, basicAuthHeader, r.Header.Get("Authorization"))
+		w.WriteHeader(http.StatusNoContent)
+	})
+	server := httptest.NewServer(handler)
+	defer server.Close()
+
+	clientBuilder := NewClientBuilder(vcsutils.BitbucketCloud).ApiEndpoint(server.URL).Token(token).Username("frogger")
+	client, err := clientBuilder.Build()
 	assert.NoError(t, err)
 
-	err = client.DeletePullRequestComment(ctx, owner, repo1, 1, 1)
-	assert.ErrorIs(t, err, errBitbucketDeletePullRequestComment)
+	err = client.DeletePullRequestComment(ctx, owner, repo1, 1, 42)
+	assert.NoError(t, err)
 }
 
-func TestBitbucketCloudClient_DeletePullRequestReviewComment(t *testing.T) {
+func TestBitbucketCloudClient_DeletePullRequestComment_NotFound(t *testing.T) {
 	ctx := context.Background()
-	client, err := NewClientBuilder(vcsutils.BitbucketCloud).Build()
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, http.MethodDelete, r.Method)
+		assert.Equal(t, basicAuthHeader, r.Header.Get("Authorization"))
+		w.WriteHeader(http.StatusNotFound)
+		_, err := w.Write([]byte("Not Found"))
+		assert.NoError(t, err)
+	})
+	server := httptest.NewServer(handler)
+	defer server.Close()
+
+	clientBuilder := NewClientBuilder(vcsutils.BitbucketCloud).ApiEndpoint(server.URL).Token(token).Username("frogger")
+	client, err := clientBuilder.Build()
 	assert.NoError(t, err)
 
-	err = client.DeletePullRequestReviewComments(ctx, owner, repo1, 1, CommentInfo{})
-	assert.ErrorIs(t, err, errBitbucketDeletePullRequestComment)
+	err = client.DeletePullRequestComment(ctx, owner, repo1, 1, 999)
+	assert.ErrorContains(t, err, "404")
+}
+
+func TestBitbucketCloudClient_DeletePullRequestComment_ValidationError(t *testing.T) {
+	ctx := context.Background()
+	client := BitbucketCloudClient{}
+	err := client.DeletePullRequestComment(ctx, "", repo1, 1, 42)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "owner")
+}
+
+func TestBitbucketCloudClient_DeletePullRequestReviewComments(t *testing.T) {
+	ctx := context.Background()
+
+	// Verify that DeletePullRequestReviewComments delegates each comment to DeletePullRequestComment.
+	deletedIDs := make(map[string]bool)
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, http.MethodDelete, r.Method)
+		assert.Equal(t, basicAuthHeader, r.Header.Get("Authorization"))
+		deletedIDs[r.RequestURI] = true
+		w.WriteHeader(http.StatusNoContent)
+	})
+	server := httptest.NewServer(handler)
+	defer server.Close()
+
+	clientBuilder := NewClientBuilder(vcsutils.BitbucketCloud).ApiEndpoint(server.URL).Token(token).Username("frogger")
+	client, err := clientBuilder.Build()
+	assert.NoError(t, err)
+
+	err = client.DeletePullRequestReviewComments(ctx, owner, repo1, 1,
+		CommentInfo{ID: 10},
+		CommentInfo{ID: 20},
+	)
+	assert.NoError(t, err)
+	assert.True(t, deletedIDs[fmt.Sprintf("/repositories/%s/%s/pullrequests/1/comments/10", owner, repo1)])
+	assert.True(t, deletedIDs[fmt.Sprintf("/repositories/%s/%s/pullrequests/1/comments/20", owner, repo1)])
+}
+
+func TestBitbucketCloudClient_DeletePullRequestReviewComments_ErrorPropagation(t *testing.T) {
+	ctx := context.Background()
+
+	// Return 500 for every request — verify the error is returned and the loop stops.
+	callCount := 0
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		callCount++
+		w.WriteHeader(http.StatusInternalServerError)
+	})
+	server := httptest.NewServer(handler)
+	defer server.Close()
+
+	client, err := NewClientBuilder(vcsutils.BitbucketCloud).ApiEndpoint(server.URL).Token(token).Username("frogger").Build()
+	assert.NoError(t, err)
+
+	err = client.DeletePullRequestReviewComments(ctx, owner, repo1, 1,
+		CommentInfo{ID: 10},
+		CommentInfo{ID: 20},
+	)
+	assert.Error(t, err)
+	// Loop must stop after the first failure — only one request should have been made.
+	assert.Equal(t, 1, callCount)
 }
 
 func TestBitbucketCloudClient_DownloadFileFromRepo(t *testing.T) {

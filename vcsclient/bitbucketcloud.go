@@ -3,16 +3,22 @@ package vcsclient
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
+	"os"
+	"os/exec"
+	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
 
+	biutils "github.com/jfrog/build-info-go/utils"
 	"github.com/jfrog/gofrog/datastructures"
 	"github.com/ktrysmt/go-bitbucket"
 
@@ -45,7 +51,14 @@ func NewBitbucketCloudClient(vcsInfo VcsInfo, logger vcsutils.Log) (*BitbucketCl
 }
 
 func (client *BitbucketCloudClient) buildBitbucketCloudClient(_ context.Context) (*bitbucket.Client, error) {
-	bitbucketClient, err := bitbucket.NewBasicAuth(client.vcsInfo.Username, client.vcsInfo.Token)
+	var bitbucketClient *bitbucket.Client
+	var err error
+
+	if client.vcsInfo.Username == "" {
+		bitbucketClient, err = bitbucket.NewOAuthbearerToken(client.vcsInfo.Token)
+	} else {
+		bitbucketClient, err = bitbucket.NewBasicAuth(client.vcsInfo.Username, client.vcsInfo.Token)
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -53,6 +66,16 @@ func (client *BitbucketCloudClient) buildBitbucketCloudClient(_ context.Context)
 		bitbucketClient.SetApiBaseURL(*client.url)
 	}
 	return bitbucketClient, nil
+}
+
+// setAuthenticationHeader sets either Basic Auth or Bearer token on an outgoing HTTP request,
+// depending on whether a username was provided in the VCS info.
+func (client *BitbucketCloudClient) setAuthenticationHeader(req *http.Request) {
+	if client.vcsInfo.Username != "" {
+		req.SetBasicAuth(client.vcsInfo.Username, client.vcsInfo.Token)
+	} else {
+		req.Header.Set("Authorization", "Bearer "+client.vcsInfo.Token)
+	}
 }
 
 // TestConnection on Bitbucket cloud
@@ -154,7 +177,7 @@ func (client *BitbucketCloudClient) AddSshKeyToRepository(ctx context.Context, o
 		return
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.SetBasicAuth(client.vcsInfo.Username, client.vcsInfo.Token)
+	client.setAuthenticationHeader(req)
 
 	bitbucketClient, err := client.buildBitbucketCloudClient(ctx)
 	if err != nil {
@@ -177,6 +200,11 @@ func (client *BitbucketCloudClient) AddSshKeyToRepository(ctx context.Context, o
 type bitbucketCloudAddSSHKeyRequest struct {
 	Key   string `json:"key"`
 	Label string `json:"label"`
+}
+
+type bitbucketCloudInlineCommentRequest struct {
+	Content commentContent `json:"content"`
+	Inline  inlineDetails  `json:"inline"`
 }
 
 // CreateWebhook on Bitbucket cloud
@@ -283,9 +311,13 @@ func (client *BitbucketCloudClient) GetCommitStatuses(ctx context.Context, owner
 	return results, err
 }
 
-// DownloadRepository on Bitbucket cloud
-func (client *BitbucketCloudClient) DownloadRepository(ctx context.Context, owner, repository, branch,
-	localPath string) error {
+func (client *BitbucketCloudClient) DownloadRepository(ctx context.Context, owner, repository, branch, localPath string) error {
+	// TODO: Once Atlassian fixes BCLOUD-23783, Bearer tokens will work for archive downloads, and we can remove this workaround.
+	// Until then, use git clone for Bearer token auth (token present, no username).
+	// No-credentials case (public repos, theoretical in practice) falls through to the archive path as it did originally.
+	if client.vcsInfo.Username == "" && client.vcsInfo.Token != "" {
+		return client.downloadRepositoryViaGitClone(ctx, owner, repository, branch, localPath)
+	}
 	bitbucketClient, err := client.buildBitbucketCloudClient(ctx)
 	if err != nil {
 		return err
@@ -308,8 +340,8 @@ func (client *BitbucketCloudClient) DownloadRepository(ctx context.Context, owne
 	if err != nil {
 		return err
 	}
-	if len(client.vcsInfo.Username) > 0 || len(client.vcsInfo.Token) > 0 {
-		getRequest.SetBasicAuth(client.vcsInfo.Username, client.vcsInfo.Token)
+	if len(client.vcsInfo.Token) > 0 {
+		client.setAuthenticationHeader(getRequest)
 	}
 
 	response, err := bitbucketClient.HttpClient.Do(getRequest)
@@ -486,13 +518,86 @@ func (client *BitbucketCloudClient) AddPullRequestComment(ctx context.Context, o
 }
 
 // AddPullRequestReviewComments on Bitbucket cloud
-func (client *BitbucketCloudClient) AddPullRequestReviewComments(_ context.Context, _, _ string, _ int, _ ...PullRequestComment) error {
-	return errBitbucketAddPullRequestReviewCommentsNotSupported
+func (client *BitbucketCloudClient) AddPullRequestReviewComments(ctx context.Context, owner, repository string, pullRequestID int, comments ...PullRequestComment) error {
+	err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository})
+	if err != nil {
+		return err
+	}
+	endpoint := client.vcsInfo.APIEndpoint
+	if endpoint == "" {
+		endpoint = bitbucket.DEFAULT_BITBUCKET_API_BASE_URL
+	}
+	bitbucketClient, err := client.buildBitbucketCloudClient(ctx)
+	if err != nil {
+		return err
+	}
+	for _, comment := range comments {
+		requestBody := bitbucketCloudInlineCommentRequest{
+			Content: commentContent{Raw: comment.Content},
+			Inline: inlineDetails{
+				To:   comment.NewEndLine,
+				Path: comment.NewFilePath,
+			},
+		}
+		body := new(bytes.Buffer)
+		if err = json.NewEncoder(body).Encode(requestBody); err != nil {
+			return err
+		}
+		u := fmt.Sprintf("%s/repositories/%s/%s/pullrequests/%d/comments", endpoint, owner, repository, pullRequestID)
+		req, err := http.NewRequestWithContext(ctx, http.MethodPost, u, body)
+		if err != nil {
+			return err
+		}
+		req.Header.Set("Content-Type", "application/json")
+		client.setAuthenticationHeader(req)
+		response, err := bitbucketClient.HttpClient.Do(req)
+		if err != nil {
+			return err
+		}
+		if closeErr := errors.Join(vcsutils.DiscardResponseBody(response), response.Body.Close()); closeErr != nil {
+			return closeErr
+		}
+		if response.StatusCode >= 300 {
+			return fmt.Errorf("%s", response.Status)
+		}
+	}
+	return nil
 }
 
 // ListPullRequestReviewComments on Bitbucket cloud
-func (client *BitbucketCloudClient) ListPullRequestReviewComments(_ context.Context, _, _ string, _ int) ([]CommentInfo, error) {
-	return nil, errBitbucketListPullRequestReviewCommentsNotSupported
+func (client *BitbucketCloudClient) ListPullRequestReviewComments(ctx context.Context, owner, repository string, pullRequestID int) ([]CommentInfo, error) {
+	err := validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository})
+	if err != nil {
+		return nil, err
+	}
+	bitbucketClient, err := client.buildBitbucketCloudClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+	options := &bitbucket.PullRequestsOptions{
+		Owner:    owner,
+		RepoSlug: repository,
+		ID:       fmt.Sprint(pullRequestID),
+	}
+	comments, err := bitbucketClient.Repositories.PullRequests.GetComments(options)
+	if err != nil {
+		return nil, err
+	}
+	parsedComments, err := vcsutils.RemapFields[commentsResponse](comments, "json")
+	if err != nil {
+		return nil, err
+	}
+	var result []CommentInfo
+	for _, comment := range parsedComments.Values {
+		if comment.Inline != nil {
+			result = append(result, CommentInfo{
+				ID:      comment.ID,
+				Content: comment.Content.Raw,
+				Created: comment.Created,
+			})
+		}
+	}
+	return result, nil
 }
 
 func (client *BitbucketCloudClient) ListPullRequestReviews(ctx context.Context, owner, repository string, pullRequestID int) ([]PullRequestReviewDetails, error) {
@@ -566,13 +671,47 @@ func (client *BitbucketCloudClient) ListPullRequestComments(ctx context.Context,
 }
 
 // DeletePullRequestReviewComments on Bitbucket cloud
-func (client *BitbucketCloudClient) DeletePullRequestReviewComments(_ context.Context, _, _ string, _ int, _ ...CommentInfo) error {
-	return errBitbucketDeletePullRequestComment
+func (client *BitbucketCloudClient) DeletePullRequestReviewComments(ctx context.Context, owner, repository string, pullRequestID int, comments ...CommentInfo) error {
+	for _, comment := range comments {
+		if err := client.DeletePullRequestComment(ctx, owner, repository, pullRequestID, int(comment.ID)); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // DeletePullRequestComment on Bitbucket cloud
-func (client *BitbucketCloudClient) DeletePullRequestComment(_ context.Context, _, _ string, _, _ int) error {
-	return errBitbucketDeletePullRequestComment
+func (client *BitbucketCloudClient) DeletePullRequestComment(ctx context.Context, owner, repository string, pullRequestID, commentID int) (err error) {
+	err = validateParametersNotBlank(map[string]string{"owner": owner, "repository": repository})
+	if err != nil {
+		return
+	}
+	endpoint := client.vcsInfo.APIEndpoint
+	if endpoint == "" {
+		endpoint = bitbucket.DEFAULT_BITBUCKET_API_BASE_URL
+	}
+	u := fmt.Sprintf("%s/repositories/%s/%s/pullrequests/%d/comments/%d", endpoint, owner, repository, pullRequestID, commentID)
+	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, u, nil)
+	if err != nil {
+		return
+	}
+	client.setAuthenticationHeader(req)
+	bitbucketClient, err := client.buildBitbucketCloudClient(ctx)
+	if err != nil {
+		return err
+	}
+	response, err := bitbucketClient.HttpClient.Do(req)
+	if err != nil {
+		return
+	}
+	defer func() {
+		err = errors.Join(err, vcsutils.DiscardResponseBody(response), response.Body.Close())
+	}()
+	if response.StatusCode >= 300 {
+		body, _ := io.ReadAll(response.Body)
+		err = fmt.Errorf("failed to delete comment (HTTP %d): %s", response.StatusCode, string(body))
+	}
+	return
 }
 
 // GetLatestCommit on Bitbucket cloud
@@ -651,7 +790,14 @@ func (client *BitbucketCloudClient) GetRepositoryInfo(ctx context.Context, owner
 	for _, link := range holder.Clone {
 		switch strings.ToLower(link.Name) {
 		case "https":
-			info.HTTP = link.HRef
+			// Bitbucket Cloud embeds the token as userinfo in the HTTPS clone URL when using access tokens.
+			// Strip it so callers receive a plain URL without credentials.
+			if parsed, parseErr := url.Parse(link.HRef); parseErr == nil {
+				parsed.User = nil
+				info.HTTP = parsed.String()
+			} else {
+				info.HTTP = link.HRef
+			}
 		case "ssh":
 			info.SSH = link.HRef
 		}
@@ -873,10 +1019,16 @@ type commentDetails struct {
 	IsDeleted bool           `json:"deleted"`
 	Content   commentContent `json:"content"`
 	Created   time.Time      `json:"created_on"`
+	Inline    *inlineDetails `json:"inline,omitempty"`
 }
 
 type commentContent struct {
 	Raw string `json:"raw"`
+}
+
+type inlineDetails struct {
+	To   int    `json:"to"`
+	Path string `json:"path"`
 }
 
 type commitResponse struct {
@@ -1025,4 +1177,62 @@ func splitBitbucketCloudRepoName(name string) (string, string) {
 		return "", ""
 	}
 	return split[0], split[1]
+}
+
+// Clones the repository using git with x-token-auth authentication.
+// This is a workaround for BCLOUD-23783: Bitbucket Cloud archive downloads do not support Bearer
+// token auth. Remove this fallback once Atlassian resolves BCLOUD-23783.
+func (client *BitbucketCloudClient) downloadRepositoryViaGitClone(ctx context.Context, owner, repository, branch, localPath string) (err error) {
+	client.logger.Debug("Using git clone fallback (BCLOUD-23783 workaround: Bearer tokens not supported for archive downloads)")
+	cloneURL := fmt.Sprintf("https://bitbucket.org/%s/%s.git", owner, repository)
+
+	tempDir, err := os.MkdirTemp("", "bitbucket-clone-*")
+	if err != nil {
+		return fmt.Errorf("failed to create temp directory: %w", err)
+	}
+	defer func() {
+		if removeErr := os.RemoveAll(tempDir); removeErr != nil {
+			err = errors.Join(err, removeErr)
+		}
+	}()
+
+	args := []string{"clone", "--depth", "1"}
+	if branch != "" {
+		args = append(args, "--branch", branch)
+	}
+	args = append(args, cloneURL, tempDir)
+
+	cmd := exec.CommandContext(ctx, "git", args...)
+	if client.vcsInfo.Token != "" {
+		creds := base64.StdEncoding.EncodeToString([]byte("x-token-auth:" + client.vcsInfo.Token))
+		cmd.Env = append(os.Environ(),
+			"GIT_CONFIG_COUNT=1",
+			"GIT_CONFIG_KEY_0=http.extraHeader",
+			fmt.Sprintf("GIT_CONFIG_VALUE_0=Authorization: Basic %s", creds),
+		)
+	}
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
+	if err = cmd.Run(); err != nil {
+		stderrStr := stderr.String()
+		if client.vcsInfo.Token != "" {
+			stderrStr = strings.ReplaceAll(stderrStr, client.vcsInfo.Token, "***")
+		}
+		return fmt.Errorf("git clone failed: %w, stderr: %s", err, stderrStr)
+	}
+	client.logger.Info(repository, vcsutils.SuccessfulRepoDownload)
+
+	if err = os.RemoveAll(filepath.Join(tempDir, ".git")); err != nil {
+		client.logger.Debug("Failed to remove .git directory:", err)
+	}
+	if err = biutils.CopyDir(tempDir, localPath, true, nil); err != nil {
+		return fmt.Errorf("failed to copy repository contents: %w", err)
+	}
+	client.logger.Info(vcsutils.SuccessfulRepoExtraction)
+
+	repositoryInfo, err := client.GetRepositoryInfo(ctx, owner, repository)
+	if err != nil {
+		return err
+	}
+	return vcsutils.CreateDotGitFolderWithRemote(localPath, "origin", repositoryInfo.CloneInfo.HTTP)
 }
