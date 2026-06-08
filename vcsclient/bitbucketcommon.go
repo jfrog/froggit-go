@@ -23,6 +23,7 @@ var (
 	errBitbucketListListPullRequestReviewsNotSupported       = fmt.Errorf("list pull request reviews is %s", notSupportedOnBitbucket)
 	errBitbucketCreateBranchNotSupported                     = fmt.Errorf("creating a branch is %s", notSupportedOnBitbucket)
 	errBitbucketAllowWorkflowsNotSupported                   = fmt.Errorf("allow workflows is %s", notSupportedOnBitbucket)
+	errBitbucketTriggerWorkflowNotSupported                  = fmt.Errorf("trigger workflow is %s", notSupportedOnBitbucket)
 	errBitbucketAddOrganizationSecretNotSupported            = fmt.Errorf("adding organization secret is %s", notSupportedOnBitbucket)
 	errBitbucketCreateOrgVariableNotSupported                = fmt.Errorf("creating organization variable is %s", notSupportedOnBitbucket)
 	errBitbucketCommitAndPushFilesNotSupported               = fmt.Errorf("commit and push files is %s", notSupportedOnBitbucket)

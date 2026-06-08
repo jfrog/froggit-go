@@ -932,6 +932,10 @@ func (client *BitbucketServerClient) AllowWorkflows(ctx context.Context, owner s
 	return errBitbucketAllowWorkflowsNotSupported
 }
 
+func (client *BitbucketServerClient) TriggerWorkflow(_ context.Context, _, _, _ string, _ map[string]interface{}) error {
+	return errBitbucketTriggerWorkflowNotSupported
+}
+
 func (client *BitbucketServerClient) AddOrganizationSecret(ctx context.Context, owner, secretName, secretValue string) error {
 	return errBitbucketAddOrganizationSecretNotSupported
 }

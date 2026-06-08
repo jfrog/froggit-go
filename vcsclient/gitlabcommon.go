@@ -8,6 +8,7 @@ var errGitLabCodeScanningNotSupported = errors.New("code scanning is not support
 var errGitLabGetRepoEnvironmentInfoNotSupported = errors.New("get repository environment info is currently not supported on Gitlab")
 var errGitLabCreateBranchNotSupported = errors.New("creating a branch is not supported on Gitlab")
 var errGitLabAllowWorkflowsNotSupported = errors.New("allow workflows is not supported on Gitlab")
+var errGitLabTriggerWorkflowNotSupported = errors.New("trigger workflow is not supported on Gitlab")
 var errGitLLabAddOrganizationSecretNotSupported = errors.New("adding organization secret is not supported on Gitlab")
 var errGitLabCreateOrgVariableNotSupported = errors.New("creating organization variable is not supported on Gitlab")
 var errGitLabCommitAndPushFilesNotSupported = errors.New("commit and push files is not supported on Gitlab")
