@@ -387,7 +387,7 @@ type VcsClient interface {
 
 	// TriggerWorkflow sends a repository_dispatch event to trigger a workflow in the given repository.
 	// eventType is the custom event type string that the workflow listens on.
-	// payload is an arbitrary key-value map that will be available as github.event.client_payload in the workflow.
+	// payload is an arbitrary key-value map that will be available as extra information about the webhook
 	TriggerWorkflow(ctx context.Context, owner, repo, eventType string, payload map[string]interface{}) error
 
 	// AddOrganizationSecret adds a secret to the organization
