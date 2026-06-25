@@ -386,7 +386,7 @@ type VcsClient interface {
 	AllowWorkflows(ctx context.Context, owner string) error
 
 	// TriggerWorkflow sends a repository_dispatch event to trigger a workflow in the given repository.
-	// eventType is the custom event type string that the workflow listens on.
+	// eventType is a custom webhook event name. (Required), Workflows can listen to this event type
 	// payload is an arbitrary key-value map that will be available as extra information about the webhook
 	TriggerWorkflow(ctx context.Context, owner, repo, eventType string, payload map[string]interface{}) error
 
