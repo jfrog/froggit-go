@@ -791,6 +791,10 @@ func (client *AzureReposClient) AllowWorkflows(ctx context.Context, owner string
 	return getUnsupportedInAzureError("allow workflows")
 }
 
+func (client *AzureReposClient) TriggerWorkflow(_ context.Context, _, _, _ string, _ map[string]interface{}) error {
+	return getUnsupportedInAzureError("trigger workflow")
+}
+
 func (client *AzureReposClient) AddOrganizationSecret(ctx context.Context, owner, secretName, secretValue string) error {
 	return getUnsupportedInAzureError("add organization secret")
 }

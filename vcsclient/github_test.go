@@ -1118,6 +1118,23 @@ func TestGitHubClient_AllowWorkflows(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestGitHubClient_TriggerWorkflow(t *testing.T) {
+	ctx := context.Background()
+	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, nil,
+		fmt.Sprintf("/repos/%s/%s/dispatches", owner, repo1), createGitHubHandler)
+	defer cleanUp()
+	err := client.TriggerWorkflow(ctx, owner, repo1, "jfrog-auto-fix", map[string]interface{}{
+		"component_name":   "org.apache.commons:commons-lang3",
+		"affected_version": "3.12.0",
+		"fix_version":      "3.14.0",
+	})
+	assert.NoError(t, err)
+
+	// Bad client should return an error
+	err = createBadGitHubClient(t).TriggerWorkflow(ctx, owner, repo1, "jfrog-auto-fix", nil)
+	assert.Error(t, err)
+}
+
 func TestGitHubClient_AddOrganizationSecret(t *testing.T) {
 	ctx := context.Background()
 	publicKeyResponse := github.PublicKey{

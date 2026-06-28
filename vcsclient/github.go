@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	base64Utils "encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -1234,6 +1235,27 @@ func (client *GitHubClient) AllowWorkflows(ctx context.Context, owner string) er
 		return nil, err
 	})
 	return err
+}
+
+func (client *GitHubClient) TriggerWorkflow(ctx context.Context, owner, repo, eventType string, payload map[string]interface{}) error {
+	err := validateParametersNotBlank(map[string]string{"owner": owner, "repo": repo, "eventType": eventType})
+	if err != nil {
+		return err
+	}
+
+	rawPayload, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("failed to marshal workflow payload: %w", err)
+	}
+	raw := json.RawMessage(rawPayload)
+
+	return client.runWithRateLimitRetries(func() (*github.Response, error) {
+		_, resp, err := client.ghClient.Repositories.Dispatch(ctx, owner, repo, github.DispatchRequestOptions{
+			EventType:     eventType,
+			ClientPayload: &raw,
+		})
+		return resp, err
+	})
 }
 
 func (client *GitHubClient) GetRepoCollaborators(ctx context.Context, owner, repo, affiliation, permission string) ([]string, error) {

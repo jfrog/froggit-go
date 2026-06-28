@@ -841,6 +841,10 @@ func (client *GitLabClient) AllowWorkflows(ctx context.Context, owner string) er
 	return errGitLabAllowWorkflowsNotSupported
 }
 
+func (client *GitLabClient) TriggerWorkflow(_ context.Context, _, _, _ string, _ map[string]interface{}) error {
+	return errGitLabTriggerWorkflowNotSupported
+}
+
 func (client *GitLabClient) AddOrganizationSecret(ctx context.Context, owner, secretName, secretValue string) error {
 	return errGitLLabAddOrganizationSecretNotSupported
 }
