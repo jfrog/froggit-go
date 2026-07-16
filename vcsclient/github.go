@@ -1405,7 +1405,29 @@ func (client *GitHubClient) commitSingleFile(
 		},
 	}
 
+	// Contents API requires the current blob SHA when updating an existing file.
+	var existing *github.RepositoryContent
 	err := client.runWithRateLimitRetries(func() (*github.Response, error) {
+		var ghResponse *github.Response
+		var getErr error
+		existing, _, ghResponse, getErr = client.ghClient.Repositories.GetContents(
+			ctx, owner, repo, file.Path, &github.RepositoryContentGetOptions{Ref: branch})
+		if getErr != nil {
+			if ghResponse != nil && ghResponse.StatusCode == http.StatusNotFound {
+				return ghResponse, nil
+			}
+			return ghResponse, getErr
+		}
+		return ghResponse, nil
+	})
+	if err != nil {
+		return fmt.Errorf("failed to commit single file %s: %w", file.Path, err)
+	}
+	if existing != nil && existing.SHA != nil {
+		fileOptions.SHA = existing.SHA
+	}
+
+	err = client.runWithRateLimitRetries(func() (*github.Response, error) {
 		_, ghResponse, err := client.ghClient.Repositories.CreateFile(ctx, owner, repo, file.Path, fileOptions)
 		return ghResponse, err
 	})
