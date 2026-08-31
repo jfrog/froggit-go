@@ -1707,3 +1707,38 @@ func TestGithubClient_UploadSnapshotToDependencyGraph(t *testing.T) {
 	err = createBadGitHubClient(t).UploadSnapshotToDependencyGraph(ctx, owner, repo1, &snapshot)
 	assert.Error(t, err)
 }
+
+func TestGitHubClient_GetMergeBase(t *testing.T) {
+	ctx := context.Background()
+	response, err := os.ReadFile(filepath.Join("testdata", "github", "compare_commits.json"))
+	assert.NoError(t, err)
+
+	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, response,
+		"/repos/jfrog/repo-1/compare/sha-1...sha-2?per_page=1", createGitHubHandler)
+	defer cleanUp()
+
+	result, err := client.GetMergeBase(ctx, "jfrog", "repo-1", "sha-1", "sha-2")
+
+	assert.NoError(t, err)
+	assert.Equal(t, "ce1965514d711e17045b849e11105d9c095ee935", result.Hash)
+}
+
+func TestGitHubClient_GetMergeBaseBlankParams(t *testing.T) {
+	client, err := NewClientBuilder(vcsutils.GitHub).Build()
+	assert.NoError(t, err)
+
+	_, err = client.GetMergeBase(context.Background(), "", "repo-1", "sha-1", "sha-2")
+
+	assert.ErrorContains(t, err, "required parameter 'owner' is missing")
+}
+
+func TestGitHubClient_GetMergeBaseServerError(t *testing.T) {
+	client, cleanUp := createServerAndClientReturningStatus(t, vcsutils.GitHub, false, nil,
+		"/repos/jfrog/repo-1/compare/sha-1...sha-2?per_page=1", http.StatusInternalServerError, createGitHubHandler)
+	defer cleanUp()
+
+	result, err := client.GetMergeBase(context.Background(), "jfrog", "repo-1", "sha-1", "sha-2")
+
+	assert.Error(t, err)
+	assert.Empty(t, result.Hash)
+}

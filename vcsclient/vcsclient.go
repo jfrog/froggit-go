@@ -2,12 +2,16 @@ package vcsclient
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
 
 	"github.com/jfrog/froggit-go/vcsutils"
 )
+
+// ErrMergeBaseUnsupported is returned by GetMergeBase for providers that do not implement merge-base resolution
+var ErrMergeBaseUnsupported = errors.New("merge base resolution is not yet supported for this provider")
 
 // CommitStatus the status of the commit in the VCS
 type CommitStatus int
@@ -180,6 +184,13 @@ type VcsClient interface {
 	// localPath  - Local file system path
 	DownloadRepository(ctx context.Context, owner, repository, branch, localPath string) error
 
+	// DownloadRepositoryByCommit downloads the repository at a specific commit to the given path
+	// owner      - User or organization
+	// repository - VCS repository name
+	// commitSha  - The commit to download
+	// localPath  - Local file system path
+	DownloadRepositoryByCommit(ctx context.Context, owner, repository, commitSha, localPath string) error
+
 	// CreatePullRequest Creates a pull request between 2 different branches in the same repository
 	// owner        - User or organization
 	// repository   - VCS repository name
@@ -276,6 +287,13 @@ type VcsClient interface {
 	// repository - VCS repository name
 	// branch     - The name of the branch
 	GetLatestCommit(ctx context.Context, owner, repository, branch string) (CommitInfo, error)
+
+	// GetMergeBase returns the best common ancestor of two branches, the commit they diverged from
+	// owner      - User or organization
+	// repository - VCS repository name
+	// refBefore  - Branch to compare from, typically the target branch of a pull request
+	// refAfter   - Branch to compare to, typically the source branch of a pull request
+	GetMergeBase(ctx context.Context, owner, repository, refBefore, refAfter string) (CommitInfo, error)
 
 	// GetCommits Gets the most recent commit of a branch
 	// owner      - User or organization
@@ -586,10 +604,21 @@ type FileToCommit struct {
 	Content string
 }
 
+func mergeBaseNotFoundError(owner, repository, refBefore, refAfter string) error {
+	return fmt.Errorf("no merge base found for <%s/%s> between %s and %s", owner, repository, refBefore, refAfter)
+}
+
+func validateNotBlank(name, value string) error {
+	if strings.TrimSpace(value) == "" {
+		return fmt.Errorf("validation failed: required parameter '%s' is missing", name)
+	}
+	return nil
+}
+
 func validateParametersNotBlank(paramNameValueMap map[string]string) error {
 	var errorMessages []string
 	for k, v := range paramNameValueMap {
-		if strings.TrimSpace(v) == "" {
+		if validateNotBlank(k, v) != nil {
 			errorMessages = append(errorMessages, fmt.Sprintf("required parameter '%s' is missing", k))
 		}
 	}

@@ -129,7 +129,17 @@
       "minVersion": "3.2",
       "maxVersion": "7.1",
       "releasedVersion": "0.0"
+    },
+    {
+      "id": "7cf2abb6-c964-4f7e-9872-f78c66e72e9c",
+      "area": "git",
+      "resourceName": "mergeBases",
+      "routeTemplate": "{project}/_apis/{area}/repositories/{repositoryNameOrId}/commits/{commitId}/{resource}",
+      "resourceVersion": 1,
+      "minVersion": "4.1",
+      "maxVersion": "7.1",
+      "releasedVersion": "0.0"
     }
   ],
-  "count": 2
+  "count": 14
 }

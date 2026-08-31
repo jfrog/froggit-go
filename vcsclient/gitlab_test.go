@@ -1072,3 +1072,29 @@ func TestGitLabClient_ListPullRequestsAssociatedWithCommit(t *testing.T) {
 	assert.Equal(t, repo1, result[0].Target.Repository)
 	assert.Equal(t, owner, result[0].Target.Owner)
 }
+
+func TestGitLabClient_GetMergeBase(t *testing.T) {
+	ctx := context.Background()
+	response, err := os.ReadFile(filepath.Join("testdata", "gitlab", "merge_base.json"))
+	assert.NoError(t, err)
+
+	client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, response,
+		fmt.Sprintf("/api/v4/projects/%s/repository/merge_base?refs%%5B%%5D=master&refs%%5B%%5D=feature",
+			url.PathEscape(owner+"/"+repo1)), createGitLabHandler)
+	defer cleanUp()
+
+	result, err := client.GetMergeBase(ctx, owner, repo1, "master", "feature")
+
+	assert.NoError(t, err)
+	assert.Equal(t, "3cc4d81a5ccedf3e4ab76ef44fae95f002de58c1", result.Hash)
+	assert.Equal(t, "Auto Runner Releaser", result.AuthorName)
+}
+
+func TestGitLabClient_GetMergeBaseBlankParams(t *testing.T) {
+	client, err := NewClientBuilder(vcsutils.GitLab).Build()
+	assert.NoError(t, err)
+
+	_, err = client.GetMergeBase(context.Background(), owner, "", "master", "feature")
+
+	assert.ErrorContains(t, err, "required parameter 'repository' is missing")
+}

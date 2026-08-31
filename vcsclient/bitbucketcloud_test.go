@@ -181,7 +181,34 @@ func TestBitbucketCloud_DownloadRepository_BearerToken_RoutesToGitClone(t *testi
 
 	err = client.DownloadRepository(ctx, owner, repo1, branch1, dir)
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "git clone failed", "error should originate from the git clone path, not the archive download path")
+	assert.Contains(t, err.Error(), "git clone failed", "a branch must still be downloaded with git clone")
+	assert.False(t, archiveEndpointCalled, "archive HTTP endpoint must not be called when no username is set")
+}
+
+func TestBitbucketCloud_DownloadRepositoryByCommit_BearerToken_RoutesToGitFetch(t *testing.T) {
+	archiveEndpointCalled := false
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		archiveEndpointCalled = true
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer server.Close()
+
+	client, err := NewClientBuilder(vcsutils.BitbucketCloud).
+		ApiEndpoint(server.URL).
+		Token(token).
+		Build()
+	assert.NoError(t, err)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	dir, err := os.MkdirTemp("", "")
+	assert.NoError(t, err)
+	defer func() { _ = os.RemoveAll(dir) }()
+
+	err = client.DownloadRepositoryByCommit(ctx, owner, repo1, "d1c1e8e0e0b5bd1e8e0e0b5bd1e8e0e0b5bd1e8e", dir)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "git init failed", "a commit sha must be downloaded with git fetch, which starts by initializing a repository")
 	assert.False(t, archiveEndpointCalled, "archive HTTP endpoint must not be called when no username is set")
 }
 
@@ -909,4 +936,29 @@ func createBitbucketCloudHandler(t *testing.T, expectedURI string, response []by
 		}
 		assert.Equal(t, basicAuthHeader, r.Header.Get("Authorization"))
 	}
+}
+
+func TestBitbucketCloud_GetMergeBase(t *testing.T) {
+	ctx := context.Background()
+	response, err := os.ReadFile(filepath.Join("testdata", "bitbucketcloud", "merge_base.json"))
+	assert.NoError(t, err)
+
+	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketCloud, true, response,
+		"/repositories/jfrog/repo-1/merge-base/master..feat%2Fslashed-name", createBitbucketCloudHandler)
+	defer cleanUp()
+
+	result, err := client.GetMergeBase(ctx, "jfrog", "repo-1", "master", "feat/slashed-name")
+
+	assert.NoError(t, err)
+	assert.Equal(t, "93983fd5cfad48aae91480c6db0dee1caa5dc4e1", result.Hash)
+	assert.Equal(t, "Albert Sundjaja", result.AuthorName)
+}
+
+func TestBitbucketCloud_GetMergeBaseBlankParams(t *testing.T) {
+	client, err := NewClientBuilder(vcsutils.BitbucketCloud).Build()
+	assert.NoError(t, err)
+
+	_, err = client.GetMergeBase(context.Background(), "jfrog", "", "master", "feature")
+
+	assert.ErrorContains(t, err, "required parameter 'repository' is missing")
 }

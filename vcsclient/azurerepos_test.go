@@ -5,17 +5,19 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/jfrog/froggit-go/vcsutils"
-	"github.com/microsoft/azure-devops-go-api/azuredevops/v7"
-	"github.com/microsoft/azure-devops-go-api/azuredevops/v7/git"
-	"github.com/microsoft/azure-devops-go-api/azuredevops/v7/webapi"
-	"github.com/stretchr/testify/assert"
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/jfrog/froggit-go/vcsutils"
+	"github.com/microsoft/azure-devops-go-api/azuredevops/v7"
+	"github.com/microsoft/azure-devops-go-api/azuredevops/v7/git"
+	"github.com/microsoft/azure-devops-go-api/azuredevops/v7/webapi"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestAzureRepos_Connection(t *testing.T) {
@@ -112,7 +114,7 @@ func TestAzureRepos_TestDownloadRepository(t *testing.T) {
 	repoFile, err := os.ReadFile(filepath.Join("testdata", "azurerepos", "hello_world.zip"))
 	assert.NoError(t, err)
 
-	downloadURL := fmt.Sprintf("/%s/_apis/git/repositories/%s/items/items?path=/&versionDescriptor[version]=%s&$format=zip",
+	downloadURL := fmt.Sprintf("/%s/_apis/git/repositories/%s/items/items?path=/&versionDescriptor[version]=%s&versionDescriptor[versionType]=branch&$format=zip",
 		"",
 		repo1,
 		branch1)
@@ -945,10 +947,141 @@ func createBadAzureReposClient(t *testing.T, response []byte) (VcsClient, func()
 		vcsutils.AzureRepos,
 		true,
 		response,
-		fmt.Sprintf("bad^endpoint/%s/_apis/git/repositories/%s/items/items?path=/&versionDescriptor[version]=%s&$format=zip",
+		fmt.Sprintf("bad^endpoint/%s/_apis/git/repositories/%s/items/items?path=/&versionDescriptor[version]=%s&versionDescriptor[versionType]=branch&$format=zip",
 			"",
 			repo1,
 			branch1),
 		createAzureReposHandler)
 	return client, cleanUp
+}
+
+func TestAzureRepos_GetMergeBase(t *testing.T) {
+	ctx := context.Background()
+	commitsResponse, err := os.ReadFile(filepath.Join("testdata", "azurerepos", "commits.json"))
+	assert.NoError(t, err)
+
+	client, cleanUp := createServerAndClient(t, vcsutils.AzureRepos, true, nil, "mergebases",
+		createAzureReposMergeBaseHandler(commitsResponse))
+	defer cleanUp()
+
+	result, err := client.GetMergeBase(ctx, "", repo1, "master", "feat/slashed-name")
+
+	assert.NoError(t, err)
+	assert.Equal(t, "86d6919952702f9ab03bc95b45687f145a663de0", result.Hash)
+}
+
+func TestAzureRepos_GetMergeBaseBlankParams(t *testing.T) {
+	client, err := NewClientBuilder(vcsutils.AzureRepos).Build()
+	assert.NoError(t, err)
+
+	_, err = client.GetMergeBase(context.Background(), "", "", "master", "feature")
+
+	assert.ErrorContains(t, err, "required parameter 'repository' is missing")
+}
+
+const (
+	masterSha  = "86d6919952702f9ab03bc95b45687f145a663de0"
+	featureSha = "11a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4"
+)
+
+func createAzureReposMergeBaseHandler(commitsResponse []byte) createHandlerFunc {
+	mergeBase := `{"count":1,"value":[{"commitId":"86d6919952702f9ab03bc95b45687f145a663de0","author":{"name":"Test User","email":"test@myserver.com","date":"2022-11-07T10:36:41Z"},"committer":{"name":"Test User","email":"test@myserver.com","date":"2022-11-07T10:36:41Z"},"comment":"merge base"}]}`
+	return func(t *testing.T, _ string, _ []byte, _ int) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
+			switch r.RequestURI {
+			case "/_apis":
+				jsonVal, err := os.ReadFile(filepath.Join("./", "testdata", "azurerepos", "resourcesResponse.json"))
+				assert.NoError(t, err)
+				_, err = w.Write(jsonVal)
+				assert.NoError(t, err)
+				return
+			case "/_apis/ResourceAreas":
+				_, err := w.Write([]byte(`{"value": [],"count": 0}`))
+				assert.NoError(t, err)
+				return
+			}
+			if strings.Contains(r.RequestURI, "mergeBases") {
+				// Azure rejects anything that is not a 40-hex object id, on BOTH sides.
+				// Distinct shas per side, so swapping CommitId and OtherCommitId fails the test.
+				assert.Contains(t, r.RequestURI, "/commits/"+masterSha+"/mergeBases")
+				assert.Contains(t, r.RequestURI, "otherCommitId="+featureSha)
+				assert.NotContains(t, r.RequestURI, "master")
+				assert.NotContains(t, r.RequestURI, "slashed")
+				_, err := w.Write([]byte(mergeBase))
+				assert.NoError(t, err)
+				return
+			}
+			if strings.Contains(r.RequestURI, "itemVersion.version=feat") {
+				_, err := w.Write([]byte(`{"count":1,"value":[{"commitId":"` + featureSha + `"}]}`))
+				assert.NoError(t, err)
+				return
+			}
+			_, err := w.Write(commitsResponse)
+			assert.NoError(t, err)
+		}
+	}
+}
+
+func TestAzureRepos_DownloadRepositoryAtCommit(t *testing.T) {
+	ctx := context.Background()
+	const commitSha = "be8b434506dfe97e27e7d8f35d3320b881ddb5c2"
+	var gotUri string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.Contains(r.RequestURI, "items/items") {
+			gotUri = r.RequestURI
+		}
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer server.Close()
+
+	client, err := NewClientBuilder(vcsutils.AzureRepos).ApiEndpoint(server.URL).Token(token).Project(project).Build()
+	assert.NoError(t, err)
+	dir, err := os.MkdirTemp("", "")
+	assert.NoError(t, err)
+	defer func() { _ = os.RemoveAll(dir) }()
+
+	_ = client.DownloadRepositoryByCommit(ctx, "", repo1, commitSha, dir)
+
+	// Without versionType=commit Azure reads the sha as a branch name and answers 404.
+	assert.Contains(t, gotUri, "versionDescriptor[versionType]=commit")
+	assert.Contains(t, gotUri, "versionDescriptor[version]="+commitSha)
+}
+
+func TestAzureRepos_DownloadRepositoryAtBranchKeepsBranchVersionType(t *testing.T) {
+	ctx := context.Background()
+	var gotUri string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.Contains(r.RequestURI, "items/items") {
+			gotUri = r.RequestURI
+		}
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer server.Close()
+
+	client, err := NewClientBuilder(vcsutils.AzureRepos).ApiEndpoint(server.URL).Token(token).Project(project).Build()
+	assert.NoError(t, err)
+	dir, err := os.MkdirTemp("", "")
+	assert.NoError(t, err)
+	defer func() { _ = os.RemoveAll(dir) }()
+
+	_ = client.DownloadRepository(ctx, "", repo1, "feat/slashed-name", dir)
+
+	assert.Contains(t, gotUri, "versionDescriptor[versionType]=branch")
+	assert.NotContains(t, gotUri, "versionType=commit")
+}
+
+func TestAzureRepos_DownloadRepositoryTransportErrorDoesNotPanic(t *testing.T) {
+	client, err := NewClientBuilder(vcsutils.AzureRepos).ApiEndpoint("http://127.0.0.1:8081").Token(token).Project(project).Build()
+	assert.NoError(t, err)
+	dir, err := os.MkdirTemp("", "")
+	assert.NoError(t, err)
+	defer func() { _ = os.RemoveAll(dir) }()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	assert.NotPanics(t, func() {
+		err = client.DownloadRepository(ctx, "", repo1, branch1, dir)
+	})
+	assert.Error(t, err)
 }

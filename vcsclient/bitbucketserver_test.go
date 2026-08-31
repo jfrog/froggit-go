@@ -1046,3 +1046,50 @@ func TestGetCommitsInDateRate(t *testing.T) {
 		})
 	}
 }
+
+func TestBitbucketServer_GetMergeBase(t *testing.T) {
+	ctx := context.Background()
+	mergeBaseResponse, err := os.ReadFile(filepath.Join("testdata", "bitbucketserver", "commit_single_response.json"))
+	assert.NoError(t, err)
+	commitsResponse, err := os.ReadFile(filepath.Join("testdata", "bitbucketserver", "commit_list_response.json"))
+	assert.NoError(t, err)
+
+	client, cleanUp := createServerAndClient(t, vcsutils.BitbucketServer, false, mergeBaseResponse, "",
+		createBitbucketServerMergeBaseHandler(commitsResponse))
+	defer cleanUp()
+
+	result, err := client.GetMergeBase(ctx, owner, repo1, "master", "feature/slashed-name")
+
+	assert.NoError(t, err)
+	assert.Equal(t, "abcdef0123abcdef4567abcdef8987abcdef6543", result.Hash)
+	assert.Equal(t, "charlie", result.AuthorName)
+}
+
+func TestBitbucketServer_GetMergeBaseBlankParams(t *testing.T) {
+	client, err := NewClientBuilder(vcsutils.BitbucketServer).Build()
+	assert.NoError(t, err)
+
+	_, err = client.GetMergeBase(context.Background(), owner, "", "master", "feature")
+
+	assert.ErrorContains(t, err, "required parameter 'repository' is missing")
+}
+
+func createBitbucketServerMergeBaseHandler(commitsResponse []byte) createHandlerFunc {
+	return func(t *testing.T, _ string, response []byte, expectedStatusCode int) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
+			if strings.Contains(r.RequestURI, "/merge-base") {
+				// The path segment must be the resolved commit id: Tomcat rejects encoded slashes.
+				assert.Contains(t, r.RequestURI, "/commits/def0123abcdef4567abcdef8987abcdef6543abc/merge-base")
+				assert.Contains(t, r.RequestURI, "otherCommitId=feature%2Fslashed-name")
+				assert.NotContains(t, r.RequestURI, "/commits/master/")
+				w.WriteHeader(expectedStatusCode)
+				_, err := w.Write(response)
+				assert.NoError(t, err)
+				return
+			}
+			w.WriteHeader(http.StatusOK)
+			_, err := w.Write(commitsResponse)
+			assert.NoError(t, err)
+		}
+	}
+}

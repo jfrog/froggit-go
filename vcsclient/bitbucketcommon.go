@@ -1,15 +1,21 @@
 package vcsclient
 
 import (
+	"context"
+	"errors"
 	"fmt"
+	"io"
+	"net/http"
+	"time"
+
 	"github.com/jfrog/froggit-go/vcsutils"
 	"github.com/mitchellh/mapstructure"
-	"time"
 )
 
 const (
 	notSupportedOnBitbucket     = "currently not supported on Bitbucket"
 	bitbucketPrContentSizeLimit = 32768
+	bitbucketCloudApiBaseUrl    = "https://api.bitbucket.org/2.0"
 )
 
 var (
@@ -128,4 +134,29 @@ func getBitbucketCloudCommitStatusInfo(commitStatus *BitbucketCommitInfo) (Commi
 		CreatedAt:     createdOn,
 		LastUpdatedAt: updatedOn,
 	}, nil
+}
+
+// getBitbucketJson issues an authenticated GET and returns the response body, shared by both Bitbucket clients.
+func getBitbucketJson(ctx context.Context, httpClient *http.Client, requestUrl string, setAuth func(*http.Request)) (body []byte, err error) {
+	request, err := http.NewRequestWithContext(ctx, http.MethodGet, requestUrl, nil)
+	if err != nil {
+		return
+	}
+	if setAuth != nil {
+		setAuth(request)
+	}
+	response, err := httpClient.Do(request)
+	if err != nil {
+		return
+	}
+	defer func() {
+		err = errors.Join(err, response.Body.Close())
+	}()
+	if body, err = io.ReadAll(response.Body); err != nil {
+		return
+	}
+	if response.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("request to %s returned status %s, body: %s", requestUrl, response.Status, body)
+	}
+	return
 }

@@ -117,7 +117,16 @@ func (client *AzureReposClient) ListBranches(ctx context.Context, _, repository 
 }
 
 // DownloadRepository on Azure Repos
-func (client *AzureReposClient) DownloadRepository(ctx context.Context, owner, repository, branch, localPath string) (err error) {
+func (client *AzureReposClient) DownloadRepository(ctx context.Context, owner, repository, branch, localPath string) error {
+	return client.downloadRepositoryAtVersion(ctx, owner, repository, branch, string(git.GitVersionTypeValues.Branch), localPath)
+}
+
+// DownloadRepositoryByCommit on Azure Repos
+func (client *AzureReposClient) DownloadRepositoryByCommit(ctx context.Context, owner, repository, commitSha, localPath string) error {
+	return client.downloadRepositoryAtVersion(ctx, owner, repository, commitSha, string(git.GitVersionTypeValues.Commit), localPath)
+}
+
+func (client *AzureReposClient) downloadRepositoryAtVersion(ctx context.Context, owner, repository, version, versionType, localPath string) (err error) {
 	wd, err := os.Getwd()
 	if err != nil {
 		return
@@ -129,9 +138,9 @@ func (client *AzureReposClient) DownloadRepository(ctx context.Context, owner, r
 	defer func() {
 		err = errors.Join(err, os.Chdir(wd))
 	}()
-	res, err := client.sendDownloadRepoRequest(ctx, repository, branch)
+	res, err := client.sendDownloadRepoRequest(ctx, repository, version, versionType)
 	defer func() {
-		if res.Body != nil {
+		if res != nil && res.Body != nil {
 			err = errors.Join(err, res.Body.Close())
 		}
 	}()
@@ -159,12 +168,13 @@ func (client *AzureReposClient) DownloadRepository(ctx context.Context, owner, r
 		httpsCloneUrl)
 }
 
-func (client *AzureReposClient) sendDownloadRepoRequest(ctx context.Context, repository string, branch string) (res *http.Response, err error) {
-	downloadRepoUrl := fmt.Sprintf("%s/%s/_apis/git/repositories/%s/items/items?path=/&versionDescriptor[version]=%s&$format=zip",
+func (client *AzureReposClient) sendDownloadRepoRequest(ctx context.Context, repository, version, versionType string) (res *http.Response, err error) {
+	downloadRepoUrl := fmt.Sprintf("%s/%s/_apis/git/repositories/%s/items/items?path=/&versionDescriptor[version]=%s&versionDescriptor[versionType]=%s&$format=zip",
 		client.connectionDetails.BaseUrl,
 		client.vcsInfo.Project,
 		repository,
-		url.QueryEscape(branch))
+		url.QueryEscape(version),
+		versionType)
 	client.logger.Debug("Download url:", downloadRepoUrl)
 	headers := map[string]string{
 		"Authorization":  client.connectionDetails.AuthorizationString,
@@ -923,4 +933,54 @@ func mapVoteToState(vote int) string {
 	default:
 		return "UNKNOWN"
 	}
+}
+
+// GetMergeBase on Azure Repos
+func (client *AzureReposClient) GetMergeBase(ctx context.Context, _, repository, refBefore, refAfter string) (CommitInfo, error) {
+	if err := errors.Join(
+		validateNotBlank("repository", repository),
+		validateNotBlank("refBefore", refBefore),
+		validateNotBlank("refAfter", refAfter),
+	); err != nil {
+		return CommitInfo{}, err
+	}
+
+	baseSha, err := client.resolveToCommitSha(ctx, repository, refBefore)
+	if err != nil {
+		return CommitInfo{}, err
+	}
+	otherSha, err := client.resolveToCommitSha(ctx, repository, refAfter)
+	if err != nil {
+		return CommitInfo{}, err
+	}
+
+	azureReposGitClient, err := client.buildAzureReposClient(ctx)
+	if err != nil {
+		return CommitInfo{}, err
+	}
+	mergeBases, err := azureReposGitClient.GetMergeBases(ctx, git.GetMergeBasesArgs{
+		RepositoryNameOrId: &repository,
+		Project:            &client.vcsInfo.Project,
+		CommitId:           &baseSha,
+		OtherCommitId:      &otherSha,
+	})
+	if err != nil {
+		return CommitInfo{}, err
+	}
+	if mergeBases == nil || len(*mergeBases) == 0 {
+		return CommitInfo{}, fmt.Errorf("no merge base found for <%s> between %s and %s", repository, refBefore, refAfter)
+	}
+	return mapAzureReposCommitsToCommitInfo((*mergeBases)[0]), nil
+}
+
+// Azure resolves merge bases only by object id, so a branch name has to be turned into one first.
+func (client *AzureReposClient) resolveToCommitSha(ctx context.Context, repository, ref string) (string, error) {
+	commit, err := client.GetLatestCommit(ctx, "", repository, ref)
+	if err != nil {
+		return "", err
+	}
+	if commit.Hash == "" {
+		return "", fmt.Errorf("could not resolve '%s' to a commit in <%s>", ref, repository)
+	}
+	return commit.Hash, nil
 }

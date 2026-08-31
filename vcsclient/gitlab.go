@@ -1022,3 +1022,31 @@ func mapGitLabPullRequestState(state *vcsutils.PullRequestState) *string {
 	}
 	return &stateStringValue
 }
+
+// GetMergeBase on GitLab
+func (client *GitLabClient) GetMergeBase(ctx context.Context, owner, repository, refBefore, refAfter string) (CommitInfo, error) {
+	if err := errors.Join(
+		validateNotBlank("owner", owner),
+		validateNotBlank("repository", repository),
+		validateNotBlank("refBefore", refBefore),
+		validateNotBlank("refAfter", refAfter),
+	); err != nil {
+		return CommitInfo{}, err
+	}
+
+	refs := []string{refBefore, refAfter}
+	commit, _, err := client.glClient.Repositories.MergeBase(getProjectID(owner, repository),
+		&gitlab.MergeBaseOptions{Ref: &refs}, gitlab.WithContext(ctx))
+	if err != nil {
+		return CommitInfo{}, err
+	}
+	if commit == nil {
+		return CommitInfo{}, mergeBaseNotFoundError(owner, repository, refBefore, refAfter)
+	}
+	return mapGitLabCommitToCommitInfo(commit), nil
+}
+
+// DownloadRepositoryByCommit on GitLab
+func (client *GitLabClient) DownloadRepositoryByCommit(ctx context.Context, owner, repository, commitSha, localPath string) error {
+	return client.DownloadRepository(ctx, owner, repository, commitSha, localPath)
+}

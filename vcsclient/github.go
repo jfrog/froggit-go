@@ -1893,3 +1893,38 @@ func convertToGitHubSnapshot(snapshot *SbomSnapshot) (*github.DependencyGraphSna
 	}
 	return ghSnapshot, nil
 }
+
+// GetMergeBase on GitHub
+func (client *GitHubClient) GetMergeBase(ctx context.Context, owner, repository, refBefore, refAfter string) (CommitInfo, error) {
+	if err := errors.Join(
+		validateNotBlank("owner", owner),
+		validateNotBlank("repository", repository),
+		validateNotBlank("refBefore", refBefore),
+		validateNotBlank("refAfter", refAfter),
+	); err != nil {
+		return CommitInfo{}, err
+	}
+
+	var mergeBase CommitInfo
+	err := client.runWithRateLimitRetries(func() (*github.Response, error) {
+		comparison, ghResponse, err := client.ghClient.Repositories.CompareCommits(ctx, owner, repository,
+			refBefore, refAfter, &github.ListOptions{PerPage: 1})
+		if err != nil {
+			return ghResponse, err
+		}
+		if err = vcsutils.CheckResponseStatusWithBody(ghResponse.Response, http.StatusOK); err != nil {
+			return ghResponse, err
+		}
+		if comparison.MergeBaseCommit == nil {
+			return ghResponse, mergeBaseNotFoundError(owner, repository, refBefore, refAfter)
+		}
+		mergeBase = mapGitHubCommitToCommitInfo(comparison.MergeBaseCommit)
+		return ghResponse, nil
+	})
+	return mergeBase, err
+}
+
+// DownloadRepositoryByCommit on GitHub
+func (client *GitHubClient) DownloadRepositoryByCommit(ctx context.Context, owner, repository, commitSha, localPath string) error {
+	return client.DownloadRepository(ctx, owner, repository, commitSha, localPath)
+}

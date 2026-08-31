@@ -1,0 +1,97 @@
+{
+    "type": "commit",
+    "hash": "93983fd5cfad48aae91480c6db0dee1caa5dc4e1",
+    "date": "2025-09-15T00:05:31+00:00",
+    "author": {
+        "type": "author",
+        "raw": "Albert Sundjaja <asundjaja@atlassian.com>",
+        "user": {
+            "display_name": "Albert Sundjaja",
+            "links": {
+                "self": {
+                    "href": "https://api.bitbucket.org/2.0/users/%7B7177c565-3bb4-44d3-b17b-e791dfb8fed8%7D"
+                },
+                "avatar": {
+                    "href": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/initials/AS-6.png"
+                },
+                "html": {
+                    "href": "https://bitbucket.org/%7B7177c565-3bb4-44d3-b17b-e791dfb8fed8%7D/"
+                }
+            },
+            "type": "user",
+            "uuid": "{7177c565-3bb4-44d3-b17b-e791dfb8fed8}",
+            "account_id": "712020:0f3e0dc4-4f17-4c0f-be18-c3d6dfa60987",
+            "nickname": "Albert Sundjaja"
+        }
+    },
+    "message": "NONE: update jira-release-blocker to 0.2.5\n",
+    "summary": {
+        "type": "rendered",
+        "raw": "NONE: update jira-release-blocker to 0.2.5\n",
+        "markup": "markdown",
+        "html": "<p>NONE: update jira-release-blocker to 0.2.5</p>"
+    },
+    "links": {
+        "self": {
+            "href": "https://api.bitbucket.org/2.0/repositories/bitbucketpipelines/official-pipes/commit/93983fd5cfad48aae91480c6db0dee1caa5dc4e1"
+        },
+        "html": {
+            "href": "https://bitbucket.org/bitbucketpipelines/official-pipes/commits/93983fd5cfad48aae91480c6db0dee1caa5dc4e1"
+        },
+        "diff": {
+            "href": "https://api.bitbucket.org/2.0/repositories/bitbucketpipelines/official-pipes/diff/93983fd5cfad48aae91480c6db0dee1caa5dc4e1"
+        },
+        "approve": {
+            "href": "https://api.bitbucket.org/2.0/repositories/bitbucketpipelines/official-pipes/commit/93983fd5cfad48aae91480c6db0dee1caa5dc4e1/approve"
+        },
+        "comments": {
+            "href": "https://api.bitbucket.org/2.0/repositories/bitbucketpipelines/official-pipes/commit/93983fd5cfad48aae91480c6db0dee1caa5dc4e1/comments"
+        },
+        "statuses": {
+            "href": "https://api.bitbucket.org/2.0/repositories/bitbucketpipelines/official-pipes/commit/93983fd5cfad48aae91480c6db0dee1caa5dc4e1/statuses"
+        },
+        "patch": {
+            "href": "https://api.bitbucket.org/2.0/repositories/bitbucketpipelines/official-pipes/patch/93983fd5cfad48aae91480c6db0dee1caa5dc4e1"
+        }
+    },
+    "parents": [
+        {
+            "hash": "2b255a5a3c66f450b091b2d354e8a8b0882ff9cc",
+            "links": {
+                "self": {
+                    "href": "https://api.bitbucket.org/2.0/repositories/bitbucketpipelines/official-pipes/commit/2b255a5a3c66f450b091b2d354e8a8b0882ff9cc"
+                },
+                "html": {
+                    "href": "https://bitbucket.org/bitbucketpipelines/official-pipes/commits/2b255a5a3c66f450b091b2d354e8a8b0882ff9cc"
+                }
+            },
+            "type": "commit"
+        }
+    ],
+    "rendered": {
+        "message": {
+            "type": "rendered",
+            "raw": "NONE: update jira-release-blocker to 0.2.5\n",
+            "markup": "markdown",
+            "html": "<p>NONE: update jira-release-blocker to 0.2.5</p>"
+        }
+    },
+    "repository": {
+        "type": "repository",
+        "full_name": "bitbucketpipelines/official-pipes",
+        "links": {
+            "self": {
+                "href": "https://api.bitbucket.org/2.0/repositories/bitbucketpipelines/official-pipes"
+            },
+            "html": {
+                "href": "https://bitbucket.org/bitbucketpipelines/official-pipes"
+            },
+            "avatar": {
+                "href": "https://bytebucket.org/ravatar/%7B55c162b8-130a-4ceb-be30-66eeea25026b%7D?ts=2117048"
+            }
+        },
+        "name": "official-pipes",
+        "uuid": "{55c162b8-130a-4ceb-be30-66eeea25026b}"
+    },
+    "participants": []
+}

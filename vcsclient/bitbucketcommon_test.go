@@ -1,9 +1,10 @@
 package vcsclient
 
 import (
-	"github.com/jfrog/froggit-go/vcsutils"
 	"testing"
 	"time"
+
+	"github.com/jfrog/froggit-go/vcsutils"
 
 	"github.com/stretchr/testify/assert"
 )

@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"sort"
 	"strconv"
 	"strings"
@@ -985,4 +986,49 @@ func getSourceRepositoryOwner(pullRequest bitbucketv1.PullRequest) (string, erro
 		return "", fmt.Errorf("failed to get source repository owner, project is nil. (PR - %s, repository - %s)", pullRequest.FromRef.DisplayID, pullRequest.FromRef.Repository.Slug)
 	}
 	return project.Key, nil
+}
+
+// GetMergeBase on Bitbucket server
+func (client *BitbucketServerClient) GetMergeBase(ctx context.Context, owner, repository, refBefore, refAfter string) (commitInfo CommitInfo, err error) {
+	if err = errors.Join(
+		validateNotBlank("owner", owner),
+		validateNotBlank("repository", repository),
+		validateNotBlank("refBefore", refBefore),
+		validateNotBlank("refAfter", refAfter),
+	); err != nil {
+		return
+	}
+
+	// The path segment accepts only a commit id: a slashed branch name resolves to a different route
+	// and its encoded form is rejected before it reaches the application.
+	baseCommit, err := client.GetLatestCommit(ctx, owner, repository, refBefore)
+	if err != nil {
+		return
+	}
+	if baseCommit.Hash == "" {
+		return CommitInfo{}, fmt.Errorf("could not resolve reference '%s' to a commit in <%s/%s>", refBefore, owner, repository)
+	}
+
+	restEndpoint := strings.TrimSuffix(client.vcsInfo.APIEndpoint, "/rest") + "/rest"
+	requestUrl := fmt.Sprintf("%s/api/1.0/projects/%s/repos/%s/commits/%s/merge-base?otherCommitId=%s",
+		restEndpoint, owner, repository, baseCommit.Hash, url.QueryEscape(refAfter))
+
+	body, err := getBitbucketJson(ctx, client.buildHTTPClient(ctx), requestUrl, nil)
+	if err != nil {
+		return
+	}
+
+	var mergeBase bitbucketv1.Commit
+	if err = json.Unmarshal(body, &mergeBase); err != nil {
+		return
+	}
+	if mergeBase.ID == "" {
+		return CommitInfo{}, mergeBaseNotFoundError(owner, repository, refBefore, refAfter)
+	}
+	return client.mapBitbucketServerCommitToCommitInfo(mergeBase, owner, repository), nil
+}
+
+// DownloadRepositoryByCommit on Bitbucket server
+func (client *BitbucketServerClient) DownloadRepositoryByCommit(ctx context.Context, owner, repository, commitSha, localPath string) error {
+	return client.DownloadRepository(ctx, owner, repository, commitSha, localPath)
 }
