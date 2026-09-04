@@ -449,8 +449,6 @@ func (client *GitLabClient) addPullRequestReviewComment(ctx context.Context, pro
 		PositionType: vcsutils.PointerOf("text"),
 		NewLine:      &newLine,
 		NewPath:      &newPath,
-		OldLine:      &newLine,
-		OldPath:      &oldPath,
 	}
 
 	// The GitLab REST API for creating a merge request discussion has strange behavior:
@@ -459,16 +457,19 @@ func (client *GitLabClient) addPullRequestReviewComment(ctx context.Context, pro
 	// - When commenting on a new file, do not include 'old_path' and 'old_line' parameters.
 	// - When commenting on an existing file that has changed in the diff, omit 'old_path' and 'old_line' parameters.
 	// - When commenting on an existing file that hasn't changed in the diff, include 'old_path' and 'old_line' parameters.
+	// A comment only reaches this point when its file was matched against the merge request diff above, which
+	// is one of the two cases that must omit them, so they are left out of the first attempt and added by the
+	// retry below.
 
-	client.logger.Debug(fmt.Sprintf("Create merge request discussion sent. newPath: %v newLine: %v oldPath: %v, oldLine: %v",
-		newPath, newLine, oldPath, newLine))
+	client.logger.Debug(fmt.Sprintf("Create merge request discussion sent. newPath: %v newLine: %v",
+		newPath, newLine))
 	// Attempt to create a merge request discussion thread
 	_, _, err := client.createMergeRequestDiscussion(ctx, projectID, comment.Content, pullRequestID, diffPosition)
 
-	// Retry without oldLine and oldPath if the GitLab API call fails
+	// Retry with oldLine and oldPath if the GitLab API call fails
 	if err != nil {
-		diffPosition.OldLine = nil
-		diffPosition.OldPath = nil
+		diffPosition.OldLine = &newLine
+		diffPosition.OldPath = &oldPath
 		client.logger.Debug(fmt.Sprintf("Create merge request discussion second attempt sent. newPath: %v newLine: %v oldPath: %v, oldLine: %v",
 			newPath, newLine, oldPath, newLine))
 		_, _, err = client.createMergeRequestDiscussion(ctx, projectID, comment.Content, pullRequestID, diffPosition)
