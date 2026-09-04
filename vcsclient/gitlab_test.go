@@ -277,39 +277,49 @@ func TestGitLabClient_AddPullRequestReviewComment(t *testing.T) {
 func TestGitLabClient_AddPullRequestReviewCommentSendsAcceptedPositionFirst(t *testing.T) {
 	ctx := context.Background()
 	var discussionRequests []string
+	rejectOldPosition := func(body string) bool {
+		return strings.Contains(body, "old_path") || strings.Contains(body, "old_line")
+	}
 	client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, "",
 		fmt.Sprintf("/api/v4/projects/%s/merge_requests/1/notes", url.PathEscape(owner+"/"+repo1)),
 		func(t *testing.T, _ string, _ []byte, _ int) http.HandlerFunc {
-			return func(w http.ResponseWriter, r *http.Request) {
-				switch r.RequestURI {
-				case "/api/v4/projects/jfrog%2Frepo-1/merge_requests/7/versions":
-					versionsDiff, err := os.ReadFile(filepath.Join("testdata", "gitlab", "merge_request_diff_versions.json"))
-					assert.NoError(t, err)
-					_, err = w.Write(versionsDiff)
-					assert.NoError(t, err)
-				case "/api/v4/projects/jfrog%2Frepo-1/merge_requests/7/diffs":
-					mergeRequestChanges, err := os.ReadFile(filepath.Join("testdata", "gitlab", "merge_request_changes.json"))
-					assert.NoError(t, err)
-					_, err = w.Write(mergeRequestChanges)
-					assert.NoError(t, err)
-				case "/api/v4/projects/jfrog%2Frepo-1/merge_requests/7/discussions":
-					body, err := io.ReadAll(r.Body)
-					assert.NoError(t, err)
-					discussionRequests = append(discussionRequests, string(body))
-					if strings.Contains(string(body), "old_path") || strings.Contains(string(body), "old_line") {
-						w.WriteHeader(http.StatusNotFound)
-						return
-					}
-					newMergeRequestThreadResponse, err := os.ReadFile(filepath.Join("testdata", "gitlab", "new_merge_request_thread.json"))
-					assert.NoError(t, err)
-					_, err = w.Write(newMergeRequestThreadResponse)
-					assert.NoError(t, err)
-				}
-			}
+			return createRecordingDiscussionGitLabHandler(t, &discussionRequests, rejectOldPosition)
 		})
 	defer cleanUp()
 
-	comments := []PullRequestComment{
+	assert.NoError(t, client.AddPullRequestReviewComments(ctx, owner, repo1, 7, versionFileComment()...))
+	assert.Len(t, discussionRequests, 1, "a comment on a file in the diff must not need the retry")
+	assert.Contains(t, discussionRequests[0], "new_path")
+	assert.NotContains(t, discussionRequests[0], "old_path")
+	assert.NotContains(t, discussionRequests[0], "old_line")
+}
+
+// The retry anchors the old side of the position, so it must use the comment's original line rather than the new one.
+func TestGitLabClient_AddPullRequestReviewCommentRetriesWithOriginalLine(t *testing.T) {
+	ctx := context.Background()
+	var discussionRequests []string
+	requireOldPosition := func(body string) bool {
+		return !strings.Contains(body, "old_path")
+	}
+	client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, "",
+		fmt.Sprintf("/api/v4/projects/%s/merge_requests/1/notes", url.PathEscape(owner+"/"+repo1)),
+		func(t *testing.T, _ string, _ []byte, _ int) http.HandlerFunc {
+			return createRecordingDiscussionGitLabHandler(t, &discussionRequests, requireOldPosition)
+		})
+	defer cleanUp()
+
+	assert.NoError(t, client.AddPullRequestReviewComments(ctx, owner, repo1, 7, versionFileComment()...))
+	assert.Len(t, discussionRequests, 2)
+	assert.NotContains(t, discussionRequests[0], "old_path")
+	assert.Contains(t, discussionRequests[1], `"old_path":"VERSION"`)
+	assert.Contains(t, discussionRequests[1], `"old_line":1`)
+	assert.Contains(t, discussionRequests[1], `"new_line":2`)
+}
+
+// versionFileComment anchors a comment to VERSION, which merge_request_changes.json reports as an existing file that
+// changed in the diff.
+func versionFileComment() []PullRequestComment {
+	return []PullRequestComment{
 		{
 			CommentInfo: CommentInfo{Content: "test1"},
 			PullRequestDiff: PullRequestDiff{
@@ -320,12 +330,37 @@ func TestGitLabClient_AddPullRequestReviewCommentSendsAcceptedPositionFirst(t *t
 			},
 		},
 	}
+}
 
-	assert.NoError(t, client.AddPullRequestReviewComments(ctx, owner, repo1, 7, comments...))
-	assert.Len(t, discussionRequests, 1, "a comment on a file in the diff must not need the retry")
-	assert.Contains(t, discussionRequests[0], "new_path")
-	assert.NotContains(t, discussionRequests[0], "old_path")
-	assert.NotContains(t, discussionRequests[0], "old_line")
+// createRecordingDiscussionGitLabHandler serves the merge request diff endpoints, records every discussion request
+// body and answers 404 to the requests rejectRequest reports as invalid.
+func createRecordingDiscussionGitLabHandler(t *testing.T, requests *[]string, rejectRequest func(body string) bool) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		switch r.RequestURI {
+		case "/api/v4/projects/jfrog%2Frepo-1/merge_requests/7/versions":
+			versionsDiff, err := os.ReadFile(filepath.Join("testdata", "gitlab", "merge_request_diff_versions.json"))
+			assert.NoError(t, err)
+			_, err = w.Write(versionsDiff)
+			assert.NoError(t, err)
+		case "/api/v4/projects/jfrog%2Frepo-1/merge_requests/7/diffs":
+			mergeRequestChanges, err := os.ReadFile(filepath.Join("testdata", "gitlab", "merge_request_changes.json"))
+			assert.NoError(t, err)
+			_, err = w.Write(mergeRequestChanges)
+			assert.NoError(t, err)
+		case "/api/v4/projects/jfrog%2Frepo-1/merge_requests/7/discussions":
+			body, err := io.ReadAll(r.Body)
+			assert.NoError(t, err)
+			*requests = append(*requests, string(body))
+			if rejectRequest(string(body)) {
+				w.WriteHeader(http.StatusNotFound)
+				return
+			}
+			newMergeRequestThreadResponse, err := os.ReadFile(filepath.Join("testdata", "gitlab", "new_merge_request_thread.json"))
+			assert.NoError(t, err)
+			_, err = w.Write(newMergeRequestThreadResponse)
+			assert.NoError(t, err)
+		}
+	}
 }
 
 func TestGitLabClient_ListPullRequestReviewComments(t *testing.T) {

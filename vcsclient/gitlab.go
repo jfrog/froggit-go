@@ -466,12 +466,14 @@ func (client *GitLabClient) addPullRequestReviewComment(ctx context.Context, pro
 	// Attempt to create a merge request discussion thread
 	_, _, err := client.createMergeRequestDiscussion(ctx, projectID, comment.Content, pullRequestID, diffPosition)
 
-	// Retry with oldLine and oldPath if the GitLab API call fails
-	if err != nil {
-		diffPosition.OldLine = &newLine
+	// Retry with the old side of the position if the GitLab API call fails. A new file has no old side, so for
+	// one there is nothing left to try and the error stands.
+	if err != nil && oldPath != "" {
+		oldLine := comment.OriginalStartLine
+		diffPosition.OldLine = &oldLine
 		diffPosition.OldPath = &oldPath
 		client.logger.Debug(fmt.Sprintf("Create merge request discussion second attempt sent. newPath: %v newLine: %v oldPath: %v, oldLine: %v",
-			newPath, newLine, oldPath, newLine))
+			newPath, newLine, oldPath, oldLine))
 		_, _, err = client.createMergeRequestDiscussion(ctx, projectID, comment.Content, pullRequestID, diffPosition)
 	}
 
