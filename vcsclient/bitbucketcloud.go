@@ -411,7 +411,15 @@ func (client *BitbucketCloudClient) UpdatePullRequest(ctx context.Context, owner
 		ID:                strconv.Itoa(prId),
 		States:            []string{*vcsutils.MapPullRequestState(&state)},
 	}
-	_, err = bitbucketClient.Repositories.PullRequests.Update(options)
+	if _, err = bitbucketClient.Repositories.PullRequests.Update(options); err != nil {
+		return err
+	}
+	if state == vcsutils.Closed {
+		// Bitbucket Cloud's generic PR update endpoint doesn't accept a state change, and its decline
+		// endpoint ignores metadata fields in its own request body - so applying both the metadata
+		// update and the state change requires both calls.
+		_, err = bitbucketClient.Repositories.PullRequests.Decline(options)
+	}
 	return err
 }
 
@@ -903,7 +911,7 @@ func (client *BitbucketCloudClient) GetModifiedFiles(ctx context.Context, owner,
 		// As there is no `topic` set it will be treated as `refAfter...refBefore` actually.
 		Spec:    refAfter + ".." + refBefore,
 		Renames: true,
-		Merge:   true,
+		Merge:   true, //nolint:staticcheck
 	}
 
 	fileNamesSet := datastructures.MakeSet[string]()
