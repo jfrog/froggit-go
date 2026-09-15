@@ -16,6 +16,10 @@ jobs:
         # The repository scanning will be triggered periodically on the following branches.
         branch: [ "master" ]
     steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ matrix.branch }}
+
       - name: Setup Go with cache
         uses: jfrog/.github/actions/install-go-with-cache@main
 
