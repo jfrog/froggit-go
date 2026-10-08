@@ -10,6 +10,7 @@ import (
 	"math"
 	"math/rand"
 	"net/http"
+	"net/http/httptest"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -1525,6 +1526,59 @@ func createGitHubSarifUploadWithRefHandler(t *testing.T, _ string, _ []byte, _ i
 		}
 	}
 }
+
+func TestGitHubClient_UsesCallerHTTPClientInsteadOfToken(t *testing.T) {
+	var auth string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		auth = r.Header.Get("Authorization")
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`"Keep it logically awesome."`))
+	}))
+	defer server.Close()
+
+	httpClient := &http.Client{Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+		req = req.Clone(req.Context())
+		req.Header.Set("Authorization", "Bearer from-caller")
+		return http.DefaultTransport.RoundTrip(req)
+	})}
+	client, err := NewGitHubClient(VcsInfo{
+		APIEndpoint: server.URL,
+		Token:       "must-not-be-sent",
+		HTTPClient:  httpClient,
+	}, vcsutils.EmptyLogger{})
+	assert.NoError(t, err)
+
+	err = client.TestConnection(context.Background())
+	assert.NoError(t, err)
+	assert.Equal(t, "Bearer from-caller", auth)
+}
+
+func TestGitHubClient_DisableRateLimitRetriesCallsOnce(t *testing.T) {
+	calls := 0
+	client := &GitHubClient{
+		vcsInfo: VcsInfo{DisableRateLimitRetries: true},
+		rateLimitRetryExecutor: GitHubRateLimitRetryExecutor{RetryExecutor: vcsutils.RetryExecutor{
+			Logger:                   vcsutils.EmptyLogger{},
+			MaxRetries:               maxRetries,
+			RetriesIntervalMilliSecs: retriesIntervalMilliSecs,
+		}},
+	}
+	started := time.Now()
+	err := client.runWithRateLimitRetries(func() (*github.Response, error) {
+		calls++
+		return &github.Response{Response: &http.Response{
+			StatusCode: http.StatusForbidden,
+			Body:       io.NopCloser(strings.NewReader("secondary rate limit")),
+		}}, errors.New("secondary rate limit")
+	})
+	assert.Error(t, err)
+	assert.Equal(t, 1, calls)
+	assert.Less(t, time.Since(started), time.Second)
+}
+
+type roundTripFunc func(*http.Request) (*http.Response, error)
+
+func (f roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) { return f(req) }
 
 func TestShouldRetryIfRateLimitExceeded(t *testing.T) {
 	// Test case 1: ghResponse is nil

@@ -81,6 +81,10 @@ func NewGitHubClient(vcsInfo VcsInfo, logger vcsutils.Log) (*GitHubClient, error
 }
 
 func (client *GitHubClient) runWithRateLimitRetries(handler func() (*github.Response, error)) error {
+	if client.vcsInfo.DisableRateLimitRetries {
+		_, err := handler()
+		return err
+	}
 	client.rateLimitRetryExecutor.GitHubRateLimitExecutionHandler = handler
 	return client.rateLimitRetryExecutor.Execute()
 }
@@ -92,9 +96,12 @@ func (client *GitHubClient) TestConnection(ctx context.Context) error {
 }
 
 func buildGithubClient(vcsInfo VcsInfo, logger vcsutils.Log) (*github.Client, error) {
-	httpClient := &http.Client{}
-	if vcsInfo.Token != "" {
-		httpClient = oauth2.NewClient(context.Background(), oauth2.StaticTokenSource(&oauth2.Token{AccessToken: vcsInfo.Token}))
+	httpClient := vcsInfo.HTTPClient
+	if httpClient == nil {
+		httpClient = &http.Client{}
+		if vcsInfo.Token != "" {
+			httpClient = oauth2.NewClient(context.Background(), oauth2.StaticTokenSource(&oauth2.Token{AccessToken: vcsInfo.Token}))
+		}
 	}
 	ghClient := github.NewClient(httpClient)
 	if vcsInfo.APIEndpoint != "" {
