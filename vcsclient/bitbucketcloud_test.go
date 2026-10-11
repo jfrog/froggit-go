@@ -9,6 +9,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -370,14 +371,14 @@ func TestBitbucketCloud_GetLatestCommit(t *testing.T) {
 }
 
 func TestBitbucketCloud_GetLatestCommitDoesNotFollowNextPages(t *testing.T) {
-	var requests int
+	var requests atomic.Int32
 	var server *httptest.Server
 	server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		requests++
+		requestNumber := requests.Add(1)
 		assert.Equal(t, fmt.Sprintf("/repositories/%s/%s/commits/master", owner, repo1), r.URL.Path)
 		assert.Equal(t, "pagelen=1", r.URL.RawQuery)
 		next := ""
-		if requests < 5 {
+		if requestNumber < 5 {
 			next = fmt.Sprintf(`,"next":"%s/next-page"`, server.URL)
 		}
 		_, err := fmt.Fprintf(w, `{"pagelen":1,"values":[{"hash":"newest","message":"newest commit"}]%s}`, next)
@@ -390,7 +391,7 @@ func TestBitbucketCloud_GetLatestCommitDoesNotFollowNextPages(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Equal(t, "newest", result.Hash)
-	assert.Equal(t, 1, requests)
+	assert.EqualValues(t, 1, requests.Load())
 }
 
 func TestBitbucketCloud_GetCommits(t *testing.T) {

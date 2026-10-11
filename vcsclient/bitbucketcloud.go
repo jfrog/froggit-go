@@ -737,7 +737,7 @@ func (client *BitbucketCloudClient) GetLatestCommit(ctx context.Context, owner, 
 		return CommitInfo{}, err
 	}
 	bitbucketClient.Pagelen = 1
-	// Pagelen only sets the page size. Without this the client follows every "next" link, sending a request per commit in the branch history.
+	// Only the newest commit is needed. Pagelen=1 sets the page size, but the client still requests every following page unless auto-paging is disabled.
 	bitbucketClient.DisableAutoPaging = true
 	options := &bitbucket.CommitsOptions{
 		Owner:       owner,
