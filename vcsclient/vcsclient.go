@@ -57,8 +57,9 @@ type VcsInfo struct {
 	// The caller owns authentication, for example an installation-token transport.
 	// Nil keeps the client built from Token.
 	HTTPClient *http.Client
-	// DisableRateLimitRetries returns a GitHub rate-limit response immediately.
-	// The default retries a secondary rate limit up to five times, a minute apart.
+	// DisableRateLimitRetries returns a GitHub rate-limit response immediately
+	// and disables go-github's local preflight check so the caller's HTTP
+	// transport observes every request and response.
 	DisableRateLimitRetries bool
 }
 

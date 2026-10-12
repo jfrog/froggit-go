@@ -104,6 +104,7 @@ func buildGithubClient(vcsInfo VcsInfo, logger vcsutils.Log) (*github.Client, er
 		}
 	}
 	ghClient := github.NewClient(httpClient)
+	ghClient.DisableRateLimitCheck = vcsInfo.DisableRateLimitRetries
 	if vcsInfo.APIEndpoint != "" {
 		baseURL, err := url.Parse(strings.TrimSuffix(vcsInfo.APIEndpoint, "/") + "/")
 		if err != nil {
@@ -111,6 +112,7 @@ func buildGithubClient(vcsInfo VcsInfo, logger vcsutils.Log) (*github.Client, er
 		}
 		logger.Info("Using API endpoint:", baseURL)
 		ghClient.BaseURL = baseURL
+		ghClient.UploadURL = baseURL
 	}
 	return ghClient, nil
 }
@@ -170,7 +172,8 @@ func (client *GitHubClient) executeListRepositoriesInPage(ctx context.Context, p
 }
 
 // ListRepositoriesByOwner on GitHub returns repositories for the given organization or user.
-// It tries listing as an org first; if that fails, falls back to listing as a user.
+// It tries listing as an org first. A 404 means the owner is a user, so the call falls
+// back to the user listing. Every other error, including a rate limit, is returned as-is.
 func (client *GitHubClient) ListRepositoriesByOwner(ctx context.Context, owner string) ([]string, error) {
 	var repos []string
 	for page := 1; ; page++ {
@@ -183,8 +186,12 @@ func (client *GitHubClient) ListRepositoriesByOwner(ctx context.Context, owner s
 			return ghResponse, e
 		})
 		if err != nil {
-			// owner is a user, not an org — fall back to user repos
-			return client.listRepositoriesByUser(ctx, owner)
+			var apiErr *github.ErrorResponse
+			if errors.As(err, &apiErr) && apiErr.Response != nil && apiErr.Response.StatusCode == http.StatusNotFound {
+				// owner is a user, not an org — fall back to user repos
+				return client.listRepositoriesByUser(ctx, owner)
+			}
+			return nil, err
 		}
 		for _, r := range reposPage {
 			repos = append(repos, r.GetName())
@@ -349,7 +356,7 @@ func (client *GitHubClient) DownloadRepository(ctx context.Context, owner, repos
 	}
 
 	// Download the archive
-	httpResponse, err := executeDownloadArchiveFromLink(baseURL.String())
+	httpResponse, err := client.executeDownloadArchiveFromLink(ctx, baseURL.String())
 	if err != nil {
 		return
 	}
@@ -377,17 +384,34 @@ func (client *GitHubClient) executeGetArchiveLink(ctx context.Context, owner, re
 		&github.RepositoryContentGetOptions{Ref: branch}, 5)
 }
 
-func executeDownloadArchiveFromLink(baseURL string) (*http.Response, error) {
-	httpClient := &http.Client{}
-	req, err := http.NewRequest(http.MethodGet, baseURL, nil)
+func (client *GitHubClient) executeDownloadArchiveFromLink(ctx context.Context, baseURL string) (*http.Response, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, baseURL, nil)
 	if err != nil {
 		return nil, err
 	}
-	httpResponse, err := httpClient.Do(req)
+	httpResponse, err := client.ghClient.Client().Do(req)
 	if err != nil {
 		return httpResponse, err
 	}
+	if rateLimitedHTTPResponse(httpResponse) {
+		// CheckResponse keeps the typed rate-limit error. The generic status
+		// helper below would replace it with an untyped string.
+		return httpResponse, github.CheckResponse(httpResponse)
+	}
 	return httpResponse, vcsutils.CheckResponseStatusWithBody(httpResponse, http.StatusOK)
+}
+
+func rateLimitedHTTPResponse(resp *http.Response) bool {
+	if resp == nil {
+		return false
+	}
+	if resp.StatusCode == http.StatusTooManyRequests {
+		return true
+	}
+	if resp.StatusCode != http.StatusForbidden || resp.Header == nil {
+		return false
+	}
+	return resp.Header.Get("X-RateLimit-Remaining") == "0" || resp.Header.Get("Retry-After") != ""
 }
 
 func (client *GitHubClient) GetPullRequestCommentSizeLimit() int {
@@ -1103,7 +1127,7 @@ func (client *GitHubClient) executeDownloadFileFromRepo(ctx context.Context, own
 	statusCode = ghResponse.StatusCode
 	if err != nil {
 		if statusCode != http.StatusOK {
-			err = fmt.Errorf("expected %d status code while received %d status code with error:\n%s", http.StatusOK, ghResponse.StatusCode, err)
+			err = fmt.Errorf("expected %d status code while received %d status code: %w", http.StatusOK, ghResponse.StatusCode, err)
 		}
 		return
 	}
