@@ -1,7 +1,9 @@
 package vcsclient
 
 import (
+	"archive/tar"
 	"bytes"
+	"compress/gzip"
 	"context"
 	"encoding/json"
 	"errors"
@@ -10,6 +12,7 @@ import (
 	"math"
 	"math/rand"
 	"net/http"
+	"net/http/httptest"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -233,18 +236,43 @@ func TestGitHubClient_getGitHubCommitState(t *testing.T) {
 }
 
 func TestGitHubClient_DownloadRepository(t *testing.T) {
-	ctx := context.Background()
-	dir, err := os.MkdirTemp("", "")
-	assert.NoError(t, err)
-	defer func() { assert.NoError(t, vcsutils.RemoveTempDir(dir)) }()
+	archive := createTestTarGz(t, "repo-main/README", []byte("hello"))
+	var server *httptest.Server
+	server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "Bearer from-caller", r.Header.Get("Authorization"))
+		switch r.URL.Path {
+		case "/repos/jfrog/Hello-World/tarball/test":
+			w.Header().Set("Location", server.URL+"/archive")
+			w.WriteHeader(http.StatusFound)
+		case "/archive":
+			_, _ = w.Write(archive)
+		case "/repos/jfrog/Hello-World":
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte(`{
+				"name":"Hello-World",
+				"visibility":"private",
+				"clone_url":"https://github.example/jfrog/Hello-World.git",
+				"ssh_url":"git@github.example:jfrog/Hello-World.git"
+			}`))
+		default:
+			t.Fatalf("unexpected request path %q", r.URL.Path)
+		}
+	}))
+	defer server.Close()
 
-	client, cleanUp := createServerAndClientReturningStatus(t, vcsutils.GitHub, false,
-		[]byte("https://github.com/octocat/Hello-World/archive/refs/heads/master.tar.gz"),
-		"/repos/jfrog/Hello-World/tarball/test", http.StatusFound, createDownloadRepositoryGitHubHandler)
-	defer cleanUp()
+	httpClient := &http.Client{Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+		req = req.Clone(req.Context())
+		req.Header.Set("Authorization", "Bearer from-caller")
+		return http.DefaultTransport.RoundTrip(req)
+	})}
+	client, err := NewGitHubClient(VcsInfo{
+		APIEndpoint: server.URL,
+		HTTPClient:  httpClient,
+	}, vcsutils.EmptyLogger{})
 	assert.NoError(t, err)
 
-	err = client.DownloadRepository(ctx, owner, "Hello-World", "test", dir)
+	dir := t.TempDir()
+	err = client.DownloadRepository(context.Background(), owner, "Hello-World", "test", dir)
 	assert.NoError(t, err)
 	fileinfo, err := os.ReadDir(dir)
 	assert.NoError(t, err)
@@ -252,8 +280,28 @@ func TestGitHubClient_DownloadRepository(t *testing.T) {
 	assert.Equal(t, ".git", fileinfo[0].Name())
 	assert.Equal(t, "README", fileinfo[1].Name())
 
-	err = createBadGitHubClient(t).DownloadRepository(ctx, owner, "Hello-World", "test", dir)
+	err = createBadGitHubClient(t).DownloadRepository(context.Background(), owner, "Hello-World", "test", dir)
 	assert.Error(t, err)
+}
+
+func TestGitHubClient_DownloadArchivePreservesRateLimitError(t *testing.T) {
+	reset := time.Now().Add(time.Hour).Unix()
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("X-RateLimit-Limit", "5000")
+		w.Header().Set("X-RateLimit-Remaining", "0")
+		w.Header().Set("X-RateLimit-Reset", strconv.FormatInt(reset, 10))
+		w.WriteHeader(http.StatusForbidden)
+		_, _ = w.Write([]byte(`{"message":"API rate limit exceeded"}`))
+	}))
+	defer server.Close()
+
+	client, err := NewGitHubClient(VcsInfo{APIEndpoint: server.URL}, vcsutils.EmptyLogger{})
+	assert.NoError(t, err)
+
+	_, err = client.executeDownloadArchiveFromLink(context.Background(), server.URL)
+	var rateErr *github.RateLimitError
+	assert.ErrorAs(t, err, &rateErr)
 }
 
 func TestGitHubClient_DownloadFileFromRepository(t *testing.T) {
@@ -1524,6 +1572,175 @@ func createGitHubSarifUploadWithRefHandler(t *testing.T, _ string, _ []byte, _ i
 			assert.Fail(t, "Unexpected Request URI", r.RequestURI)
 		}
 	}
+}
+
+func TestGitHubClient_UsesCallerHTTPClientInsteadOfToken(t *testing.T) {
+	var auth string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		auth = r.Header.Get("Authorization")
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`"Keep it logically awesome."`))
+	}))
+	defer server.Close()
+
+	httpClient := &http.Client{Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+		req = req.Clone(req.Context())
+		req.Header.Set("Authorization", "Bearer from-caller")
+		return http.DefaultTransport.RoundTrip(req)
+	})}
+	client, err := NewGitHubClient(VcsInfo{
+		APIEndpoint: server.URL,
+		Token:       "must-not-be-sent",
+		HTTPClient:  httpClient,
+	}, vcsutils.EmptyLogger{})
+	assert.NoError(t, err)
+
+	err = client.TestConnection(context.Background())
+	assert.NoError(t, err)
+	assert.Equal(t, "Bearer from-caller", auth)
+}
+
+func TestGitHubClient_DisableRateLimitRetriesCallsOnce(t *testing.T) {
+	calls := 0
+	client := &GitHubClient{
+		vcsInfo: VcsInfo{DisableRateLimitRetries: true},
+		rateLimitRetryExecutor: GitHubRateLimitRetryExecutor{RetryExecutor: vcsutils.RetryExecutor{
+			Logger:                   vcsutils.EmptyLogger{},
+			MaxRetries:               maxRetries,
+			RetriesIntervalMilliSecs: retriesIntervalMilliSecs,
+		}},
+	}
+	started := time.Now()
+	err := client.runWithRateLimitRetries(func() (*github.Response, error) {
+		calls++
+		return &github.Response{Response: &http.Response{
+			StatusCode: http.StatusForbidden,
+			Body:       io.NopCloser(strings.NewReader("secondary rate limit")),
+		}}, errors.New("secondary rate limit")
+	})
+	assert.Error(t, err)
+	assert.Equal(t, 1, calls)
+	assert.Less(t, time.Since(started), time.Second)
+}
+
+func TestGitHubClient_DisableRateLimitRetriesDisablesGoGitHubPreflight(t *testing.T) {
+	calls := 0
+	reset := time.Now().Add(time.Hour).Unix()
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		calls++
+		w.Header().Set("Content-Type", "application/json")
+		if calls == 1 {
+			w.Header().Set("X-RateLimit-Limit", "5000")
+			w.Header().Set("X-RateLimit-Remaining", "0")
+			w.Header().Set("X-RateLimit-Reset", strconv.FormatInt(reset, 10))
+			w.WriteHeader(http.StatusForbidden)
+			_, _ = w.Write([]byte(`{"message":"API rate limit exceeded"}`))
+			return
+		}
+		_, _ = w.Write([]byte(`"Keep it logically awesome."`))
+	}))
+	defer server.Close()
+
+	client, err := NewGitHubClient(VcsInfo{
+		APIEndpoint:             server.URL,
+		DisableRateLimitRetries: true,
+	}, vcsutils.EmptyLogger{})
+	assert.NoError(t, err)
+
+	err = client.TestConnection(context.Background())
+	var rateLimitErr *github.RateLimitError
+	assert.ErrorAs(t, err, &rateLimitErr)
+
+	err = client.TestConnection(context.Background())
+	assert.NoError(t, err)
+	assert.Equal(t, 2, calls, "the second call must reach the injected transport")
+}
+
+func TestGitHubClient_ListRepositoriesByOwnerDoesNotFallbackOnRateLimit(t *testing.T) {
+	orgCalls := 0
+	userCalls := 0
+	reset := time.Now().Add(time.Hour).Unix()
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch {
+		case strings.HasPrefix(r.URL.Path, "/orgs/"):
+			orgCalls++
+			w.Header().Set("X-RateLimit-Limit", "5000")
+			w.Header().Set("X-RateLimit-Remaining", "0")
+			w.Header().Set("X-RateLimit-Reset", strconv.FormatInt(reset, 10))
+			w.WriteHeader(http.StatusForbidden)
+			_, _ = w.Write([]byte(`{"message":"API rate limit exceeded"}`))
+		case strings.HasPrefix(r.URL.Path, "/users/"):
+			userCalls++
+			_, _ = w.Write([]byte(`[]`))
+		default:
+			t.Fatalf("unexpected request path %q", r.URL.Path)
+		}
+	}))
+	defer server.Close()
+
+	client, err := NewGitHubClient(VcsInfo{
+		APIEndpoint:             server.URL,
+		DisableRateLimitRetries: true,
+	}, vcsutils.EmptyLogger{})
+	assert.NoError(t, err)
+
+	_, err = client.ListRepositoriesByOwner(context.Background(), owner)
+	var rateLimitErr *github.RateLimitError
+	assert.ErrorAs(t, err, &rateLimitErr)
+	assert.Equal(t, 1, orgCalls)
+	assert.Zero(t, userCalls, "rate limits must not be mistaken for a non-organization owner")
+}
+
+func TestGitHubClient_DownloadFilePreservesRateLimitError(t *testing.T) {
+	reset := time.Now().Add(time.Hour).Unix()
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("X-RateLimit-Limit", "5000")
+		w.Header().Set("X-RateLimit-Remaining", "0")
+		w.Header().Set("X-RateLimit-Reset", strconv.FormatInt(reset, 10))
+		w.WriteHeader(http.StatusForbidden)
+		_, _ = w.Write([]byte(`{"message":"API rate limit exceeded"}`))
+	}))
+	defer server.Close()
+
+	client, err := NewGitHubClient(VcsInfo{
+		APIEndpoint:             server.URL,
+		DisableRateLimitRetries: true,
+	}, vcsutils.EmptyLogger{})
+	assert.NoError(t, err)
+
+	_, _, err = client.DownloadFileFromRepo(context.Background(), owner, repo1, branch1, "README.md")
+	var rateLimitErr *github.RateLimitError
+	assert.ErrorAs(t, err, &rateLimitErr)
+}
+
+func TestGitHubClient_APIEndpointConfiguresUploadURL(t *testing.T) {
+	client, err := NewGitHubClient(VcsInfo{APIEndpoint: "https://github.example/api/v3"}, vcsutils.EmptyLogger{})
+	assert.NoError(t, err)
+	assert.Equal(t, "https://github.example/api/v3/", client.ghClient.BaseURL.String())
+	assert.Equal(t, "https://github.example/api/v3/", client.ghClient.UploadURL.String())
+}
+
+type roundTripFunc func(*http.Request) (*http.Response, error)
+
+func (f roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) { return f(req) }
+
+func createTestTarGz(t *testing.T, name string, content []byte) []byte {
+	t.Helper()
+	var buffer bytes.Buffer
+	gzipWriter := gzip.NewWriter(&buffer)
+	tarWriter := tar.NewWriter(gzipWriter)
+	assert.NoError(t, tarWriter.WriteHeader(&tar.Header{
+		Name: name,
+		Mode: 0o600,
+		Size: int64(len(content)),
+	}))
+	_, err := tarWriter.Write(content)
+	assert.NoError(t, err)
+	assert.NoError(t, tarWriter.Close())
+	assert.NoError(t, gzipWriter.Close())
+	return buffer.Bytes()
 }
 
 func TestShouldRetryIfRateLimitExceeded(t *testing.T) {

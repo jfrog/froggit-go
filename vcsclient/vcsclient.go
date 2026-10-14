@@ -3,6 +3,7 @@ package vcsclient
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"strings"
 	"time"
 
@@ -52,6 +53,14 @@ type VcsInfo struct {
 	Token       string
 	// Project name is relevant for Azure Repos
 	Project string
+	// HTTPClient, when set, is used for GitHub API calls and Token is ignored.
+	// The caller owns authentication, for example an installation-token transport.
+	// Nil keeps the client built from Token.
+	HTTPClient *http.Client
+	// DisableRateLimitRetries returns a GitHub rate-limit response immediately
+	// and disables go-github's local preflight check so the caller's HTTP
+	// transport observes every request and response.
+	DisableRateLimitRetries bool
 }
 
 // RepositoryEnvironmentInfo is the environment details configured for a repository
