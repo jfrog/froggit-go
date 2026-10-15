@@ -1210,7 +1210,7 @@ func (client *GitHubClient) CheckIfOrgSecretExists(ctx context.Context, owner, s
 	err = client.runWithRateLimitRetries(func() (*github.Response, error) {
 		_, ghResponse, err := client.ghClient.Actions.GetOrgSecret(ctx, owner, secretName)
 		if err != nil {
-			if ghResponse != nil && ghResponse.Response != nil && ghResponse.Response.StatusCode == http.StatusNotFound {
+			if ghResponse != nil && ghResponse.Response != nil && ghResponse.StatusCode == http.StatusNotFound {
 				exists = false
 				return ghResponse, nil
 			}
