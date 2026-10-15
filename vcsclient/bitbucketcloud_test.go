@@ -9,6 +9,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -367,6 +368,30 @@ func TestBitbucketCloud_GetLatestCommit(t *testing.T) {
 		Message:       "Fix README.md: yaml\n",
 		ParentHashes:  []string{"774aa0fb252bccbc2a7e01060ef4d4be0b0eeaa9", "def26c6128ebe11fac555fe58b59227e9655dc4d"},
 	}, result)
+}
+
+func TestBitbucketCloud_GetLatestCommitDoesNotFollowNextPages(t *testing.T) {
+	var requests atomic.Int32
+	var server *httptest.Server
+	server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requestNumber := requests.Add(1)
+		assert.Equal(t, fmt.Sprintf("/repositories/%s/%s/commits/master", owner, repo1), r.URL.Path)
+		assert.Equal(t, "pagelen=1", r.URL.RawQuery)
+		next := ""
+		if requestNumber < 5 {
+			next = fmt.Sprintf(`,"next":"%s/next-page"`, server.URL)
+		}
+		_, err := fmt.Fprintf(w, `{"pagelen":1,"values":[{"hash":"newest","message":"newest commit"}]%s}`, next)
+		assert.NoError(t, err)
+	}))
+	defer server.Close()
+	client := buildClient(t, vcsutils.BitbucketCloud, true, server)
+
+	result, err := client.GetLatestCommit(context.Background(), owner, repo1, "master")
+
+	assert.NoError(t, err)
+	assert.Equal(t, "newest", result.Hash)
+	assert.EqualValues(t, 1, requests.Load())
 }
 
 func TestBitbucketCloud_GetCommits(t *testing.T) {
