@@ -2,9 +2,10 @@ package vcsclient
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/jfrog/froggit-go/vcsutils"
 	"github.com/mitchellh/mapstructure"
-	"time"
 )
 
 const (
@@ -25,6 +26,7 @@ var (
 	errBitbucketAllowWorkflowsNotSupported                   = fmt.Errorf("allow workflows is %s", notSupportedOnBitbucket)
 	errBitbucketTriggerWorkflowNotSupported                  = fmt.Errorf("trigger workflow is %s", notSupportedOnBitbucket)
 	errBitbucketAddOrganizationSecretNotSupported            = fmt.Errorf("adding organization secret is %s", notSupportedOnBitbucket)
+	errBitbucketCheckIfOrgSecretExistsNotSupported           = fmt.Errorf("checking if organization secret exists is %s", notSupportedOnBitbucket)
 	errBitbucketCreateOrgVariableNotSupported                = fmt.Errorf("creating organization variable is %s", notSupportedOnBitbucket)
 	errBitbucketCommitAndPushFilesNotSupported               = fmt.Errorf("commit and push files is %s", notSupportedOnBitbucket)
 	errBitbucketGetRepoCollaboratorsNotSupported             = fmt.Errorf("get repository collaborators is %s", notSupportedOnBitbucket)

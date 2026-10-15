@@ -1200,6 +1200,28 @@ func (client *GitHubClient) AddOrganizationSecret(ctx context.Context, owner, se
 	return err
 }
 
+func (client *GitHubClient) CheckIfOrgSecretExists(ctx context.Context, owner, secretName string) (bool, error) {
+	err := validateParametersNotBlank(map[string]string{"secretName": secretName, "owner": owner})
+	if err != nil {
+		return false, err
+	}
+
+	var exists bool
+	err = client.runWithRateLimitRetries(func() (*github.Response, error) {
+		_, ghResponse, err := client.ghClient.Actions.GetOrgSecret(ctx, owner, secretName)
+		if err != nil {
+			if ghResponse != nil && ghResponse.Response != nil && ghResponse.StatusCode == http.StatusNotFound {
+				exists = false
+				return ghResponse, nil
+			}
+			return ghResponse, err
+		}
+		exists = true
+		return ghResponse, nil
+	})
+	return exists, err
+}
+
 func (client *GitHubClient) CreateOrgVariable(ctx context.Context, owner, variableName, variableValue string) error {
 	err := validateParametersNotBlank(map[string]string{"owner": owner, "variableName": variableName, "variableValue": variableValue})
 	if err != nil {

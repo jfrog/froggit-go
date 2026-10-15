@@ -393,6 +393,9 @@ type VcsClient interface {
 	// AddOrganizationSecret adds a secret to the organization
 	AddOrganizationSecret(ctx context.Context, owner, secretName, secretValue string) error
 
+	// CheckIfOrgSecretExists checks whether a secret with the given name exists in the organization
+	CheckIfOrgSecretExists(ctx context.Context, owner, secretName string) (bool, error)
+
 	// CreateOrgVariable creates a variable in the organization
 	CreateOrgVariable(ctx context.Context, owner, variableName, variableValue string) error
 

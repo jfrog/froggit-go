@@ -799,6 +799,10 @@ func (client *AzureReposClient) AddOrganizationSecret(ctx context.Context, owner
 	return getUnsupportedInAzureError("add organization secret")
 }
 
+func (client *AzureReposClient) CheckIfOrgSecretExists(ctx context.Context, owner, secretName string) (bool, error) {
+	return false, getUnsupportedInAzureError("check if organization secret exists")
+}
+
 func (client *AzureReposClient) CreateOrgVariable(ctx context.Context, owner, variableName, variableValue string) error {
 	return getUnsupportedInAzureError("create organization variable")
 }
