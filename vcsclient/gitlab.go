@@ -849,6 +849,10 @@ func (client *GitLabClient) AddOrganizationSecret(ctx context.Context, owner, se
 	return errGitLLabAddOrganizationSecretNotSupported
 }
 
+func (client *GitLabClient) CheckIfOrgSecretExists(ctx context.Context, owner, secretName string) (bool, error) {
+	return false, errGitLabCheckIfOrgSecretExistsNotSupported
+}
+
 func (client *GitLabClient) CreateOrgVariable(ctx context.Context, owner, variableName, variableValue string) error {
 	return errGitLabCreateOrgVariableNotSupported
 }
