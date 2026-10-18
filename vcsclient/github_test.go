@@ -284,6 +284,62 @@ func TestGitHubClient_DownloadRepository(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestGitHubClient_DownloadRepositoryClosesBodyOnStatusError(t *testing.T) {
+	closed := false
+	var server *httptest.Server
+	server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/repos/jfrog/Hello-World/tarball/test":
+			w.Header().Set("Location", server.URL+"/archive")
+			w.WriteHeader(http.StatusFound)
+		case "/archive":
+			w.WriteHeader(http.StatusInternalServerError)
+			_, _ = w.Write([]byte("archive failed"))
+		default:
+			t.Fatalf("unexpected request path %q", r.URL.Path)
+		}
+	}))
+	defer server.Close()
+
+	httpClient := &http.Client{Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+		resp, err := http.DefaultTransport.RoundTrip(req)
+		if err != nil || resp == nil || resp.Body == nil || req.URL.Path != "/archive" {
+			return resp, err
+		}
+		resp.Body = &closeTrackingBody{ReadCloser: resp.Body, closed: &closed}
+		return resp, nil
+	})}
+	client, err := NewGitHubClient(VcsInfo{
+		APIEndpoint: server.URL,
+		HTTPClient:  httpClient,
+	}, vcsutils.EmptyLogger{})
+	assert.NoError(t, err)
+
+	err = client.DownloadRepository(context.Background(), owner, "Hello-World", "test", t.TempDir())
+	assert.Error(t, err)
+	assert.True(t, closed)
+}
+
+func TestGitHubClient_DownloadRepositoryNilResponseDoesNotPanic(t *testing.T) {
+	dead := httptest.NewServer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {}))
+	dead.Close()
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/repos/jfrog/Hello-World/tarball/test" {
+			t.Fatalf("unexpected request path %q", r.URL.Path)
+		}
+		w.Header().Set("Location", dead.URL+"/archive")
+		w.WriteHeader(http.StatusFound)
+	}))
+	defer server.Close()
+
+	client, err := NewGitHubClient(VcsInfo{APIEndpoint: server.URL}, vcsutils.EmptyLogger{})
+	assert.NoError(t, err)
+
+	err = client.DownloadRepository(context.Background(), owner, "Hello-World", "test", t.TempDir())
+	assert.Error(t, err)
+}
+
 func TestGitHubClient_DownloadArchivePreservesRateLimitError(t *testing.T) {
 	reset := time.Now().Add(time.Hour).Unix()
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
@@ -1578,6 +1634,26 @@ func TestGitHubClient_UsesCallerHTTPClientInsteadOfToken(t *testing.T) {
 	assert.Equal(t, "Bearer from-caller", auth)
 }
 
+func TestGitHubClient_WarnsWhenTokenIgnored(t *testing.T) {
+	logger := &recordingLogger{}
+	_, err := NewGitHubClient(VcsInfo{
+		Token:      "secret",
+		HTTPClient: &http.Client{},
+	}, logger)
+	assert.NoError(t, err)
+	assert.Equal(t, []string{"GitHub token is ignored because an HTTP client was provided"}, logger.warnings)
+
+	logger = &recordingLogger{}
+	_, err = NewGitHubClient(VcsInfo{HTTPClient: &http.Client{}}, logger)
+	assert.NoError(t, err)
+	assert.Empty(t, logger.warnings)
+
+	logger = &recordingLogger{}
+	_, err = NewGitHubClient(VcsInfo{Token: "secret"}, logger)
+	assert.NoError(t, err)
+	assert.Empty(t, logger.warnings)
+}
+
 func TestGitHubClient_DisableRateLimitRetriesCallsOnce(t *testing.T) {
 	calls := 0
 	client := &GitHubClient{
@@ -1703,6 +1779,25 @@ func TestGitHubClient_APIEndpointConfiguresUploadURL(t *testing.T) {
 type roundTripFunc func(*http.Request) (*http.Response, error)
 
 func (f roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) { return f(req) }
+
+type closeTrackingBody struct {
+	io.ReadCloser
+	closed *bool
+}
+
+func (b *closeTrackingBody) Close() error {
+	*b.closed = true
+	return b.ReadCloser.Close()
+}
+
+type recordingLogger struct {
+	vcsutils.EmptyLogger
+	warnings []string
+}
+
+func (l *recordingLogger) Warn(a ...interface{}) {
+	l.warnings = append(l.warnings, fmt.Sprint(a...))
+}
 
 func createTestTarGz(t *testing.T, name string, content []byte) []byte {
 	t.Helper()

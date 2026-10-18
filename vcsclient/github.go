@@ -102,6 +102,8 @@ func buildGithubClient(vcsInfo VcsInfo, logger vcsutils.Log) (*github.Client, er
 		if vcsInfo.Token != "" {
 			httpClient = oauth2.NewClient(context.Background(), oauth2.StaticTokenSource(&oauth2.Token{AccessToken: vcsInfo.Token}))
 		}
+	} else if vcsInfo.Token != "" {
+		logger.Warn("GitHub token is ignored because an HTTP client was provided")
 	}
 	ghClient := github.NewClient(httpClient)
 	ghClient.DisableRateLimitCheck = vcsInfo.DisableRateLimitRetries
@@ -187,7 +189,9 @@ func (client *GitHubClient) ListRepositoriesByOwner(ctx context.Context, owner s
 		})
 		if err != nil {
 			var apiErr *github.ErrorResponse
-			if errors.As(err, &apiErr) && apiErr.Response != nil && apiErr.Response.StatusCode == http.StatusNotFound {
+			// errors.As is false for a nil err. A typed nil *github.ErrorResponse still
+			// makes it return true, so apiErr itself has to be checked before Response.
+			if errors.As(err, &apiErr) && apiErr != nil && apiErr.Response != nil && apiErr.Response.StatusCode == http.StatusNotFound {
 				// owner is a user, not an org — fall back to user repos
 				return client.listRepositoriesByUser(ctx, owner)
 			}
@@ -355,12 +359,15 @@ func (client *GitHubClient) DownloadRepository(ctx context.Context, owner, repos
 		return
 	}
 
-	// Download the archive
+	// Download the archive. Register the close before the error return: a rate-limit
+	// or status error comes back with an open body. Do can also fail with a nil response.
 	httpResponse, err := client.executeDownloadArchiveFromLink(ctx, baseURL.String())
+	if httpResponse != nil && httpResponse.Body != nil {
+		defer func() { err = errors.Join(err, httpResponse.Body.Close()) }()
+	}
 	if err != nil {
 		return
 	}
-	defer func() { err = errors.Join(err, httpResponse.Body.Close()) }()
 	client.logger.Info(repository, vcsutils.SuccessfulRepoDownload)
 
 	// Untar the archive
@@ -384,6 +391,11 @@ func (client *GitHubClient) executeGetArchiveLink(ctx context.Context, owner, re
 		&github.RepositoryContentGetOptions{Ref: branch}, 5)
 }
 
+// executeDownloadArchiveFromLink downloads archive bytes from an absolute URL.
+// It is excluded from runWithRateLimitRetries. A rate-limited response is returned
+// as *github.RateLimitError or *github.AbuseRateLimitError so the caller can handle
+// it. shouldRetryIfRateLimitExceeded does not retry those types, so wrapping this
+// call would not retry it either. The archive link request is the retried call.
 func (client *GitHubClient) executeDownloadArchiveFromLink(ctx context.Context, baseURL string) (*http.Response, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, baseURL, nil)
 	if err != nil {
