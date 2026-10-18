@@ -940,6 +940,10 @@ func (client *BitbucketServerClient) AddOrganizationSecret(ctx context.Context, 
 	return errBitbucketAddOrganizationSecretNotSupported
 }
 
+func (client *BitbucketServerClient) CheckIfOrgSecretExists(ctx context.Context, owner, secretName string) (bool, error) {
+	return false, errBitbucketCheckIfOrgSecretExistsNotSupported
+}
+
 func (client *BitbucketServerClient) CreateOrgVariable(ctx context.Context, owner, variableName, variableValue string) error {
 	return errBitbucketCreateOrgVariableNotSupported
 }

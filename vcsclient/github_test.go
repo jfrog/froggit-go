@@ -24,7 +24,10 @@ import (
 	"github.com/jfrog/froggit-go/vcsutils"
 )
 
-const testSarifScanContent = "{\n    \"version\": \"2.1.0\",\n    \"$schema\": \"https://json.schemastore.org/sarif-2.1.0-rtm.5.json\",\n    \"runs\": [\n      {\n        \"tool\": {\n          \"driver\": {\n            \"informationUri\": \"https://jfrog.com/xray/\",\n            \"name\": \"Xray\",\n            \"rules\": [\n              {\n                \"id\": \"XRAY-174176\",\n                \"shortDescription\": null,\n                \"fullDescription\": {\n                  \"text\": \"json Package for Node.js lib/json.js _parseString() Function -d Argument Handling Local Code Execution Weakness\"\n                },\n                \"properties\": {\n                  \"security-severity\": \"8\"\n                }\n              }\n            ]\n          }\n        },\n        \"results\": [\n          {\n            \"ruleId\": \"XRAY-174176\",\n            \"ruleIndex\": 1,\n            \"message\": {\n              \"text\": \"json 9.0.6. Fixed in Versions: [11.0.0]\"\n            },\n            \"locations\": [\n              {\n                \"physicalLocation\": {\n                  \"artifactLocation\": {\n                    \"uri\": \"package.json\"\n                  }\n                }\n              }\n            ]\n          }\n        ]\n      }\n    ]\n  }"
+const (
+	testSarifScanContent = "{\n    \"version\": \"2.1.0\",\n    \"$schema\": \"https://json.schemastore.org/sarif-2.1.0-rtm.5.json\",\n    \"runs\": [\n      {\n        \"tool\": {\n          \"driver\": {\n            \"informationUri\": \"https://jfrog.com/xray/\",\n            \"name\": \"Xray\",\n            \"rules\": [\n              {\n                \"id\": \"XRAY-174176\",\n                \"shortDescription\": null,\n                \"fullDescription\": {\n                  \"text\": \"json Package for Node.js lib/json.js _parseString() Function -d Argument Handling Local Code Execution Weakness\"\n                },\n                \"properties\": {\n                  \"security-severity\": \"8\"\n                }\n              }\n            ]\n          }\n        },\n        \"results\": [\n          {\n            \"ruleId\": \"XRAY-174176\",\n            \"ruleIndex\": 1,\n            \"message\": {\n              \"text\": \"json 9.0.6. Fixed in Versions: [11.0.0]\"\n            },\n            \"locations\": [\n              {\n                \"physicalLocation\": {\n                  \"artifactLocation\": {\n                    \"uri\": \"package.json\"\n                  }\n                }\n              }\n            ]\n          }\n        ]\n      }\n    ]\n  }"
+	mockOrgSecret        = "my-mock-secret"
+)
 
 func TestGitHubClient_Connection(t *testing.T) {
 	ctx := context.Background()
@@ -1148,6 +1151,36 @@ func TestGitHubClient_AddOrganizationSecret(t *testing.T) {
 	client = createBadGitHubClient(t)
 	err = client.AddOrganizationSecret(ctx, owner, "super-duper-secret", "super-duper-secret-value")
 	assert.Error(t, err)
+}
+
+func TestGitHubClient_CheckIfOrgSecretExists(t *testing.T) {
+	ctx := context.Background()
+	secretResponse := github.Secret{Name: mockOrgSecret}
+	client, cleanUp := createServerAndClient(t, vcsutils.GitHub, false, secretResponse,
+		fmt.Sprintf("/orgs/jfrog/actions/secrets/%s", mockOrgSecret), createGitHubHandler)
+	defer cleanUp()
+
+	exists, err := client.CheckIfOrgSecretExists(ctx, owner, mockOrgSecret)
+	assert.NoError(t, err)
+	assert.True(t, exists)
+}
+
+func TestGitHubClient_CheckIfOrgSecretExistsNotFound(t *testing.T) {
+	ctx := context.Background()
+	client, cleanUp := createBodyHandlingServerAndClient(t, vcsutils.GitHub, false, github.Secret{},
+		"/orgs/jfrog/actions/secrets/not-existed", http.StatusNotFound, []byte{}, http.MethodGet, createGitHubWithBodyHandler)
+	defer cleanUp()
+
+	exists, err := client.CheckIfOrgSecretExists(ctx, owner, "not-existed")
+	assert.NoError(t, err)
+	assert.False(t, exists)
+}
+
+func TestGitHubClient_CheckIfOrgSecretExistsError(t *testing.T) {
+	ctx := context.Background()
+	exists, err := createBadGitHubClient(t).CheckIfOrgSecretExists(ctx, owner, mockOrgSecret)
+	assert.Error(t, err)
+	assert.False(t, exists)
 }
 
 func TestGitHubClient_CreateOrgVariable(t *testing.T) {
