@@ -1499,28 +1499,6 @@ func createAddPullRequestReviewCommentHandler(t *testing.T, expectedURI string, 
 	}
 }
 
-func createDownloadRepositoryGitHubHandler(t *testing.T, expectedURI string, response []byte, expectedStatusCode int) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		if r.RequestURI == "/repos/jfrog/Hello-World" {
-			repositoryResponse, err := os.ReadFile(filepath.Join("testdata", "github", "repository_response.json"))
-			assert.NoError(t, err)
-			_, err = w.Write(repositoryResponse)
-			assert.NoError(t, err)
-			return
-		}
-		assert.Equal(t, expectedURI, r.RequestURI)
-		assert.Equal(t, "Bearer "+token, r.Header.Get("Authorization"))
-		if strings.Contains(r.RequestURI, "tarball") {
-			w.Header().Add("Location", string(response))
-			w.WriteHeader(expectedStatusCode)
-			return
-		}
-		w.WriteHeader(expectedStatusCode)
-		_, err := w.Write(response)
-		assert.NoError(t, err)
-	}
-}
-
 func handleSarifUploadRequest(t *testing.T, w http.ResponseWriter, r *http.Request, expectedCommitSHA string, expectedRef string) {
 	body, err := io.ReadAll(r.Body)
 	assert.NoError(t, err)
