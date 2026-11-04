@@ -14,7 +14,7 @@ jobs:
       matrix:
         os: [ ubuntu, windows, macos ]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Start FastCI Optimization
         uses: jfrog-fastci/fastci@main
