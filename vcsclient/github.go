@@ -106,7 +106,7 @@ func buildGithubClient(vcsInfo VcsInfo, logger vcsutils.Log) (*github.Client, er
 		logger.Warn("GitHub token is ignored because an HTTP client was provided")
 	}
 	ghClient := github.NewClient(httpClient)
-	ghClient.DisableRateLimitCheck = vcsInfo.DisableRateLimitRetries
+	ghClient.DisableRateLimitCheck = vcsInfo.DisableRateLimitRetries && !vcsInfo.KeepRateLimitPreflight
 	if vcsInfo.APIEndpoint != "" {
 		baseURL, err := url.Parse(strings.TrimSuffix(vcsInfo.APIEndpoint, "/") + "/")
 		if err != nil {

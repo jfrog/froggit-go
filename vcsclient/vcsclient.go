@@ -58,9 +58,15 @@ type VcsInfo struct {
 	// Nil keeps the client built from Token.
 	HTTPClient *http.Client
 	// DisableRateLimitRetries returns a GitHub rate-limit response immediately
-	// and disables go-github's local preflight check so the caller's HTTP
-	// transport observes every request and response.
+	// instead of retrying it. Unless KeepRateLimitPreflight is set, it also
+	// disables go-github's local preflight check, so the caller's HTTP transport
+	// observes every request and response.
 	DisableRateLimitRetries bool
+	// KeepRateLimitPreflight keeps go-github's local rate-limit check enabled when
+	// DisableRateLimitRetries is set. After a limit is observed, calls fail locally
+	// until the reset time and do not reach the caller's HTTP transport. Without
+	// DisableRateLimitRetries it has no effect, because the check is already on.
+	KeepRateLimitPreflight bool
 }
 
 // RepositoryEnvironmentInfo is the environment details configured for a repository

@@ -1743,6 +1743,73 @@ func TestGitHubClient_DisableRateLimitRetriesDisablesGoGitHubPreflight(t *testin
 	assert.Equal(t, 2, calls, "the second call must reach the injected transport")
 }
 
+func TestGitHubClient_KeepRateLimitPreflightShortCircuitsKnownLimit(t *testing.T) {
+	calls := 0
+	reset := time.Now().Add(time.Hour).Unix()
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		calls++
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("X-RateLimit-Limit", "5000")
+		w.Header().Set("X-RateLimit-Remaining", "0")
+		w.Header().Set("X-RateLimit-Reset", strconv.FormatInt(reset, 10))
+		w.WriteHeader(http.StatusForbidden)
+		_, _ = w.Write([]byte(`{"message":"API rate limit exceeded"}`))
+	}))
+	defer server.Close()
+
+	client, err := NewGitHubClient(VcsInfo{
+		APIEndpoint:             server.URL,
+		DisableRateLimitRetries: true,
+		KeepRateLimitPreflight:  true,
+	}, vcsutils.EmptyLogger{})
+	assert.NoError(t, err)
+
+	var rateLimitErr *github.RateLimitError
+	err = client.TestConnection(context.Background())
+	assert.ErrorAs(t, err, &rateLimitErr)
+	assert.Equal(t, 1, calls)
+
+	err = client.TestConnection(context.Background())
+	assert.ErrorAs(t, err, &rateLimitErr)
+	assert.Equal(t, 1, calls, "a known limit must short-circuit without reaching GitHub")
+}
+
+func TestBuildGithubClient_RateLimitPreflightFlags(t *testing.T) {
+	tests := []struct {
+		name             string
+		vcsInfo          VcsInfo
+		wantPreflightOff bool
+	}{
+		{
+			name:             "default keeps go-github preflight",
+			vcsInfo:          VcsInfo{},
+			wantPreflightOff: false,
+		},
+		{
+			name:             "disabling retries also disables go-github preflight",
+			vcsInfo:          VcsInfo{DisableRateLimitRetries: true},
+			wantPreflightOff: true,
+		},
+		{
+			name:             "keeping preflight overrides disabled retries",
+			vcsInfo:          VcsInfo{DisableRateLimitRetries: true, KeepRateLimitPreflight: true},
+			wantPreflightOff: false,
+		},
+		{
+			name:             "keeping preflight alone changes nothing",
+			vcsInfo:          VcsInfo{KeepRateLimitPreflight: true},
+			wantPreflightOff: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ghClient, err := buildGithubClient(tt.vcsInfo, vcsutils.EmptyLogger{})
+			assert.NoError(t, err)
+			assert.Equal(t, tt.wantPreflightOff, ghClient.DisableRateLimitCheck)
+		})
+	}
+}
+
 func TestGitHubClient_ListRepositoriesByOwnerDoesNotFallbackOnRateLimit(t *testing.T) {
 	orgCalls := 0
 	userCalls := 0
