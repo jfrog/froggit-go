@@ -74,28 +74,60 @@ func (client *GitLabClient) ListRepositories(ctx context.Context) (map[string][]
 }
 
 // ListRepositoriesByOwner on GitLab returns repositories for the given group or user namespace.
-// It tries listing as a group first; if that fails, falls back to listing as a user.
+// For a group, projects of all nested subgroups are included, and every project is returned as its path
+// relative to the group (for example "team-a/repo" for the project "my-group/team-a/repo"), so that
+// owner + repository identifies the project in the other GitLab client methods.
+// Projects shared with the group from other namespaces are not included.
+// If the owner is not a group, it falls back to listing the projects of the user namespace.
 func (client *GitLabClient) ListRepositoriesByOwner(ctx context.Context, owner string) ([]string, error) {
+	withProjects := false
+	group, groupResponse, err := client.glClient.Groups.GetGroup(owner, &gitlab.GetGroupOptions{WithProjects: &withProjects}, gitlab.WithContext(ctx))
+	if err != nil {
+		if groupResponse != nil && groupResponse.Response != nil && groupResponse.StatusCode == http.StatusNotFound {
+			// owner is a user namespace, not a group. Fall back to user projects.
+			return client.listUserProjectsByOwner(ctx, owner)
+		}
+		return nil, err
+	}
 	simple := true
+	includeSubGroups := true
+	withShared := false
 	var repos []string
 	for pageID := 1; ; pageID++ {
 		opts := &gitlab.ListGroupProjectsOptions{
-			ListOptions: gitlab.ListOptions{Page: pageID},
-			Simple:      &simple,
+			ListOptions:      gitlab.ListOptions{Page: pageID},
+			Simple:           &simple,
+			IncludeSubGroups: &includeSubGroups,
+			WithShared:       &withShared,
 		}
 		projects, response, err := client.glClient.Groups.ListGroupProjects(owner, opts, gitlab.WithContext(ctx))
 		if err != nil {
-			// owner is a user namespace, not a group — fall back to user projects
-			return client.listUserProjectsByOwner(ctx, owner)
+			return nil, err
 		}
 		for _, p := range projects {
-			repos = append(repos, p.Path)
+			relativePath, nested := projectPathRelativeToGroup(p, group.FullPath)
+			if !nested {
+				client.logger.Debug(fmt.Sprintf("project %s is not nested under group %s, using its plain path", p.PathWithNamespace, group.FullPath))
+			}
+			repos = append(repos, relativePath)
 		}
 		if pageID >= response.TotalPages {
 			break
 		}
 	}
 	return repos, nil
+}
+
+// projectPathRelativeToGroup returns the path of the project relative to the group with the given full path.
+// Both paths are the canonical paths reported by GitLab, so the comparison does not depend on how the
+// caller spelled the owner. If the project is not nested under the group, which GitLab does not return for
+// non-shared group projects, the plain project path is returned together with false.
+func projectPathRelativeToGroup(project *gitlab.Project, groupFullPath string) (string, bool) {
+	prefix := groupFullPath + "/"
+	if strings.HasPrefix(project.PathWithNamespace, prefix) {
+		return strings.TrimPrefix(project.PathWithNamespace, prefix), true
+	}
+	return project.Path, false
 }
 
 func (client *GitLabClient) listUserProjectsByOwner(ctx context.Context, owner string) ([]string, error) {
@@ -971,10 +1003,11 @@ func (client *GitLabClient) mapGitLabMergeRequestToPullRequestInfo(mergeRequest 
 	if withBody {
 		body = mergeRequest.Description
 	}
-	sourceOwner := owner
+	sourceOwner, sourceRepository := owner, repository
 	var err error
 	if mergeRequest.SourceProjectID != mergeRequest.TargetProjectID {
-		if sourceOwner, err = client.getProjectOwnerByID(mergeRequest.SourceProjectID); err != nil {
+		// The merge request comes from a fork, which can live under another owner and have another path.
+		if sourceOwner, sourceRepository, err = client.getProjectOwnerByID(mergeRequest.SourceProjectID); err != nil {
 			return PullRequestInfo{}, err
 		}
 	}
@@ -986,7 +1019,7 @@ func (client *GitLabClient) mapGitLabMergeRequestToPullRequestInfo(mergeRequest 
 		Author: mergeRequest.Author.Username,
 		Source: BranchInfo{
 			Name:       mergeRequest.SourceBranch,
-			Repository: repository,
+			Repository: sourceRepository,
 			Owner:      sourceOwner,
 		},
 		URL: mergeRequest.WebURL,
@@ -998,20 +1031,21 @@ func (client *GitLabClient) mapGitLabMergeRequestToPullRequestInfo(mergeRequest 
 	}, nil
 }
 
-func (client *GitLabClient) getProjectOwnerByID(projectID int) (string, error) {
+// getProjectOwnerByID returns the owner and the path of the project with the given ID.
+func (client *GitLabClient) getProjectOwnerByID(projectID int) (owner, path string, err error) {
 	project, glResponse, err := client.glClient.Projects.GetProject(projectID, &gitlab.GetProjectOptions{})
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	if glResponse != nil {
 		if err = vcsutils.CheckResponseStatusWithBody(glResponse.Response, http.StatusOK); err != nil {
-			return "", err
+			return "", "", err
 		}
 	}
 	if project.Namespace == nil {
-		return "", fmt.Errorf("could not fetch the name of the project owner. Project ID: %d", projectID)
+		return "", "", fmt.Errorf("could not fetch the name of the project owner. Project ID: %d", projectID)
 	}
-	return project.Namespace.Name, nil
+	return project.Namespace.Name, project.Path, nil
 }
 
 func mapGitLabPullRequestState(state *vcsutils.PullRequestState) *string {
