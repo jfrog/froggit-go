@@ -1217,18 +1217,46 @@ func TestGitLabClient_getProjectOwnerByID(t *testing.T) {
 
 	glClient, ok := client.(*GitLabClient)
 	assert.True(t, ok)
-	projectOwner, err := glClient.getProjectOwnerByID(projectID)
+	projectOwner, projectPath, err := glClient.getProjectOwnerByID(projectID)
 	assert.NoError(t, err)
 	assert.Equal(t, "test", projectOwner)
+	assert.Equal(t, "frogbot-demo", projectPath)
 
 	badClient, badClientCleanUp :=
 		createServerAndClient(t, vcsutils.GitLab, false, nil, fmt.Sprintf("/api/v4/projects/%d", projectID), createGitLabHandler)
 	defer badClientCleanUp()
 	badGlClient, ok := badClient.(*GitLabClient)
 	assert.True(t, ok)
-	projectOwner, err = badGlClient.getProjectOwnerByID(projectID)
+	projectOwner, projectPath, err = badGlClient.getProjectOwnerByID(projectID)
 	assert.Error(t, err)
-	assert.NotEqual(t, "test", projectOwner)
+	assert.Empty(t, projectOwner)
+	assert.Empty(t, projectPath)
+}
+
+func TestGitLabClient_mapGitLabMergeRequestToPullRequestInfoFromFork(t *testing.T) {
+	forkProjectID := 47457684
+	response, err := os.ReadFile(filepath.Join("testdata", "gitlab", "get_project_response.json"))
+	assert.NoError(t, err)
+	client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, response,
+		fmt.Sprintf("/api/v4/projects/%d", forkProjectID), createGitLabHandler)
+	defer cleanUp()
+	glClient, ok := client.(*GitLabClient)
+	assert.True(t, ok)
+
+	mergeRequest := &gitlab.MergeRequest{
+		IID:             7,
+		Title:           "from fork",
+		SourceBranch:    "feature",
+		TargetBranch:    "main",
+		SourceProjectID: forkProjectID,
+		TargetProjectID: 1,
+		Author:          &gitlab.BasicUser{Username: "forker"},
+	}
+	info, err := glClient.mapGitLabMergeRequestToPullRequestInfo(mergeRequest, false, owner, repo1)
+	assert.NoError(t, err)
+	// The source points at the fork, the target at the project the merge request was listed for.
+	assert.Equal(t, BranchInfo{Name: "feature", Repository: "frogbot-demo", Owner: "test"}, info.Source)
+	assert.Equal(t, BranchInfo{Name: "main", Repository: repo1, Owner: owner}, info.Target)
 }
 
 func TestGitLabClient_ListPullRequestReviews(t *testing.T) {

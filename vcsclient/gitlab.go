@@ -1003,10 +1003,11 @@ func (client *GitLabClient) mapGitLabMergeRequestToPullRequestInfo(mergeRequest 
 	if withBody {
 		body = mergeRequest.Description
 	}
-	sourceOwner := owner
+	sourceOwner, sourceRepository := owner, repository
 	var err error
 	if mergeRequest.SourceProjectID != mergeRequest.TargetProjectID {
-		if sourceOwner, err = client.getProjectOwnerByID(mergeRequest.SourceProjectID); err != nil {
+		// The merge request comes from a fork, which can live under another owner and have another path.
+		if sourceOwner, sourceRepository, err = client.getProjectOwnerByID(mergeRequest.SourceProjectID); err != nil {
 			return PullRequestInfo{}, err
 		}
 	}
@@ -1018,7 +1019,7 @@ func (client *GitLabClient) mapGitLabMergeRequestToPullRequestInfo(mergeRequest 
 		Author: mergeRequest.Author.Username,
 		Source: BranchInfo{
 			Name:       mergeRequest.SourceBranch,
-			Repository: repository,
+			Repository: sourceRepository,
 			Owner:      sourceOwner,
 		},
 		URL: mergeRequest.WebURL,
@@ -1030,20 +1031,21 @@ func (client *GitLabClient) mapGitLabMergeRequestToPullRequestInfo(mergeRequest 
 	}, nil
 }
 
-func (client *GitLabClient) getProjectOwnerByID(projectID int) (string, error) {
+// getProjectOwnerByID returns the owner and the path of the project with the given ID.
+func (client *GitLabClient) getProjectOwnerByID(projectID int) (owner, path string, err error) {
 	project, glResponse, err := client.glClient.Projects.GetProject(projectID, &gitlab.GetProjectOptions{})
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	if glResponse != nil {
 		if err = vcsutils.CheckResponseStatusWithBody(glResponse.Response, http.StatusOK); err != nil {
-			return "", err
+			return "", "", err
 		}
 	}
 	if project.Namespace == nil {
-		return "", fmt.Errorf("could not fetch the name of the project owner. Project ID: %d", projectID)
+		return "", "", fmt.Errorf("could not fetch the name of the project owner. Project ID: %d", projectID)
 	}
-	return project.Namespace.Name, nil
+	return project.Namespace.Name, project.Path, nil
 }
 
 func mapGitLabPullRequestState(state *vcsutils.PullRequestState) *string {
