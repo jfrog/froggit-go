@@ -220,6 +220,10 @@ The meaning of `owner` varies by provider:
 | Bitbucket Cloud | Workspace slug |
 | Azure Repos | Project name |
 
+On GitLab, projects in nested subgroups are included and returned as their path relative to the group,
+for example `team-a/repo` for the project `my-group/team-a/repo`. Pass that value as the `repository`
+argument of the other methods together with the same `owner`.
+
 ```go
 // Go context
 ctx := context.Background()

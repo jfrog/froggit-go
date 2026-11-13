@@ -8,6 +8,7 @@ import (
 	"math"
 	"math/rand"
 	"net/http"
+	"net/http/httptest"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -73,14 +74,153 @@ func TestGitLabClient_ListRepositories(t *testing.T) {
 
 func TestGitLabClient_ListRepositoriesByOwner(t *testing.T) {
 	ctx := context.Background()
-	projects := []gitlab.Project{{Path: repo1}, {Path: repo2}}
-	client, cleanUp := createServerAndClient(t, vcsutils.GitLab, false, projects,
-		fmt.Sprintf("/api/v4/groups/%s/projects", owner), createGitLabHandlerForUnknownUrl)
-	defer cleanUp()
+	projects := []gitlab.Project{
+		{Path: repo1, PathWithNamespace: owner + "/" + repo1},
+		{Path: repo2, PathWithNamespace: owner + "/team-a/" + repo2},
+		{Path: "repo-3", PathWithNamespace: owner + "/team-a/sub-team/repo-3"},
+	}
+	handler, pagesServed := createGitLabGroupProjectsHandler(t, owner, owner, projects, 20)
+	server := httptest.NewServer(handler)
+	defer server.Close()
+	client := buildClient(t, vcsutils.GitLab, false, server)
 
 	actualRepos, err := client.ListRepositoriesByOwner(ctx, owner)
 	assert.NoError(t, err)
-	assert.ElementsMatch(t, []string{repo1, repo2}, actualRepos)
+	assert.Equal(t, []string{repo1, "team-a/" + repo2, "team-a/sub-team/repo-3"}, actualRepos)
+	assert.Equal(t, 1, *pagesServed)
+}
+
+func TestGitLabClient_ListRepositoriesByOwnerMultiplePages(t *testing.T) {
+	ctx := context.Background()
+	const perPage = 20
+	var projects []gitlab.Project
+	var expected []string
+	for i := 0; i < 45; i++ {
+		path := fmt.Sprintf("repo-%d", i)
+		relative := path
+		if i%2 == 1 {
+			relative = "team-a/" + path
+		}
+		projects = append(projects, gitlab.Project{Path: path, PathWithNamespace: owner + "/" + relative})
+		expected = append(expected, relative)
+	}
+	handler, pagesServed := createGitLabGroupProjectsHandler(t, owner, owner, projects, perPage)
+	server := httptest.NewServer(handler)
+	defer server.Close()
+	client := buildClient(t, vcsutils.GitLab, false, server)
+
+	actualRepos, err := client.ListRepositoriesByOwner(ctx, owner)
+	assert.NoError(t, err)
+	assert.Equal(t, expected, actualRepos)
+	assert.Equal(t, 3, *pagesServed)
+}
+
+func TestGitLabClient_ListRepositoriesByOwnerOnlySubgroups(t *testing.T) {
+	ctx := context.Background()
+	// The group has no projects of its own, only projects in subgroups. The owner is spelled with a different
+	// casing than the canonical group path reported by GitLab, so the relative path must be derived from the
+	// paths in the API responses and not from the input.
+	const groupFullPath = "my-group"
+	projects := []gitlab.Project{
+		{Path: repo1, PathWithNamespace: groupFullPath + "/team-a/" + repo1},
+		{Path: repo2, PathWithNamespace: groupFullPath + "/team-b/nested/" + repo2},
+	}
+	handler, _ := createGitLabGroupProjectsHandler(t, "My-Group", groupFullPath, projects, 20)
+	server := httptest.NewServer(handler)
+	defer server.Close()
+	client := buildClient(t, vcsutils.GitLab, false, server)
+
+	actualRepos, err := client.ListRepositoriesByOwner(ctx, "My-Group")
+	assert.NoError(t, err)
+	assert.Equal(t, []string{"team-a/" + repo1, "team-b/nested/" + repo2}, actualRepos)
+}
+
+func TestGitLabClient_ListRepositoriesByOwnerSubgroupAsOwner(t *testing.T) {
+	ctx := context.Background()
+	const groupFullPath = "my-group/team-a"
+	projects := []gitlab.Project{
+		{Path: repo1, PathWithNamespace: groupFullPath + "/" + repo1},
+		{Path: repo2, PathWithNamespace: groupFullPath + "/nested/" + repo2},
+	}
+	handler, _ := createGitLabGroupProjectsHandler(t, groupFullPath, groupFullPath, projects, 20)
+	server := httptest.NewServer(handler)
+	defer server.Close()
+	client := buildClient(t, vcsutils.GitLab, false, server)
+
+	actualRepos, err := client.ListRepositoriesByOwner(ctx, groupFullPath)
+	assert.NoError(t, err)
+	assert.Equal(t, []string{repo1, "nested/" + repo2}, actualRepos)
+}
+
+func TestGitLabClient_ListRepositoriesByOwnerProjectsErrorIsReturned(t *testing.T) {
+	ctx := context.Background()
+	handler := func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/api/v4/":
+			w.WriteHeader(http.StatusOK)
+		case "/api/v4/groups/" + owner:
+			writeGitLabGroup(t, w, owner)
+		default:
+			// The group exists, so a failure listing its projects must not fall back to user projects.
+			assert.Equal(t, "/api/v4/groups/"+owner+"/projects", r.URL.Path)
+			w.WriteHeader(http.StatusForbidden)
+		}
+	}
+	server := httptest.NewServer(http.HandlerFunc(handler))
+	defer server.Close()
+	client := buildClient(t, vcsutils.GitLab, false, server)
+
+	_, err := client.ListRepositoriesByOwner(ctx, owner)
+	assert.Error(t, err)
+}
+
+func TestGitLabClient_ListRepositoriesByOwnerGroupErrorIsReturned(t *testing.T) {
+	ctx := context.Background()
+	// Only a 404 on the group lookup means "owner is a user". Any other error must be returned as is and
+	// must not trigger the fallback to user projects.
+	handler := func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/api/v4/":
+			w.WriteHeader(http.StatusOK)
+		case "/api/v4/groups/" + owner:
+			w.WriteHeader(http.StatusForbidden)
+		default:
+			assert.Fail(t, "unexpected request", "%s %s", r.Method, r.RequestURI)
+			w.WriteHeader(http.StatusNotFound)
+		}
+	}
+	server := httptest.NewServer(http.HandlerFunc(handler))
+	defer server.Close()
+	client := buildClient(t, vcsutils.GitLab, false, server)
+
+	_, err := client.ListRepositoriesByOwner(ctx, owner)
+	assert.Error(t, err)
+	assert.ErrorContains(t, err, "403")
+}
+
+func TestProjectPathRelativeToGroup(t *testing.T) {
+	tests := []struct {
+		name           string
+		project        gitlab.Project
+		groupFullPath  string
+		expected       string
+		expectedNested bool
+	}{
+		{"top level project", gitlab.Project{Path: "repo", PathWithNamespace: "my-group/repo"}, "my-group", "repo", true},
+		{"subgroup project", gitlab.Project{Path: "repo", PathWithNamespace: "my-group/team-a/repo"}, "my-group", "team-a/repo", true},
+		{"nested subgroup project", gitlab.Project{Path: "repo", PathWithNamespace: "my-group/team-a/sub/repo"}, "my-group", "team-a/sub/repo", true},
+		{"subgroup as group", gitlab.Project{Path: "repo", PathWithNamespace: "my-group/team-a/repo"}, "my-group/team-a", "repo", true},
+		{"group path is only a prefix of the namespace", gitlab.Project{Path: "repo", PathWithNamespace: "my-group-2/repo"}, "my-group", "repo", false},
+		{"project outside the group", gitlab.Project{Path: "repo", PathWithNamespace: "other/repo"}, "my-group", "repo", false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			project := tt.project
+			actual, nested := projectPathRelativeToGroup(&project, tt.groupFullPath)
+			assert.Equal(t, tt.expected, actual)
+			assert.Equal(t, tt.expectedNested, nested)
+		})
+	}
 }
 
 func TestGitLabClient_ListRepositoriesByOwnerUserFallback(t *testing.T) {
@@ -811,6 +951,66 @@ func createGitLabHandlerForUnknownUrl(t *testing.T, expectedURI string, response
 		assert.Contains(t, r.RequestURI, expectedURI)
 		assert.Equal(t, token, r.Header.Get("Private-Token"))
 	}
+}
+
+// createGitLabGroupProjectsHandler serves the group details and the paginated group projects endpoints for a group
+// that GitLab knows under groupFullPath, looked up by the caller as requestedOwner. The returned counter holds the
+// number of project pages served.
+func createGitLabGroupProjectsHandler(t *testing.T, requestedOwner, groupFullPath string, projects []gitlab.Project, perPage int) (http.HandlerFunc, *int) {
+	pagesServed := 0
+	groupPath := "/api/v4/groups/" + requestedOwner
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/api/v4/" {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+		assert.Equal(t, http.MethodGet, r.Method)
+		assert.Equal(t, token, r.Header.Get("Private-Token"))
+		switch {
+		case strings.EqualFold(r.URL.Path, groupPath):
+			writeGitLabGroup(t, w, groupFullPath)
+		case strings.EqualFold(r.URL.Path, groupPath+"/projects"):
+			query := r.URL.Query()
+			assert.Equal(t, "true", query.Get("include_subgroups"), "subgroup projects must be requested")
+			assert.Equal(t, "false", query.Get("with_shared"), "shared projects must be excluded")
+			assert.Equal(t, "true", query.Get("simple"))
+			page := 1
+			if query.Has("page") {
+				var err error
+				page, err = strconv.Atoi(query.Get("page"))
+				assert.NoError(t, err)
+			}
+			lastPage := int(math.Ceil(float64(len(projects)) / float64(perPage)))
+			low := (page - 1) * perPage
+			high := min(page*perPage, len(projects))
+			var pageItems []gitlab.Project
+			if low < high {
+				pageItems = projects[low:high]
+			}
+			pagesServed++
+			w.Header().Add("X-Total-Pages", strconv.Itoa(lastPage))
+			w.WriteHeader(http.StatusOK)
+			body, err := json.Marshal(pageItems)
+			assert.NoError(t, err)
+			_, err = w.Write(body)
+			assert.NoError(t, err)
+		default:
+			assert.Fail(t, "unexpected request", "%s %s", r.Method, r.RequestURI)
+			w.WriteHeader(http.StatusNotFound)
+		}
+	}, &pagesServed
+}
+
+func writeGitLabGroup(t *testing.T, w http.ResponseWriter, groupFullPath string) {
+	path := groupFullPath
+	if i := strings.LastIndex(groupFullPath, "/"); i >= 0 {
+		path = groupFullPath[i+1:]
+	}
+	body, err := json.Marshal(gitlab.Group{ID: 1, Path: path, FullPath: groupFullPath})
+	assert.NoError(t, err)
+	w.WriteHeader(http.StatusOK)
+	_, err = w.Write(body)
+	assert.NoError(t, err)
 }
 
 func createGitLabHandlerWithoutExpectedURI(t *testing.T, _ string, response []byte, expectedStatusCode int) http.HandlerFunc {

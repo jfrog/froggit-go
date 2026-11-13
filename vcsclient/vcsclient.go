@@ -137,6 +137,9 @@ type VcsClient interface {
 	// ListRepositoriesByOwner returns the list of repositories for a specific owner/project/workspace.
 	// owner - The project key (Bitbucket Server), organization/user (GitHub), group/user (GitLab),
 	//         workspace slug (Bitbucket Cloud), or project name (Azure Repos).
+	// Every returned name identifies a repository together with the same owner in the other methods.
+	// On GitLab, projects in nested subgroups are included as their path relative to the group,
+	// for example "team-a/repo" for the project "my-group/team-a/repo".
 	ListRepositoriesByOwner(ctx context.Context, owner string) ([]string, error)
 
 	// ListAppRepositories ListRepositories Returns a map between all accessible App to their list of repositories
